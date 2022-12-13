@@ -1,9 +1,5 @@
-
 const { WebSocket } = require('ws');
 const request = require('request');
-
-//TODO handle reconnects on error
-//TODO handle reconnects on close
 
 async function connect(prev_state = {}) {
     state = {
@@ -24,7 +20,7 @@ async function getGateway() {
     return new Promise(resolve => request({ url: 'https://discord.com/api/v10/gateway/bot', headers: { Authorization: 'Bot ' + process.env.DISCORD_TOKEN }, json: true }, (err, res, body) => {
         if (err) return resolve('wss:gateway.discord.gg');
         return resolve(body.url);
-    }))
+    }));
 }
 
 function handleMessage(state, message) {
@@ -145,7 +141,6 @@ async function send(op, payload) {
 }
 
 async function handleDispatch(state, sequence, event, payload) {
-    if (Math.random() < 0.1) return handleReconnect(state);
     switch(event) {
         case 'READY': return handleReady(state, payload);
         case 'RESUMED': return handleResumed();
@@ -163,8 +158,9 @@ async function handleDispatch(state, sequence, event, payload) {
 
 async function dispatch(event, payload) {
     console.log('dispatch ' + event.toLowerCase());
-    //console.log('HTTP POST https://localhost:1234/discord/' + event.toLowerCase());
-    return new Promise(resolve => setTimeout(resolve, 1000 * 60 * 5 * Math.random()));
+    let url = 'https://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
+    console.log('HTTP POST ' + url);
+    return new Promise(resolve => request.post({ url: url, headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) }, (err, res, body) => resolve(body)));
 }
 
 connect();
