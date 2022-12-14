@@ -78,7 +78,7 @@ async function handleInvalidSession(state) {
 
 async function sendIdentify(state) {
     console.log('identify');
-    return send(2, {
+    return send(state, 2, {
         token: process.env.DISCORD_TOKEN,
         properties: {
             os: 'Linux',
@@ -103,7 +103,7 @@ async function sendIdentify(state) {
 
 async function sendResume(state) {
     console.log('resume (session_id ' + state.session_id + ', sequence ' + state.sequence + ')');
-    return send(6, { 'token': process.env.DISCORD_TOKEN, 'session_id': state.session_id, 'seq': state.sequence });
+    return send(state, 6, { 'token': process.env.DISCORD_TOKEN, 'session_id': state.session_id, 'seq': state.sequence });
 }
 
 async function handleReady(state, payload) {
@@ -132,10 +132,10 @@ async function sendHeartbeatLater(state) {
 
 async function sendHeartbeat(state) {
     console.log('heartbeat (' + state.sequence + ')');
-    return send(1, state.sequence ?? null);
+    return send(state, 1, state.sequence ?? null);
 }
 
-async function send(op, payload) {
+async function send(state, op, payload) {
     console.log('send ' + op);
     return state.socket.send(JSON.stringify({ op: op, d: payload }));
 }
