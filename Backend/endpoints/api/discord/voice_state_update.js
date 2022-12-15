@@ -1,13 +1,13 @@
-const sdk = require('../../../../../shared/opentelemetry.js').create(context.service.version);
+const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
 await sdk.start();
 const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
-const memory = require('../../../../../shared/memory.js');
-const statistics = require('../../../../../shared/statistics.js');
-const discord = require('../../../../../shared/discord.js');
-const player = require('../../../../../shared/player.js');
-const features = require('../../../../../shared/features.js');
+const memory = require('../../shared/memory.js');
+const statistics = require('../../shared/statistics.js');
+const discord = require('../../shared/discord.js');
+const player = require('../../shared/player.js');
+const features = require('../../shared/features.js');
 
 async function playGreeting(guild_id, user_id) {
   let now = new Date();

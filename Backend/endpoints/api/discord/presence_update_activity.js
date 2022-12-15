@@ -1,14 +1,14 @@
-const sdk = require('../../../../../shared/opentelemetry.js').create(context.service.version);
+const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
 await sdk.start();
 const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
-const discord = require('../../../../../shared/discord.js');
-const timeout = require('../../../../../shared/timeout.js');
-const memory = require('../../../../../shared/memory.js');
-const statistics = require('../../../../../shared/statistics.js');
-const delayed_memory = require('../../../../../shared/delayed_memory.js');
-const games = require('../../../../../shared/games/games.js');
+const discord = require('../../shared/discord.js');
+const timeout = require('../../shared/timeout.js');
+const memory = require('../../shared/memory.js');
+const statistics = require('../../shared/statistics.js');
+const delayed_memory = require('../../shared/delayed_memory.js');
+const games = require('../../shared/games/games.js');
 
 const mute_ttl = 60 * 60 * 24 * 7 * 4;
 const mute_auto_ttl = 60 * 60 * 2;

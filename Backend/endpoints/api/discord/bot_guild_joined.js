@@ -1,10 +1,10 @@
-const sdk = require('../../../../../shared/opentelemetry.js').create(context.service.version);
+const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
 await sdk.start();
 const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
-const memory = require('../../../../../shared/memory.js');
-const statistics = require('../../../../../shared/statistics.js');
+const memory = require('../../shared/memory.js');
+const statistics = require('../../shared/statistics.js');
 
 let span = tracer.startSpan('functions.events.discord.bot.guild.joined', { kind: opentelemetry.SpanKind.CONSUMER }, undefined);
 return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {

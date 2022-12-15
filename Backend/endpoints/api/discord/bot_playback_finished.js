@@ -1,11 +1,11 @@
-const sdk = require('../../../../../shared/opentelemetry.js').create(context.service.version);
+const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
 await sdk.start();
 const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
-const memory = require('../../../../../shared/memory.js');
-const statistics = require('../../../../../shared/statistics.js');
-const player = require('../../../../../shared/player.js');
+const memory = require('../../shared/memory.js');
+const statistics = require('../../shared/statistics.js');
+const player = require('../../shared/player.js');
 
 async function handle(guild_id) {
   return (Math.random() < 0.99 ? player.playNext(guild_id, null) : player.play(guild_id, null, null, 'rick roll'));

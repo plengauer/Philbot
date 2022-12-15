@@ -1,13 +1,13 @@
-const sdk = require('../../../shared/opentelemetry.js').create(context.service.version);
+const sdk = require('../shared/opentelemetry.js').create(context.service.version);
 await sdk.start();
 const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
-const memory = require('../../../shared/memory.js');
-const memory_kv = require('../../../shared/memory_kv.js');
-const statistics = require('../../../shared/statistics.js');
-const discord = require('../../../shared/discord.js');
-const identity = require('../../../shared/identity.js');
+const memory = require('../shared/memory.js');
+const memory_kv = require('../shared/memory_kv.js');
+const statistics = require('../shared/statistics.js');
+const discord = require('../shared/discord.js');
+const identity = require('../shared/identity.js');
 const fs = require('fs');
 
 const ttl = 60 * 60 * 24 * (31 + 1);
