@@ -1,0 +1,3 @@
+I'm **${name}** version ${version}, free of use. Please contact p.lengauer@gmail.com for feedback, suggestions and bug reports. Use ${link_discord_add} to add me to your own server.
+I'm continuously monitored to improve my quality, use ${link_monitoring} to view observability data, and ${link_logs} to view my logs.
+In terms of privacy, I'm fully GDPR compliant. If a user leaves a server I will purge my memory of any trace of that user within at most 1 month. If I get kicked out of a server completely, I erase all memory of all its users within the same time period. I will retain any config made for that server (not for individual users) in case I'm asked to rejoin again in the future.

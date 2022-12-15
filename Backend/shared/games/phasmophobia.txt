@@ -1,0 +1,211 @@
+The **Banshee** (also: **Overly Attached Girlfriend**) is quite an old school, conservative ghost. She focuses her whole attention on one player, henceforth called the “spouse”. She does not change her spouse until she domestically abused her spouse to death, or got them to divorce her (leave the game). Banshees are quite clingy: during hunts, if the spouse is in the house, she refuses to inappropriately touch (kill) any other player. In fact, in order to not make her spouse jealous, she even goes to great lengths to completely ignore any other player in the house, acting as if she can’t even sense their presence.
+Evidences: Fingerprints, Ghost Orb, D.O.T.S. Projector
+Peculiarities:
+- The hunt sanity threshold is 50% of the spouse’s sanity, not of average sanity.
+- As long as the spouse isn’t in the house during a hunt, she will seek any temporary partner she can find to inappropriately touch (kill). What a fucking unfaithful bitch. Is the kid even the spouse’s?
+- When a Parabolic Microphone is used, the Banshee has a chance of making a unique shriek-like paranormal sound.
+- She prefers singing ghost events, and causes more sanity loss for it’s spouse when they end a singing ghost event by slapping (colliding with) the Banshee for her terrible singing.
+- She occasionally walks to the position of her spouse ouside of a hunt.
+Learn everything about the Banshee here: https://phasmophobia.fandom.com/wiki/Banshee 
+
+**Demons** are generally considered to be one of the most dangerous types of ghost to encounter; they attack more often than any other ghost.
+Evidences: Fingerprints, Ghost Writing, Freezing Temperatures
+Peculiarities:
+- The hunt sanity threshold is 70%.
+- Demons have a slightly shorter cooldown between hunts.
+- Smudging a Demon will prevent hunts for only 60 seconds, as opposed to the standard 90 seconds.
+- The effective range of a crucifix is increased against a Demon.
+Learn everything about the Demon here: https://phasmophobia.fandom.com/wiki/Demon 
+
+You can run from a **Deogen**, but you can’t hide!
+Evidences: Spirit Box, Ghost Writing, D.O.T.S. Projector
+Peculiarities:
+- The hunt sanity threshold is 40%. 
+- Does not accelerate while maintaining line of sight during hunts.
+- At the start of a hunt it targets the nearest player, but unlike the Banshee, it can kill other players, and also occasionally picks the nearest player to it as a new target during a hunt.
+- It always knows where it’s target is during a hunt, and it’s speed is based on the distance to the target. The Deogen is incredibly fast when far away from players, but becomes extremely slow when it’s near a player, enabling players to outmaneuver it even without looping.
+- If the Spirit Box is used while standing within 1 meter of the Deogen, it has a 33% chance with each question to produce a unique “heavy breathing” response instead of a regular response.
+Learn everything about de ogen here: https://phasmophobia.fandom.com/wiki/Deogen 
+
+**Goryos** are known for being the most bullshit ghosts around.
+Evidences: EMF Level 5, Fingerprints, D.O.T.S. Projector
+Peculiarities:
+- Will always have D.O.T.S. in Nightmare difficulty.
+- A Goryo will only interact with a D.O.T.S. Projector if no players are nearby. 
+- It’s D.O.T.S. silhouette is only visible through a Video Camera, and cannot be seen with the naked eye.
+- When not hunting, the Goryo's wandering distance will generally be shorter.
+Learn everything about the Goryo here: https://phasmophobia.fandom.com/wiki/Goryo 
+
+The **Hantu** (also: **Hantuwu**) is known for it’s increased speed in colder rooms, which can make it an unexpected threat during a hunt.
+Evidences: Fingerprints, Ghost Orb, Freezing Temperatures
+Peculiarities:
+- Will always have Freezing Temperatures in Nightmare difficulty.
+- Does not accelerate while maintaining line of sight during hunts.
+- The Hantu cannot turn on the fuse box. It it also twice as likely to turn off the fuse box.
+- During a hunt, a Hantu's speed is affected by the temperature of the room that it is in. It’s very fast in a cold room, and becomes quite slow (and thus cute UwU) in warm rooms, allowing players to loop it. Beware that the room will cool down while the ghost is in it, so don’t tease it for too long!
+- When the Hantu is visible during a hunt, it will emit freezing breath when it is in a room with freezing or almost freezing temperatures. Dead players cannot see this breath.
+Learn everything about the Hantuwu here: https://phasmophobia.fandom.com/wiki/Hantu 
+
+The **Jinn** is a territorial ghost that requires the fuse box to be turned on to be able to use it’s special abilities.
+Evidences: EMF Level 5, Fingerprints, Freezing Temperatures
+Peculiarities:
+- It can’t turn off the fuse box by interacting with it directly. It can still turn it off unintentionally if it turns on a light, exceeding the limit on the number of lights that can be turned on.
+- It’s 1st special ability is to chase a player it has line of sight with, travelling to them at a higher speed until very close to the player.
+- It’s 2nd special ability is to drain a large amount of sanity from players within a few meters of it. This ability will generate an EMF reading at the fuse box (without turning it off).
+Learn everything about the Jinn here: https://phasmophobia.fandom.com/wiki/Jinn 
+
+The **Mare** has a distaste for light and will be enhanced in the dark.
+Evidences: Spirit Box, Ghost Orb, Ghost Writing
+Peculiarities:
+- Hunt sanity threshold: 40% if the lights are turned on in the room that the ghost is currently in, 60% if the lights are off.
+- If a player turns on a light near a Mare, it has a chance of turning the light off almost immediately.
+- Mares cannot interact with lights to turn them on, and they are more likely to choose turning off lights as an interaction.
+- Mares have a higher chance of wandering into rooms which are not lit.
+- Prefers ghost events where the light bulbs explode.
+Learn everything about the Mare here: https://phasmophobia.fandom.com/wiki/Mare 
+
+**Morois** drain energy from the living, placing curses on their victims.
+Evidences: Spirit Box, Ghost Writing, Freezing Temperatures
+Peculiarities:
+- Will always have Spirit Box in Nightmare difficulty.
+- If a player obtains a response from a Spirit Box, that player is cursed by the Moroi.
+- When cursed, passive sanity drain is doubled, and is not stopped by light or candles.
+- Walking outside of the house temporarily pauses the curse until re-entering. Consuming Sanity Pills removes the curse for that player.
+- When smudged during a hunt, the Moroi cannot see nor kill players for twice as long.
+- The ghost speed of a Moroi during a hunt is determined at the start of a hunt, and depends on the average sanity. At 50%, it has a normal ghost speed, but it becomes increasingly faster the lower the average sanity is, with it being extremely fast at 0% average sanity.
+Learn everything about the Moroi here: https://phasmophobia.fandom.com/wiki/Moroi 
+
+The **Myling** is a very vocal and active ghost. They are rumoured to be quiet when hunting their prey.
+Evidences: EMF Level 5, Fingerprints, Ghost Writing
+Peculiarities:
+- A Myling will make paranormal sounds more often than other ghosts. These can be heard through a Parabolic Microphone.
+- When hunting, a Myling's footstep sounds will only be audible to players within about 9 meters, similar to the distance required for electronic interference.
+Learn everything about the Myling here: https://phasmophobia.fandom.com/wiki/Myling 
+
+**Obakes** are shapeshifters in the dumbest way possible, leaving behind unique fingerprints.
+Evidences: EMF Level 5, Fingerprints, Ghost Orb
+Peculiarities:
+- Will always have Fingerprints in Nightmare difficulty.
+- When interacting with a valid surface, an Obake only has a 75% of creating fingerprints, instead of the usual 100%.
+- When creating fingerprints, it has a one-sixth chance of creating a unique fingerprint: Six fingers instead of the usual five, two fingers on a lightswitch instead of one, or five fingers on keyboards or prison cell doors instead of four.
+- The Obake occassionally triggers an ability to reduce the remaining time for all existing, lingering fingerprints on the map by half.
+Learn everything about the Obake here: https://phasmophobia.fandom.com/wiki/Obake 
+
+**Onis** love to scare their victims as much as possible before attacking. They’re also objectively the best ghost. Anyone claiming something else is wrong.
+Evidences: EMF Level 5, Freezing Temperatures, D.O.T.S. Projector
+Peculiarities:
+- The Oni is more active, interacting with objects and performing ghost events more often, especially where there are people in the ghost room.
+- An Oni cannot perform the smoke ball ghost event, which has a special hiss associated to it, enabling players to rule out Onis even if they did not see the smoke ball.
+- It has a higher chance of showing in its full form during a manifestation ghost event as opposed to a shadowy or translucent form.
+- When interacting with objects, an Oni has a chance of throwing it higher and/or with more force, making it land further away. Unlike Poltergeists, they cannot throw multiple items at once, nor does interacting with items reduce the players' sanity.
+Learn everything about the Oni here: https://phasmophobia.fandom.com/wiki/Oni 
+
+The **Onryo** is noted to be wary of fire; however, when the fires go out, beware its vengeance, for an Onryo may decide to hunt once there are no flames keeping it at bay.
+Evidences: Spirit Box, Ghost Orb, Freezing Temperatures
+Peculiarities:
+- The hunt sanity threshold is 60%.
+- The Onryo has a higher chance to blow out a flame than other ghosts.
+- When a lit candle, lighter, or campfire is blown out by an Onryo, there is a chance for it to start a hunt regardless of average sanity. This chance to hunt increases when players die.
+- Counterintuitively, if a flame is present near the ghost, the flame also acts as a crucifix, preventing it from hunting within a slightly higher range than a crucifix, also prioritizing flames over crucifixes. If it attempts to start a hunt within range of a flame, the hunt will fail and it will blow out the flame instead.
+Learn everything about the Onryo here: https://phasmophobia.fandom.com/wiki/Onryo 
+
+The **Phantom** is an elusive ghost, haunting players from the shadows.
+Evidences: Spirit Box, Fingerprints, D.O.T.S. Projector
+Peculiarities:
+- Outside of a hunt, Phantoms will occasionally choose a random player and walk to their location, creating an EMF reading at its starting location.
+- Being within 10 metres while in line-of-sight of a Phantom during ghost events and hunts will reduce the player's sanity rapidly.
+- A Phantom is less visible while hunting, flashing visible far less frequently than other ghosts.
+- Taking a photo of the ghost during a manifestation ghost event will always cause a Phantom to disappear immediately upon the flash going off. The Phantom will remain invisible for the rest of that manifestation. Taking a photo will not end a manifestation ghost event or a hunt.
+- Phantoms are always invisible on photos, and ghost photos of phantoms will not have electrical interference. Beware that certain circumstances can cause other ghost’s photos to also not have interference, like photographing a ghost on top of stairs from the bottom.
+Learn everything about the Phantom here: https://phasmophobia.fandom.com/wiki/Phantom 
+
+The **Poltergeist** is sure to make a mess of your house.
+Evidences: Spirit Box, Ghost Writing, Fingerprints
+Peculiarities:
+- It is very likely to throw items, and it can throw items with more force.
+- The Poltergeist will occasionally use an ability that allows it to throw multiple nearby items at once, which no other ghost is able to do, creating an EMF level 3 reading. This ability slightly decreases the sanity of all players near the ghost.
+Learn everything about the Poltergeist here: https://phasmophobia.fandom.com/wiki/Poltergeist 
+
+A **Raiju** is a demon that thrives on electrical current. While generally calm, they can become agitated when overwhelmed with power.
+Evidences: EMF Level 5, Ghost Orb, D.O.T.S. Projector
+Peculiarities:
+- The hunt sanity threshold increases to 65% if it is near at least one piece of active electronic equipment. Otherwise, it has a normal threshold.
+- When a Raiju hunts, it interferes with electronics at a longer range than other ghosts.
+- During hunts, if a Raiju is near active electronic equipment, it moves at an extremely fast, fixed pace. While it does not accelerate this pace when it maintains line of sight while moving at this fixed rate, the acceleration will be counted for it’s speed after it leaves the area of the electronic equipment. The area is based on map size, and is bigger on larger maps.
+- Head mounted cameras, motion sensors, sound sensors, and building lights, do not count as active electronic equipment. Video and photo cameras count as inactive only if they are thrown; if they are held in hand or placed, they count as active.
+Learn everything about the Raiju here: https://phasmophobia.fandom.com/wiki/Raiju 
+
+The **Revenant** is widely regarded as among the most dangerous ghosts in the game, due its ability to rapidly catch up to players during a hunt.
+Evidences: Ghost Orb, Ghost Writing, Freezing Temperatures
+Peculiarities:
+- During a hunt, if the revenant does not have line of sight to a player, it turns into an absolute soyboy which will roam slowly, at approximately two-thirds of the speed of other ghosts.
+- If the revenant achieves line of sight to a player during a hunt, it speeds up to an extreme speed that is about twice the speed of other ghosts.
+- These two speeds are fixed, and it can not accelerate further.
+Learn everything about the Revenant here: https://phasmophobia.fandom.com/wiki/Revenant 
+
+**Shades** are shy ghosts, which will lower their activity in the presence of players. Who’s scared now?
+Evidences: EMF Level 5, Ghost Writing, Freezing Temperatures
+Peculiarities:
+- The hunt sanity threshold is 35%.
+- When at least one player is in the same room as a Shade, it will be unable to hunt. It may still hunt if it wanders into a room without players.
+- The Shade is unable to perform interactions that give an EMF level 3 reading if at least one player is in the same room as it.
+- Shades are less likely to perform ghost events at high sanity. It is almost impossible for a Shade to perform a ghost event immediately after players enter the house.
+- When it performs a ghost event, the Shade will prefer hissing into the player's ear instead of a full manifestation. If it does manifest for a ghost event, it has a higher chance of appearing as a shadow.
+- If the ghost is made to appear using a Summoning Circle or a Music Box, it has a chance of appearing as a transparent, black shadow rather than in its full form while in the ghost event stage.
+Learn everything about the Shade here: https://phasmophobia.fandom.com/wiki/Shade 
+
+**Spirits** are the basic bitches of the ghost world, possessing no special abilities.
+Evidences: EMF Level 5, Spirit Box, Ghost Writing
+- Smudging a Spirit will prevent hunts for 180 seconds, as opposed to the standard 90 seconds.
+Learn everything about the Spirit here: https://phasmophobia.fandom.com/wiki/Spirit 
+
+The **Thaye** is a hyperactive zoomer that eventually becomes a boring old boomer.
+Evidences: Ghost Orb, Ghost Writing, D.O.T.S. Projector
+Peculiarities:
+- The Thaye has an "age" parameter. Every few minutes, the Thaye attempts to age; if at least one player is inside the investigation area, and is either near the ghost or in the same room as the ghost, the Thaye will age, else it will wait a short while before attempting to age again. The Thaye can age a total of 10 times per contract.
+- The Thaye’s age negatively affects it’s hunt sanity threshold, hunt speed, and ghost interaction/event rate. Thus, a Thaye is usually much more dangerous at the start of an investigation.
+- It’s initial hunt threshold is 75%, which is reduced with age down to a minimum of 15%.
+- Does not accelerate while maintaining line of sight during hunts, enabling players to potentially loop a Thaye if it has already aged sufficiently.
+- It is more likely to interact with the D.O.T.S Projector and the Ghost Writing Book.
+Learn everything about the Thaye here: https://phasmophobia.fandom.com/wiki/Thaye 
+
+The **Mimic** is a trickster known for mimicking the traits of other ghosts.
+Evidences: Spirit Box, Fingerprints, Freezing Temperatures AND Ghost Orb
+Peculiarities:
+- Even though it’s not listed as one of it’s evidences, The Mimic will always have a Ghost Orb. This means that, as opposed to other ghosts, it will have 3 evidences in Nightmare difficulty, and 4 evidences in other difficulties.
+- The Mimic changes the type of ghost it imitates every few minutes, inhering any and all traits of the mimicked ghost. The evidences do not change.
+- If The Mimic mimics a Thaye, it will select a random starting age, and if the requirements for it to age are successful, The Mimic will mimic another ghost instead of ageing.
+Learn everything about The Mimic here: https://phasmophobia.fandom.com/wiki/The_Mimic 
+
+The **Twins** are known for existing as a "pair", yet they’re not really known for having a “pair”.
+Evidences: EMF Level 5, Spirit Box, Freezing Temperatures
+Peculiarities:
+- The Twins are not equal; there is one “main ghost” and one “decoy twin”, each having their own interaction range. The decoy does not set off motion sensors, and can’t respond to the Spirit Box nor lower room temperatures. It’s interactions can give off EMF 5 however.
+- When performing interactions, the main ghost can choose to interact from where it is, from where the decoy is, or both at the same time (usually with about half of a second delay). This makes The Twins more active interaction-wise, on average. It can also help identifying the ghost, as two interactions in rapid succession far away from each other are a strong indicator for The Twins.
+- When the ghost attempts to initiate a hunt, there is a 50% chance for it to begin at the main ghost, and a 50% chance for it to being at the decoy. The hunt will then follow normal hunting rules. Both twins cannot hunt at the same time.
+- The main ghost is very slightly slower than a normal ghost during a hunt, while the decoy is very slightly faster. Noticing a subtle change in speed from one hunt to another might indicate The Twins.
+- When using a crucifix in an attempt to prevent hunts, the crucifix check will only be applied for the main ghost, even if the hunt would start from the decoy.
+Learn everything about The Twins here: https://phasmophobia.fandom.com/wiki/The_Twins 
+
+**Wraiths** are best known for their purported ability to "fly" and "walk through walls".
+Evidences: EMF Level 5, Spirit Box, D.O.T.S. Projector
+Peculiarities:
+- When the Wraith is not hunting, it has a chance to teleport to a random player, generating an EMF reading.
+- When a Wraith steps in a salt pile, indicated by the presence of an imprint, it will never leave any UV-visible footprints, even if it moves and makes footstep noises.
+Learn everything about the Wraith here: https://phasmophobia.fandom.com/wiki/Wraith 
+
+**Yokais** are sensitive to voices, becoming more aggressive while players are speaking nearby.
+Evidences: Spirit Box, Ghost Orb, D.O.T.S. Projector
+Peculiarities:
+- The hunt sanity threshold increases to 80% if at least one player talks near the Yokai. Otherwise, it has a normal threshold.
+- During hunts, a Yokai can only hear players or sense handheld active electronics that are very close to it, as opposed to other ghosts, which can sense players from quite far away.
+- This means you should make fun of a Yokai, mocking it’s inability to find you as you yell at it and shine your flashlight at it through glass doors. What a fucking loser. Total airhead.
+Learn everything about the Yokai here: https://phasmophobia.fandom.com/wiki/Yokai 
+
+The **Yurei** has an inexplicable love for doors. To each their own, I guess.
+Evidences: Ghost Orb, Freezing Temperatures, D.O.T.S. Projector
+Peculiarities:
+- The Yurei has the ability to drop the sanity of all players within a medium range by about 15%. When this happens, one randomly selected door (if available) in the ghost's current room will close rapidly, with the door shutting sound lagging by up to 2 seconds.
+- The Yurei is more likely to perform smoke ball ghost events.
+- When smudging a Yurei, in addition to preventing hunts and increasing activity, it will not leave the room that it is currently in until the effect wears off.
+Learn everything about the Yurei here: https://phasmophobia.fandom.com/wiki/Yurei 

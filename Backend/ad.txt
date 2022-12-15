@@ -1,0 +1,1 @@
+Hey, are you enjoying my features? I'm free to use! You can add me to your own server at any time with this link: ${link_discord_add}. To learn more about my features, say 'help'.
