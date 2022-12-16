@@ -338,7 +338,7 @@ async function handle() {
     sendReminders(),
     verifyLicenseConsumption(),
     verifyMemory()
-  ]).then(() => context.service.version ? memory.clean() : Promise.resolve())
+  ]).then(() => memory.clean())
   .then(() => undefined)
 }
 

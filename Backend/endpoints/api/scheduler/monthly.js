@@ -216,12 +216,11 @@ async function handle() {
       .then(users => users.map(user => user.id))
       .then(user_ids => Promise.all([
         cleanUsersActivities(user_ids),
-        context.service.version ? cleanUsersExcept(user_ids) : Promise.resolve()
+        cleanUsersExcept(user_ids)
       ]))
-  ]).then(() => context.service.version ? createReport()
-    .then(report => discord.dms(process.env.OWNER_DISCORD_USER_ID, report))
-    .finally(() => statistics.reset()) : Promise.resolve()
-  ).then(() => undefined)
+  ])
+  .then(() => createReport().then(report => discord.dms(process.env.OWNER_DISCORD_USER_ID, report)).finally(() => statistics.reset()))
+  .then(() => undefined)
 }
 
 module.exports = { handle }
