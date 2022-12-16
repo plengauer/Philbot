@@ -10,11 +10,7 @@ async function handle(payload) {
       .then(me => discord.guild_retrieve(guild_id)
         .then(guild => 
           discord.try_dms(user_id, `Hi <@${user_id}>, welcome to ${guild.name}! I'm your friendly neighborhood bot. I can play music, tell jokes, or schedule weekly events, whatever you need. Type \'<@${me.id}> help\' to learn how to talk to me. In case you talk to me in a DM channel, just skip the \'<@${me.id}>\'. I'm always around and happy to help.`)
-        ).catch(ex => {
-          span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-          span.recordException(ex);
-          throw ex;
-        })
+        )
       ),
     features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_member_added(guild_id, user_id) : Promise.resolve())
   ]).then(() => undefined);

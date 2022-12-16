@@ -1,5 +1,3 @@
-const opentelemetry = require('@opentelemetry/api');
-const tracer = opentelemetry.trace.getTracer('autocode');
 const discord = require('../../../shared/discord.js');
 const memory = require('../../../shared/memory.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
@@ -39,39 +37,17 @@ async function sendHint(guild_id, user_id, activity) {
     return Promise.resolve();
   }
   await memory.set(`mute:auto:hint:user:${user_id}:activity:${activity.name}${custom_auto_mute_appendix}`, true, hint.ttl ?? mute_auto_ttl);
-  
-  let span = tracer.startSpan('functions.events.discord.presence.update.activity.hint');
-  span.setAttribute("discord.user.id", user_id);
-  span.setAttribute("discord.activity.name", activity.name);
-  span.setAttribute("discord.activity.details", activity.details);
-  span.setAttribute("discord.activity.state", activity.state);
-  span.setAttribute("discord.activity.hint", hint.text);
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-    discord.try_dms(user_id,
-        `You are playing ${activity.name}: ${hint.text}`
-         + (Math.random() < 0.25 ? ` Respond with "mute for me" or "mute for ${activity.name}" if you want me to stop providing hints to you for a while.` : '')
-      ).then(sent => Promise.all([
-        delayed_memory.set(`response:` + memory.mask('mute for me') + `:user:${user_id}`, `mute:user:${user_id}`, true, mute_ttl),
-        delayed_memory.set(`response:` + memory.mask(`mute for ${activity.name}`) + `:user:${user_id}`, `mute:user:${user_id}:activity:${activity.name}`, true, mute_ttl)
-      ])).catch(ex => {
-        span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-        span.recordException(ex);
-        throw ex;
-      })
-    ).finally(() => span.end());
+  return discord.try_dms(user_id,
+      `You are playing ${activity.name}: ${hint.text}`
+        + (Math.random() < 0.25 ? ` Respond with "mute for me" or "mute for ${activity.name}" if you want me to stop providing hints to you for a while.` : '')
+    ).then(sent => Promise.all([
+      delayed_memory.set(`response:` + memory.mask('mute for me') + `:user:${user_id}`, `mute:user:${user_id}`, true, mute_ttl),
+      delayed_memory.set(`response:` + memory.mask(`mute for ${activity.name}`) + `:user:${user_id}`, `mute:user:${user_id}:activity:${activity.name}`, true, mute_ttl)
+    ]));
 }
 
 async function sendHints(guild_id, user_id, activities) {
-  let span = tracer.startSpan('functions.events.discord.presence.update.activity.hints');
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-    span.setAttribute("discord.activities", activities.map(a => `${a.name}, ${a.details}, ${a.state}`));
-    return Promise.all(activities.map(activity => sendHint(guild_id, user_id, activity)))
-      .catch(ex => {
-        span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-        span.recordException(ex);
-        throw ex;
-      });
-  }).finally(() => span.end());
+  return Promise.all(activities.map(activity => sendHint(guild_id, user_id, activity)));
 }
 
 async function sendManualNotification(guild_id, user_id, user_name, activity, member) {
@@ -87,37 +63,17 @@ async function sendManualNotification(guild_id, user_id, user_name, activity, me
   await memory.set(`mute:auto:manual:guild:${guild_id}:user:${id}:other:${user_id}:activity:${activity}`, true, mute_auto_ttl);
   if (mute) return Promise.resolve();
   
-  let span = tracer.startSpan('functions.events.discord.presence.update.notification.manual');
-  span.setAttribute("discord.user_from.id", user_id);
-  span.setAttribute("discord.user_to.id", id);
-  span.setAttribute("discord.activity.name", activity);
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-    discord.try_dms(id, '**' + user_name + '** is playing **' + activity + '**.'
-        + (Math.random() < 0.25 ? ` Respond with "mute for me", "mute for ${activity}", or "mute for ${user_name}" if you want me to stop notifying you for a while.` : '')
-      ).then(sent => Promise.all([
-        delayed_memory.set(`response:` + memory.mask(`mute for me`) + `:user:${id}`, `mute:user:${id}`, true, mute_ttl),
-        delayed_memory.set(`response:` + memory.mask(`mute for ${activity}`) + `:user:${id}`, `mute:user:${id}:activity:${activity}`, true, mute_ttl),
-        delayed_memory.set(`response:` + memory.mask(`mute for ${user_name}`) + `:user:${id}`, `mute:user:${id}:other:${user_id}`, true, mute_ttl)
-      ])).catch(ex => {
-        span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-        span.recordException(ex);
-        throw ex;
-      })
-    ).finally(() => span.end());
+  return discord.try_dms(id, '**' + user_name + '** is playing **' + activity + '**.'
+      + (Math.random() < 0.25 ? ` Respond with "mute for me", "mute for ${activity}", or "mute for ${user_name}" if you want me to stop notifying you for a while.` : '')
+    ).then(sent => Promise.all([
+      delayed_memory.set(`response:` + memory.mask(`mute for me`) + `:user:${id}`, `mute:user:${id}`, true, mute_ttl),
+      delayed_memory.set(`response:` + memory.mask(`mute for ${activity}`) + `:user:${id}`, `mute:user:${id}:activity:${activity}`, true, mute_ttl),
+      delayed_memory.set(`response:` + memory.mask(`mute for ${user_name}`) + `:user:${id}`, `mute:user:${id}:other:${user_id}`, true, mute_ttl)
+    ]));
 }
 
 async function sendManualNotifications(guild_id, user_id, user_name, activities, members) {
-  let span = tracer.startSpan('functions.events.discord.presence.update.activity.notifications.manual');
-  span.setAttribute("discord.user.id", user_id);
-  span.setAttribute("discord.activities", activities);
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-    return Promise.all(activities.map(activity => Promise.all(members.map(member => sendManualNotification(guild_id, user_id, user_name, activity, member)))))
-      .catch(ex => {
-        span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-        span.recordException(ex);
-        throw ex;
-      });
-  }).finally(() => span.end());
+  return Promise.all(activities.map(activity => Promise.all(members.map(member => sendManualNotification(guild_id, user_id, user_name, activity, member)))));
 }
 
 async function sendAutomaticNotification(guild_id, guild_name, member, activities, members_with_same_activity) {
@@ -184,25 +140,15 @@ async function sendAutomaticNotification(guild_id, guild_name, member, activitie
   if (activities.length == 1) {
     await delayed_memory.set(`response:` + memory.mask(`mute for ${activities[0]}`) + `:user:${member}`, `mute:user:${member}:activity:${activities[0]}`, true, mute_ttl);
   }
-  
-  let span = tracer.startSpan('functions.events.discord.presence.update.activity.notification.automatic');
-  span.setAttribute("discord.guild.id", guild_id);
-  span.setAttribute("discord.user.id", member);
-  span.setAttribute("discord.activities", activities);
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-      discord.try_dms(member,
-        '' + others + ' ' + (members_with_same_activity.length == 2 ? 'is' : 'are') + ' ' + (activities.length == 1 ? `also playing ${activities[0]}` : 'playing the same as you') + '.'
-        + ` Why don\'t you meet up in ${guild_name}?`
-        + (Math.random() < 0.25 ? ' Respond with "mute for me"' + (activities.length == 1 ? `, "mute for ${activities[0]}"` : '') + ', or "mute for <name>" if you want me to stop notifying you for a while.' : '')
-      ).catch(ex => {
-        span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-        span.recordException(ex);
-        throw ex;
-      })
-    ).finally(() => span.end());
+
+  return discord.try_dms(member,
+      '' + others + ' ' + (members_with_same_activity.length == 2 ? 'is' : 'are') + ' ' + (activities.length == 1 ? `also playing ${activities[0]}` : 'playing the same as you') + '.'
+      + ` Why don\'t you meet up in ${guild_name}?`
+      + (Math.random() < 0.25 ? ' Respond with "mute for me"' + (activities.length == 1 ? `, "mute for ${activities[0]}"` : '') + ', or "mute for <name>" if you want me to stop notifying you for a while.' : '')
+    );
 }
 
-async function sendAutomaticNotifications0(guild_id, guild_name, activities, members) {
+async function sendAutomaticNotifications(guild_id, guild_name, activities, members) {
   let role = await memory.get(`notification:role:guild:${guild_id}`, null);
   // search members that have the same current activity
   let members_with_same_activity_promises = members
@@ -235,20 +181,6 @@ async function sendAutomaticNotifications0(guild_id, guild_name, activities, mem
   return Promise.all(members_with_same_activity.map(member => sendAutomaticNotification(guild_id, guild_name, member, activities, members_with_same_activity)));
 }
 
-async function sendAutomaticNotifications(guild_id, guild_name, activities, members) {
-  let span = tracer.startSpan('functions.events.discord.presence.update.activity.notifications.automatic');
-  span.setAttribute("discord.guild.id", guild_id);
-  span.setAttribute("discord.activities", activities);
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-    return sendAutomaticNotifications0(guild_id, guild_name, activities, members)
-      .catch(ex => {
-        span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-        span.recordException(ex);
-        throw ex;
-      });
-  }).finally(() => span.end());
-}
-
 async function sendEmergencyNotification(guild_id, user_id, activity, notification, sender_user_id, sender_user_name, sender_voice_channel) {
   if (sender_voice_channel) {
     let user_voice_channel = await memory.get(`voice_channel:user:${user_id}`, null);
@@ -264,23 +196,14 @@ async function sendEmergencyNotification(guild_id, user_id, activity, notificati
     return Promise.resolve();
   }
 
-  let span = tracer.startSpan('functions.events.discord.presence.update.activity.notification.emergency');
-  span.setAttribute("discord.user.id", user_id);
-  span.setAttribute("discord.activity.name", activity);
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-      discord.try_dms(user_id, notification
-          + ' Come and help if you can.'
-          + (Math.random() < 0.25 ? ` Respond with "mute for me", "mute for ${activity}", or "mute for ${sender_user_name}" if you want me to stop notifying you for a while.` : '')
-        ).then(sent => Promise.all([
-          delayed_memory.set(`response:` + memory.mask(`mute for me`) + `:user:${user_id}`, `mute:user:${user_id}`, true, mute_ttl),
-          delayed_memory.set(`response:` + memory.mask(`mute for ${activity}`) + `:user:${user_id}`, `mute:user:${user_id}:activity:${activity}`, true, mute_ttl),
-          delayed_memory.set(`response:` + memory.mask(`mute for ${sender_user_name}`) + `:user:${user_id}`, `mute:user:${user_id}:other${sender_user_id}`, true, mute_ttl)
-        ])).catch(ex => {
-          span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-          span.recordException(ex);
-          throw ex;
-        })
-    ).finally(() => span.end());
+  return discord.try_dms(user_id, notification
+      + ' Come and help if you can.'
+      + (Math.random() < 0.25 ? ` Respond with "mute for me", "mute for ${activity}", or "mute for ${sender_user_name}" if you want me to stop notifying you for a while.` : '')
+    ).then(sent => Promise.all([
+      delayed_memory.set(`response:` + memory.mask(`mute for me`) + `:user:${user_id}`, `mute:user:${user_id}`, true, mute_ttl),
+      delayed_memory.set(`response:` + memory.mask(`mute for ${activity}`) + `:user:${user_id}`, `mute:user:${user_id}:activity:${activity}`, true, mute_ttl),
+      delayed_memory.set(`response:` + memory.mask(`mute for ${sender_user_name}`) + `:user:${user_id}`, `mute:user:${user_id}:other${sender_user_id}`, true, mute_ttl)
+    ]));
 }
 
 async function sendEmergencyNotifications0(guild_id, user_id, user_name, activity, notification, members) {
@@ -311,21 +234,10 @@ async function sendEmergencyNotifications0(guild_id, user_id, user_name, activit
 }
 
 async function sendEmergencyNotifications(guild_id, user_id, user_name, activities, members) {
-  let span = tracer.startSpan('functions.events.discord.presence.update.activity.notifications.emergency');
-  span.setAttribute("discord.guild.id", guild_id);
-  span.setAttribute("discord.user.id", user_id);
-  span.setAttribute("discord.activities", activities);
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-    return Promise.all(activities
-        .map(activity => getActivityEmergencyNotification(activity.name, activity.details, activity.state, user_name)
-          .then(notification => sendEmergencyNotifications0(guild_id, user_id, user_name, activity.name, notification, members))
-        )
-      ).catch(ex => {
-        span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-        span.recordException(ex);
-        throw ex;
-      });
-  }).finally(() => span.end());
+  return Promise.all(activities.map(activity => getActivityEmergencyNotification(activity.name, activity.details, activity.state, user_name)
+        .then(notification => sendEmergencyNotifications0(guild_id, user_id, user_name, activity.name, notification, members))
+      )
+    );
 }
 
 async function handle(guild_id, user_id, activities) {

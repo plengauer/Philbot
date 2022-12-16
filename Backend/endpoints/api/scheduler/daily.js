@@ -1,5 +1,3 @@
-const opentelemetry = require('@opentelemetry/api');
-const tracer = opentelemetry.trace.getTracer('autocode');
 const memory = require('../../../shared/memory.js');
 const memory_health = require('../../../shared/memory_health.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
@@ -11,7 +9,7 @@ const features = require('../../../shared/features.js');
 const mute_ttl = 60 * 60 * 24 * 7 * 4;
 const scheduling_distance = 1000 * 60 * 60 * 24 * 4;
 
-async function tryScheduleEvent0(guild, guild_details, members, events, event_config) {
+async function tryScheduleEvent(guild, guild_details, members, events, event_config) {
   let now = new Date();
   if ((await memory.list([ `mute:event:guild:${guild.id}:name:${event_config.name}`, `mute:auto:event:guild:${guild.id}:name:${event_config.name}:schedule:${event_config.schedule.day}.${event_config.schedule.hour}.${event_config.schedule.minute}` ])).reduce((e1, e2) => e1.value || e2.value, false)) {
     return Promise.resolve();
@@ -149,22 +147,6 @@ async function tryScheduleEvent0(guild, guild_details, members, events, event_co
   return Promise.all(promises);
 }
 
-async function tryScheduleEvent(guild, guild_details_promise, members_promise, events_promise, event_config) {
-  let guild_details = await guild_details_promise;
-  let members = await members_promise;
-  let events = await events_promise;
-  let span = tracer.startSpan('functions.events.scheduler.daily.try_schedule_event');
-  span.setAttribute('discord.guild.id', guild.id);
-  span.setAttribute('event.name', event_config.name);
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-    tryScheduleEvent0(guild, guild_details, members, events, event_config).catch(ex => {
-      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-      span.recordException(ex);
-      throw ex;
-    })
-  ).finally(() => span.end());
-}
-
 async function verifyPermissions(guild_id) {
   let required = await Promise.all(features.list().map(name => features.isActive(guild_id, name).then(on => on ? name : null)))
     .then(names => permissions.required(names.filter(name => !!name)));
@@ -203,27 +185,16 @@ async function verifyPermissions(guild_id) {
 }
 
 async function handleGuild(guild) {
-  let span = tracer.startSpan('functions.events.scheduler.daily.handle_guild');
-  span.setAttribute('discord.guild.id', guild.id);
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-    let guild_details_promise = discord.guild_retrieve(guild.id);
-    let members_promise = discord.guild_members_list(guild.id);
-    let events_promise = discord.scheduledevents_list(guild.id);
-    return Promise.all([
-        features.isActive(guild.id, 'repeating events').then(active => active ? memory.get(`repeating_events:config:guild:${guild.id}`, [])
-          .then(event_configs => Promise.all(event_configs.map(event_config =>
-            tryScheduleEvent(guild, guild_details_promise, members_promise, events_promise, event_config).catch(ex => {
-              span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-              span.recordException(ex);
-              throw ex;
-            })
-          ))) : Promise.resolve()),
-        verifyPermissions(guild.id)
-      ]);
-    }).finally(() => span.end());
+  return Promise.all([
+      features.isActive(guild.id, 'repeating events').then(active => active ?
+        memory.get(`repeating_events:config:guild:${guild.id}`, [])
+          .then(event_configs => Promise.all(event_configs.map(event_config => tryScheduleEvent(guild, guild_details_promise, members_promise, events_promise, event_config)))) :
+        Promise.resolve()),
+      verifyPermissions(guild.id)
+    ]);
 }
 
-async function sendBirthdayGreetings0() {
+async function sendBirthdayGreetings() {
   let now = new Date();
   return discord.users_list()
     .then(users => users
@@ -238,17 +209,6 @@ async function sendBirthdayGreetings0() {
         })
       )
     ).then(results => Promise.all(results));
-}
-
-async function sendBirthdayGreetings() {
-  let span = tracer.startSpan('functions.events.scheduler.daily.handle_birthdays');
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-    sendBirthdayGreetings0().catch(ex => {
-      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-      span.recordException(ex);
-      throw ex;
-    })
-  ).finally(() => span.end());
 }
 
 async function sendRemindersForUser(user_id) {
@@ -272,41 +232,19 @@ async function sendRemindersForUser(user_id) {
   return Promise.resolve();
 }
 
-async function sendReminders0() {
+async function sendReminders() {
   return discord.users_list()
     .then(users => users.map(user => user.id).map(user_id => sendRemindersForUser(user_id)))
     .then(results => Promise.all(results));
 }
 
-async function sendReminders() {
-  let span = tracer.startSpan('functions.events.scheduler.daily.handle_reminders');
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-    sendReminders0().catch(ex => {
-      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-      span.recordException(ex);
-      throw ex;
-    })
-  ).finally(() => span.end());
-}
-
-async function verifyMemory0() {
+async function verifyMemory() {
   try {
     await memory_health.verify();
     await memory_health.testAPIs();
   } catch (ex) {
     await discord.dms(process.env.OWNER_DISCORD_USER_ID, '**Memory Verification FAILED**\n' + ex.stack);
   }
-}
-
-async function verifyMemory() {
-  let span = tracer.startSpan('functions.events.scheduler.daily.verify_memory');
-  return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-    verifyMemory0().catch(ex => {
-      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-      span.recordException(ex);
-      throw ex;
-    })
-  ).finally(() => span.end());
 }
 
 async function handle() {
