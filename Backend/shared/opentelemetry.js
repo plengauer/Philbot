@@ -9,7 +9,6 @@ const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventi
 const { BatchSpanProcessor, SpanExporter } = require('@opentelemetry/sdk-trace-base');
 const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
 const { AlwaysOnSampler, AlwaysOffSampler } = require("@opentelemetry/core");
-const identity = require('./identity.js');
 
 const propertiesReader = require('properties-reader');
 
@@ -67,7 +66,7 @@ class MultiSpanExporter {
 }
 
 function create(version = undefined) {
-  let name = identity.getProjectName();
+  let name = 'Philbot';
   name = name.substring(0, 1).toUpperCase() + name.substring(1, name.length);
   dtmetadata = new Resource({});
   for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
