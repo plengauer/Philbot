@@ -13,7 +13,7 @@ function capitalize(input) {
 }
 
 async function getLocationMadamNazar() {
-  let info = await curl.get('api.rdo.gg', '/nazar');
+  let info = await curl.request({ hostname: 'api.rdo.gg', path: '/nazar' });
   return {
     state: capitalize(info.state.substring(4).replace(/_/g, ' ')),
     location: capitalize(info.location.substring(4).replace(/_/g, ' ')),
@@ -22,7 +22,7 @@ async function getLocationMadamNazar() {
 }
 
 async function getAllFreeRoamEvents() {
-  let info = await curl.get('api.rdo.gg', '/events');
+  let info = await curl.request({ hostname: 'api.rdo.gg', path: '/events' });
   let events = [];
   for (let container of [ info.standard, info.themed ]) {
     for (let time in container) {

@@ -6,7 +6,7 @@ const memory = require('../memory.js');
 const servers = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
 
 async function http_get(server, endpoint) {
-  return curl.get('' + server + '.api.riotgames.com', endpoint, { 'X-Riot-Token': process.env.RIOT_API_TOKEN });
+  return curl.request({ hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': process.env.RIOT_API_TOKEN } });
 }
 
 function getConfigHint() {
@@ -246,9 +246,9 @@ function getBasicServer(server) {
 }
 
 async function getChampionName(id) {
-  return curl.get('ddragon.leagueoflegends.com', '/api/versions.json')
+  return curl.request({ hostname: 'ddragon.leagueoflegends.com', path: '/api/versions.json' })
     .then(versions => versions[0])
-    .then(version => curl.get('ddragon.leagueoflegends.com', `/cdn/${version}/data/en_US/champion.json`))
+    .then(version => curl.request({ hostname: 'ddragon.leagueoflegends.com', path: `/cdn/${version}/data/en_US/champion.json` }))
     .then(result => result.data)
     .then(list => {
       for (let champion in list) {

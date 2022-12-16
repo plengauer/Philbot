@@ -103,7 +103,7 @@ async function getInformation(config) {
   }
   
   let affixes = [];
-  let page = await curl.get('wowaffixes.info', '/', { 'Accept': 'text/html' });
+  let page = await curl.request({ hostname: 'wowaffixes.info', headers: { 'accept': 'text/html' }});
   // <h2>+6 Week</h2>
   // <a href="https://en.wowhead.com/affix=9/" class="affixes affixes-9"></a><br />
   let index = -1;

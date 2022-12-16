@@ -28,7 +28,7 @@ async function handle() {
       return respond(302, { 'content-type': 'text/plain', 'location': `https://${host}${path}` }, 'Found');
     case 'inject':
       headers['accept-encoding'] = 'identity';
-      let response = await curl.get_full(host, path, filterIncomingHeaders(headers));
+      let response = await curl.request_full({ hostname: host, path: path, headers: filterIncomingHeaders(headers) });
       if (response.status != 200) {
         return respond(response.status, filterOutgoingHeaders(response.headers), response.body);
       }

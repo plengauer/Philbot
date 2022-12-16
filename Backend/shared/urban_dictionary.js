@@ -1,8 +1,7 @@
 const curl = require('./curl.js');
 
 async function lookup(needle) {
-  const host = 'mashape-community-urban-dictionary.p.rapidapi.com';
-  let response = await curl.get(host, '/define?term=' + encodeURIComponent(needle), { 'X-RapidAPI-Key': process.env.RAPID_API_TOKEN, 'X-RapidAPI-Host': host });
+  let response = await curl.request({ hostname: 'mashape-community-urban-dictionary.p.rapidapi.com', path: '/define?term=' + encodeURIComponent(needle), headers: { 'X-RapidAPI-Key': process.env.RAPID_API_TOKEN } });
   if (!response) return null; // nothing found
   let results = response.list;
   if (results.length == 0) return null; // nothing found
