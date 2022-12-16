@@ -13,7 +13,7 @@ async function request(options) {
   if (options.body) {
     options.headers = options.headers ?? {};
     if (typeof options.body == 'object') {
-      options.body = JSON.stringify(body);
+      options.body = JSON.stringify(options.body);
       options.headers['content-type'] = 'application/json';
     } else if (typeof options.body == 'string' && !options.headers['content-type']) {
       options.headers['content-type'] = 'text/plain';
@@ -59,16 +59,16 @@ async function request_simple(options) {
           let buffer = '';
           receiver.on('data', chunk => { buffer += chunk; });
           receiver.on('end', () => {
-            console.log(`HTTP ${options.method} https://${hostname}${path} => ${response.statusCode}`);
+            console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => ${response.statusCode}`);
             resolve({ status: response.statusCode, headers: response.headers, body: buffer });
           });
         });
       request.on('error', error => {
-          console.log(`HTTP ${options.method} https://${hostname}${path} => ${error.message}`);
+          console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => ${error.message}`);
           reject(error);
         });
       request.on('timeout', () => {
-          console.log(`HTTP ${options.method} https://${hostname}${path} => TIMEOUT`);
+          console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => TIMEOUT`);
           reject(new Error(`HTTP Timeout`));
         });
       if (options.body) {
