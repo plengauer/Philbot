@@ -4,7 +4,6 @@
 *) clean out all uses of context.* in endpoints
 *) rip out statistcs
 *) review all usages of otel and their namings
-*) replace storage
 *) turn around order of functions in all endpoints and review them all one-by-one
 *) review links and text in about.txt and ad.txt and help.txt
 *) build env by looking at old autocode env and also search for new ones by searching for process.env
