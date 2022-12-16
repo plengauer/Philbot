@@ -7,4 +7,5 @@
 *) replace storage
 *) turn around order of functions in all endpoints and review them all one-by-one
 *) review links and text in about.txt and ad.txt and help.txt
+*) build env by looking at old autocode env and also search for new ones by searching for process.env
 *) re-implement voice player
