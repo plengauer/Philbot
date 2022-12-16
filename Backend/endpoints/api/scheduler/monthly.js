@@ -1,14 +1,9 @@
-const sdk = require('../shared/opentelemetry.js').create(context.service.version);
-await sdk.start();
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
-const opentelemetry = require('@opentelemetry/api');
-const tracer = opentelemetry.trace.getTracer('autocode');
-const memory = require('../shared/memory.js');
-const memory_kv = require('../shared/memory_kv.js');
-const statistics = require('../shared/statistics.js');
-const discord = require('../shared/discord.js');
-const identity = require('../shared/identity.js');
 const fs = require('fs');
+const memory = require('../../../shared/memory.js');
+const memory_kv = require('../../../shared/memory_kv.js');
+const statistics = require('../../../shared/statistics.js');
+const discord = require('../../../shared/discord.js');
+const identity = require('../../../shared/identity.js');
 
 const ttl = 60 * 60 * 24 * (31 + 1);
 const birthday_track = 'https://www.youtube.com/watch?v=jgfu30N-zpY';
@@ -206,35 +201,28 @@ async function createReport() {
   return report;
 }
 
-let span = tracer.startSpan('functions.events.scheduler.monthly', { kind: opentelemetry.SpanKind.CONSUMER }, undefined);
-return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-    Promise.all([
-      statistics.record('trigger:monthly'),
-      memory.fill(muted_activities.map(muted_activity => memory.entry(`mute:activity:${muted_activity}`, true, ttl))),
-      memory.set('track:birthday', birthday_track, ttl),
-      discord.users_list(guild_id => memory.get(`notification:role:guild:${guild_id}`, null))
-        .then(users => users.map(user => user.id))
-        .then(user_ids => Promise.all([
-          sendUsersActivityWarning(user_ids),
-          sendRandomAds(user_ids)
-        ]))
-        .then(() => discord.users_list())
-        .then(users => users.map(user => user.id))
-        .then(user_ids => Promise.all([
-          cleanUsersActivities(user_ids),
-          context.service.version ? cleanUsersExcept(user_ids) : Promise.resolve()
-        ]))
-    ])
-    .then(() => context.service.version ? createReport()
-      .then(report => discord.dms(process.env.OWNER_DISCORD_USER_ID, report))
-      .finally(() => statistics.reset()) : Promise.resolve()
-    )
-    .catch(ex => {
-      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-      span.recordException(ex);
-      throw ex;
-    })
-  )
-  .finally(() => span.end())
-  .finally(() => sdk.shutdown());
+async function handle() {
+  return Promise.all([
+    statistics.record('trigger:monthly'),
+    memory.fill(muted_activities.map(muted_activity => memory.entry(`mute:activity:${muted_activity}`, true, ttl))),
+    memory.set('track:birthday', birthday_track, ttl),
+    discord.users_list(guild_id => memory.get(`notification:role:guild:${guild_id}`, null))
+      .then(users => users.map(user => user.id))
+      .then(user_ids => Promise.all([
+        sendUsersActivityWarning(user_ids),
+        sendRandomAds(user_ids)
+      ]))
+      .then(() => discord.users_list())
+      .then(users => users.map(user => user.id))
+      .then(user_ids => Promise.all([
+        cleanUsersActivities(user_ids),
+        context.service.version ? cleanUsersExcept(user_ids) : Promise.resolve()
+      ]))
+  ]).then(() => context.service.version ? createReport()
+    .then(report => discord.dms(process.env.OWNER_DISCORD_USER_ID, report))
+    .finally(() => statistics.reset()) : Promise.resolve()
+  ).then(() => undefined)
+}
+
+module.exports = { handle }
   

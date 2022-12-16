@@ -1,13 +1,10 @@
-const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
-await sdk.start();
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
-const discord = require('../../shared/discord.js');
-const timeout = require('../../shared/timeout.js');
-const memory = require('../../shared/memory.js');
-const statistics = require('../../shared/statistics.js');
-const delayed_memory = require('../../shared/delayed_memory.js');
-const games = require('../../shared/games/games.js');
+const discord = require('../../../shared/discord.js');
+const memory = require('../../../shared/memory.js');
+const statistics = require('../../../shared/statistics.js');
+const delayed_memory = require('../../../shared/delayed_memory.js');
+const games = require('../../../shared/games/games.js');
 
 const mute_ttl = 60 * 60 * 24 * 7 * 4;
 const mute_auto_ttl = 60 * 60 * 2;
@@ -396,39 +393,13 @@ async function handle(guild_id, user_id, activities) {
     ]);
 }
 
-function getParentContext(activities) {
-  for (let activity of activities) {
-    if (!activity.party || !activity.party.id || !activity.party.id.startsWith("OT;")) {
-      continue;
-    }
-    let tokens = activity.party.id.split(';');
-    if (tokens.length != 4 || tokens[0] !== 'OT') continue;
-    let trace_id = tokens[1];
-    let span_id = tokens[2];
-    let trace_state = tokens[3];
-    return opentelemetry.trace.setSpanContext(opentelemetry.context.active(), { traceId: trace_id, spanId: span_id });
-  }
-  return opentelemetry.context.active();
+async function handle(payload) {
+  return Promise.all([
+    statistics.record(`trigger:discord.presence.update:guild:${payload.guild_id}:user:${payload.user.id}`
+      + (payload.activities.length == 0 ? '' : (':activity:' + (payload.activities.length == 1 ? payload.activities[0].name : '<multiple>')))
+    ),
+    handle(payload.guild_id, payload.user.id, payload.activities)
+  ]).then(() => undefined);
 }
 
-let span = tracer.startSpan('functions.events.discord.presence.update.activity', { kind: opentelemetry.SpanKind.CONSUMER }, getParentContext(context.params.event.activities));
-return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-    let guild_id = context.params.event.guild_id;
-    let user_id = context.params.event.user.id;
-    let activities = context.params.event.activities.filter(activity => activity.type != 4);
-    span.setAttribute("discord.guild.id", guild_id);
-    span.setAttribute("discord.user.id", user_id);
-    span.setAttribute("discord.activities", activities.map(activity => activity.name + ', ' + activity.details + ', ' + activity.state).join(';'));
-    return Promise.all([
-      statistics.record(`trigger:discord.presence.update.activity:guild:${guild_id}:user:${user_id}`
-        + (activities.length == 0 ? '' : (':activity:' + (activities.length == 1 ? activities[0].name : '<multiple>')))
-      ),
-      handle(guild_id, user_id, activities)
-    ]).catch(ex => {
-      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-      span.recordException(ex);
-      throw ex;
-    });
-  })
-  .finally(() => span.end())
-  .finally(() => sdk.shutdown());
+module.exports = { handle }

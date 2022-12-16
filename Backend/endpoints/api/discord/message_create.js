@@ -1,24 +1,20 @@
-const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
-await sdk.start();
-const opentelemetry = require('@opentelemetry/api');
-const tracer = opentelemetry.trace.getTracer('autocode');
-const curl = require('../../shared/curl.js');
-const memory = require('../../shared/memory.js');
-const memory_kv = require('../../shared/memory_kv.js');
-const memory_google_sheet = require('../../shared/memory_google_sheet.js');
-const statistics = require('../../shared/statistics.js');
-const delayed_memory = require('../../shared/delayed_memory.js');
-const discord = require('../../shared/discord.js');
-const player = require('../../shared/player.js');
-const games = require('../../shared/games/games.js');
-const wow = require('../../shared/games/wow.js');
-const lol = require('../../shared/games/lol.js');
-const urban_dictionary = require('../../shared/urban_dictionary.js');
-const tournament = require('../../shared/tournament.js');
-const identity = require('../../shared/identity.js');
-const features = require('../../shared/features.js');
-const permissions = require('../../shared/permissions.js');
-const raid_protection = require('../../shared/raid_protection.js');
+const curl = require('../../../shared/curl.js');
+const memory = require('../../../shared/memory.js');
+const memory_kv = require('../../../shared/memory_kv.js');
+const memory_google_sheet = require('../../../shared/memory_google_sheet.js');
+const statistics = require('../../../shared/statistics.js');
+const delayed_memory = require('../../../shared/delayed_memory.js');
+const discord = require('../../../shared/discord.js');
+const player = require('../../../shared/player.js');
+const games = require('../../../shared/games/games.js');
+const wow = require('../../../shared/games/wow.js');
+const lol = require('../../../shared/games/lol.js');
+const urban_dictionary = require('../../../shared/urban_dictionary.js');
+const tournament = require('../../../shared/tournament.js');
+const identity = require('../../../shared/identity.js');
+const features = require('../../../shared/features.js');
+const permissions = require('../../../shared/permissions.js');
+const raid_protection = require('../../../shared/raid_protection.js');
 const fs = require('fs');
 
 async function reactOK(channel_id, event_id) {
@@ -900,28 +896,11 @@ async function handle(version, guild_id, channel_id, event_id, user_id, user_nam
     ]);
 }
 
-let span = tracer.startSpan('functions.events.discord.message.create', { kind: opentelemetry.SpanKind.CONSUMER }, undefined);
-return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-    let guild_id = context.params.event.guild_id;
-    let channel_id = context.params.event.channel_id;
-    let event_id = context.params.event.id;
-    let user_id = context.params.event.author.id;
-    let user_name = context.params.event.author.username;
-    let message = context.params.event.content;
-    let referenced_message_id = context.params.event.referenced_message?.id;
-    span.setAttribute("discord.guild.id", guild_id);
-    span.setAttribute("discord.channel.id", channel_id);
-    span.setAttribute("discord.event.id", event_id);
-    span.setAttribute("discord.user.id", user_id);
-    span.setAttribute("discord.message", message);
-    return Promise.all([
-      statistics.record(`trigger:discord.message.create:guild:${guild_id}:channel:${channel_id}:user:${user_id}`),
-      handle(context.service.version, guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id)
-    ]).catch(ex => {
-      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-      span.recordException(ex);
-      throw ex;
-    });
-  })
-  .finally(() => span.end())
-  .finally(() => sdk.shutdown());
+async function handle(payload) {
+  return Promise.all([
+    statistics.record(`trigger:discord.message.create:guild:${payload.guild_id}:channel:${payload.channel_id}:user:${payload.author.id}`),
+    handle(context.service.version, payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
+  ]).then(() => undefined);
+}
+
+module.exports = { handle }

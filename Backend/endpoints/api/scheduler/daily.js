@@ -1,17 +1,13 @@
-const sdk = require('../shared/opentelemetry.js').create(context.service.version);
-await sdk.start();
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
-const memory = require('../shared/memory.js');
-const memory_health = require('../shared/memory_health.js');
-const delayed_memory = require('../shared/delayed_memory.js');
-const statistics = require('../shared/statistics.js');
-const discord = require('../shared/discord.js');
-const datefinder = require('../shared/datefinder.js');
-const retry = require('../shared/retry.js');
-const permissions = require('../shared/permissions.js');
-const features = require('../shared/features.js');
+const memory = require('../../../shared/memory.js');
+const memory_health = require('../../../shared/memory_health.js');
+const delayed_memory = require('../../../shared/delayed_memory.js');
+const statistics = require('../../../shared/statistics.js');
+const discord = require('../../../shared/discord.js');
+const datefinder = require('../../../shared/datefinder.js');
+const permissions = require('../../../shared/permissions.js');
+const features = require('../../../shared/features.js');
 
 const mute_ttl = 60 * 60 * 24 * 7 * 4;
 const scheduling_distance = 1000 * 60 * 60 * 24 * 4;
@@ -334,22 +330,16 @@ async function verifyMemory() {
   ).finally(() => span.end());
 }
 
-let span = tracer.startSpan('functions.events.scheduler.daily', { kind: opentelemetry.SpanKind.CONSUMER }, undefined);
-return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => 
-    Promise.all([
-      statistics.record('trigger:daily'),
-      discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => handleGuild(guild)))),
-      sendBirthdayGreetings(),
-      sendReminders(),
-      verifyLicenseConsumption(),
-      verifyMemory()
-    ])
-    .then(() => context.service.version ? memory.clean() : Promise.resolve())
-    .catch(ex => {
-      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-      span.recordException(ex);
-      throw ex;
-    })
-  )
-  .finally(() => span.end())
-  .finally(() => sdk.shutdown());
+async function handle() {
+  return Promise.all([
+    statistics.record('trigger:daily'),
+    discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => handleGuild(guild)))),
+    sendBirthdayGreetings(),
+    sendReminders(),
+    verifyLicenseConsumption(),
+    verifyMemory()
+  ]).then(() => context.service.version ? memory.clean() : Promise.resolve())
+  .then(() => undefined)
+}
+
+  module.exports = { handle }

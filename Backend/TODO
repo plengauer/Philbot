@@ -1,1 +1,11 @@
 *) better deduplication of events in terms of hints
+
+*) clean out all uses of lib
+*) clean out all uses of context.* in endpoints
+*) rip out statistcs
+*) review all usages of otel and their namings
+*) clean out all uses of identity
+*) replace storage
+*) turn around order of functions in all endpoints and review them all one-by-one
+*) review links and text in about.txt and ad.txt and help.txt
+*) re-implement voice player

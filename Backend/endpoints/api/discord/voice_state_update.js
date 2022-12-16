@@ -1,12 +1,8 @@
-const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
-await sdk.start();
-const opentelemetry = require('@opentelemetry/api');
-const tracer = opentelemetry.trace.getTracer('autocode');
-const memory = require('../../shared/memory.js');
-const statistics = require('../../shared/statistics.js');
-const discord = require('../../shared/discord.js');
-const player = require('../../shared/player.js');
-const features = require('../../shared/features.js');
+const memory = require('../../../shared/memory.js');
+const statistics = require('../../../shared/statistics.js');
+const discord = require('../../../shared/discord.js');
+const player = require('../../../shared/player.js');
+const features = require('../../../shared/features.js');
 
 async function playGreeting(guild_id, user_id) {
   let now = new Date();
@@ -53,26 +49,15 @@ async function checkUnexpectedVoiceDisconnect(guild_id, channel_id, user_id) {
   })
 }
 
-let span = tracer.startSpan('functions.events.discord.voice.state.update', { kind: opentelemetry.SpanKind.CONSUMER }, undefined);
-return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-    let guild_id = context.params.event.guild_id;
-    let channel_id = context.params.event.channel_id;
-    let user_id = context.params.event.user_id;
-    span.setAttribute("discord.guild.id", guild_id);
-    span.setAttribute("discord.channel.id", channel_id);
-    span.setAttribute("discord.user.id", user_id);
-    return Promise.all([
-      statistics.record(`trigger:discord.voice.state.update:guild:${guild_id}:channel:${channel_id}:user:${user_id}`),
-      channel_id ? checkAndStartEvents(guild_id, channel_id) : Promise.resolve(),
-      channel_id ?
-        memory.set(`voice_channel:user:${user_id}`, { guild_id: guild_id, channel_id: channel_id }, 60 * 60 * 24).then(() => playGreeting(guild_id, user_id)) :
-        memory.unset(`voice_channel:user:${user_id}`),
-      channel_id ? Promise.resolve() : checkUnexpectedVoiceDisconnect(guild_id, channel_id, user_id)
-    ]).catch(ex => {
-      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-      span.recordException(ex);
-      throw ex;
-    });
-  })
-  .finally(() => span.end())
-  .finally(() => sdk.shutdown());
+async function handle(payload) {
+  return Promise.all([
+    statistics.record(`trigger:discord.voice.state.update:guild:${payload.guild_id}:channel:${payload.channel_id}:user:${payload.user_id}`),
+    payload.channel_id ? checkAndStartEvents(payload.guild_id, payload.channel_id) : Promise.resolve(),
+    payload.channel_id ?
+      memory.set(`voice_channel:user:${payload.user_id}`, { guild_id: payload.guild_id, channel_id: payload.channel_id }, 60 * 60 * 24).then(() => playGreeting(payload.guild_id, payload.user_id)) :
+      memory.unset(`voice_channel:user:${payload.user_id}`),
+    payload.channel_id ? Promise.resolve() : checkUnexpectedVoiceDisconnect(payload.guild_id, payload.channel_id, payload.user_id)
+  ]).then(() => undefined)
+}
+
+module.exports = { handle }

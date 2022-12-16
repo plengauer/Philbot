@@ -1,10 +1,5 @@
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
-const sdk = require('../shared/opentelemetry.js').create(context.service.version);
-await sdk.start();
-const opentelemetry = require('@opentelemetry/api');
-const tracer = opentelemetry.trace.getTracer('autocode');
 const fs = require('fs');
-const discord = require('../shared/discord.js');
+const discord = require('../../shared/discord.js');
 
 async function handle() {
   let me = await discord.me();
@@ -17,13 +12,10 @@ async function handle() {
     .replace(/\*\*(.*)\*\*/g, '<b>$1</b>')
     .replace(/\n/g, '<p/>');
   return {
-    statusCode: 200,
+    status: 200,
     headers: { 'content-type': 'text/html' },
     body: `<html><head><title>${me.username} About</title></head><body>${about}</body></html>`
   };
 }
 
-let span = tracer.startSpan('/about', { kind: opentelemetry.SpanKind.SERVER }, undefined);
-return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), handle)
-  .finally(() => span.end())
-  .finally(() => sdk.shutdown());
+module.exports = { handle }
