@@ -75,14 +75,14 @@ async function tryScheduleEvent0(guild, guild_details, members, events, event_co
     }
     event_config.name = bag[Math.floor(Math.random() * bag.length)];
     // override
-    for (let channel of await lib.discord.guilds['@0.2.2'].channels.list({ guild_id: guild.id })) {
+    for (let channel of await discord.guild_channels_list(guild_id)) {
       if (channel.name === event_config.name) {
         event_config.channel_id = channel.id;
         break;
       }
     }
   } else if (!event_config.channel_id) {
-    for (let channel of await lib.discord.guilds['@0.2.2'].channels.list({ guild_id: guild.id })) {
+    for (let channel of await discord.guild_channels_list(guild_id)) {
       if (channel.name === event_config.name) {
         event_config.channel_id = channel.id;
         break;
@@ -94,15 +94,7 @@ async function tryScheduleEvent0(guild, guild_details, members, events, event_co
     return Promise.resolve();
   }
   
-  let event = await lib.discord.scheduledevents['@0.0.1'].create({
-    guild_id: guild.id,
-    name: event_config.name,
-    description: event_config.description,
-    scheduled_start_time: scheduled_start_string,
-    channel_id: event_config.channel_id,
-    privacy_level: 'GUILD_MEMBERS',
-    entity_type: 'VOICE'
-  });
+  let event = await discord.scheduledevent_create(guild.id, event_config.channel_id, event_config.name, event_config.description, scheduled_start_string);
   await statistics.record('scheduled_events');
   
   if (await memory.get(`mute:activity:${event_config.name}`, false)) {
@@ -111,13 +103,6 @@ async function tryScheduleEvent0(guild, guild_details, members, events, event_co
   
   let promises = [];
   
-  /*let interested = memory.list(members.map(member => `activities:all:user:${member.user.id}`))
-    .then(entries => entries.filter(entry => entry.value.includes(event_config_name)))
-    .then(entries => entries.map(entry => entry.key.substring(entry.key.lastIndexOf(':') + 1)))
-    .then(user_ids => memory.list(user_ids.map(user_id => [ `mute:user:${member.user.id}`, `mute:user:${member.user.id}:activity:${event_config.name}` ]).flatMap(keys => keys))
-      .then(mutes => )
-    )
-    */
       
   let interestedPromises = members.map(member => Promise.all([
       memory.get(`mute:user:${member.user.id}`, false),
@@ -154,7 +139,7 @@ async function tryScheduleEvent0(guild, guild_details, members, events, event_co
       }
     }
     promises.push(
-      lib.discord.channels['@0.3.0'].messages.create({
+      discord.post({
         channel_id: guild_details.system_channel_id,
         content: `I\'ve scheduled a new event, **${event_config.name}**: ${link}. Join if you can. ` + (mentions.length > 0 ? (` (fyi ${mentions})`) : '')
       }).then(() => 
@@ -196,9 +181,9 @@ async function verifyPermissions(guild_id) {
   let required = await Promise.all(features.list().map(name => features.isActive(guild_id, name).then(on => on ? name : null)))
     .then(names => permissions.required(names.filter(name => !!name)));
   
-  let me = await lib.discord.users['@0.2.1'].me.list();
+  let me = await discord.me();
   let members = await discord.guild_members_list(guild_id);
-  let roles = await lib.discord.guilds['@0.2.4'].roles.list({ guild_id: guild_id });
+  let roles = await discord.guild_roles_list(guild_id);
   
   let my_role_ids = Array.from(new Set(members.filter(member => member.user.id == me.id).map(member => member.roles)[0].concat([ guild_id ])));
   let my_roles = roles.filter(role => my_role_ids.includes(role.id));
@@ -235,7 +220,7 @@ async function handleGuild(guild) {
   return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
     let guild_details_promise = discord.guild_retrieve(guild.id);
     let members_promise = discord.guild_members_list(guild.id);
-    let events_promise = lib.discord.scheduledevents['@0.0.1'].list({ guild_id: guild.id });
+    let events_promise = discord.scheduledevents_list(guild.id);
     return Promise.all([
         features.isActive(guild.id, 'repeating events').then(active => active ? memory.get(`repeating_events:config:guild:${guild.id}`, [])
           .then(event_configs => Promise.all(event_configs.map(event_config =>
@@ -320,18 +305,6 @@ async function sendReminders() {
   ).finally(() => span.end());
 }
 
-async function updateStatus() {
-  if (Math.random() < 0.1) {
-    return lib.discord.users['@0.2.1'].me.status.update({
-      activity_name: 'You',
-      activity_type: 'WATCHING',
-      status: 'ONLINE'
-    });
-  } else {
-    return lib.discord.users['@0.2.1'].me.status.clear();
-  }
-}
-
 async function verifyLicenseConsumption() {
   return statistics.count(key => key.includes('trigger:') && !key.endsWith(':total'))
     .then(count => {
@@ -368,7 +341,6 @@ return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.cont
       discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => handleGuild(guild)))),
       sendBirthdayGreetings(),
       sendReminders(),
-      updateStatus(),
       verifyLicenseConsumption(),
       verifyMemory()
     ])

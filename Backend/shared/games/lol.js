@@ -1,6 +1,4 @@
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const curl = require('../curl.js');
-const retry = require('../retry.js');
 const memory = require('../memory.js');
 
 const servers = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
@@ -23,7 +21,7 @@ async function getInformation(details, state, user_id) {
   // estimation about calls 1+1+5+5*(1+1+100) = 517
   if (!process.env.RIOT_API_TOKEN) return null;
   
-  let configs = await lib.discord.users['@0.2.1'].retrieve({ user_id: user_id })
+  let configs = await discord.user_retrieve(user_id)
     .then(result => result.username)
     .then(user_name => memory.get('activity_hint_config:activity:League of Legends:user:' + user_id, servers.map(server => { return { summoner: user_name, server: server }; })));
   

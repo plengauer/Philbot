@@ -4,9 +4,10 @@ await sdk.start();
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
 const fs = require('fs');
+const discord = require('../shared/discord.js');
 
 async function handle() {
-  let me = await lib.discord.users['@0.2.0'].me.list();
+  let me = await discord.me();
   let about = ('' + fs.readFileSync('./about.txt'))
     .replace(/\$\{name\}/g, `${me.username}`)
     .replace(/\$\{version\}/g, context.service.version)

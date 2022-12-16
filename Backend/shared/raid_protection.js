@@ -1,4 +1,3 @@
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const permissions = require('./permissions.js');
@@ -30,22 +29,18 @@ async function notify_raid(guild) {
 
 async function revoke_invite_permissions(guild) {
   return discord.guild_roles_list(guild.id)
-    .then(roles => roles.filter(role => permissions.decompile(role.permissions).includes('CREATE_INVITE')).map(role => discord.retry_with_rate_limit(() => lib.discord.guilds['@0.2.4'].roles.update({
-        guild_id: guild.id,
-        role_id: role.id,
-        name: role.name,
-        permissions: permissions.compile(permissions.decompile(role.permissions).filter(permission => permission != 'CREATE_INVITE')),
-        color: role.color,
-        hoist: role.hoist,
-        mentionable: role.mentionable
-      })).then(() => role).catch(e => null)))
+    .then(roles => roles.filter(role => permissions.decompile(role.permissions).includes('CREATE_INVITE')).map(role => discord.guild_role_modify(
+        guild.id, role.id, role.name,
+        permissions.compile(permissions.decompile(role.permissions).filter(permission => permission != 'CREATE_INVITE')),
+        role.hoist, role.mentionable)).then(() => role).catch(e => null)
+      )
     .then(promises => Promise.all(promises))
     .then(roles => roles.filter(role => !!role));
 }
 
 async function revoke_invites(guild) {
-  return lib.discord.invites['@0.1.0'].list({ guild_id: guild.id })
-    .then(invites => invites.map(invite => discord.retry_with_rate_limit(() => lib.discord.invites['@0.1.0'].destroy({ invite_code: invite.code })).then(() => invite))) // TODO we can check how often it was used maybe and who created it? or what role
+  return discord.guild_invites_list(guild.id)
+    .then(invites => invites.map(invite => discord.invite_delete(invite.code).then(() => invite))) // TODO we can check how often it was used maybe and who created it? or what role
     .then(promises => Promise.all(promises));
 }
 
@@ -56,9 +51,8 @@ async function kick_and_ban_suspects(guild) {
     .then(promises => Promise.all(promises));
 }
 
-async function kick_and_ban_user(guil_id, user_id) {
-  return discord.retry_with_rate_limit(() => lib.discord.guilds['@0.2.4'].members.destroy({ guild_id: guild_id, user_id: user_id }))
-    .then(() => discord.retry_with_rate_limit(() => lib.discord.guilds['@0.2.4'].bans.create({ guild_id: guild_id, user_id: user_id, reason: 'suspect about contribution to a raid' })));
+async function kick_and_ban_user(guild_id, user_id) {
+  return discord.guild_member_kick(guild_id, user_id).then(() => discord.guild_ban_create(guild_id, user_id, 'suspect about contribution to a raid'));
 }
 
 async function slowdown_channels(guild) {

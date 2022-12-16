@@ -1,6 +1,7 @@
 const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const memory = require('./memory.js');
 const discord = require('./discord.js');
+const permissions = require('./permissions.js');
 
 //TODO dedicated referees, that are circled through, and the method we use now are only "auxiliary"
 //TOOD retry all discord rate-limited operations
@@ -270,15 +271,15 @@ async function prepare(guild_id, user_id) {
       ]))
     .then(() => Promise.all([
         write(guild_id, tournament),
-        Promise.all(tournament.game_masters.concat(tournament.players).map(user => assign_role(guild_id, user, tournament.role))),
-        Promise.all(tournament.game_masters.map(user => assign_role(guild_id, user, tournament.role_master))),
-        Promise.all(tournament.teams.map(team => Promise.all(team.players.map(player => assign_role(guild_id, player, team.role))))),
+        Promise.all(tournament.game_masters.concat(tournament.players).map(user => discord.assign_role(guild_id, user, tournament.role))),
+        Promise.all(tournament.game_masters.map(user => discord.assign_role(guild_id, user, tournament.role_master))),
+        Promise.all(tournament.teams.map(team => Promise.all(team.players.map(player => discord.assign_role(guild_id, player, team.role))))),
       ]))
     .then(() => Promise.all([
         discord.post(tournament.channel,
           '\**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n' + to_string(tournament) + '\n\n <@&' + tournament.role + '> **JOIN NOW**'
         ),
-        Promise.all(tournament.players.concat(tournament.game_masters).map(user_id => connect_user_to_voice_channel(guild_id, user_id, tournament.lobby).catch(ex => {}))),
+        Promise.all(tournament.players.concat(tournament.game_masters).map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby).catch(ex => {}))),
         tournament.players.concat(tournament.game_masters).map(user_id =>
           discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for updates.')
             .then(sent => sent ? Promise.resolve() : discord.post('I cannot DM <@' + user_id + '>. To manage the tournament, pls allow me to send you messages (Settings -> Privacy & Safety -> Allow direct messages from server members).'))
@@ -288,82 +289,18 @@ async function prepare(guild_id, user_id) {
 }
 
 async function create_channel(guild_id, category, name, listen_roles = [], speak_roles = [], admin_roles = []) {
-  const PERMISSION_VIEW = 1 << 10;
-  const PERMISSION_CONNECT = 1 << 20;
-  const PERMISSION_SPEAK = (1 << 21) | (1 << 25);
-  const PERMISSION_STREAM = 1 << 9;
-  const PERMISSION_MUTE = 1 << 22;
-  const PERMISSION_DEAFEN = 1 << 23;
-  const PERMISSION_KICK = 1 << 1;
-  const PERMISSION_MOVE = 1 << 24;
-  let channel_id = await lib.discord.guilds['@0.2.4'].channels.create({
-    guild_id: guild_id,
-    name: name,
-    type: 2,
-    parent_id: category
-  }).then(result => result.id);
-  await lib.discord.channels['@0.3.0'].permissions.update({
-    overwrite_id: guild_id,
-    channel_id: channel_id, // @everyone
-    deny: '' + ~0,
-    type: 0,
-  });
-  for (let role of listen_roles) {
-    await lib.discord.channels['@0.3.0'].permissions.update({
-      overwrite_id: role,
-      channel_id: channel_id,
-      allow: '' + (PERMISSION_VIEW | PERMISSION_CONNECT),
-      type: 0
-    });
-  }
-  for (let role of speak_roles) {
-    await lib.discord.channels['@0.3.0'].permissions.update({
-      overwrite_id: role,
-      channel_id: channel_id,
-      allow: '' + (PERMISSION_VIEW | PERMISSION_CONNECT | PERMISSION_SPEAK | PERMISSION_STREAM),
-      type: 0
-    });
-  }
-  for (let role of admin_roles) {
-    await lib.discord.channels['@0.3.0'].permissions.update({
-      overwrite_id: role,
-      channel_id: channel_id,
-      allow: '' + (PERMISSION_VIEW | PERMISSION_CONNECT | PERMISSION_SPEAK | PERMISSION_STREAM | PERMISSION_MUTE | PERMISSION_DEAFEN | PERMISSION_KICK | PERMISSION_MOVE),
-      type: 0
-    });
-  }
-  return channel_id;
+  return discord.guild_channel_create(guild_id, name, category, 2)
+    .then(result => result.id)
+    .then(channel_id => Promise.all([
+        discord.guild_channel_permission_overwrite(channel_id, guild_id, undefined, permissions.compile(permissions.all())),
+        Promise.all(listen_roles.map(role_id => discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT']), undefined))),
+        Promise.all( speak_roles.map(role_id => discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT', 'SPEAK', 'STREAM']), undefined))),
+        Promise.all( admin_roles.map(role_id => discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT', 'SPEAK', 'STREAM', 'MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'KICK_MEMBERS', 'MOVE_MEMBERS']), undefined)))
+      ]).then(() => channel_id));
 }
 
 async function create_role(guild_id, name) {
-  return lib.discord.guilds['@0.2.4'].roles.create({
-      guild_id: guild_id,
-      name: name,
-      hoist: false,
-      mentionable: true
-    }).then(result => result.id);
-}
-
-async function assign_role(guild_id, user_id, role_id) {
-  return lib.discord.guilds['@0.2.4'].members.roles.update({
-      guild_id: guild_id,
-      user_id: user_id,
-      role_id: role_id,
-    });
-}
-
-async function unassign_role(guild_id, user_id, role_id) {
-  return lib.discord.guilds['@0.2.4'].members.roles.destroy({
-      guild_id: guild_id,
-      user_id: user_id,
-      role_id: role_id,
-    });
-}
-
-async function connect_user_to_voice_channel(guild_id, user_id, channel_id) {
-  return lib.discord.guilds['@0.2.4'].members.voice.update({
-      guild_id: guild_id, user_id: user_id, mute: false, channel_id: channel_id
-    });
+  return discord.guild_role_create(guild_id, name).then(result => result.id);
 }
 
 async function start(guild_id, user_id) {
@@ -378,7 +315,7 @@ async function start(guild_id, user_id) {
       Promise.all([
         announce_upcoming_matches(tournament, guild_id),
         Promise.all(tournament.teams.map(team => Promise.all(team.players.map(player => 
-          connect_user_to_voice_channel(guild_id, player, team.channel)
+          discord.guild_member_move(guild_id, player, team.channel)
             .catch(e => Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Player <@${player}> is not connected to any voice channel. Pls verify.`))))
         ))))
       ]))
@@ -396,11 +333,11 @@ async function match_started(guild_id, user_id, match_id) {
     .then(() => Promise.all([
         announce_match_started(tournament, match_id),
         Promise.all(tournament.teams[tournament.matches[match_id].team1].players
-          .map(player => connect_user_to_voice_channel(guild_id, player, tournament.teams[tournament.matches[match_id].team1].channel)
+          .map(player => discord.guild_member_move(guild_id, player, tournament.teams[tournament.matches[match_id].team1].channel)
             .catch(e => discord.try_dms(tournament.matches[match_id].referee, `Player <@${player}> is not connected to any voice channel. Pls verify and restart the match if needed.`))
           )),
         Promise.all(tournament.teams[tournament.matches[match_id].team2].players
-          .map(player => connect_user_to_voice_channel(guild_id, player, tournament.teams[tournament.matches[match_id].team2].channel)
+          .map(player => discord.guild_member_move(guild_id, player, tournament.teams[tournament.matches[match_id].team2].channel)
             .catch(e => discord.try_dms(tournament.matches[match_id].referee, `Player <@${player}> is not connected to any voice channel. Pls verify and restart the match if needed.`))
           ))
       ]))
@@ -434,13 +371,13 @@ async function match_completed(guild_id, user_id, match_id, team_id_winner) {
   return write(guild_id, tournament)
     .then(() => Promise.all([
       announce_match_result(tournament, match_id),
-      unassign_role(guild_id, tournament.matches[match_id].referee, tournament.role_referee),
+      discord.unassign_role(guild_id, tournament.matches[match_id].referee, tournament.role_referee),
       announce_upcoming_matches(tournament, guild_id),
     ]))
     .then(() => Promise.all([
         tournament.matches.every(match => match.winner != null) ? announce_tournament_result(tournament) : Promise.resolve(),
         tournament.matches.every(match => match.winner != null) ? 
-          Promise.all(tournament.game_masters.concat(tournament.players).map(user_id => connect_user_to_voice_channel(guild_id, user_id, tournament.lobby).catch(e => {}))) :
+          Promise.all(tournament.game_masters.concat(tournament.players).map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby).catch(e => {}))) :
           Promise.resolve()
       ]))
     .then(() => true);
@@ -512,7 +449,7 @@ async function announce_upcoming_matches(tournament, guild_id) {
         ));
       active_users.add(match.referee);
       if (next) {
-        promises.push(assign_role(guild_id, match.referee, tournament.role_referee));
+        promises.push(discord.assign_role(guild_id, match.referee, tournament.role_referee));
       }
     }
     for (let player of players) {

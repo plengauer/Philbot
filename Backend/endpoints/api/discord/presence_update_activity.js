@@ -1,6 +1,5 @@
 const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
 await sdk.start();
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
 const discord = require('../../shared/discord.js');
@@ -182,7 +181,7 @@ async function sendAutomaticNotification(guild_id, guild_name, member, activitie
   */
   
   let others = await Promise.all(members_with_same_activity.filter(other_member => other_member !== member).map(other_member =>
-      lib.discord.guilds['@0.2.2'].members.retrieve({ guild_id: guild_id, user_id: other_member })
+      discord.guild_member_retrieve(guild_id, other_member)
         .then(data => data.nick ?? data.user.username)
         .then(name => delayed_memory.set(`response:` + memory.mask(`mute for ${name}`) + `:user:${member}`, `mute:user:${member}:other:${other_member}`, true, mute_ttl).then(() => name))
         .then(name => '**' + name + '**')
@@ -361,7 +360,7 @@ async function handle(guild_id, user_id, activities) {
     return memory.unset(`activities:current:user:${user_id}`);
   }
 
-  let guild = await lib.discord.guilds['@0.2.2'].retrieve({ guild_id: guild_id });
+  let guild = await discord.guild_retrieve(guild_id);
   let members = await discord.guild_members_list(guild_id);
   let user_name = '';
   for (let member of members) {

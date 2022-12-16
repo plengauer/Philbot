@@ -1,4 +1,3 @@
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const discord = require('./discord.js')
 const memory_kv = require('./memory_kv.js');
 const memory_google_sheet = require('./memory_google_sheet.js');
@@ -585,7 +584,7 @@ function putInDictionary(dictionary, id, name) {
 }
 
 async function fillDictionaryWithGuildChannels(dictionary, guild) {
-  return lib.discord.guilds['@0.2.2'].channels.list({ guild_id: guild.id })
+  return discord.guild_channels_list(guild.id)
     .then(channels => channels.map(channel => putInDictionary(dictionary, channel.id, channel.name)));
 }
 
@@ -600,7 +599,7 @@ async function fillDictionaryWithGuildMembers(dictionary, guild) {
 }
 
 async function fillDictionaryWithGuildRoles(dictionary, guild) {
-  return lib.discord.guilds['@0.2.2'].roles.list({ guild_id: guild.id })
+  return discord.guild_roles_list(guild.id)
     .then(roles => roles.map(role => putInDictionary(dictionary, role.id, role.name)));
 }
 

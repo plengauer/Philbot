@@ -5,6 +5,7 @@ const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
 const memory = require('../../shared/memory.js');
 const statistics = require('../../shared/statistics.js');
+const discord = require('../shared/discord.js');
 
 let span = tracer.startSpan('functions.events.discord.bot.guild.joined', { kind: opentelemetry.SpanKind.CONSUMER }, undefined);
 return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
@@ -13,13 +14,10 @@ return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.cont
     return Promise.all([
       statistics.record(`trigger:discord.bot.guild.joined:guild:${guild_id}`),
       Promise.all([
-          lib.discord.guilds['@0.2.2'].retrieve({ guild_id: guild_id }),
-          lib.discord.users['@0.2.0'].me.list()
+          discord.guild_retrieve(guild_id),
+          discord.me()
         ]).then(values => values[0].system_channel_id ?
-          lib.discord.channels['@0.2.0'].messages.create({
-            channel_id: values[0].system_channel_id,
-            content: `Hi, I'm <@${values[1].id}>. I can play music, tell jokes, schedule weekly events, whatever you need. Type \'<@${values[1].id}> help\' to learn how to talk to me. I'm always around and happy to help.`
-          }) :
+          discord.post(values[0].system_channel_id, `Hi, I'm <@${values[1].id}>. I can play music, tell jokes, schedule weekly events, whatever you need. Type \'<@${values[1].id}> help\' to learn how to talk to me. I'm always around and happy to help.`) :
           Promise.resolve()
         ).catch(ex => {
           span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });

@@ -1,6 +1,5 @@
 const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
 await sdk.start();
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
 const memory = require('../../shared/memory.js');
@@ -34,7 +33,7 @@ async function checkAndStartEvents(guild_id, channel_id) {
   let now = new Date();
   return discord.scheduledevents_list(guild_id).then(events => events.map(event => {
     if (event.channel_id === channel_id && event.status == 1 && new Date(Date.parse(event.scheduled_start_time).valueOf() - 1000 * 60 * 60) < now) {
-      return lib.discord.scheduledevents['@0.0.1'].update({ scheduled_event_id: event.id, guild_id: guild_id, status: 'ACTIVE' });
+      return discord.scheduledevent_modify(guild_id, event.id, { status: 'ACTIVE' });
     } else {
       return Promise.resolve();
     }
@@ -43,7 +42,7 @@ async function checkAndStartEvents(guild_id, channel_id) {
 
 async function checkUnexpectedVoiceDisconnect(guild_id, channel_id, user_id) {
   return Promise.all([
-    lib.discord.users['@0.2.0'].me.list().then(me => me.id == user_id),
+    discord.me().then(me => me.id == user_id),
     player.hasRecentVoiceOperation(guild_id).then(value => !value)
   ]).then(values => {
     if (values.every(value => !!value)) {

@@ -1,4 +1,3 @@
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const ytdl = require('ytdl-core');
@@ -18,7 +17,7 @@ async function hasRecentVoiceOperation(guild_id) {
 async function play0(guild_id, user_id, voice_channel, youtube_link) {
   let voice_channel_id = null;
   if (voice_channel) {
-    for (const channel of await lib.discord.guilds['@0.2.2'].channels.list({ guild_id: guild_id })) {
+    for (const channel of await discord.guild_channels_list(guild_id)) {
       if (channel.name === voice_channel) {
         voice_channel_id = channel.id;
         break;
@@ -97,18 +96,18 @@ async function play(guild_id, user_id, voice_channel, search_string) {
 
 async function stop(guild_id) {
   return markVoiceOperation(guild_id, 60)
-    .then(() => lib.discord.voice['@0.0.1'].channels.disconnect({ guild_id: guild_id }));
+    .then(() => { throw new Error('Not implemented! (VOICE DISCONNECT)'); });
 }
 
 async function pause(guild_id) {
   return markVoiceOperation(guild_id, 60 * 60)
-    .then(() => lib.discord.voice['@0.0.1'].tracks.pause({ guild_id: guild_id }));
+    .then(() => { throw new Error('Not implemented! (VOICE PAUSE)'); });
     // at some point it automatically disconnects, and thats ok
 }
 
 async function resume(guild_id) {
-  return lib.discord.voice['@0.0.1'].tracks.resume({ guild_id: guild_id })
-    .then(() => markVoiceOperation(guild_id));
+  throw new Error('Not implemented! (VOICE RESUME)');
+    //.then(() => markVoiceOperation(guild_id));
 }
 
 async function popFromQueue(guild_id) {

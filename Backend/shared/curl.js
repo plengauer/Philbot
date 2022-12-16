@@ -21,7 +21,6 @@ async function request(options) {
       options.body = '' + options.body;
       options.headers['content-type'] = 'text/plain';
     }
-    options.headers['content-length'] = body.length;
   }
   let response = await request_full(options);
   if (200 <= response.status && response.status < 300) return (response.headers['content-type'] && response.headers['content-type'].startsWith('application/json')) ? JSON.parse(response.body) : response.body;
@@ -41,12 +40,12 @@ async function request_simple(options) {
   if (!options.path) throw new Error('Need path');
   if (options.body && typeof options.body != 'string') throw new Error('Body must be string');
   if (options.body && !options.headers['content-type']) throw new Error('Body must have content-type header');
-  if (options.body && !options.headers['content-length']) throw new Error('Body must have content-length header');
 
   if (!options.method) options.method = 'GET';
   if (!options.headers) options.headers = {};
   if (!options.timeout) options.timeout = 1000 * 10;
   options.headers['accept-encoding'] = 'gzip,identity';
+  if (options.body) options.headers['content-length'] = options.body.length;
 
   return retry(() => new Promise((resolve, reject) => {
       let request = https.request(options, response => {
@@ -74,8 +73,8 @@ async function request_simple(options) {
         });
       if (options.body) {
         request.write(options.body);
-        request.end();
       }
+      request.end();
     }));
 }
 

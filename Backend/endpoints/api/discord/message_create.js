@@ -1,6 +1,5 @@
 const sdk = require('../../shared/opentelemetry.js').create(context.service.version);
 await sdk.start();
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
 const curl = require('../../shared/curl.js');
@@ -23,19 +22,11 @@ const raid_protection = require('../../shared/raid_protection.js');
 const fs = require('fs');
 
 async function reactOK(channel_id, event_id) {
-  return lib.discord.channels['@0.3.0'].messages.reactions.create({
-    emoji: '👍',
-    message_id: event_id,
-    channel_id: channel_id,
-  });
+  return discord.react(channel_id, event_id, '👍');
 }
 
 async function reactNotOK(channel_id, event_id) {
-  return lib.discord.channels['@0.3.0'].messages.reactions.create({
-    emoji: '👎',
-    message_id: event_id,
-    channel_id: channel_id,
-  });
+  return discord.react(channel_id, event_id, '👎');
 }
 
 async function hasMasterPermission(guild_id, user_id) {
@@ -47,7 +38,7 @@ async function respondNeedsMasterPermission(channel_id, event_id, action) {
 }
 
 async function respondNeedsFeatureActive(channel_id, event_id, feature, action) {
-  return lib.discord.users['@0.2.0'].me.list().then(me => discord.respond(channel_id, event_id, `The feature ${feature} needs to be active to ${action}. Use '<@${me.id}> activate ${feature}' to turn it on.`));
+  return discord.me().then(me => discord.respond(channel_id, event_id, `The feature ${feature} needs to be active to ${action}. Use '<@${me.id}> activate ${feature}' to turn it on.`));
 }
 
 async function resolveGuildID(user_id) {
@@ -325,7 +316,7 @@ async function handleBuiltInCommand(version, guild_id, channel_id, event_id, use
       let notification_role_id = await memory.get(`notification:role:guild:${guild_id}`, null);
       notification_role_name = !notification_role_id ?
         '@everyone' :
-        await lib.discord.guilds['@0.2.2'].roles.list({ guild_id: guild_id })
+        await discord.guild_roles_list(guild_id)
           .then(roles => roles.filter(role => role.id === notification_role_id))
           .then(roles => roles.length > 0 ? ('@' + roles[0].name) : '@deleted-role')
     } else {
@@ -349,18 +340,10 @@ async function handleBuiltInCommand(version, guild_id, channel_id, event_id, use
       );
     
   } else if (message === 'good bot') {
-    return lib.discord.channels['@0.3.0'].messages.reactions.create({
-      emoji: '👍',
-      message_id: event_id,
-      channel_id: channel_id,
-    });
+    return discord.react(channel_id, event_id, '👍');
     
   } else if (message === 'bad bot') {
-    return lib.discord.channels['@0.3.0'].messages.reactions.create({
-      emoji: '😢',
-      message_id: event_id,
-      channel_id: channel_id,
-    });
+    return discord.react(channel_id, event_id, '😢');
     
   } else if (message.startsWith('command start ')) {
     return memory.set(`command:user:${user_id}`, message.split(' ').slice(2).join(' '), 60 * 60)
@@ -474,7 +457,7 @@ async function handleBuiltInCommand(version, guild_id, channel_id, event_id, use
       return discord.respond(channel_id, event_id, 'You need the \'Manage Events\' permission to add repeating events.')
     }
     
-    let channels = await lib.discord.guilds['@0.2.2'].channels.list({ guild_id: guild_id });
+    let channels = await discord.guild_channels_list(guild_id);
     message = message.substring('add repeating event '.length);
     let nameAndDescription = message.substring(0, message.indexOf(' every '));
     let name = nameAndDescription.substring(0, nameAndDescription.indexOf(':::')).trim();
@@ -888,7 +871,7 @@ async function handle(version, guild_id, channel_id, event_id, user_id, user_nam
   message = message.trim();
   
   let mentioned = false;
-  let me = await lib.discord.users['@0.2.0'].me.list();
+  let me = await discord.me();
   if (message.startsWith(`@${me.username}`)) {
     mentioned = true;
     message = message.substring(1 + me.username.length).trim();
@@ -897,7 +880,7 @@ async function handle(version, guild_id, channel_id, event_id, user_id, user_nam
     message = message.substring(message.indexOf('>') + 1).trim();
   } else if (guild_id && message.startsWith('<@&')) {
     let role = undefined;
-    let roles = await lib.discord.guilds['@0.2.2'].roles.list({ guild_id: guild_id });
+    let roles = await discord.guild_roles_list(guild_id);
     for (let index = 0; index < roles.length; index++) {
       if (roles[index].name === me.username) {
         role = roles[index];
