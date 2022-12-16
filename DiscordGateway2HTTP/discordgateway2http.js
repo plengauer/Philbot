@@ -159,7 +159,7 @@ async function handleDispatch(state, sequence, event, payload) {
 async function dispatch(event, payload) {
     console.log('dispatch ' + event.toLowerCase());
     let url = 'https://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
-    return new Promise(resolve => request.post({ url: url, headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) }).on('response', response => {
+    return new Promise(resolve => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: JSON.stringify(payload) }).on('response', response => {
     	console.log('HTTP POST ' + url + ' => ' + response.statusCode);
     	return resolve(response.body);
     }));
