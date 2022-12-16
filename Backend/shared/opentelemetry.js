@@ -65,8 +65,10 @@ class MultiSpanExporter {
   }
 }
 
-function create(version = undefined) {
+function create() {
   let name = 'Philbot';
+  let version = process.env.VERSION;
+
   name = name.substring(0, 1).toUpperCase() + name.substring(1, name.length);
   dtmetadata = new Resource({});
   for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
@@ -96,10 +98,12 @@ function create(version = undefined) {
         [SemanticResourceAttributes.SERVICE_VERSION]: version ?? 'dev',
       }).merge(dtmetadata),
   });
-  
-  timeout.register(() => sdk.shutdown(), 0.9);
-  
   return sdk;
 }
 
-module.exports = { create }
+async function init() {
+  let sdk = create();
+  process.on('exit', () => sdk.shutdown());  
+}
+
+init();
