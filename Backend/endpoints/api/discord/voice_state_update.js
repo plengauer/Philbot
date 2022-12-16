@@ -1,5 +1,4 @@
 const memory = require('../../../shared/memory.js');
-const statistics = require('../../../shared/statistics.js');
 const discord = require('../../../shared/discord.js');
 const player = require('../../../shared/player.js');
 const features = require('../../../shared/features.js');
@@ -11,15 +10,9 @@ async function playGreeting(guild_id, user_id) {
   let birthday_track = memory.get('track:birthday', null);
   let intro_track = memory.get(`track:intro:user:${user_id}:guild:${guild_id}`, null);
   if (await canPlay && await birthday_track && await birthday && (await birthday).month == now.getUTCMonth() + 1 && (await birthday).day == now.getUTCDate()) {
-    return Promise.all([
-        player.play(guild_id, user_id, null, await birthday_track),
-        statistics.record(`birthday:song:guild:${guild_id}:user:${user_id}`)
-      ]);
+    return player.play(guild_id, user_id, null, await birthday_track);
   } else if (await canPlay && await intro_track) {
-    return Promise.all([
-        player.play(guild_id, user_id, null, await intro_track),
-        statistics.record(`intro:song:guild:${guild_id}:user:${user_id}`)
-      ]);
+    return player.play(guild_id, user_id, null, await intro_track);
   } else {
     return Promise.resolve();
   }
@@ -51,7 +44,6 @@ async function checkUnexpectedVoiceDisconnect(guild_id, channel_id, user_id) {
 
 async function handle(payload) {
   return Promise.all([
-    statistics.record(`trigger:discord.voice.state.update:guild:${payload.guild_id}:channel:${payload.channel_id}:user:${payload.user_id}`),
     payload.channel_id ? checkAndStartEvents(payload.guild_id, payload.channel_id) : Promise.resolve(),
     payload.channel_id ?
       memory.set(`voice_channel:user:${payload.user_id}`, { guild_id: payload.guild_id, channel_id: payload.channel_id }, 60 * 60 * 24).then(() => playGreeting(payload.guild_id, payload.user_id)) :

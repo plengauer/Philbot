@@ -2,7 +2,6 @@ const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('autocode');
 const discord = require('../../../shared/discord.js');
 const memory = require('../../../shared/memory.js');
-const statistics = require('../../../shared/statistics.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
 const games = require('../../../shared/games/games.js');
 
@@ -52,7 +51,6 @@ async function sendHint(guild_id, user_id, activity) {
         `You are playing ${activity.name}: ${hint.text}`
          + (Math.random() < 0.25 ? ` Respond with "mute for me" or "mute for ${activity.name}" if you want me to stop providing hints to you for a while.` : '')
       ).then(sent => Promise.all([
-        sent ? statistics.record(`notifications:activity:hint:activity:${activity.name}:user:${user_id}`) : Promise.resolve(),
         delayed_memory.set(`response:` + memory.mask('mute for me') + `:user:${user_id}`, `mute:user:${user_id}`, true, mute_ttl),
         delayed_memory.set(`response:` + memory.mask(`mute for ${activity.name}`) + `:user:${user_id}`, `mute:user:${user_id}:activity:${activity.name}`, true, mute_ttl)
       ])).catch(ex => {
@@ -97,7 +95,6 @@ async function sendManualNotification(guild_id, user_id, user_name, activity, me
     discord.try_dms(id, '**' + user_name + '** is playing **' + activity + '**.'
         + (Math.random() < 0.25 ? ` Respond with "mute for me", "mute for ${activity}", or "mute for ${user_name}" if you want me to stop notifying you for a while.` : '')
       ).then(sent => Promise.all([
-        sent ? statistics.record(`notifications:activity:manual:activity:${activity}:guild:${guild_id}:user:${user_id}`) : Promise.resolve(),
         delayed_memory.set(`response:` + memory.mask(`mute for me`) + `:user:${id}`, `mute:user:${id}`, true, mute_ttl),
         delayed_memory.set(`response:` + memory.mask(`mute for ${activity}`) + `:user:${id}`, `mute:user:${id}:activity:${activity}`, true, mute_ttl),
         delayed_memory.set(`response:` + memory.mask(`mute for ${user_name}`) + `:user:${id}`, `mute:user:${id}:other:${user_id}`, true, mute_ttl)
@@ -197,9 +194,6 @@ async function sendAutomaticNotification(guild_id, guild_name, member, activitie
         '' + others + ' ' + (members_with_same_activity.length == 2 ? 'is' : 'are') + ' ' + (activities.length == 1 ? `also playing ${activities[0]}` : 'playing the same as you') + '.'
         + ` Why don\'t you meet up in ${guild_name}?`
         + (Math.random() < 0.25 ? ' Respond with "mute for me"' + (activities.length == 1 ? `, "mute for ${activities[0]}"` : '') + ', or "mute for <name>" if you want me to stop notifying you for a while.' : '')
-      ).then(sent => sent ?
-        Promise.all(activities.map(activity => statistics.record(`notifications:activity:automatic:activity:${activity}:guild:${guild_id}:user:${member}`))) :
-        Promise.resolve()
       ).catch(ex => {
         span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
         span.recordException(ex);
@@ -278,7 +272,6 @@ async function sendEmergencyNotification(guild_id, user_id, activity, notificati
           + ' Come and help if you can.'
           + (Math.random() < 0.25 ? ` Respond with "mute for me", "mute for ${activity}", or "mute for ${sender_user_name}" if you want me to stop notifying you for a while.` : '')
         ).then(sent => Promise.all([
-          sent ? statistics.record(`notifications:activity:emergency:activity:${activity}:guild:${guild_id}:user:${user_id}`) : Promise.resolve(),
           delayed_memory.set(`response:` + memory.mask(`mute for me`) + `:user:${user_id}`, `mute:user:${user_id}`, true, mute_ttl),
           delayed_memory.set(`response:` + memory.mask(`mute for ${activity}`) + `:user:${user_id}`, `mute:user:${user_id}:activity:${activity}`, true, mute_ttl),
           delayed_memory.set(`response:` + memory.mask(`mute for ${sender_user_name}`) + `:user:${user_id}`, `mute:user:${user_id}:other${sender_user_id}`, true, mute_ttl)
@@ -394,12 +387,7 @@ async function handle(guild_id, user_id, activities) {
 }
 
 async function handle(payload) {
-  return Promise.all([
-    statistics.record(`trigger:discord.presence.update:guild:${payload.guild_id}:user:${payload.user.id}`
-      + (payload.activities.length == 0 ? '' : (':activity:' + (payload.activities.length == 1 ? payload.activities[0].name : '<multiple>')))
-    ),
-    handle(payload.guild_id, payload.user.id, payload.activities)
-  ]).then(() => undefined);
+  return handle(payload.guild_id, payload.user.id, payload.activities).then(() => undefined);
 }
 
 module.exports = { handle }

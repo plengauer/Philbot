@@ -1,8 +1,5 @@
 const curl = require('../../../shared/curl.js');
 const memory = require('../../../shared/memory.js');
-const memory_kv = require('../../../shared/memory_kv.js');
-const memory_google_sheet = require('../../../shared/memory_google_sheet.js');
-const statistics = require('../../../shared/statistics.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
 const discord = require('../../../shared/discord.js');
 const player = require('../../../shared/player.js');
@@ -41,7 +38,7 @@ async function resolveGuildID(user_id) {
   return memory.get(`voice_channel:user:${user_id}`, null).then(info => info ? info.guild_id : null);
 }
 
-async function handleMessage(version, guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned) {
+async function handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned) {
   let promises = [];
   
   if (guild_id && message.includes('@') && message.split('').some((char, index) => char == '@' && (index == 0 || message.charAt(index-1) != '<'))) {
@@ -238,7 +235,7 @@ async function handleMessage(version, guild_id, channel_id, event_id, user_id, u
   return Promise.all(promises);
 }
 
-async function handleBuiltInCommand(version, guild_id, channel_id, event_id, user_id, user_name, message, me) {
+async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, me) {
   if (message.length == 0) {
     return Promise.resolve();
     
@@ -263,17 +260,6 @@ async function handleBuiltInCommand(version, guild_id, channel_id, event_id, use
   } else if (message === 'dump context') {
     console.log(context);
     return reactOK(channel_id, event_id);
-
-  } else if (message === 'show memory-consumption') {
-    if (user_id != process.env.OWNER_DISCORD_USER_ID) {
-      return reactNotOK(channel_id, event_id);
-    }
-    return Promise.all([
-        memory_kv.count(),
-        memory_google_sheet.count()
-      ])
-      .then(counts => `kv=${counts[0]}, gs=${counts[1]}`)
-      .then(message => discord.respond(channel_id, event_id, message));
     
   } else if (message === 'show memory' || message.startsWith('show memory ')) {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
@@ -328,7 +314,7 @@ async function handleBuiltInCommand(version, guild_id, channel_id, event_id, use
   } else if (message == 'about') {
     return discord.respond(channel_id, event_id,  ('' + fs.readFileSync('./about.txt'))
         .replace(/\$\{name\}/g, `<@${me.id}>`)
-        .replace(/\$\{version\}/g, version)
+        .replace(/\$\{version\}/g, process.env.VERSION)
         .replace(/\$\{link_monitoring\}/g, identity.getRootURL() + '/monitoring')
         .replace(/\$\{link_logs\}/g, identity.getRootURL() + '/logs')
         .replace(/\$\{link_discord_add\}/g, identity.getRootURL() + '/deploy')
@@ -353,7 +339,7 @@ async function handleBuiltInCommand(version, guild_id, channel_id, event_id, use
   } else if (message === 'command execute') {
     return memory.consume(`command:user:${user_id}`, null)
       .then(command => command ?
-        handleCommand(version, guild_id, channel_id, event_id, user_id, user_name, command, me) :
+        handleCommand(guild_id, channel_id, event_id, user_id, user_name, command, me) :
         reactNotOK(channel_id, event_id)
       );
   
@@ -844,7 +830,7 @@ async function handleBuiltInCommand(version, guild_id, channel_id, event_id, use
       let alias = await memory.get(`alias:` + memory.mask(tokens[0]) + `:guild:${guild_id}`, undefined);
       if (alias) {
         message = (alias + ' ' + message.substring(tokens[0].length + 1)).trim();
-        return handleCommand(version, guild_id, channel_id, event_id, user_id, user_name, message, me);
+        return handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me);
       }
     }
     return discord.respond(channel_id, event_id, `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`);
@@ -856,14 +842,14 @@ async function handleDelayedCommand(channel_id, event_id, user_id, message) {
     .then(materialized => materialized ? reactOK(channel_id, event_id) : Promise.resolve())
 }
 
-async function handleCommand(version, guild_id, channel_id, event_id, user_id, user_name, message, me) {
+async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me) {
   return Promise.all([
-    handleBuiltInCommand(version, guild_id, channel_id, event_id, user_id, user_name, message, me),
+    handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, me),
     handleDelayedCommand(channel_id, event_id, user_id, message)
   ])
 }
 
-async function handle(version, guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id) {
+async function handle(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id) {
   message = message.trim();
   
   let mentioned = false;
@@ -890,17 +876,15 @@ async function handle(version, guild_id, channel_id, event_id, user_id, user_nam
   }
   
   return Promise.all([
-      handleMessage(version, guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
-      mentioned ? handleCommand(version, guild_id, channel_id, event_id, user_id, user_name, message, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
+      handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
+      mentioned ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
       guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_created(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
     ]);
 }
 
 async function handle(payload) {
-  return Promise.all([
-    statistics.record(`trigger:discord.message.create:guild:${payload.guild_id}:channel:${payload.channel_id}:user:${payload.author.id}`),
-    handle(context.service.version, payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
-  ]).then(() => undefined);
+  return handle(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
+    .then(() => undefined);
 }
 
 module.exports = { handle }

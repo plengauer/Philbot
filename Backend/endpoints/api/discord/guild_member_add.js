@@ -1,4 +1,3 @@
-const statistics = require('../../../shared/statistics.js');
 const discord = require('../../../shared/discord.js');
 const features = require('../../../shared/features.js');
 const raid_protection = require('../../../shared/raid_protection.js');
@@ -7,7 +6,6 @@ async function handle(payload) {
   let guild_id = payload.guild_id;
   let user_id = payload.user.id;
   return Promise.all([
-    statistics.record(`trigger:discord.guild.member.add:guild:${guild_id}:user:${user_id}`),
     discord.me()
       .then(me => discord.guild_retrieve(guild_id)
         .then(guild => 

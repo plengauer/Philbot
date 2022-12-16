@@ -3,7 +3,6 @@ const tracer = opentelemetry.trace.getTracer('autocode');
 const memory = require('../../../shared/memory.js');
 const memory_health = require('../../../shared/memory_health.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
-const statistics = require('../../../shared/statistics.js');
 const discord = require('../../../shared/discord.js');
 const datefinder = require('../../../shared/datefinder.js');
 const permissions = require('../../../shared/permissions.js');
@@ -91,7 +90,6 @@ async function tryScheduleEvent0(guild, guild_details, members, events, event_co
   }
   
   let event = await discord.scheduledevent_create(guild.id, event_config.channel_id, event_config.name, event_config.description, scheduled_start_string);
-  await statistics.record('scheduled_events');
   
   if (await memory.get(`mute:activity:${event_config.name}`, false)) {
     return Promise.resolve();
@@ -131,25 +129,19 @@ async function tryScheduleEvent0(guild, guild_details, members, events, event_co
           mentions += ', ';
         }
         mentions += '<@' + member.user.id + '>';
-        promises.push(statistics.record(`notifications:scheduled_event:mention:activity:${event_config.name}:guild:${guild.id}:user:${member.user.id}`));
       }
     }
     promises.push(
       discord.post({
         channel_id: guild_details.system_channel_id,
         content: `I\'ve scheduled a new event, **${event_config.name}**: ${link}. Join if you can. ` + (mentions.length > 0 ? (` (fyi ${mentions})`) : '')
-      }).then(() => 
-        statistics.record(`notifications:scheduled_event:public:activity:${event_config.name}:guild:${guild.id}`)
-      )
+      })
     );
   }
   if (await memory.get(`scheduled_events:post_dm:guild:${guild.id}`, true)) {
     for (let member of interested) {
       promises.push(discord.try_dms(member.user.id,
           `There is a new event you might be interested in: ${link}. Respond with "mute for me" or "mute for ${event_config.name}" if you want me to stop notifying you for a while.`
-        ).then(sent => sent ? 
-          statistics.record(`notifications:scheduled_event:dm:activity:${event_config.name}:guild:${guild.id}:user:${member.user.id}`) :
-          Promise.resolve()
         )
       );
     }
@@ -239,11 +231,7 @@ async function sendBirthdayGreetings0() {
       .map(user_id => memory.get(`birthday:user:${user_id}`, null)
         .then(birthday => {
           if (birthday && birthday.month == now.getUTCMonth() + 1 && birthday.day == now.getUTCDate()) {
-            return discord.try_dms(user_id, "Happy Birthday 🎂")
-              .then(sent => sent ?
-                statistics.record(`birthday:dm:user:${user_id}`) :
-                Promise.resolve()
-              );
+            return discord.try_dms(user_id, "Happy Birthday 🎂");
           } else {
             return Promise.resolve();
           }
@@ -301,15 +289,6 @@ async function sendReminders() {
   ).finally(() => span.end());
 }
 
-async function verifyLicenseConsumption() {
-  return statistics.count(key => key.includes('trigger:') && !key.endsWith(':total'))
-    .then(count => {
-      let consumption = count / process.env.REQUEST_LIMIT;
-      if (consumption < 0.8) return Promise.resolve();
-      return discord.dms(process.env.OWNER_DISCORD_USER_ID, '**Warning**, license consumption is at ' + (consumption * 100) + '%.');
-    });
-}
-
 async function verifyMemory0() {
   try {
     await memory_health.verify();
@@ -332,11 +311,9 @@ async function verifyMemory() {
 
 async function handle() {
   return Promise.all([
-    statistics.record('trigger:daily'),
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => handleGuild(guild)))),
     sendBirthdayGreetings(),
     sendReminders(),
-    verifyLicenseConsumption(),
     verifyMemory()
   ]).then(() => memory.clean())
   .then(() => undefined)

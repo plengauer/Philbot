@@ -1,4 +1,3 @@
-const statistics = require('../../../shared/statistics.js');
 const discord = require('../../../shared/discord.js');
 
 async function handle(payload) {
@@ -7,19 +6,17 @@ async function handle(payload) {
   }
   let guild_id = payload.guild_id;
   return Promise.all([
-    statistics.record(`trigger:discord.bot.guild.joined:guild:${guild_id}`),
-    Promise.all([
-        discord.guild_retrieve(guild_id),
-        discord.me()
-      ]).then(values => values[0].system_channel_id ?
-        discord.post(values[0].system_channel_id, `Hi, I'm <@${values[1].id}>. I can play music, tell jokes, schedule weekly events, whatever you need. Type \'<@${values[1].id}> help\' to learn how to talk to me. I'm always around and happy to help.`) :
-        Promise.resolve()
-      ).catch(ex => {
-        span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
-        span.recordException(ex);
-        throw ex;
-      })
-    ]).then(() => undefined);
+      discord.guild_retrieve(guild_id),
+      discord.me()
+    ]).then(values => values[0].system_channel_id ?
+      discord.post(values[0].system_channel_id, `Hi, I'm <@${values[1].id}>. I can play music, tell jokes, schedule weekly events, whatever you need. Type \'<@${values[1].id}> help\' to learn how to talk to me. I'm always around and happy to help.`) :
+      Promise.resolve()
+    ).catch(ex => {
+      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
+      span.recordException(ex);
+      throw ex;
+    })
+    .then(() => undefined);
 }
 
 module.exports = { handle }
