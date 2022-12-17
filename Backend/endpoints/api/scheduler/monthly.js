@@ -42,6 +42,30 @@ const muted_activities = [
   'Visual Studio',
 ];
 
+async function handle() {
+  return Promise.all([
+    memory.fill(muted_activities.map(muted_activity => memory.entry(`mute:activity:${muted_activity}`, true, ttl))),
+    memory.set('track:birthday', birthday_track, ttl),
+    discord.users_list(guild_id => memory.get(`notification:role:guild:${guild_id}`, null))
+      .then(users => users.map(user => user.id))
+      .then(user_ids => Promise.all([
+        sendUsersActivityWarning(user_ids),
+        sendRandomAds(user_ids)
+      ]))
+      .then(() => discord.users_list())
+      .then(users => users.map(user => user.id))
+      .then(user_ids => Promise.all([
+        cleanUsersActivities(user_ids),
+        cleanUsersExcept(user_ids)
+      ]))
+  ])
+  .then(() => undefined)
+}
+
+async function sendUsersActivityWarning(user_ids) {
+  return Promise.all(user_ids.map(user_id => sendUserActivityWarning(user_id)));
+}
+
 async function sendUserActivityWarning(user_id) {
   let all_promise = memory.get(`activities:all:user:${user_id}`, []);
   let recent_promise = Promise.all([
@@ -61,33 +85,6 @@ async function sendUserActivityWarning(user_id) {
   }
 }
 
-async function sendUsersActivityWarning(user_ids) {
-  return Promise.all(user_ids.map(user_id => sendUserActivityWarning(user_id)));
-}
-
-async function cleanUserActivity(user_id) {
-  let recent = await Promise.all([
-      memory.consume(`activities:recent:user:${user_id}`, []),
-      memory.get(`activities:permanent:user:${user_id}`, [])
-    ]).then(lists => lists.flatMap(list => list));
-  return recent.length > 0 ? memory.set(`activities:all:user:${user_id}`, recent, 60 * 60 * 24 * 7 * 13) : memory.unset(`activities:all:user:${user_id}`);
-}
-
-async function cleanUsersActivities(user_ids) {
-  return Promise.all(user_ids.map(user_id => cleanUserActivity(user_id)));
-}
-
-async function cleanUsersExcept(except_user_ids) {
-  return memory.list()
-    .then(entries => memory.clear(
-      entries
-        .map(entry => entry.key)
-        .filter(key => key.includes('user:'))
-        .filter(key => !except_user_ids.some(except_user_id => key.includes(except_user_id)))
-      )
-    );
-}
-
 async function sendAd(user_id) {
   return discord.try_dms(user_id, ('' + fs.readFileSync('./ad.txt')).replace(/\$\{link_discord_add\}/g, identity.getRootURL() + '/addme'));
 }
@@ -99,37 +96,27 @@ async function sendRandomAds(user_ids) {
     );
 }
 
-function extractToken(key, name) {
-  let index = key.indexOf(':' + name + ':');
-  if (index < 0) return undefined;
-  let f = index + (':' + name + ':').length;
-  let t = key.indexOf(':', f + 1);
-  if (t < 0) t = key.length;
-  return key.substring(f, t);
+async function cleanUsersActivities(user_ids) {
+  return Promise.all(user_ids.map(user_id => cleanUserActivity(user_id)));
 }
 
-function computeLicenseConsumption(count) {
-  return '' + (count / process.env.REQUEST_LIMIT * 100) + '% (' + count + ')';
+async function cleanUserActivity(user_id) {
+  let recent = await Promise.all([
+      memory.consume(`activities:recent:user:${user_id}`, []),
+      memory.get(`activities:permanent:user:${user_id}`, [])
+    ]).then(lists => lists.flatMap(list => list));
+  return recent.length > 0 ? memory.set(`activities:all:user:${user_id}`, recent, 60 * 60 * 24 * 7 * 13) : memory.unset(`activities:all:user:${user_id}`);
 }
 
-async function handle() {
-  return Promise.all([
-    memory.fill(muted_activities.map(muted_activity => memory.entry(`mute:activity:${muted_activity}`, true, ttl))),
-    memory.set('track:birthday', birthday_track, ttl),
-    discord.users_list(guild_id => memory.get(`notification:role:guild:${guild_id}`, null))
-      .then(users => users.map(user => user.id))
-      .then(user_ids => Promise.all([
-        sendUsersActivityWarning(user_ids),
-        sendRandomAds(user_ids)
-      ]))
-      .then(() => discord.users_list())
-      .then(users => users.map(user => user.id))
-      .then(user_ids => Promise.all([
-        cleanUsersActivities(user_ids),
-        cleanUsersExcept(user_ids)
-      ]))
-  ])
-  .then(() => undefined)
+async function cleanUsersExcept(except_user_ids) {
+  return memory.list()
+    .then(entries => memory.clear(
+      entries
+        .map(entry => entry.key)
+        .filter(key => key.includes('user:'))
+        .filter(key => !except_user_ids.some(except_user_id => key.includes(except_user_id)))
+      )
+    );
 }
 
 module.exports = { handle }
