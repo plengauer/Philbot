@@ -36,7 +36,7 @@ async function request_full(options) {
 async function request_simple(options) {
   if (!options.hostname) throw new Error('Need hostname');
   if (!options.path) throw new Error('Need path');
-  if (!options.startsWith('/')) throw new Error('Path must start with a "/"');
+  if (!options.path.startsWith('/')) throw new Error('Path must start with a "/"');
   if (options.body && typeof options.body != 'string') throw new Error('Body must be string');
   if (options.body && !options.headers['content-type']) throw new Error('Body must have content-type header');
 

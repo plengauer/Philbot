@@ -1,5 +1,6 @@
 const process = require('process');
 const permissions = require('./permissions.js');
+const curl = require('./curl.js');
 
 function parse_mention(mention) {
   mention = mention.trim();
