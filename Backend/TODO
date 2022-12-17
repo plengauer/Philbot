@@ -2,5 +2,4 @@
 
 *) deploy to EC 2 with public domain
 *) deduplicate events, presence_update for example
-*) restart backond on timeout
 *) re-implement voice player

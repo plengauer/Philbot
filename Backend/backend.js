@@ -19,8 +19,15 @@ const endpoint_discord_message_create = require('./endpoint/api/discord/message_
 const endpoint_discord_presence_update = require('./endpoint/api/discord/presence_update.js');
 const endpoint_discord_voice_state_update = require('./endpoint/api/discord/voice_state_update.js');
 
+let revision = 0;
+let revision_done = -1;
+let revisions_done = [];
+let operations = [];
+
 let server = https.createServer((request, response) => handle(request, response));
+server.on('close', () => shutdown())
 server.listen(process.env.PORT ?? 12345);
+setInterval(checkTimeout, 1000 * 60);
 
 function handle(request, response) {
     if (request.method != 'POST') {
@@ -39,7 +46,21 @@ function handle(request, response) {
     let path = url.parse(request.url).pathname;
     let buffer = '';
     request.on('data', data => { buffer += data; });
-    request.on('end', () => dispatchAny(path, JSON.parse(buffer), response));
+    request.on('end', () => dispatchAnyWithTimeout(path, JSON.parse(buffer), response));
+}
+
+async function dispatchAnyWithTimeout(path, payload, response) {
+    let operation = { revision: revision++, timestamp: Date.now() };
+    operations.push(operation);
+    return dispatchAny(path, payload, response)
+        .finally(() => operations = operations.filter(op => op.revision != operation.revision))
+        .finally(() => revisions_done.push(operation.revision))
+        .finally(() => {
+            while (revisions_done.includes(revision_done + 1)) {
+                revisions_done = revisions_done.filter(r => r != revision_done + 1);
+                revision_done++;
+            }
+        });
 }
 
 async function dispatchAny(path, payload, response) {
@@ -54,25 +75,31 @@ async function dispatchAny(path, payload, response) {
         response.writeHead(200, { 'content-type': contentType, 'content-encoding': 'identity', 'content-length': fs.statSync(path).size });
         fs.createReadStream(path).pipe(response);
         response.end();
+        return;
     } else {
-        dispatchAPI(path, payload).then(result => {
-            if (!result) {
-                result = { status: 200, body: 'Success' };
-            }
-            if (result.body) {
-                if (typeof result.body == 'object') {
-                    result.body = JSON.stringify(result.body);
-                    result.headers['content-type'] = 'application/json';
-                } else if (result.body == 'string' && !result.headers['content-type']) {
-                    result.headers['content-type'] = 'text/plain';
+        return dispatchAPI(path, payload)
+            .catch(error => {
+                console.error(error.stack);
+                return { status: 500, body: 'An internal error has occurred!' };
+            })
+            .then(result => {
+                if (!result) {
+                    result = { status: 200, body: 'Success' };
                 }
-                result.headers['content-encoding'] = 'identity';
-                result.headers['content-length'] = result.body.length;    
-            }
-            response.writeHead(result.status, result.headers);
-            if (result.body) response.write(response.body);
-            response.end();
-        });
+                if (result.body) {
+                    if (typeof result.body == 'object') {
+                        result.body = JSON.stringify(result.body);
+                        result.headers['content-type'] = 'application/json';
+                    } else if (result.body == 'string' && !result.headers['content-type']) {
+                        result.headers['content-type'] = 'text/plain';
+                    }
+                    result.headers['content-encoding'] = 'identity';
+                    result.headers['content-length'] = result.body.length;    
+                }
+                response.writeHead(result.status, result.headers);
+                if (result.body) response.write(response.body);
+                response.end();
+            });
     }
 }
 
@@ -95,4 +122,18 @@ async function dispatchAPI(path, payload) {
         case '/discord/voice_state_update': return endpoint_discord_voice_state_update.handle(payload);
         default: return { status: 404, body: 'Not found' };
     }
+}
+
+async function shutdown() {
+    while (operations.length > 0) await new Promise(resolve => setTimeout(resolve, 1000));
+    process.exit(0);
+}
+
+async function checkTimeout() {
+    const timeout = process.env.TIMEOUT ?? 1000 * 60 * 60;
+    let timedouts = operations.filter(operation => operation.timestamp < Date.now() - timeout);
+    if (timedouts.length == 0) return;
+    // if we have timed out operations, lets close the server to not accept new operations, and then remove all timed out operations as if they would not exist
+    server.close();
+    operations = operations.filter(operation => !timedouts.some(timedout => timedout.revision == operation.revision));
 }
