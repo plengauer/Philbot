@@ -9,8 +9,70 @@ const all_activities_ttl = 60 * 60 * 24 * 7 * 13;
 const current_activities_ttl = 60 * 60 * 24;
 // const starting_activities_ttl = 60 * 3;
 
-async function getActivityEmergencyNotification(name, details, state, user_name) {
-  return games.getActivityEmergencyNotification(name, details, state, user_name);
+async function handle(payload) {
+  return handle0(payload.guild_id, payload.user.id, payload.activities).then(() => undefined);
+}
+
+async function handle0(guild_id, user_id, activities) {
+  for (let activity of activities) {
+    console.log(`Activity: ${activity.name}, ${activity.details}, ${activity.state}`);
+  }
+  
+  // sanitize
+  for (let activity of activities) {
+    if (activity.name.startsWith('SnowRunner ::  KSIVA:')) {
+      activity.name = 'SnowRunner';
+    }
+  }
+  
+  // filter muted to abort early
+  // this muted check is a pure optimization, it trades off less storage costs vs more read accesses
+  activities = await Promise.all(activities.filter(activity => activity.type == 0).map(activity => memory.get(`mute:activity:${activity.name}`, false).then(muted => muted ? null : activity)))
+    .then(activities => activities.filter(activity => !!activity));
+  
+  // abort if there is no current activity
+  if (activities.length == 0) {
+    return memory.unset(`activities:current:user:${user_id}`);
+  }
+
+  let guild = await discord.guild_retrieve(guild_id);
+  let members = await discord.guild_members_list(guild_id);
+  let user_name = '';
+  for (let member of members) {
+    if (member.user.id !== user_id) {
+      continue;
+    }
+    user_name = (member.nick && member.nick.length > 0) ? member.nick : member.user.username;
+    break;
+  }
+  
+  return Promise.all([
+      memory.set(`activities:current:user:${user_id}`, activities.map(a => a.name), current_activities_ttl),
+      // memory.set(`activities:starting:user:${user_id}`, activities, starting_activities_ttl),
+      memory.get(`activities:all:user:${user_id}`, []).then(global_activities => 
+        activities.some(activity => !global_activities.includes(activity.name)) ?
+          memory.set(`activities:all:user:${user_id}`, global_activities.concat(activities.map(a => a.name).filter(activity => !global_activities.includes(activity))), all_activities_ttl) :
+          Promise.resolve()
+      ),
+      memory.get(`activities:recent:user:${user_id}`, []).then(global_activities => 
+        activities.some(activity => !global_activities.includes(activity.name)) ?
+          memory.set(`activities:recent:user:${user_id}`, global_activities.concat(activities.map(a => a.name).filter(activity => !global_activities.includes(activity))), all_activities_ttl) :
+          Promise.resolve()
+      ),
+      memory.get(`activities:global:user:${user_id}`, []).then(global_activities => 
+        activities.some(activity => !global_activities.includes(activity.name)) ?
+          memory.set(`activities:global:user:${user_id}`, global_activities.concat(activities.map(a => a.name).filter(activity => !global_activities.includes(activity))), all_activities_ttl) :
+          Promise.resolve()
+      ),
+      sendHints(guild_id, user_id, activities),
+      sendManualNotifications(guild_id, user_id, user_name, activities.map(a => a.name), members),
+      sendAutomaticNotifications(guild_id, guild.name, activities.map(a => a.name), members),
+      sendEmergencyNotifications(guild_id, user_id, user_name, activities, members)
+    ]);
+}
+
+async function sendHints(guild_id, user_id, activities) {
+  return Promise.all(activities.map(activity => sendHint(guild_id, user_id, activity)));
 }
 
 async function sendHint(guild_id, user_id, activity) {
@@ -46,8 +108,8 @@ async function sendHint(guild_id, user_id, activity) {
     ]));
 }
 
-async function sendHints(guild_id, user_id, activities) {
-  return Promise.all(activities.map(activity => sendHint(guild_id, user_id, activity)));
+async function sendManualNotifications(guild_id, user_id, user_name, activities, members) {
+  return Promise.all(activities.map(activity => Promise.all(members.map(member => sendManualNotification(guild_id, user_id, user_name, activity, member)))));
 }
 
 async function sendManualNotification(guild_id, user_id, user_name, activity, member) {
@@ -72,8 +134,37 @@ async function sendManualNotification(guild_id, user_id, user_name, activity, me
     ]));
 }
 
-async function sendManualNotifications(guild_id, user_id, user_name, activities, members) {
-  return Promise.all(activities.map(activity => Promise.all(members.map(member => sendManualNotification(guild_id, user_id, user_name, activity, member)))));
+async function sendAutomaticNotifications(guild_id, guild_name, activities, members) {
+  let role = await memory.get(`notification:role:guild:${guild_id}`, null);
+  // search members that have the same current activity
+  let members_with_same_activity_promises = members
+    .filter(member => !role || member.roles.some(role_id => role_id === role))
+    .map(member => memory.get(`activities:current:user:${member.user.id}`, []).then(other_activities => {
+      for (let other_activity of other_activities) {
+        for (let activity of activities) {
+          if (activity === other_activity) {
+            return member.user.id;
+          }
+        }
+      }
+      return null;
+    }));
+    
+  let members_with_same_activity = [];
+  for (let member_with_same_activity_promise of members_with_same_activity_promises) {
+    let member_with_same_activity = await member_with_same_activity_promise;
+    if (!member_with_same_activity) continue;
+    members_with_same_activity.push(member_with_same_activity);
+  }
+
+  if (members_with_same_activity.length > 10) {
+    return Promise.resolve();
+  }
+  // abort if there is only 1 (i.e., self) member with the same current activity
+  if (members_with_same_activity.length <= 1) {
+    return Promise.resolve();
+  }
+  return Promise.all(members_with_same_activity.map(member => sendAutomaticNotification(guild_id, guild_name, member, activities, members_with_same_activity)));
 }
 
 async function sendAutomaticNotification(guild_id, guild_name, member, activities, members_with_same_activity) {
@@ -148,39 +239,6 @@ async function sendAutomaticNotification(guild_id, guild_name, member, activitie
     );
 }
 
-async function sendAutomaticNotifications(guild_id, guild_name, activities, members) {
-  let role = await memory.get(`notification:role:guild:${guild_id}`, null);
-  // search members that have the same current activity
-  let members_with_same_activity_promises = members
-    .filter(member => !role || member.roles.some(role_id => role_id === role))
-    .map(member => memory.get(`activities:current:user:${member.user.id}`, []).then(other_activities => {
-      for (let other_activity of other_activities) {
-        for (let activity of activities) {
-          if (activity === other_activity) {
-            return member.user.id;
-          }
-        }
-      }
-      return null;
-    }));
-    
-  let members_with_same_activity = [];
-  for (let member_with_same_activity_promise of members_with_same_activity_promises) {
-    let member_with_same_activity = await member_with_same_activity_promise;
-    if (!member_with_same_activity) continue;
-    members_with_same_activity.push(member_with_same_activity);
-  }
-
-  if (members_with_same_activity.length > 10) {
-    return Promise.resolve();
-  }
-  // abort if there is only 1 (i.e., self) member with the same current activity
-  if (members_with_same_activity.length <= 1) {
-    return Promise.resolve();
-  }
-  return Promise.all(members_with_same_activity.map(member => sendAutomaticNotification(guild_id, guild_name, member, activities, members_with_same_activity)));
-}
-
 async function sendEmergencyNotification(guild_id, user_id, activity, notification, sender_user_id, sender_user_name, sender_voice_channel) {
   if (sender_voice_channel) {
     let user_voice_channel = await memory.get(`voice_channel:user:${user_id}`, null);
@@ -204,6 +262,17 @@ async function sendEmergencyNotification(guild_id, user_id, activity, notificati
       delayed_memory.set(`response:` + memory.mask(`mute for ${activity}`) + `:user:${user_id}`, `mute:user:${user_id}:activity:${activity}`, true, mute_ttl),
       delayed_memory.set(`response:` + memory.mask(`mute for ${sender_user_name}`) + `:user:${user_id}`, `mute:user:${user_id}:other${sender_user_id}`, true, mute_ttl)
     ]));
+}
+
+async function sendEmergencyNotifications(guild_id, user_id, user_name, activities, members) {
+  return Promise.all(activities.map(activity => getActivityEmergencyNotification(activity.name, activity.details, activity.state, user_name)
+        .then(notification => sendEmergencyNotifications0(guild_id, user_id, user_name, activity.name, notification, members))
+      )
+    );
+}
+
+async function getActivityEmergencyNotification(name, details, state, user_name) {
+  return games.getActivityEmergencyNotification(name, details, state, user_name);
 }
 
 async function sendEmergencyNotifications0(guild_id, user_id, user_name, activity, notification, members) {
@@ -231,75 +300,6 @@ async function sendEmergencyNotifications0(guild_id, user_id, user_name, activit
   }
   
   return Promise.all(members_with_same_activity.map(member => sendEmergencyNotification(guild_id, member, activity, notification, user_id, user_name, voice_channel)));
-}
-
-async function sendEmergencyNotifications(guild_id, user_id, user_name, activities, members) {
-  return Promise.all(activities.map(activity => getActivityEmergencyNotification(activity.name, activity.details, activity.state, user_name)
-        .then(notification => sendEmergencyNotifications0(guild_id, user_id, user_name, activity.name, notification, members))
-      )
-    );
-}
-
-async function handle(guild_id, user_id, activities) {
-  for (let activity of activities) {
-    console.log(`Activity: ${activity.name}, ${activity.details}, ${activity.state}`);
-  }
-  
-  // sanitize
-  for (let activity of activities) {
-    if (activity.name.startsWith('SnowRunner ::  KSIVA:')) {
-      activity.name = 'SnowRunner';
-    }
-  }
-  
-  // filter muted to abort early
-  // this muted check is a pure optimization, it trades off less storage costs vs more read accesses
-  activities = await Promise.all(activities.filter(activity => activity.type == 0).map(activity => memory.get(`mute:activity:${activity.name}`, false).then(muted => muted ? null : activity)))
-    .then(activities => activities.filter(activity => !!activity));
-  
-  // abort if there is no current activity
-  if (activities.length == 0) {
-    return memory.unset(`activities:current:user:${user_id}`);
-  }
-
-  let guild = await discord.guild_retrieve(guild_id);
-  let members = await discord.guild_members_list(guild_id);
-  let user_name = '';
-  for (let member of members) {
-    if (member.user.id !== user_id) {
-      continue;
-    }
-    user_name = (member.nick && member.nick.length > 0) ? member.nick : member.user.username;
-    break;
-  }
-  
-  return Promise.all([
-      memory.set(`activities:current:user:${user_id}`, activities.map(a => a.name), current_activities_ttl),
-      // memory.set(`activities:starting:user:${user_id}`, activities, starting_activities_ttl),
-      memory.get(`activities:all:user:${user_id}`, []).then(global_activities => 
-        activities.some(activity => !global_activities.includes(activity.name)) ?
-          memory.set(`activities:all:user:${user_id}`, global_activities.concat(activities.map(a => a.name).filter(activity => !global_activities.includes(activity))), all_activities_ttl) :
-          Promise.resolve()
-      ),
-      memory.get(`activities:recent:user:${user_id}`, []).then(global_activities => 
-        activities.some(activity => !global_activities.includes(activity.name)) ?
-          memory.set(`activities:recent:user:${user_id}`, global_activities.concat(activities.map(a => a.name).filter(activity => !global_activities.includes(activity))), all_activities_ttl) :
-          Promise.resolve()
-      ),
-      memory.get(`activities:global:user:${user_id}`, []).then(global_activities => 
-        activities.some(activity => !global_activities.includes(activity.name)) ?
-          memory.set(`activities:global:user:${user_id}`, global_activities.concat(activities.map(a => a.name).filter(activity => !global_activities.includes(activity))), all_activities_ttl) :
-          Promise.resolve()
-      ),
-      sendHints(guild_id, user_id, activities),
-      sendManualNotifications(guild_id, user_id, user_name, activities.map(a => a.name), members),
-      sendAutomaticNotifications(guild_id, guild.name, activities.map(a => a.name), members),
-      sendEmergencyNotifications(guild_id, user_id, user_name, activities, members)
-    ]);
-}
-
-async function handle(payload) {
-  return handle(payload.guild_id, payload.user.id, payload.activities).then(() => undefined);
 }
 
 module.exports = { handle }

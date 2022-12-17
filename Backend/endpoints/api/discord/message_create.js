@@ -14,28 +14,42 @@ const permissions = require('../../../shared/permissions.js');
 const raid_protection = require('../../../shared/raid_protection.js');
 const fs = require('fs');
 
-async function reactOK(channel_id, event_id) {
-  return discord.react(channel_id, event_id, '👍');
+async function handle(payload) {
+  return handle(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
+    .then(() => undefined);
 }
 
-async function reactNotOK(channel_id, event_id) {
-  return discord.react(channel_id, event_id, '👎');
-}
-
-async function hasMasterPermission(guild_id, user_id) {
-  return discord.guild_member_has_permission(guild_id, user_id, 'MANAGE_SERVER');
-}
-
-async function respondNeedsMasterPermission(channel_id, event_id, action) {
-  return discord.respond(channel_id, event_id, `You need the permission 'Manage Server' to ${action}.`);
-}
-
-async function respondNeedsFeatureActive(channel_id, event_id, feature, action) {
-  return discord.me().then(me => discord.respond(channel_id, event_id, `The feature ${feature} needs to be active to ${action}. Use '<@${me.id}> activate ${feature}' to turn it on.`));
-}
-
-async function resolveGuildID(user_id) {
-  return memory.get(`voice_channel:user:${user_id}`, null).then(info => info ? info.guild_id : null);
+async function handle(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id) {
+  message = message.trim();
+  
+  let mentioned = false;
+  let me = await discord.me();
+  if (message.startsWith(`@${me.username}`)) {
+    mentioned = true;
+    message = message.substring(1 + me.username.length).trim();
+  } else if (message.startsWith(`<@${me.id}>`) || message.startsWith(`<@!${me.id}>`)) {
+    mentioned = true;
+    message = message.substring(message.indexOf('>') + 1).trim();
+  } else if (guild_id && message.startsWith('<@&')) {
+    let role = undefined;
+    let roles = await discord.guild_roles_list(guild_id);
+    for (let index = 0; index < roles.length; index++) {
+      if (roles[index].name === me.username) {
+        role = roles[index];
+        break;
+      }
+    }
+    mentioned = message.startsWith(`<@&${role.id}>`);
+    if (mentioned) message = message.substring(message.indexOf('>') + 1).trim();
+  } else {
+    mentioned = !guild_id;
+  }
+  
+  return Promise.all([
+      handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
+      mentioned ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
+      guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_created(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
+    ]);
 }
 
 async function handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned) {
@@ -233,6 +247,13 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   }
   
   return Promise.all(promises);
+}
+
+async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me) {
+  return Promise.all([
+    handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, me),
+    handleDelayedCommand(channel_id, event_id, user_id, message)
+  ])
 }
 
 async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, me) {
@@ -841,49 +862,32 @@ async function handleDelayedCommand(channel_id, event_id, user_id, message) {
     .then(materialized => materialized ? reactOK(channel_id, event_id) : Promise.resolve())
 }
 
-async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me) {
-  return Promise.all([
-    handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, me),
-    handleDelayedCommand(channel_id, event_id, user_id, message)
-  ])
+
+
+
+
+async function reactOK(channel_id, event_id) {
+  return discord.react(channel_id, event_id, '👍');
 }
 
-async function handle(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id) {
-  message = message.trim();
-  
-  let mentioned = false;
-  let me = await discord.me();
-  if (message.startsWith(`@${me.username}`)) {
-    mentioned = true;
-    message = message.substring(1 + me.username.length).trim();
-  } else if (message.startsWith(`<@${me.id}>`) || message.startsWith(`<@!${me.id}>`)) {
-    mentioned = true;
-    message = message.substring(message.indexOf('>') + 1).trim();
-  } else if (guild_id && message.startsWith('<@&')) {
-    let role = undefined;
-    let roles = await discord.guild_roles_list(guild_id);
-    for (let index = 0; index < roles.length; index++) {
-      if (roles[index].name === me.username) {
-        role = roles[index];
-        break;
-      }
-    }
-    mentioned = message.startsWith(`<@&${role.id}>`);
-    if (mentioned) message = message.substring(message.indexOf('>') + 1).trim();
-  } else {
-    mentioned = !guild_id;
-  }
-  
-  return Promise.all([
-      handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
-      mentioned ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
-      guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_created(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
-    ]);
+async function reactNotOK(channel_id, event_id) {
+  return discord.react(channel_id, event_id, '👎');
 }
 
-async function handle(payload) {
-  return handle(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
-    .then(() => undefined);
+async function hasMasterPermission(guild_id, user_id) {
+  return discord.guild_member_has_permission(guild_id, user_id, 'MANAGE_SERVER');
+}
+
+async function respondNeedsMasterPermission(channel_id, event_id, action) {
+  return discord.respond(channel_id, event_id, `You need the permission 'Manage Server' to ${action}.`);
+}
+
+async function respondNeedsFeatureActive(channel_id, event_id, feature, action) {
+  return discord.me().then(me => discord.respond(channel_id, event_id, `The feature ${feature} needs to be active to ${action}. Use '<@${me.id}> activate ${feature}' to turn it on.`));
+}
+
+async function resolveGuildID(user_id) {
+  return memory.get(`voice_channel:user:${user_id}`, null).then(info => info ? info.guild_id : null);
 }
 
 module.exports = { handle }
