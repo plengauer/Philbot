@@ -3,21 +3,21 @@ const https = require('https');
 const url = require("url");
 const fs = require("fs");
 
-const endpoint_about = require('./endpoint/api/about.js');
-const endpoint_autorefresh = require('./endpoint/api/autorefresh.js');
-const endpoint_configure = require('./endpoint/api/configure.js');
-const endpoint_debug = require('./endpoint/api/debug.js');
-const endpoint_deploy = require('./endpoint/api/deploy.js');
-const endpoint_help = require('./endpoint/api/help.js');
-const endpoint_monitoring = require('./endpoint/api/monitoring.js');
-const endpoint_sourcecode = require('./endpoint/api/sourcecode.js');
-const endpoint_scheduler_monthly = require('./endpoint/api/scheduler/monthly.js');
-const endpoint_scheduler_daily = require('./endpoint/api/scheduler/daily.js');
-const endpoint_discord_guild_create = require('./endpoint/api/discord/guild_create.js');
-const endpoint_discord_guild_member_add = require('./endpoint/api/discord/guild_member_add.js');
-const endpoint_discord_message_create = require('./endpoint/api/discord/message_create.js');
-const endpoint_discord_presence_update = require('./endpoint/api/discord/presence_update.js');
-const endpoint_discord_voice_state_update = require('./endpoint/api/discord/voice_state_update.js');
+const endpoint_about = require('./endpoints/api/about.js');
+const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');
+const endpoint_configure = require('./endpoints/api/configure.js');
+const endpoint_debug = require('./endpoints/api/debug.js');
+const endpoint_deploy = require('./endpoints/api/deploy.js');
+const endpoint_help = require('./endpoints/api/help.js');
+const endpoint_monitoring = require('./endpoints/api/monitoring.js');
+const endpoint_sourcecode = require('./endpoints/api/sourcecode.js');
+const endpoint_scheduler_monthly = require('./endpoints/api/scheduler/monthly.js');
+const endpoint_scheduler_daily = require('./endpoints/api/scheduler/daily.js');
+const endpoint_discord_guild_create = require('./endpoints/api/discord/guild_create.js');
+const endpoint_discord_guild_member_add = require('./endpoints/api/discord/guild_member_add.js');
+const endpoint_discord_message_create = require('./endpoints/api/discord/message_create.js');
+const endpoint_discord_presence_update = require('./endpoints/api/discord/presence_update.js');
+const endpoint_discord_voice_state_update = require('./endpoints/api/discord/voice_state_update.js');
 
 let revision = 0;
 let revision_done = -1;
@@ -25,8 +25,9 @@ let revisions_done = [];
 let operations = [];
 
 let server = https.createServer((request, response) => handle(request, response));
+server.on('error', error => console.error(error));
 server.on('close', () => shutdown())
-server.listen(process.env.PORT ?? 12345);
+server.listen(process.env.PORT ?? 443);
 setInterval(checkTimeout, 1000 * 60);
 
 function handle(request, response) {
