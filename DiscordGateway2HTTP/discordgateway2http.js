@@ -18,7 +18,7 @@ async function connect(prev_state = {}) {
 }
 
 async function getGateway() {
-    return new Promise(resolve => request({ url: 'https://discord.com/api/v10/gateway/bot', headers: { Authorization: 'Bot ' + process.env.DISCORD_API_TOKEN }, json: true }, (err, res, body) => {
+    return new Promise(resolve => request({ url: 'https://discord.com/api/v10/gateway/bot', headers: { authorization: 'Bot ' + process.env.DISCORD_API_TOKEN }, json: true }, (err, res, body) => {
         if (err) return resolve('wss:gateway.discord.gg');
         return resolve(body.url);
     }));
@@ -149,21 +149,36 @@ async function handleDispatch(state, sequence, event, payload) {
             state.sequence = sequence;
             state.in_progress = (state.in_progress ?? []).concat([sequence]);
             //TODO save event to replay if necessary
-            return dispatch(event, payload)
-                .then(result => {
-                    state.in_progress = state.in_progress.filter(s => s != sequence);
-                    return result;
-                });
+            return dispatch(event, payload).finally(state.in_progress = state.in_progress.filter(s => s != sequence));
     }
 }
 
 async function dispatch(event, payload) {
+    if (deduplicate(event, payload)) {
+        console.log('deduplicate ' + event.toLowerCase());
+        return;
+    }
     console.log('dispatch ' + event.toLowerCase());
+    return http(event, payload);
+}
+
+async function http(event, payload, delay = undefined) {
+    if (delay) await new Promise(resolve => setTimeout(resolve, delay));
     let url = 'https://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
-    return new Promise(resolve => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: JSON.stringify(payload) }).on('response', response => {
-    	console.log('HTTP POST ' + url + ' => ' + response.statusCode);
-    	return resolve(response.body);
-    }));
+    return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: JSON.stringify(payload) })
+        .on('response', response => {
+    	    console.log('HTTP POST ' + url + ' => ' + response.statusCode);
+    	    return response.statusCode == 503 || response.statusCode == 429 ? reject(response.statusCode) : resolve(response.body);
+        })
+        .on('error', error => {
+    	    console.log('HTTP POST ' + url + ' => ' + error);
+            return reject(error);
+        })
+    ).catch(() => http(event, payload, delay ? delay * 2 : 1000));
+}
+
+function deduplicate(event, payload) {
+    return false;
 }
 
 connect();
