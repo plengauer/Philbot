@@ -316,7 +316,6 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
         .replace(/\$\{name\}/g, `<@${me.id}>`)
         .replace(/\$\{version\}/g, process.env.VERSION)
         .replace(/\$\{link_monitoring\}/g, identity.getRootURL() + '/monitoring')
-        .replace(/\$\{link_logs\}/g, identity.getRootURL() + '/logs')
         .replace(/\$\{link_discord_add\}/g, identity.getRootURL() + '/deploy')
         + '\n Use ' + identity.getRootURL() + '/about to share this about with others outside your discord server.'
       );
