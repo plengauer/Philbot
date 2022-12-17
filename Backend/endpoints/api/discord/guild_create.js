@@ -1,10 +1,10 @@
 const discord = require('../../../shared/discord.js');
 
 async function handle(payload) {
-  if (new Date(payload.joined_at).getTime() > Date.now() - 1000 * 10) {
+  if (new Date(payload.joined_at).getTime() < Date.now() - 1000 * 10) {
     return undefined;
   }
-  let guild_id = payload.guild_id;
+  let guild_id = payload.id;
   return Promise.all([
       discord.guild_retrieve(guild_id),
       discord.me()

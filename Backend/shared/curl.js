@@ -126,6 +126,9 @@ var rate_limits = {};
 var active_counts = {};
 
 async function request_rate_limited_v2(options, request) {
+  if (!options.hostname) throw new Error("Need hostname");
+  if (!options.path) throw new Error("Need path");
+
   let cpath = options.path.split('/').filter(segment => !/\d/.test(segment)).join('/');
 
   // we need to update the feedback from the other side and keep our own count because

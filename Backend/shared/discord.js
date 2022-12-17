@@ -38,7 +38,7 @@ async function guild_members_list(guild_id, role = undefined) {
 }
 
 async function guild_members_list_paged(guild_id, limit, last) {
-  return HTTP(`/guilds/${guild_id}/members?limit=${limit}&after=${last}`, 'GET');
+  return HTTP(`/guilds/${guild_id}/members?limit=${limit}` + (last ? `&after=${last}` : ''), 'GET');
 }
 
 async function guild_member_retrieve(guild_id, user_id) {
@@ -251,6 +251,8 @@ async function HTTP(endpoint, method, payload = undefined) {
 module.exports = {
   parse_mention,
   
+  me,
+
   guilds_list,
   guild_retrieve,
   

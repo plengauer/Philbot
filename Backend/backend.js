@@ -29,6 +29,7 @@ server.on('error', error => console.error(error));
 server.on('close', () => shutdown())
 server.listen(process.env.PORT ?? 80);
 setInterval(checkTimeout, 1000 * 60);
+console.log('ready');
 
 function handle(request, response) {
     if (request.method != 'POST') {
@@ -52,7 +53,9 @@ function handle(request, response) {
 async function dispatchAnyWithTimeout(path, payload, response) {
     let operation = { revision: revision++, timestamp: Date.now() };
     operations.push(operation);
+    console.log(`${operation.revision}: serving ${path}`);
     return dispatchAny(path, payload, response)
+        .finally(() =>  console.log(`${operation.revision}: served`))
         .finally(() => operations = operations.filter(op => op.revision != operation.revision))
         .finally(() => revisions_done.push(operation.revision))
         .finally(() => {
@@ -64,7 +67,6 @@ async function dispatchAnyWithTimeout(path, payload, response) {
 }
 
 async function dispatchAny(path, payload, response) {
-    console.log('serving ' + path);
     if (fs.existsSync('./endpoints/www/' + path)) {
         path = './endpoints/www/' + path;
         let contentType;
@@ -88,16 +90,18 @@ async function dispatchAny(path, payload, response) {
                     result = { status: 200, body: 'Success' };
                 }
                 if (result.body) {
+                    result.headers = result.headers ?? {};
                     if (typeof result.body == 'object') {
                         result.body = JSON.stringify(result.body);
                         result.headers['content-type'] = 'application/json';
-                    } else if (result.body == 'string' && !result.headers['content-type']) {
-                        result.headers['content-type'] = 'text/plain';
+                    } else if (typeof result.body != 'string') {
+                        result.body = '' + result.body;
                     }
+                    result.headers['content-type'] = result.headers['content-type'] ?? 'text/plain';
                     result.headers['content-encoding'] = 'identity';  
                 }
                 response.writeHead(result.status, result.headers);
-                if (result.body) response.write(response.body);
+                if (result.body) response.write(result.body);
                 response.end();
             });
     }
