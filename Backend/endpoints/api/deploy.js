@@ -1,3 +1,4 @@
+const process = require('process');
 const permissions = require('../../shared/permissions.js');
 
 async function handle() {

@@ -1,3 +1,4 @@
+const process = require('process');
 const curl = require('../curl.js');
 const memory = require('../memory.js');
 

@@ -1,4 +1,3 @@
-const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const permissions = require('./permissions.js');

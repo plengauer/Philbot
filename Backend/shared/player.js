@@ -1,3 +1,4 @@
+const process = require('process');
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const ytdl = require('ytdl-core');
@@ -51,8 +52,6 @@ async function play0(guild_id, user_id, voice_channel, youtube_link) {
     memory.set(`player:voice_channel:guild:${guild_id}`, voice_channel_id, 60 * 60 * 24),
     markVoiceOperation(guild_id)
   ]).then(() => 0);
-  return 0;
-}
 
 async function play(guild_id, user_id, voice_channel, search_string) {
   if (search_string.includes('youtube.com/watch?v=')) {

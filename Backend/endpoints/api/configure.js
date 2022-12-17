@@ -1,3 +1,5 @@
+const process = require('process');
+
 async function handle() {
   return {
     status: 301,

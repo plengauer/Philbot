@@ -1,5 +1,3 @@
-const timeout = require('./timeout.js');
-// https://github.com/open-telemetry/opentelemetry-js/find/main
 const process = require('process');
 const opentelemetry_api = require('@opentelemetry/api');
 const opentelemetry_sdk = require("@opentelemetry/sdk-node");

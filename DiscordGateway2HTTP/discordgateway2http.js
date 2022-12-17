@@ -1,3 +1,4 @@
+const process = require('process');
 const { WebSocket } = require('ws');
 const request = require('request');
 

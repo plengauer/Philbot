@@ -1,3 +1,4 @@
+const process = require('process');
 const fs = require('fs');
 const discord = require('../../shared/discord.js');
 

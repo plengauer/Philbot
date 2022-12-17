@@ -1,3 +1,4 @@
+const process = require('process');
 const memory = require('../../../shared/memory.js');
 const memory_health = require('../../../shared/memory_health.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');

@@ -1,3 +1,4 @@
+const process = require('process');
 const https = require('https');
 const url = require("url");
 const fs = require("fs");
@@ -92,7 +93,6 @@ async function dispatchAPI(path, payload) {
         case '/discord/message_create': return endpoint_discord_message_create.handle(payload);
         case '/discord/presence_update': return endpoint_discord_presence_update.handle(payload);
         case '/discord/voice_state_update': return endpoint_discord_voice_state_update.handle(payload);
-        default:
-            return { status: 404, body: 'Not found' };
+        default: return { status: 404, body: 'Not found' };
     }
 }
