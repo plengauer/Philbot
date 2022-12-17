@@ -1,6 +1,8 @@
 const process = require('process');
 const { WebSocket } = require('ws');
 const request = require('request');
+const https = require('https');
+const { BADFAMILY } = require('dns');
 
 async function connect(prev_state = {}) {
     state = {
@@ -164,8 +166,29 @@ async function dispatch(event, payload) {
 
 async function http(event, payload, delay = undefined) {
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
-    let url = 'https://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
-    return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: JSON.stringify(payload) })
+    let body = JSON.stringify(payload);
+    /*
+    return new Promise((resolve, reject) => {
+            let body = JSON.stringify(payload);
+            let request = https.request({
+                    method: 'POST',
+                    hostname: process.env.FORWARD_HOST ?? '127.0.0.1',
+                    path: (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase(),
+                    headers: { 'content-encoding': 'identity', 'content-type': 'application/json', 'content-length': body.length }
+                }, response => {
+                    console.log('HTTP POST ' + 'TODO' + ' => ' + response.statusCode);
+                    return response.statusCode == 503 || response.statusCode == 429 ? reject(response.statusCode) : resolve(response.body);
+                })
+            request.on('error', error => {
+                    console.log('HTTP POST ' + 'TODO' + ' => ' + error);
+                    return reject(error);
+                });
+            request.write(body);
+            request.end();
+        }).catch(() => http(event, payload, delay ? delay * 2 : 1000));
+    */
+    let url = 'http://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
+    return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: body })
         .on('response', response => {
     	    console.log('HTTP POST ' + url + ' => ' + response.statusCode);
     	    return response.statusCode == 503 || response.statusCode == 429 ? reject(response.statusCode) : resolve(response.body);

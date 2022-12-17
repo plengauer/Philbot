@@ -44,7 +44,8 @@ async function request_simple(options) {
   if (!options.headers) options.headers = {};
   if (!options.timeout) options.timeout = 1000 * 10;
   options.headers['accept-encoding'] = 'gzip,identity';
-  if (options.body) options.headers['content-length'] = options.body.length;
+  // content-length is byte-based, not character based, lets end the request explicitly and not do the necessary calculations ...
+  // if (options.body) options.headers['content-length'] = options.body.length;
 
   return retry(() => new Promise((resolve, reject) => {
       let request = https.request(options, response => {

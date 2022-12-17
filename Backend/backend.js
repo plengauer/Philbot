@@ -1,5 +1,5 @@
 const process = require('process');
-const https = require('https');
+const http = require('http');
 const url = require("url");
 const fs = require("fs");
 
@@ -24,10 +24,10 @@ let revision_done = -1;
 let revisions_done = [];
 let operations = [];
 
-let server = https.createServer((request, response) => handle(request, response));
+let server = http.createServer((request, response) => handle(request, response));
 server.on('error', error => console.error(error));
 server.on('close', () => shutdown())
-server.listen(process.env.PORT ?? 443);
+server.listen(process.env.PORT ?? 80);
 setInterval(checkTimeout, 1000 * 60);
 
 function handle(request, response) {
@@ -44,10 +44,9 @@ function handle(request, response) {
         response.end('Bad Request');
     }
     //TODO authentication!!!! with same token
-    let path = url.parse(request.url).pathname;
     let buffer = '';
     request.on('data', data => { buffer += data; });
-    request.on('end', () => dispatchAnyWithTimeout(path, JSON.parse(buffer), response));
+    request.on('end', () => dispatchAnyWithTimeout(url.parse(request.url).pathname, JSON.parse(buffer), response));
 }
 
 async function dispatchAnyWithTimeout(path, payload, response) {
@@ -65,6 +64,7 @@ async function dispatchAnyWithTimeout(path, payload, response) {
 }
 
 async function dispatchAny(path, payload, response) {
+    console.log('serving ' + path);
     if (fs.existsSync('./endpoints/www/' + path)) {
         path = './endpoints/www/' + path;
         let contentType;
@@ -73,7 +73,7 @@ async function dispatchAny(path, payload, response) {
         else if (path.endsWith('.xml')) contentType = 'text/xml';
         else if (path.endsWith('.ico')) contentType = 'image/vnd.microsoft.icon';
         else contentType = 'text/plain';
-        response.writeHead(200, { 'content-type': contentType, 'content-encoding': 'identity', 'content-length': fs.statSync(path).size });
+        response.writeHead(200, { 'content-type': contentType, 'content-encoding': 'identity' });
         fs.createReadStream(path).pipe(response);
         response.end();
         return;
@@ -94,8 +94,7 @@ async function dispatchAny(path, payload, response) {
                     } else if (result.body == 'string' && !result.headers['content-type']) {
                         result.headers['content-type'] = 'text/plain';
                     }
-                    result.headers['content-encoding'] = 'identity';
-                    result.headers['content-length'] = result.body.length;    
+                    result.headers['content-encoding'] = 'identity';  
                 }
                 response.writeHead(result.status, result.headers);
                 if (result.body) response.write(response.body);
