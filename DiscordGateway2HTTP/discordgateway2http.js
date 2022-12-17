@@ -17,7 +17,7 @@ async function connect(prev_state = {}) {
 }
 
 async function getGateway() {
-    return new Promise(resolve => request({ url: 'https://discord.com/api/v10/gateway/bot', headers: { Authorization: 'Bot ' + process.env.DISCORD_TOKEN }, json: true }, (err, res, body) => {
+    return new Promise(resolve => request({ url: 'https://discord.com/api/v10/gateway/bot', headers: { Authorization: 'Bot ' + process.env.DISCORD_API_TOKEN }, json: true }, (err, res, body) => {
         if (err) return resolve('wss:gateway.discord.gg');
         return resolve(body.url);
     }));
@@ -79,7 +79,7 @@ async function handleInvalidSession(state) {
 async function sendIdentify(state) {
     console.log('identify');
     return send(state, 2, {
-        token: process.env.DISCORD_TOKEN,
+        token: process.env.DISCORD_API_TOKEN,
         properties: {
             os: 'Linux',
             device: 'Philbot',
@@ -103,7 +103,7 @@ async function sendIdentify(state) {
 
 async function sendResume(state) {
     console.log('resume (session_id ' + state.session_id + ', sequence ' + state.sequence + ')');
-    return send(state, 6, { 'token': process.env.DISCORD_TOKEN, 'session_id': state.session_id, 'seq': state.sequence });
+    return send(state, 6, { 'token': process.env.DISCORD_API_TOKEN, 'session_id': state.session_id, 'seq': state.sequence });
 }
 
 async function handleReady(state, payload) {

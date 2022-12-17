@@ -243,7 +243,7 @@ function guild_member_has_permission_0(guild, roles, member, permission) {
 }
 
 async function HTTP(endpoint, method, payload = undefined) {
-  return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_TOKEN}` } });
+  return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` } });
 }
 
 module.exports = {
