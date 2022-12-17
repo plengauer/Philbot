@@ -9,6 +9,26 @@ const features = require('../../../shared/features.js');
 const mute_ttl = 60 * 60 * 24 * 7 * 4;
 const scheduling_distance = 1000 * 60 * 60 * 24 * 4;
 
+async function handle() {
+  return Promise.all([
+    discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => handleGuild(guild)))),
+    sendBirthdayGreetings(),
+    sendReminders(),
+    verifyMemory()
+  ]).then(() => memory.clean())
+  .then(() => undefined)
+}
+
+async function handleGuild(guild) {
+  return Promise.all([
+      features.isActive(guild.id, 'repeating events').then(active => active ?
+        memory.get(`repeating_events:config:guild:${guild.id}`, [])
+          .then(event_configs => Promise.all(event_configs.map(event_config => tryScheduleEvent(guild, guild_details_promise, members_promise, events_promise, event_config)))) :
+        Promise.resolve()),
+      verifyPermissions(guild.id)
+    ]);
+}
+
 async function tryScheduleEvent(guild, guild_details, members, events, event_config) {
   let now = new Date();
   if ((await memory.list([ `mute:event:guild:${guild.id}:name:${event_config.name}`, `mute:auto:event:guild:${guild.id}:name:${event_config.name}:schedule:${event_config.schedule.day}.${event_config.schedule.hour}.${event_config.schedule.minute}` ])).reduce((e1, e2) => e1.value || e2.value, false)) {
@@ -184,16 +204,6 @@ async function verifyPermissions(guild_id) {
   }
 }
 
-async function handleGuild(guild) {
-  return Promise.all([
-      features.isActive(guild.id, 'repeating events').then(active => active ?
-        memory.get(`repeating_events:config:guild:${guild.id}`, [])
-          .then(event_configs => Promise.all(event_configs.map(event_config => tryScheduleEvent(guild, guild_details_promise, members_promise, events_promise, event_config)))) :
-        Promise.resolve()),
-      verifyPermissions(guild.id)
-    ]);
-}
-
 async function sendBirthdayGreetings() {
   let now = new Date();
   return discord.users_list()
@@ -209,6 +219,12 @@ async function sendBirthdayGreetings() {
         })
       )
     ).then(results => Promise.all(results));
+}
+
+async function sendReminders() {
+  return discord.users_list()
+    .then(users => users.map(user => user.id).map(user_id => sendRemindersForUser(user_id)))
+    .then(results => Promise.all(results));
 }
 
 async function sendRemindersForUser(user_id) {
@@ -232,12 +248,6 @@ async function sendRemindersForUser(user_id) {
   return Promise.resolve();
 }
 
-async function sendReminders() {
-  return discord.users_list()
-    .then(users => users.map(user => user.id).map(user_id => sendRemindersForUser(user_id)))
-    .then(results => Promise.all(results));
-}
-
 async function verifyMemory() {
   try {
     await memory_health.verify();
@@ -245,16 +255,6 @@ async function verifyMemory() {
   } catch (ex) {
     await discord.dms(process.env.OWNER_DISCORD_USER_ID, '**Memory Verification FAILED**\n' + ex.stack);
   }
-}
-
-async function handle() {
-  return Promise.all([
-    discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => handleGuild(guild)))),
-    sendBirthdayGreetings(),
-    sendReminders(),
-    verifyMemory()
-  ]).then(() => memory.clean())
-  .then(() => undefined)
 }
 
   module.exports = { handle }
