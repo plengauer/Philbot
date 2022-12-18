@@ -29,7 +29,7 @@ async function fill(entries) {
 }
 
 async function unset(key) {
-  return remove(key).catch(error => undefined);
+  return remove(key).catch(error => console.error(error));
 }
 
 async function clear(keys) {
@@ -46,7 +46,7 @@ async function write(entry) {
 }
 
 async function remove(key) {
-  return new Promise((resolve, reject) => fs.unlink(filename(entry.key), error => error ? reject(error) : resolve()));
+  return new Promise((resolve, reject) => fs.unlink(filename(key), error => error ? reject(error) : resolve()));
 }
 
 function filename(key) {
