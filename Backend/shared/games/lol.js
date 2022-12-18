@@ -1,5 +1,6 @@
 const process = require('process');
 const curl = require('../curl.js');
+const discord = require('../discord.js');
 const memory = require('../memory.js');
 
 const servers = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];

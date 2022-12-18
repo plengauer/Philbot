@@ -4,6 +4,7 @@ const retry = require('./retry.js').retry;
 const delay = require('./retry.js').delay;
 
 async function request(options) {
+  if (!options.path) options.path = '/'; 
   if (!options.headers || !options.headers['accept']) {
     options.headers = options.headers ?? {};
     options.headers['accept'] = 'application/json';
