@@ -30,7 +30,10 @@ File.open(ENV["CONFIG_FILE"]).readlines.map(&:chomp).each do |line|
         while true
             sleep(get_sleep_time(interval))
             puts url
-            Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json' })
+            begin
+                Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json' })
+            rescue
+            end
         end
     }
 end
