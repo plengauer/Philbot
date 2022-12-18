@@ -42,7 +42,7 @@ async function getJoke() {
   return JOKES[getRandomInt(JOKES.length)];
 }
 
-function getAffixByID(id) {
+async function getAffixByID(id) {
   switch (id) {
     case 3: return "Volcanic";
     case 4: return "Necrotic";
@@ -60,7 +60,21 @@ function getAffixByID(id) {
     case 124: return "Storming";
     case 130: return "Encrypted";
     case 131: return "Shrouded";
-    default: return "Unknown";
+    case 132: return "Thundering";
+    default: return curl.request_simple({hostname: 'www.wowhead.com', path: '/affix=' + id})
+      .then(response => {
+        if (!(300 <= response.status && response.status < 400)) throw new Error();
+        if (!response.headers['location']) throw new Error();
+        let affix = response.headers['location'];
+        if (!affix.startsWith('/')) throw new Error();
+        affix = affix.substring(1);
+        if (!affix.includes('/')) throw new Error();
+        affix = affix.substring(affix.indexOf('/') + 1);
+        if (affix.includes('/')) throw new Error();
+        affix = affix.substring(0, 1).toUpperCase() + affix.substring(1).toLowerCase();
+        return affix;
+      })
+      .catch(error => "Unknown");
   }
 }
 
@@ -125,7 +139,7 @@ async function getInformation(config) {
     
     let link = line.substring(f, t);
     let id = link.substring(link.indexOf('=') + 1, link.length - 1);
-    let name = getAffixByID(Number(id));
+    let name = await getAffixByID(Number(id));
     
     affixes[index].push({id: id, name: name, link: link});
   }
