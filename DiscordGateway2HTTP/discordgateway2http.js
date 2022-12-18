@@ -188,9 +188,10 @@ async function http(event, payload, delay = undefined) {
         }).catch(() => http(event, payload, delay ? delay * 2 : 1000));
     */
     let url = 'http://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
+    let time = Date.now();
     return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: body })
         .on('response', response => {
-    	    console.log('HTTP POST ' + url + ' => ' + response.statusCode);
+    	    console.log('HTTP POST ' + url + ' => ' + response.statusCode + ' (' + (Date.now() - time) + 'ms)');
     	    return response.statusCode == 503 || response.statusCode == 429 ? reject(response.statusCode) : resolve(response.body);
         })
         .on('error', error => {
