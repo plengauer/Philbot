@@ -29,7 +29,7 @@ server.on('error', error => console.error(error));
 server.on('close', () => shutdown())
 server.listen(process.env.PORT ?? 80);
 setInterval(checkTimeout, 1000 * 60);
-console.log('ready');
+console.log('HTTP SERVER ready');
 
 function handle(request, response) {
     if (request.method != 'POST') {
@@ -53,9 +53,9 @@ function handle(request, response) {
 async function dispatchAnyWithTimeout(path, payload, response) {
     let operation = { revision: revision++, timestamp: Date.now() };
     operations.push(operation);
-    console.log(`${operation.revision}: serving ${path}`);
+    console.log(`HTTP SERVER ${operation.revision}: serving ${path}`);
     return dispatchAny(path, payload, response)
-        .finally(() =>  console.log(`${operation.revision}: served`))
+        .finally(() =>  console.log(`HTTP SERVER ${operation.revision}: served`))
         .finally(() => operations = operations.filter(op => op.revision != operation.revision))
         .finally(() => revisions_done.push(operation.revision))
         .finally(() => {
