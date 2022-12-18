@@ -13,6 +13,7 @@ const endpoint_monitoring = require('./endpoints/api/monitoring.js');
 const endpoint_sourcecode = require('./endpoints/api/sourcecode.js');
 const endpoint_scheduler_monthly = require('./endpoints/api/scheduler/monthly.js');
 const endpoint_scheduler_daily = require('./endpoints/api/scheduler/daily.js');
+const endpoint_scheduler_hourly = require('./endpoints/api/scheduler/hourly.js');
 const endpoint_discord_guild_create = require('./endpoints/api/discord/guild_create.js');
 const endpoint_discord_guild_member_add = require('./endpoints/api/discord/guild_member_add.js');
 const endpoint_discord_message_create = require('./endpoints/api/discord/message_create.js');
@@ -122,6 +123,7 @@ async function dispatchAPI(path, payload) {
         case '/sourcecode': return endpoint_sourcecode.handle();
         case '/scheduler/monthly': return endpoint_scheduler_monthly.handle();
         case '/scheduler/daily': return endpoint_scheduler_daily.handle();
+        case '/scheduler/hourly': return endpoint_scheduler_hourly.handle();
         case '/discord/guild_create': return endpoint_discord_guild_create.handle(payload);
         case '/discord/guild_member_add': return endpoint_discord_guild_member_add.handle(payload);
         case '/discord/message_create': return endpoint_discord_message_create.handle(payload);
