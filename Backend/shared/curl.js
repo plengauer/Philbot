@@ -183,8 +183,8 @@ async function request_rate_limited_v2(options, request) {
       let max = parseInt(response.headers['x-ratelimit-limit']);
       let length = Math.floor(Math.max(1, parseInt(response.headers['x-ratelimit-reset']) - Date.now() / 1000));
       let count = max - parseInt(response.headers['x-ratelimit-remaining']);
-      rate_limits[options.hostname] = create_rate_limit(max, length, count);
-      rate_limits[options.hostname + cpath] = create_rate_limit(max, length, count);
+      rate_limits[options.hostname] = [ create_rate_limit(max, length, count) ];
+      rate_limits[options.hostname + cpath] = [ create_rate_limit(max, length, count) ];
     } else {
       rate_limits[options.hostname] = [ create_rate_limit(100, 1, 0, true) ];
       rate_limits[options.hostname + cpath] = [ create_rate_limit(100, 1, 0, true) ];
