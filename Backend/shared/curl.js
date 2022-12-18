@@ -48,6 +48,7 @@ async function request_simple(options) {
   // if (options.body) options.headers['content-length'] = options.body.length;
 
   return retry(() => new Promise((resolve, reject) => {
+      let time = Date.now();
       let request = https.request(options, response => {
           let receiver = null;
           if (response.headers['content-encoding'] == 'gzip') {
@@ -59,7 +60,8 @@ async function request_simple(options) {
           let buffer = '';
           receiver.on('data', chunk => { buffer += chunk; });
           receiver.on('end', () => {
-            console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => ${response.statusCode}`);
+            let duration = Date.now() - time;
+            console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => ${response.statusCode} (${duration}ms)`);
             resolve({ status: response.statusCode, headers: response.headers, body: buffer });
           });
         });
@@ -68,7 +70,8 @@ async function request_simple(options) {
           reject(error);
         });
       request.on('timeout', () => {
-          console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => TIMEOUT`);
+          let duration = Date.now() - time;
+          console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => TIMEOUT (${duration}ms)`);
           reject(new Error(`HTTP Timeout`));
         });
       if (options.body) {
