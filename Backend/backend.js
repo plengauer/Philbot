@@ -134,7 +134,7 @@ async function shutdown() {
 }
 
 async function checkTimeout() {
-    const timeout = process.env.TIMEOUT ?? 1000 * 60 * 60;
+    const timeout = parseInt(process.env.TIMEOUT) ?? 1000 * 60 * 60;
     let timedouts = operations.filter(operation => operation.timestamp < Date.now() - timeout);
     if (timedouts.length == 0) return;
     // if we have timed out operations, lets close the server to not accept new operations, and then remove all timed out operations as if they would not exist
