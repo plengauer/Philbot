@@ -162,20 +162,38 @@ async function invite_delete(invite_code)  {
 }
 
 async function respond(channel_id, event_id, content, tts = false) {
+  return post(channel_id, content, tts, event_id);
+}
+
+async function dms(user_id, content) {
+  return HTTP(`/users/@me/channels`, 'POST', { recipient_id: user_id })
+    .then(dm_channel => post(dm_channel.id, content));
+}
+
+async function try_dms(user_id, content) {
+  return dms(user_id, content)
+    .then(() => true)
+    .catch(ex => {
+      if (ex.stack.includes('Cannot send messages to this user')) return false;
+      throw ex;
+    });
+}
+
+async function post(channel_id, content, tts = false, referenced_message_id = undefined) {
   let limit = 2000;
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
-    await respond_paged(channel_id, event_id, content.substring(0, index), tts);
+    await post_paged(channel_id, content.substring(0, index), tts, referenced_message_id);
     content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
   }
-  return respond_paged(channel_id, event_id, content, tts);
+  return post_paged(channel_id, content, tts, referenced_message_id);
 }
 
-async function respond_paged(channel_id, event_id, content, tts) {
+async function post_paged(channel_id, content, tts, referenced_message_id) {
   return HTTP(`/channels/${channel_id}/messages`, 'POST', {
       content: content,
       tts: tts,
-      message_reference: event_id ? { message_id: event_id } : undefined,
+      message_reference: referenced_message_id ? { message_id: referenced_message_id } : undefined,
       flags: 1 << 2 // SUPPRESS_EMBEDS
     });
 }
@@ -188,34 +206,6 @@ function getSplitIndex(string, limit) {
   if (index <= 0) index = string.substring(0, limit - 1).lastIndexOf(' ') + 1;
   if (index <= 0) index = limit;
   return index;
-}
-
-async function post(channel_id, content, tts = false) {
-  return respond(channel_id, undefined, content, tts);
-}
-
-async function dms(user_id, content) {
-  let limit = 2000;
-  while (content.length > limit) {
-    let index = getSplitIndex(content, limit);
-    await dms_paged(user_id, content.substring(0, index));
-    content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
-  }
-  return dms_paged(user_id, content);
-}
-
-async function dms_paged(user_id, content) {
-  return HTTP(`/users/@me/channels`, 'POST', { recipient_id: user_id })
-    .then(dm_channel => post(dm_channel.id, content));
-}
-
-async function try_dms(user_id, content) {
-  return dms(user_id, content)
-    .then(() => true)
-    .catch(ex => {
-      if (ex.stack.includes('Cannot send messages to this user')) return false;
-      throw ex;
-    });
 }
 
 async function react(channel_id, message_id, emoji) {
