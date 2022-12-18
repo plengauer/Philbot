@@ -37,16 +37,20 @@ async function clear(keys) {
 }
 
 async function read(key) {
-  return new Promise((resolve, reject) => fs.readFile(directory + '/' + key, 'utf-8', (error, content) => error ? reject(error) : resolve(JSON.parse(content))))
+  return new Promise((resolve, reject) => fs.readFile(filename(key), { encoding: 'utf-8' }, (error, content) => error ? reject(error) : resolve(JSON.parse(content))))
     .then(entry => entry.ttl && entry.timestamp + entry.ttl * 1000 < Date.now() ? Promise.reject(new Error('expired')) : Promise.resolve(entry));
 }
 
 async function write(entry) {
-  return new Promise((resolve) => fs.writeFile(directory + '/' + entry.key, 'utf-8', () => resolve(entry.value)));
+  return new Promise((resolve, reject) => fs.writeFile(filename(entry.key), JSON.stringify(entry), { encoding: 'utf-8' }, error => error ? reject(error) : resolve(entry.value)));
 }
 
 async function remove(key) {
-  return new Promise((resolve, reject) => fs.unlink(directory + '/' + key, error => error ? reject(error) : resolve()));
+  return new Promise((resolve, reject) => fs.unlink(filename(entry.key), error => error ? reject(error) : resolve()));
+}
+
+function filename(key) {
+  return directory + '/' + key.replace(/:/g, '_') + '.json';
 }
 
 async function consume(key, backup) {
