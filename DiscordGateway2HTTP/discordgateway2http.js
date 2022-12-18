@@ -12,9 +12,9 @@ async function connect(prev_state = {}) {
         in_progress: prev_state.in_progress
     };
     state.socket = new WebSocket(state.resume_gateway_url + '?v=10&encoding=json');
-    state.socket.on('open', () => console.log('connection established (' + state.resume_gateway_url + ')'));
+    state.socket.on('open', () => console.log('GATEWAY connection established (' + state.resume_gateway_url + ')'));
     state.socket.on('message', message => handleMessage(state, message));
-    state.socket.on('error', error => console.error('connection error: ' + error));
+    state.socket.on('error', error => console.error('GATEWAY connection error: ' + error));
     state.socket.on('close', code => handleClose(state, code));
     return state;
 }
@@ -28,7 +28,7 @@ async function getGateway() {
 
 function handleMessage(state, message) {
     let event = JSON.parse(message);
-    console.log('receive ' + event.op + ' (' + event.s + ')');
+    console.log('GATEWAY receive op ' + event.op + ' (' + event.s + ')');
     switch(event.op) {
         case 0 /* ready | dispatch */: return handleDispatch(state, event.s, event.t, event.d);
         case 1 /* heartbeat request (heartbeat) */: return handleHeartbeatRequest(state);
@@ -41,7 +41,7 @@ function handleMessage(state, message) {
 }
 
 function handleClose(state, code) {
-    console.log('connection closed (' + code + ')');
+    console.log('GATEWAY connection closed (' + code + ')');
     switch (code) {
         case 4000 /* unknown error */: return connect(state);
         case 4001 /* unknown opcode */: return connect(state);
@@ -64,23 +64,23 @@ function handleClose(state, code) {
 
 async function handleHello(state, payload) {
     state.heartbeat_interval = payload.heartbeat_interval;
-    console.log('hello (heartbeat interval ' + state.heartbeat_interval + 'ms)');
+    console.log('GATEWAY hello (heartbeat interval ' + state.heartbeat_interval + 'ms)');
     sendHeartbeatLater(state);
     return state.sequence ? sendResume(state) : sendIdentify(state);
 }
 
 async function handleReconnect(state) {
-    console.log('reconnect');
+    console.log('GATEWAY reconnect');
     return state.socket.close();
 }
 
 async function handleInvalidSession(state) {
-    console.log('invalid session');
+    console.log('GATEWAY invalid session');
     return sendIdentify(state);
 }
 
 async function sendIdentify(state) {
-    console.log('identify');
+    console.log('GATEWAY identify');
     return send(state, 2, {
         token: process.env.DISCORD_API_TOKEN,
         properties: {
@@ -105,27 +105,27 @@ async function sendIdentify(state) {
 }
 
 async function sendResume(state) {
-    console.log('resume (session_id ' + state.session_id + ', sequence ' + state.sequence + ')');
+    console.log('GATEWAY resume (session_id ' + state.session_id + ', sequence ' + state.sequence + ')');
     return send(state, 6, { 'token': process.env.DISCORD_API_TOKEN, 'session_id': state.session_id, 'seq': state.sequence });
 }
 
 async function handleReady(state, payload) {
     state.session_id = payload.session_id;
     state.resume_gateway_url = payload.resume_gateway_url;
-    console.log('ready (session_id ' + state.session_id + ', resume_gateway_url ' + state.resume_gateway_url + ')');
+    console.log('GATEWAY ready (session_id ' + state.session_id + ', resume_gateway_url ' + state.resume_gateway_url + ')');
 }
 
 async function handleResumed() {
-    console.log('resumed');
+    console.log('GATEWAY resumed');
 }
 
 async function handleHeartbeatRequest(state) {
-    console.log('heartbeat request');
+    console.log('GATEWAY heartbeat request');
     return sendHeartbeat(state);
 }
 
 async function handleHeartbeatACK(state) {
-    console.log('heartbeat acknowledge');
+    console.log('GATEWAY heartbeat acknowledge');
     return sendHeartbeatLater(state);
 }
 
@@ -134,12 +134,12 @@ async function sendHeartbeatLater(state) {
 }
 
 async function sendHeartbeat(state) {
-    console.log('heartbeat (' + state.sequence + ')');
+    console.log('GATEWAY heartbeat (' + state.sequence + ')');
     return send(state, 1, state.sequence ?? null);
 }
 
 async function send(state, op, payload) {
-    console.log('send ' + op);
+    console.log('GATEWAY send op ' + op);
     return state.socket.send(JSON.stringify({ op: op, d: payload }));
 }
 
@@ -157,10 +157,10 @@ async function handleDispatch(state, sequence, event, payload) {
 
 async function dispatch(event, payload) {
     if (deduplicate(event, payload)) {
-        console.log('deduplicate ' + event.toLowerCase());
+        console.log('GATEWAY deduplicate ' + event.toLowerCase());
         return;
     }
-    console.log('dispatch ' + event.toLowerCase());
+    console.log('GATEWAY dispatch ' + event.toLowerCase());
     return http(event, payload);
 }
 
