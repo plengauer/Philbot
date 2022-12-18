@@ -16,11 +16,11 @@ const permissions = require('../../../shared/permissions.js');
 const raid_protection = require('../../../shared/raid_protection.js');
 
 async function handle(payload) {
-  return handle(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
+  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
     .then(() => undefined);
 }
 
-async function handle(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id) {
+async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id) {
   message = message.trim();
   
   let mentioned = false;
