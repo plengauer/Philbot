@@ -29,7 +29,7 @@ async function fill(entries) {
 }
 
 async function unset(key) {
-  return remove(key).catch(error => console.error(error));
+  return remove(key).catch(error => undefined);
 }
 
 async function clear(keys) {
