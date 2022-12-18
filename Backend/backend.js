@@ -35,15 +35,18 @@ console.log('HTTP SERVER ready');
 function handle(request, response) {
     if (request.method != 'POST') {
         response.writeHead(400, { 'content-type': 'text/plain' });
-        response.end('Bad Request');
+        response.write('Bad Request');
+        response.end();
     }
     if (request.headers['content-encoding'] != 'identity') {
         response.writeHead(400, { 'content-type': 'text/plain' });
-        response.end('Bad Request');
+        response.write('Bad Request');
+        response.end();
     }
     if (request.headers['content-type'] != 'application/json') {
         response.writeHead(400, { 'content-type': 'text/plain' });
-        response.end('Bad Request');
+        response.write('Bad Request');
+        response.end();
     }
     //TODO authentication!!!! with same token
     let buffer = '';
