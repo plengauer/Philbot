@@ -53,9 +53,12 @@ function handle(request, response) {
 async function dispatchAnyWithTimeout(path, payload, response) {
     let operation = { revision: revision++, timestamp: Date.now() };
     operations.push(operation);
-    console.log(`HTTP SERVER ${operation.revision}: serving ${path}`);
+    console.log(`HTTP SERVER request #${operation.revision}: serving ${path}`);
     return dispatchAny(path, payload, response)
-        .finally(() =>  console.log(`HTTP SERVER ${operation.revision}: served`))
+        .finally(() => {
+            let duration = Date.now() - operation.timestamp;
+            console.log(`HTTP SERVER request #${operation.revision}: served ${path} (${duration}ms)`);
+        })
         .finally(() => operations = operations.filter(op => op.revision != operation.revision))
         .finally(() => revisions_done.push(operation.revision))
         .finally(() => {
