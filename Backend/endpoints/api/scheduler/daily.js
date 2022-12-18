@@ -1,6 +1,5 @@
 const process = require('process');
 const memory = require('../../../shared/memory.js');
-const memory_health = require('../../../shared/memory_health.js');
 const discord = require('../../../shared/discord.js');
 const permissions = require('../../../shared/permissions.js');
 const features = require('../../../shared/features.js');
@@ -8,8 +7,7 @@ const features = require('../../../shared/features.js');
 async function handle() {
   return Promise.all([
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => verifyPermissions(guild.id)))),
-    sendBirthdayGreetings(),
-    verifyMemory()
+    sendBirthdayGreetings()
   ]).then(() => memory.clean())
   .then(() => undefined)
 }
@@ -68,13 +66,4 @@ async function sendBirthdayGreetings() {
     ).then(results => Promise.all(results));
 }
 
-async function verifyMemory() {
-  try {
-    await memory_health.verify();
-    await memory_health.testAPIs();
-  } catch (ex) {
-    await discord.dms(process.env.OWNER_DISCORD_USER_ID, '**Memory Verification FAILED**\n' + ex.stack);
-  }
-}
-
-  module.exports = { handle }
+module.exports = { handle }

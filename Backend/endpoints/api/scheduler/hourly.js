@@ -1,10 +1,7 @@
-const process = require('process');
 const memory = require('../../../shared/memory.js');
-const memory_health = require('../../../shared/memory_health.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
 const discord = require('../../../shared/discord.js');
 const datefinder = require('../../../shared/datefinder.js');
-const permissions = require('../../../shared/permissions.js');
 const features = require('../../../shared/features.js');
 
 const mute_ttl = 60 * 60 * 24 * 7 * 4;
@@ -163,60 +160,6 @@ async function tryScheduleEvent(guild, guild_details, members, events, event_con
   return Promise.all(promises);
 }
 
-async function verifyPermissions(guild_id) {
-  let required = await Promise.all(features.list().map(name => features.isActive(guild_id, name).then(on => on ? name : null)))
-    .then(names => permissions.required(names.filter(name => !!name)));
-  
-  let me = await discord.me();
-  let members = await discord.guild_members_list(guild_id);
-  let roles = await discord.guild_roles_list(guild_id);
-  
-  let my_role_ids = Array.from(new Set(members.filter(member => member.user.id == me.id).map(member => member.roles)[0].concat([ guild_id ])));
-  let my_roles = roles.filter(role => my_role_ids.includes(role.id));
-  let my_role = roles.filter(role => role.name == me.username)[0];
-  
-  let missing = [];
-  let unnecessary = [];
-  for (let permission of permissions.all()) {
-    let needs = required.includes(permission);
-    let has = permissions.decompile(my_role.permissions).includes(permission);
-    if (needs && has) ; // nothing to do
-    else if (needs && !has) missing.push(permission);
-    else if (!needs && has) unnecessary.push(permission);
-    else ; // nothing to do
-  }
-  
-  if (missing.length == 0 && unnecessary.length == 0) return;
-  
-  console.log('Permissions for ' + guild_id + ': + ' + missing.join(',') + '; - ' + unnecessary.join(','));
-  let guild = await discord.guild_retrieve(guild_id);
-  let manage_roles_members = await discord.guild_members_list_with_permission(guild_id, 'MANAGE_ROLES');
-  manage_roles_members = manage_roles_members.filter(member => Math.random() < 1.0 / manage_roles_members.length); // only send to a few to not annoy too much
-  if (missing.length > 0) {
-    return Promise.all(manage_roles_members.map(manage_roles_member => discord.try_dms(manage_roles_member.user.id, `Hi ${manage_roles_member.nick ?? manage_roles_member.user.username}, I'm **missing** some crucial **permissions** for ${guild.name} to do my work properly. Please grant me the following additional permissions (via Server Settings -> Roles -> ${my_role.name} -> Permissions): ` + missing.map(p => `**${p}**`).join(', ') + '.')));
-  } else if (unnecessary.length > 0) {
-    // in theory that shouldnt be an else if, but lets not be too annoying
-    return Promise.all(manage_roles_members.map(manage_roles_member => discord.try_dms(manage_roles_member.user.id, `Hi ${manage_roles_member.nick ?? manage_roles_member.user.username}, your privacy and security is important to me. I have some **permissions** for ${guild.name} that I **do not need**. Please drop the following permissions for me (via Server Settings -> Roles -> ${my_role.name} -> Permissions): ` + unnecessary.map(p => `**${p}**`).join(', ') + '.')));
-  }
-}
-
-async function sendBirthdayGreetings() {
-  let now = new Date();
-  return discord.users_list()
-    .then(users => users
-      .map(user => user.id)
-      .map(user_id => memory.get(`birthday:user:${user_id}`, null)
-        .then(birthday => {
-          if (birthday && birthday.month == now.getUTCMonth() + 1 && birthday.day == now.getUTCDate()) {
-            return discord.try_dms(user_id, "Happy Birthday 🎂");
-          } else {
-            return Promise.resolve();
-          }
-        })
-      )
-    ).then(results => Promise.all(results));
-}
-
 async function sendReminders() {
   return discord.users_list()
     .then(users => users.map(user => user.id).map(user_id => sendRemindersForUser(user_id)))
@@ -242,15 +185,6 @@ async function sendRemindersForUser(user_id) {
   
   if (dirty) await (futureReminders.length > 0 ? memory.set(`reminders:user:${user_id}`, futureReminders) : memory.unset(`reminders:user:${user_id}`));
   return Promise.resolve();
-}
-
-async function verifyMemory() {
-  try {
-    await memory_health.verify();
-    await memory_health.testAPIs();
-  } catch (ex) {
-    await discord.dms(process.env.OWNER_DISCORD_USER_ID, '**Memory Verification FAILED**\n' + ex.stack);
-  }
 }
 
   module.exports = { handle }

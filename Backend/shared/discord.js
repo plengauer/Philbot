@@ -175,7 +175,7 @@ async function respond_paged(channel_id, event_id, content, tts) {
   return HTTP(`/channels/${channel_id}/messages`, 'POST', {
       content: content,
       tts: tts,
-      message_reference: { message_id: event_id, fail_if_not_exists: false },
+      message_reference: event_id ? { message_id: event_id } : undefined,
       flags: 1 << 2 // SUPPRESS_EMBEDS
     });
 }
@@ -213,7 +213,7 @@ async function try_dms(user_id, content) {
   return dms(user_id, content)
     .then(() => true)
     .catch(ex => {
-      if (ex.stack.includes('Cannot send messages to this user: code 50007')) return false;
+      if (ex.stack.includes('Cannot send messages to this user')) return false;
       throw ex;
     });
 }

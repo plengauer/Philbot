@@ -5,8 +5,7 @@ const discord = require('./discord.js');
 const directory = process.env.MEMORY_DIRECTORY;
 
 async function clean() {
-  return new Promise((resolve, reject) => fs.readdir(directory, (error, files) => error ? reject(error) : resolve(files)))
-    .then(files => files.map(file => file.substring(file.lastIndexOf('/') + 1)))
+  return ls()
     .then(keys => keys.map(key => read(key).catch(error => remove(key))))
     .then(promises => Promise.all(promises));
 }
@@ -16,7 +15,8 @@ async function get(key, backup) {
 }
 
 async function list(keys) {
-  return Promise.all(keys.map(key => read(key).catch(error => null)))
+  return (keys ? Promise.resolve(keys) : ls())
+    .then(keys => Promise.all(keys.map(key => read(key).catch(error => null))))
     .then(entries => entries.filter(entry => !!entry));
 }
 
@@ -47,6 +47,12 @@ async function write(entry) {
 
 async function remove(key) {
   return new Promise((resolve, reject) => fs.unlink(filename(key), error => error ? reject(error) : resolve()));
+}
+
+async function ls() {
+  return new Promise((resolve, reject) => fs.readdir(directory, (error, files) => error ? reject(error) : resolve(files)))
+    .then(paths => paths.map(path => path.substring(path.lastIndexOf('/') + 1)))
+    .then(files => files.map(file => file.substring(0, file.lastIndexOf('.'))))
 }
 
 function filename(key) {
