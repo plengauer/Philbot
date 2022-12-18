@@ -47,7 +47,7 @@ function handle(request, response) {
     //TODO authentication!!!! with same token
     let buffer = '';
     request.on('data', data => { buffer += data; });
-    request.on('end', () => dispatchAnyWithTimeout(url.parse(request.url).pathname, JSON.parse(buffer), response));
+    request.on('end', () => dispatchAnyWithTimeout(url.parse(request.url).pathname, buffer.length > 0 ? JSON.parse(buffer) : null, response));
 }
 
 async function dispatchAnyWithTimeout(path, payload, response) {
