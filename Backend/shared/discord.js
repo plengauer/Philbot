@@ -50,7 +50,7 @@ async function guild_member_kick(guild_id, user_id) {
 }
 
 async function guild_member_move(guild_id, user_id, channel_id) {
-  return HTTP(`/guilds/${guild_id}/members/${user_id}`, 'PATH', {
+  return HTTP(`/guilds/${guild_id}/members/${user_id}`, 'PATCH', {
       channel_id: channel_id
     });
 }
