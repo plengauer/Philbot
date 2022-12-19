@@ -144,7 +144,9 @@ async function request_rate_limited_v2(options, request) {
   // rate limit because we send many before getting the first feedback.
   
   // clear old rate limits to make sure we dont have a memory leak
-  Object.keys(rate_limits).filter(bucket => active_counts[bucket] == 0 && Date.now() > rl.timestamp + 10 * rl.length * 1000).forEach(bucket => { rate_limits[bucket] = undefined; active_counts[bucket] = undefined; });
+  Object.keys(rate_limits)
+    .filter(bucket => active_counts[bucket] == 0 && rate_limits[bucket].every(rl => Date.now() > rl.timestamp + 10 * rl.length * 1000))
+    .forEach(bucket => { rate_limits[bucket] = undefined; active_counts[bucket] = undefined; });
   
   // check if there is a rate limit, and if not create a fake one to make canary request. that rate limit will be overridden after the first requests
   if (!rate_limits[options.hostname] || rate_limits[options.hostname].length == 0) rate_limits[options.hostname] = [ create_rate_limit(1, 1, 0, true) ];

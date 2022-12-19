@@ -40,7 +40,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
         break;
       }
     }
-    mentioned = message.startsWith(`<@&${role.id}>`);
+    mentioned = role && message.startsWith(`<@&${role.id}>`);
     if (mentioned) message = message.substring(message.indexOf('>') + 1).trim();
   } else {
     mentioned = !guild_id;
