@@ -1,8 +1,6 @@
 const process = require('process');
 const { WebSocket } = require('ws');
 const request = require('request');
-const https = require('https');
-const { BADFAMILY } = require('dns');
 
 async function connect(prev_state = {}) {
     state = {
