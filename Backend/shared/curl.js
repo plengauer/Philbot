@@ -133,7 +133,7 @@ async function request_rate_limited_v2(options, request) {
   if (!options.hostname) throw new Error("Need hostname");
   if (!options.path) throw new Error("Need path");
 
-  let cpath = options.path.split('/').filter(segment => !/\d/.test(segment)).join('/');
+  let cpath = options.rate_limit_hint?.strip_digits ? options.path.split('/').filter(segment => !/\d/.test(segment)).join('/') : options.path;
 
   // we need to update the feedback from the other side and keep our own count because
   // (1) the server side knows about requests that we dont and (2) sending many requests
@@ -187,14 +187,14 @@ async function request_rate_limited_v2(options, request) {
       let max = parseInt(response.headers['x-ratelimit-limit']);
       let length = Math.floor(Math.max(1, parseInt(response.headers['x-ratelimit-reset']) - Date.now() / 1000));
       let count = max - parseInt(response.headers['x-ratelimit-remaining']);
-      rate_limits[options.hostname] = [ create_rate_limit(max, length, count) ];
+      rate_limits[options.hostname] = [ options.rate_limit_hint?.host_scope ? create_rate_limit(max, length, count) : create_rate_limit(options.rate_limit_hint?.max ?? 100, 1, 0, true) ];
       rate_limits[options.hostname + cpath] = [ create_rate_limit(max, length, count) ];
     } else {
-      rate_limits[options.hostname] = [ create_rate_limit(100, 1, 0, true) ];
-      rate_limits[options.hostname + cpath] = [ create_rate_limit(100, 1, 0, true) ];
+      rate_limits[options.hostname] = [ create_rate_limit(options.rate_limit_hint?.max ?? 100, 1, 0, true) ];
+      rate_limits[options.hostname + cpath] = [ create_rate_limit(options.rate_limit_hint?.max ?? 100, 1, 0, true) ];
     }
     
-    // if the request still was 429, restart the process and give hint t about when to retry.
+    // if the request still was 429, restart the process and give hint about when to retry.
     if (response.status == 429) {
       if (response.headers['retry-after']) {
         let next = parseInt(response.headers['retry-after']);
