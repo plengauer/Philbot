@@ -1,6 +1,135 @@
 const process = require('process');
 const { WebSocket } = require('ws');
 const request = require('request');
+const propertiesReader = require('properties-reader');
+const opentelemetry_api = require('@opentelemetry/api');
+const opentelemetry_sdk = require("@opentelemetry/sdk-node");
+const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
+const { Resource } = require('@opentelemetry/resources');
+const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
+const { BatchSpanProcessor, SpanExporter } = require('@opentelemetry/sdk-trace-base');
+const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
+const { AlwaysOnSampler, AlwaysOffSampler } = require("@opentelemetry/core");
+
+initOpenTelemetry().then(() => connect());
+
+async function initOpenTelemetry() {
+  let sdk = createOpenTelemetrySDK();
+  process.on('exit', () => sdk.shutdown());
+  await sdk.start();
+}
+
+function createOpenTelemetrySDK() {
+  let name = 'Philbot Discord Gateway 2 HTTP';
+  let version = process.env.VERSION;
+  dtmetadata = new Resource({});
+  for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
+    try {
+      dtmetadata.merge(new Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties()));
+    } catch { }
+  }
+  const sdk = new opentelemetry_sdk.NodeSDK({
+    sampler: version ? new AlwaysOnSampler() : new AlwaysOffSampler(),
+    spanProcessor: new ShutdownAwareSpanProcessor(new BatchSpanProcessor(new MultiSpanExporter([
+        new OTLPTraceExporter({
+            url: process.env.OPENTELEMETRY_TRACES_API_ENDPOINT,
+            headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_TRACES_API_TOKEN },
+          }),
+    ]))),
+    instrumentations: [getNodeAutoInstrumentations()],
+    resource: new Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: name,
+        [SemanticResourceAttributes.SERVICE_VERSION]: version ?? 'dev',
+      }).merge(dtmetadata),
+  });
+  return sdk;
+}
+
+class ShutdownAwareSpanProcessor {
+  processor;
+  open;
+  
+  constructor(processor) {
+    this.processor = processor;
+    this.open = [];
+  }
+  
+  onStart(span) {
+    this.open.push(span);
+    return this.processor.onStart(span);
+  }
+  
+  onEnd(span) {
+    let new_open = this.open.filter(s => s != span);
+    let doEnd = new_open.length < this.open.length;
+    this.open = new_open;
+    return doEnd ? this.processor.onEnd(span) : undefined;
+  }
+  
+  shutdown() {
+    for (let span of this.open) {
+      span.setStatus({ code: opentelemetry_api.SpanStatusCode.ERROR });
+      span.recordException('Aborted (shutdown)');
+      span.end();
+    }
+    this.open = [];
+    return this.processor.shutdown();
+  }
+}
+
+class MultiSpanExporter {
+  exporters;
+  
+  constructor(exporters) {
+    this.exporters = exporters;
+  }
+  
+  export(spans, resultCallback) {
+    let exported = 0;
+    for (let exporter of this.exporters) {
+      exporter.export(spans, result => {
+        if(++exported == this.exporters.length) resultCallback(result);
+      });
+    }
+  }
+  
+  shutdown() {
+    return Promise.all(this.exporters.map(exporter => exporter.shutdown()));
+  }
+}
+
+
+async function initOpenTelemetry() {
+  let sdk = createOpenTelemetrySDK();
+  process.on('exit', () => sdk.shutdown());
+  await sdk.start();
+}
+
+function createOpenTelemetrySDK() {
+  let name = 'Philbot';
+  let version = process.env.VERSION;
+  dtmetadata = new Resource({});
+  for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
+    try {
+      dtmetadata.merge(new Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties()));
+    } catch { }
+  }
+  const sdk = new opentelemetry_sdk.NodeSDK({
+    sampler: version ? new AlwaysOnSampler() : new AlwaysOffSampler(),
+    spanProcessor: new ShutdownAwareSpanProcessor(new BatchSpanProcessor(new MultiSpanExporter([
+        new OTLPTraceExporter({
+            url: process.env.OPENTELEMETRY_TRACES_API_ENDPOINT,
+            headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_TRACES_API_TOKEN },
+          }),
+    ]))),
+    instrumentations: [getNodeAutoInstrumentations()],
+    resource: new Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: name,
+        [SemanticResourceAttributes.SERVICE_VERSION]: version ?? 'dev',
+      }).merge(dtmetadata),
+  });
+  return sdk;
+}
 
 async function connect(prev_state = {}) {
     state = {
@@ -202,5 +331,3 @@ async function http(event, payload, delay = undefined) {
 function deduplicate(event, payload) {
     return false;
 }
-
-connect();
