@@ -1,8 +1,9 @@
 {
   "name": "philbot-opentelemetry",
+  "version": "1.0.3",
   "description": "",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
-  "version": "1.0.0",
+  "main": "opentelemetry.js",
   "dependencies": {
     "properties-reader": "^2.2.0",
     "@opentelemetry/resources": "^1.8.0",

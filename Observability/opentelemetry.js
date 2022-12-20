@@ -69,6 +69,8 @@ async function init() {
 }
 
 function create() {
+  let name = process.env.SERVICE_NAME;
+  let version = process.env.SERVICE_VERSION;
   dtmetadata = new Resource({});
   for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
     try {
@@ -76,7 +78,7 @@ function create() {
     } catch { }
   }
   const sdk = new opentelemetry_sdk.NodeSDK({
-    sampler: version ? new AlwaysOnSampler() : new AlwaysOffSampler(),
+    sampler: (name && version) ? new AlwaysOnSampler() : new AlwaysOffSampler(),
     spanProcessor: new ShutdownAwareSpanProcessor(new BatchSpanProcessor(new MultiSpanExporter([
         new OTLPTraceExporter({
             url: process.env.OPENTELEMETRY_TRACES_API_ENDPOINT,
@@ -85,11 +87,13 @@ function create() {
     ]))),
     instrumentations: [getNodeAutoInstrumentations()],
     resource: new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: process.env.SERVICE_NAME,
-        [SemanticResourceAttributes.SERVICE_VERSION]: process.env.SERVICE_VERSION,
+        [SemanticResourceAttributes.SERVICE_NAME]: name,
+        [SemanticResourceAttributes.SERVICE_VERSION]: version,
       }).merge(dtmetadata),
   });
   return sdk;
 }
 
 init();
+
+module.exports = {};
