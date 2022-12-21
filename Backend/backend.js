@@ -26,12 +26,20 @@ let revision_done = -1;
 let revisions_done = [];
 let operations = [];
 
-let server = http.createServer((request, response) => handle(request, response));
+let server = http.createServer((request, response) => handleSafely(request, response));
 server.on('error', error => console.error(error));
 server.on('close', () => shutdown())
 server.listen(process.env.PORT ?? 80);
 setInterval(checkTimeout, 1000 * 60);
 console.log('HTTP SERVER ready');
+
+function handleSafely(request, response) {
+    try {
+        handle(request, response);
+    } catch (error) {
+        console.error(`HTTP SERVER handling ${request.url} failed ` + error);
+    }
+}
 
 function handle(request, response) {
     if (request.method != 'POST') {
