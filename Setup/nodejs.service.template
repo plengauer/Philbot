@@ -1,0 +1,11 @@
+[Unit]
+Description=""
+[Service]
+Type=simple
+ExitType=main
+Restart=always
+RestartSec=1
+User=ubuntu
+ExecStart=/usr/bin/bash $directory/../run_nodejs.sh $package $directory
+[Install]
+WantedBy=multi-user.target
