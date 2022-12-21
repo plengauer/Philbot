@@ -1,9 +1,10 @@
 require('philbot-opentelemetry');
 const process = require('process');
+const fs = require('fs');
 const { WebSocket } = require('ws');
 const request = require('request');
 
-connect();
+connect(restoreState());
 
 async function connect(prev_state = {}) {
     state = {
@@ -67,7 +68,7 @@ async function handleHello(state, payload) {
     state.heartbeat_interval = payload.heartbeat_interval;
     console.log('GATEWAY hello (heartbeat interval ' + state.heartbeat_interval + 'ms)');
     sendHeartbeatLater(state);
-    return state.sequence ? sendResume(state) : sendIdentify(state);
+    return (state.session_id && state.sequence) ? sendResume(state) : sendIdentify(state);
 }
 
 async function handleReconnect(state) {
@@ -113,6 +114,7 @@ async function sendResume(state) {
 async function handleReady(state, payload) {
     state.session_id = payload.session_id;
     state.resume_gateway_url = payload.resume_gateway_url;
+    saveState(state);
     console.log('GATEWAY ready (session_id ' + state.session_id + ', resume_gateway_url ' + state.resume_gateway_url + ')');
 }
 
@@ -151,6 +153,7 @@ async function handleDispatch(state, sequence, event, payload) {
         default:
             state.sequence = sequence;
             state.in_progress = (state.in_progress ?? []).concat([sequence]);
+            saveState(state);
             //TODO save event to replay if necessary
             return dispatch(event, payload).finally(state.in_progress = state.in_progress.filter(s => s != sequence));
     }
@@ -200,6 +203,18 @@ async function http(event, payload, delay = undefined) {
             return reject(error);
         })
     ).catch(() => http(event, payload, delay ? delay * 2 : 1000));
+}
+
+function saveState(state) {
+    return fs.writeFileSync('.state.json', JSON.stringify({ session_id: state.session_id, resume_gateway_url: state.resume_gateway_url, sequence: state.sequence }));
+}
+
+function restoreState() {
+    try {
+        return JSON.parse(fs.readFileSync('.state.json'));
+    } catch {
+        return {};
+    }
 }
 
 function deduplicate(event, payload) {
