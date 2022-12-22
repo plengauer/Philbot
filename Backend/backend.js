@@ -46,7 +46,7 @@ function handle(request, response) {
         response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
         response.end();
     }
-    if (!request.headers['content-encoding'] || request.headers['content-encoding'] != 'identity') {
+    if (!request.headers['content-encoding'] && request.headers['content-encoding'] != 'identity') {
         response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
         response.end();
     }
