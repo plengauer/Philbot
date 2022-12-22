@@ -45,14 +45,17 @@ function handle(request, response) {
     if (request.method != 'POST' && request.method != 'GET') {
         response.writeHead(405, 'Method Not Allowed', { 'content-type': 'text/plain' });
         response.end();
+        return;
     }
     if (request.headers['content-encoding'] && request.headers['content-encoding'] != 'identity') {
         response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
         response.end();
+        return;
     }
     if (request.method == 'POST' && request.headers['content-type'] != 'application/json') {
         response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
         response.end();
+        return;
     }
     let buffer = '';
     request.on('data', data => { buffer += data; });
@@ -64,9 +67,10 @@ function handle(request, response) {
 	    } catch {
                 response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
                 response.end();
+                return;
 	    }
         }
-    	return dispatchAnyWithTimeout(url.parse(request.url).pathname, request.method == 'POST' && buffer.length > 0 ? JSON.parse(buffer) : null, response);
+    	dispatchAnyWithTimeout(url.parse(request.url).pathname, payload, response);
     });
 }
 
