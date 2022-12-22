@@ -11,7 +11,6 @@ async function connect(prev_state = {}) {
         session_id: prev_state.session_id,
         sequence: prev_state.sequence,
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
-        in_progress: prev_state.in_progress
     };
     state.socket = new WebSocket(state.resume_gateway_url + '?v=10&encoding=json');
     state.socket.on('open', () => console.log('GATEWAY connection established (' + state.resume_gateway_url + ')'));
@@ -147,15 +146,14 @@ async function send(state, op, payload) {
 }
 
 async function handleDispatch(state, sequence, event, payload) {
+    if (sequence) {
+        state.sequence = sequence;
+        saveState(state);
+    }
     switch(event) {
         case 'READY': return handleReady(state, payload);
         case 'RESUMED': return handleResumed();
-        default:
-            state.sequence = sequence;
-            state.in_progress = (state.in_progress ?? []).concat([sequence]);
-            saveState(state);
-            //TODO save event to replay if necessary
-            return dispatch(event, payload).finally(state.in_progress = state.in_progress.filter(s => s != sequence));
+        default: return dispatch(event, payload);
     }
 }
 
@@ -171,26 +169,6 @@ async function dispatch(event, payload) {
 async function http(event, payload, delay = undefined) {
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
     let body = JSON.stringify(payload);
-    /*
-    return new Promise((resolve, reject) => {
-            let body = JSON.stringify(payload);
-            let request = https.request({
-                    method: 'POST',
-                    hostname: process.env.FORWARD_HOST ?? '127.0.0.1',
-                    path: (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase(),
-                    headers: { 'content-encoding': 'identity', 'content-type': 'application/json', 'content-length': body.length }
-                }, response => {
-                    console.log('HTTP POST ' + 'TODO' + ' => ' + response.statusCode);
-                    return response.statusCode == 503 || response.statusCode == 429 ? reject(response.statusCode) : resolve(response.body);
-                })
-            request.on('error', error => {
-                    console.log('HTTP POST ' + 'TODO' + ' => ' + error);
-                    return reject(error);
-                });
-            request.write(body);
-            request.end();
-        }).catch(() => http(event, payload, delay ? delay * 2 : 1000));
-    */
     let url = 'http://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
     let time = Date.now();
     return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: body })
