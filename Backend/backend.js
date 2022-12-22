@@ -42,25 +42,21 @@ function handleSafely(request, response) {
 }
 
 function handle(request, response) {
-    if (request.method != 'POST') {
-        response.writeHead(400, { 'content-type': 'text/plain' });
-        response.write('Bad Request');
+    if (request.method != 'POST' && request.method != 'GET') {
+        response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
         response.end();
     }
-    if (request.headers['content-encoding'] != 'identity') {
-        response.writeHead(400, { 'content-type': 'text/plain' });
-        response.write('Bad Request');
+    if (!request.headers['content-encoding'] || request.headers['content-encoding'] != 'identity') {
+        response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
         response.end();
     }
-    if (request.headers['content-type'] != 'application/json') {
-        response.writeHead(400, { 'content-type': 'text/plain' });
-        response.write('Bad Request');
+    if (request.method == 'POST' && request.headers['content-type'] != 'application/json') {
+        response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
         response.end();
     }
-    //TODO authentication!!!! with same token
     let buffer = '';
     request.on('data', data => { buffer += data; });
-    request.on('end', () => dispatchAnyWithTimeout(url.parse(request.url).pathname, buffer.length > 0 ? JSON.parse(buffer) : null, response));
+    request.on('end', () => dispatchAnyWithTimeout(url.parse(request.url).pathname, request.method == 'POST' && buffer.length > 0 ? JSON.parse(buffer) : null, response));
 }
 
 async function dispatchAnyWithTimeout(path, payload, response) {
