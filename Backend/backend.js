@@ -79,7 +79,11 @@ async function dispatchAnyWithTimeout(path, payload, response) {
 }
 
 async function dispatchAny(path, payload, response) {
-    if (fs.existsSync('./endpoints/www/' + path)) {
+    if (path == '/') {
+        return { status: 301, headers: { location: '/index.html' }};
+    } else if (path.endsWith('/')) {
+        return { status: 301, headers: { location: path.substring(0, path.length - 1) } };
+    } else if (fs.existsSync('./endpoints/www/' + path)) {
         path = './endpoints/www/' + path;
         let contentType;
         if (path.endsWith('.txt')) contentType = 'text/plain';
@@ -87,10 +91,12 @@ async function dispatchAny(path, payload, response) {
         else if (path.endsWith('.xml')) contentType = 'text/xml';
         else if (path.endsWith('.ico')) contentType = 'image/vnd.microsoft.icon';
         else contentType = 'text/plain';
-        response.writeHead(200, { 'content-type': contentType, 'content-encoding': 'identity' });
-        fs.createReadStream(path).pipe(response);
-        response.end();
-        return;
+        return new Promise(resolve => {
+            response.writeHead(200, { 'content-type': contentType, 'content-encoding': 'identity' });
+            let stream = fs.createReadStream(path);
+            stream.on('end', () => resolve(response.end()));
+            stream.pipe(response);
+        });
     } else {
         return dispatchAPI(path, payload)
             .catch(error => {
