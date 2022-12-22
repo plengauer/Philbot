@@ -6,7 +6,7 @@ async function handle() {
   let me = await discord.me();
   let about = ('' + fs.readFileSync('./about.txt'))
     .replace(/\$\{name\}/g, `${me.username}`)
-    .replace(/\$\{version\}/g, process.env.VERSION)
+    .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
     .replace(/\$\{link_monitoring\}/g, `this <a href="/monitoring">link</a>`)
     .replace(/\$\{link_discord_add\}/g, `this <a href="/deploy">link</a>`)
     .replace(/\*\*(.*)\*\*/g, '<b>$1</b>')

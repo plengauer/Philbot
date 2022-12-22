@@ -330,16 +330,16 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
         .replace(/\$\{about_instruction\}/g, 'Use \'${name} about\'')
         .replace(/\$\{name\}/g, `<@${me.id}>`)
         .replace(/\$\{notification_role\}/g, notification_role_name)
-        + '\n Use ' + identity.getRootURL() + '/help to share this help with others outside your discord server.'
+        + '\nUse ' + identity.getRootURL() + '/help to share this help with others outside your discord server.'
       );
     
   } else if (message == 'about') {
     return discord.respond(channel_id, event_id,  ('' + fs.readFileSync('./about.txt'))
         .replace(/\$\{name\}/g, `<@${me.id}>`)
-        .replace(/\$\{version\}/g, process.env.VERSION)
+        .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
         .replace(/\$\{link_monitoring\}/g, identity.getRootURL() + '/monitoring')
         .replace(/\$\{link_discord_add\}/g, identity.getRootURL() + '/deploy')
-        + '\n Use ' + identity.getRootURL() + '/about to share this about with others outside your discord server.'
+        + '\nUse ' + identity.getRootURL() + '/about to share this about with others outside your discord server.'
       );
     
   } else if (message === 'good bot') {

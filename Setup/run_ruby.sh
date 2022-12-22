@@ -5,5 +5,5 @@ rm -rf gems &&
 mkdir -p gems &&
 gem install --install-dir=gems $gem
 export $(cat environment.properties | xargs) &&
-export SERVICE_VERSION=dev &&
+export SERVICE_VERSION= &&
 ruby gems/gems/$gem-*/*.rb
