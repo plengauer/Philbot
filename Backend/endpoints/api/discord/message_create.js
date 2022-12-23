@@ -365,6 +365,7 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       );
   
   } else if (message.startsWith('play ')) {
+    return discord.respond(channel_id, event_id, "Voice functionality has been temporarily disabled. I'm working on restoring it as soon as possible!");
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOk(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
@@ -396,18 +397,21 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       });
     
   } else if (message === "stop") {
+    return discord.respond(channel_id, event_id, "Voice functionality has been temporarily disabled. I'm working on restoring it as soon as possible!");
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOk(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.stop(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message === "pause") {
+    return discord.respond(channel_id, event_id, "Voice functionality has been temporarily disabled. I'm working on restoring it as soon as possible!");
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOk(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.pause(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message === "resume") {
+    return discord.respond(channel_id, event_id, "Voice functionality has been temporarily disabled. I'm working on restoring it as soon as possible!");
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOk(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
