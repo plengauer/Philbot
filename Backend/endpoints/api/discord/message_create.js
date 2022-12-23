@@ -326,20 +326,24 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     } else {
       notification_role_name = 'unknown';
     }
-    return discord.respond(channel_id, event_id, ('' + fs.readFileSync('./help.txt'))
-        .replace(/\$\{about_instruction\}/g, 'Use \'${name} about\'')
-        .replace(/\$\{name\}/g, `<@${me.id}>`)
-        .replace(/\$\{notification_role\}/g, notification_role_name)
-        + '\nUse ' + identity.getRootURL() + '/help to share this help with others outside your discord server.'
+    return identity.getPublicURL()
+        .then(url => discord.respond(channel_id, event_id, ('' + fs.readFileSync('./help.txt'))
+          .replace(/\$\{about_instruction\}/g, 'Use \'${name} about\'')
+          .replace(/\$\{name\}/g, `<@${me.id}>`)
+          .replace(/\$\{notification_role\}/g, notification_role_name)
+          + '\nUse ' + url + '/help to share this help with others outside your discord server.'
+        )
       );
     
   } else if (message == 'about') {
-    return discord.respond(channel_id, event_id,  ('' + fs.readFileSync('./about.txt'))
-        .replace(/\$\{name\}/g, `<@${me.id}>`)
-        .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
-        .replace(/\$\{link_monitoring\}/g, identity.getRootURL() + '/monitoring')
-        .replace(/\$\{link_discord_add\}/g, identity.getRootURL() + '/deploy')
-        + '\nUse ' + identity.getRootURL() + '/about to share this about with others outside your discord server.'
+    return identity.getPublicURL()
+      .then(url => discord.respond(channel_id, event_id,  ('' + fs.readFileSync('./about.txt'))
+          .replace(/\$\{name\}/g, `<@${me.id}>`)
+          .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
+          .replace(/\$\{link_monitoring\}/g, url + '/monitoring')
+          .replace(/\$\{link_discord_add\}/g, url + '/deploy')
+          + '\nUse ' + url + '/about to share this about with others outside your discord server.'
+        )
       );
     
   } else if (message === 'good bot') {

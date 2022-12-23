@@ -85,15 +85,15 @@ async function sendUserActivityWarning(user_id) {
   }
 }
 
-async function sendAd(user_id) {
-  return discord.try_dms(user_id, ('' + fs.readFileSync('./ad.txt')).replace(/\$\{link_discord_add\}/g, identity.getRootURL() + '/addme'));
-}
-
 async function sendRandomAds(user_ids) {
   return Promise.all(user_ids
       .filter(user_id => Math.random() < 0.1)
       .map(user_id => sendAd(user_id))
     );
+}
+
+async function sendAd(user_id) {
+  return identity.getPublicURL().then(url => discord.try_dms(user_id, ('' + fs.readFileSync('./ad.txt')).replace(/\$\{link_discord_add\}/g, url + '/deploy')));
 }
 
 async function cleanUsersActivities(user_ids) {

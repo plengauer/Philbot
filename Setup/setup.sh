@@ -17,7 +17,6 @@ cp -f -T environment.properties.scheduler ./scheduler/environment.properties &&
 cp -f -T config.properties.scheduler ./scheduler/config.properties &&
 
 echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
-echo PUBLIC_URL=http://$(curl -s http://169.254.169.254/latest/meta-data/public-hostname) >> ./backend/environment.properties &&
 echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties &&
 
 cat nodejs.service.template | sed 's~$directory~'$(pwd)'\/backend~g' | sed 's/$package/philbot-backend/g' > philbot_backend.service &&
