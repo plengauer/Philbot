@@ -165,7 +165,9 @@ async function dispatchAPI(path, payload) {
 }
 
 async function shutdown() {
-    while (operations.length > 0) await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log(`HTTP SERVER waiting for ${operations.length} in-progress operations to complete`);
+    for (let i = 0; i < 10 && operations.length > 0; i++) await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log(`HTTP SERVER exiting (${operations.length} in progress)`);
     process.exit(0);
 }
 
@@ -174,6 +176,8 @@ async function checkTimeout() {
     let timedouts = operations.filter(operation => operation.timestamp < Date.now() - timeout);
     if (timedouts.length == 0) return;
     // if we have timed out operations, lets close the server to not accept new operations, and then remove all timed out operations as if they would not exist
+    timedouts.forEach(timedout => console.log(`HTTP SERVER request hanging #${timedout.revision}`));
+    console.log('HTTP SERVER closing');
     server.close();
     operations = operations.filter(operation => !timedouts.some(timedout => timedout.revision == operation.revision));
 }
