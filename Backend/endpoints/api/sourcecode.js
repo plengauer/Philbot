@@ -5,3 +5,5 @@ async function handle() {
     body: 'Moved Permanently'
   };
 }
+
+module.exports = { handle }
