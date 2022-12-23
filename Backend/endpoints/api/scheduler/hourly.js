@@ -27,9 +27,6 @@ async function tryScheduleEvent(guild, event_config) {
   if ((await memory.list([ `mute:event:guild:${guild.id}:name:${event_config.name}`, `mute:auto:event:guild:${guild.id}:name:${event_config.name}:schedule:${event_config.schedule.day}.${event_config.schedule.hour}.${event_config.schedule.minute}` ])).reduce((e1, e2) => e1.value || e2.value, false)) {
     return Promise.resolve();
   }
-
-  let guild_details = await discord.guild_retrieve(guild.id);
-  let members = await discord.guild_members_list(guild.id);
   
   let scheduled_start = await datefinder.findNext(now, event_config.schedule.day, event_config.schedule.hour, event_config.schedule.minute, event_config.schedule.timezone);
   let distance = scheduled_start.getTime() - now.getTime();
@@ -46,7 +43,7 @@ async function tryScheduleEvent(guild, event_config) {
     + ':00+00:00';
   
   let found = false;
-  for (let event of events) {
+  for (let event of await discord.scheduledevents_list(guild.id)) {
     found = found || ((!event_config.name || event.name === event_config.name) && event.scheduled_start_time == scheduled_start_string);
   }
   if (found) {
@@ -58,6 +55,8 @@ async function tryScheduleEvent(guild, event_config) {
   if (Math.random() > event_config.probability) {
     return Promise.resolve();
   }
+  
+  let members = await discord.guild_members_list(guild.id);
   
   if (!event_config.name) {
     let activities = await memory.list(members.map(member => `activities:all:user:${member.user.id}`))
@@ -110,7 +109,6 @@ async function tryScheduleEvent(guild, event_config) {
   }
   
   let promises = [];
-  
       
   let interestedPromises = members.map(member => Promise.all([
       memory.get(`mute:user:${member.user.id}`, false),
@@ -146,10 +144,13 @@ async function tryScheduleEvent(guild, event_config) {
       }
     }
     promises.push(
-      discord.post({
-        channel_id: guild_details.system_channel_id,
-        content: `I\'ve scheduled a new event, **${event_config.name}**: ${link}. Join if you can. ` + (mentions.length > 0 ? (` (fyi ${mentions})`) : '')
-      })
+      discord.guild_retrieve(guild.id)
+        .then(guild_details => 
+          discord.post({
+            channel_id: guild_details.system_channel_id,
+            content: `I\'ve scheduled a new event, **${event_config.name}**: ${link}. Join if you can. ` + (mentions.length > 0 ? (` (fyi ${mentions})`) : '')
+          })
+        )
     );
   }
   if (await memory.get(`scheduled_events:post_dm:guild:${guild.id}`, true)) {
