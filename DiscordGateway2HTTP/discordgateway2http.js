@@ -157,7 +157,7 @@ async function handleDispatch(state, sequence, event, payload) {
         case 'RESUMED': return handleResumed();
         default:
             const span = tracer.startSpan('discord.' + event, { kind: opentelemetry.SpanKind.CONSUMER }, undefined);
-            return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
+            return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.ROOT_CONTEXT, span),
                     () => dispatch(event, payload)
                 )
                 .finally(() => span.end())
