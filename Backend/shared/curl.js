@@ -1,3 +1,4 @@
+const http = require('http');
 const https = require('https');
 const zlib = require('zlib');
 const retry = require('./retry.js').retry;
@@ -44,13 +45,14 @@ async function request_simple(options) {
   if (!options.method) options.method = 'GET';
   if (!options.headers) options.headers = {};
   if (!options.timeout) options.timeout = 1000 * 10;
+  if (!options.secure) options.secure = true;
   options.headers['accept-encoding'] = 'gzip,identity';
   // content-length is byte-based, not character based, lets end the request explicitly and not do the necessary calculations ...
   // if (options.body) options.headers['content-length'] = options.body.length;
 
   return retry(() => new Promise((resolve, reject) => {
       let time = Date.now();
-      let request = https.request(options, response => {
+      let request = (options.secure ? https : http).request(options, response => {
           let receiver = null;
           if (response.headers['content-encoding'] == 'gzip') {
             receiver = zlib.createGunzip();
