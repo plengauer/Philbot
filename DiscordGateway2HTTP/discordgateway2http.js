@@ -3,6 +3,8 @@ const process = require('process');
 const fs = require('fs');
 const { WebSocket } = require('ws');
 const request = require('request');
+const opentelemetry = require('@opentelemetry/api');
+const tracer = opentelemetry.trace.getTracer('discord.gateway');
 
 connect(restoreState());
 
@@ -55,7 +57,7 @@ function handleClose(state, code) {
         case 4008 /* rate limited */: return connect(state);
         case 4009 /* session timed out */: return connect(state);
         case 4010 /* invalid shard */: return connect(state);
-        case 4011 /* shareding required */: return process.exit(0);
+        case 4011 /* sharding required */: return process.exit(0);
         case 4012 /* invalid API version */: return process.exit(0);
         case 4013 /* invalid intent(s) */: return process.exit(0);
         case 4014 /* disallowed intent(s) */: return process.exit(0);
@@ -153,7 +155,12 @@ async function handleDispatch(state, sequence, event, payload) {
     switch(event) {
         case 'READY': return handleReady(state, payload);
         case 'RESUMED': return handleResumed();
-        default: return dispatch(event, payload);
+        default:
+            const span = tracer.startSpan('discord.' + event, { kind: opentelemetry.SpanKind.CONSUMER }, undefined);
+            return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
+                    () => dispatch(event, payload)
+                )
+                .finally(() => span.end())
     }
 }
 
