@@ -51,7 +51,8 @@ async function request_simple(options) {
   // if (options.body) options.headers['content-length'] = options.body.length;
 
   return retry(() => new Promise((resolve, reject) => {
-      let time = Date.now();
+      let s = options.secure ? 's' : '';
+      let time = Date.now();      
       let request = (options.secure ? https : http).request(options, response => {
           let receiver = null;
           if (response.headers['content-encoding'] == 'gzip') {
@@ -64,17 +65,17 @@ async function request_simple(options) {
           receiver.on('data', chunk => { buffer += chunk; });
           receiver.on('end', () => {
             let duration = Date.now() - time;
-            console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => ${response.statusCode} (${duration}ms)`);
+            console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${response.statusCode} (${duration}ms)`);
             resolve({ status: response.statusCode, headers: response.headers, body: buffer });
           });
         });
       request.on('error', error => {
-          console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => ${error.message}`);
+          console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${error.message}`);
           reject(error);
         });
       request.on('timeout', () => {
           let duration = Date.now() - time;
-          console.log(`HTTP ${options.method} https://${options.hostname}${options.path} => TIMEOUT (${duration}ms)`);
+          console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => TIMEOUT (${duration}ms)`);
           reject(new Error(`HTTP Timeout`));
         });
       if (options.body) {
@@ -90,6 +91,7 @@ async function request_redirected(options, request) {
         let location = response.headers['location'];
         if (location.startsWith('http://') || location.startsWith('https://')) {
           location = location.substring(location.indexOf('://') + 3);
+          options.secure = location.startsWith('https://');
           options.hostname = location.includes('/') ? location.substring(0, location.indexOf('/')) : location;
           options.path = location.includes('/') ? location.substring(location.indexOf('/'), location.length) : '/';
         } else if (location.startsWith('/')) {
