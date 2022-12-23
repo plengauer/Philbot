@@ -18,15 +18,18 @@ async function handle() {
 async function handleGuild(guild) {
   return features.isActive(guild.id, 'repeating events').then(active => active ?
     memory.get(`repeating_events:config:guild:${guild.id}`, [])
-      .then(event_configs => Promise.all(event_configs.map(event_config => tryScheduleEvent(guild, guild_details_promise, members_promise, events_promise, event_config)))) :
+      .then(event_configs => Promise.all(event_configs.map(event_config => tryScheduleEvent(guild, event_config)))) :
     Promise.resolve());
 }
 
-async function tryScheduleEvent(guild, guild_details, members, events, event_config) {
+async function tryScheduleEvent(guild, event_config) {
   let now = new Date();
   if ((await memory.list([ `mute:event:guild:${guild.id}:name:${event_config.name}`, `mute:auto:event:guild:${guild.id}:name:${event_config.name}:schedule:${event_config.schedule.day}.${event_config.schedule.hour}.${event_config.schedule.minute}` ])).reduce((e1, e2) => e1.value || e2.value, false)) {
     return Promise.resolve();
   }
+
+  let guild_details = await discord.guild_retrieve(guild.id);
+  let members = await discord.guild_members_list(guild.id);
   
   let scheduled_start = await datefinder.findNext(now, event_config.schedule.day, event_config.schedule.hour, event_config.schedule.minute, event_config.schedule.timezone);
   let distance = scheduled_start.getTime() - now.getTime();
