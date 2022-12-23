@@ -148,8 +148,8 @@ async function scheduledevent_create(guild_id, channel_id, name, description, sc
       name: name,
       description: description,
       scheduled_start_time: scheduled_start_time,
-      privacy_level: 'GUILD_MEMBERS',
-      entity_type: 'VOICE'
+      privacy_level: 2 /* GUILD_ONLY */,
+      entity_type: 2 /* VOICE */
     }); 
 }
 
