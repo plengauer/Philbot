@@ -597,6 +597,8 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       if (isNaN(count)) return discord.respond(channel_id, event_id, 'I do not know how much ' + count + ' is.');
       if (!unit_string.endsWith('s')) unit_string += 's';
       switch (unit_string) {
+        case 'minutes': next = Date.now() + 1000 * 60 * count - 1000 * 30; break;
+        case 'hours': next = Date.now() + 1000 * 60 * 60 * count - 1000 * 60 * 30; break;
         case 'days': next = Date.now() + 1000 * 60 * 60 * 24 * count - 1000 * 60 * 60 * 12; break;
         case 'weeks': next = Date.now() + 1000 * 60 * 60 * 24 * 7 * count - 1000 * 60 * 60 * 12; break;
         case 'months': next = Date.now() + 1000 * 60 * 60 * 24 * 30 * count - 1000 * 60 * 60 * 12; break;
