@@ -2,9 +2,8 @@ sudo systemctl stop philbot_backend
 sudo systemctl stop philbot_discordgateway2http
 sudo systemctl stop philbot_scheduler
 
-sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
 curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&
-sudo apt-get -y install nodejs ruby &&
+sudo apt-get -y install nodejs ruby iptables-persistent &&
 
 mkdir -p memory &&
 mkdir -p backend &&
@@ -22,6 +21,9 @@ echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.p
 cat nodejs.service.template | sed 's~$directory~'$(pwd)'\/backend~g' | sed 's/$package/philbot-backend/g' > philbot_backend.service &&
 cat nodejs.service.template | sed 's~$directory~'$(pwd)'\/discordgateway2http~g' | sed 's/$package/philbot-discordgateway2http/g' > philbot_discordgateway2http.service &&
 cat ruby.service.template | sed 's~$directory~'$(pwd)'\/scheduler~g' | sed 's/$gem/philbot-scheduler/g' > philbot_scheduler.service &&
+
+# sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT &&
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
 
 sudo mv *.service /etc/systemd/system/ &&
 sudo systemctl daemon-reload &&
