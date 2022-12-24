@@ -146,10 +146,10 @@ async function tryScheduleEvent(guild, event_config) {
     promises.push(
       discord.guild_retrieve(guild.id)
         .then(guild_details => 
-          discord.post({
-            channel_id: guild_details.system_channel_id,
-            content: `I\'ve scheduled a new event, **${event_config.name}**: ${link}. Join if you can. ` + (mentions.length > 0 ? (` (fyi ${mentions})`) : '')
-          })
+          discord.post(
+            guild_details.system_channel_id,
+            `I\'ve scheduled a new event, **${event_config.name}**: ${link}. Join if you can. ` + (mentions.length > 0 ? (` (fyi ${mentions})`) : '')
+          )
         )
     );
   }
