@@ -600,10 +600,7 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     let next_string = tokens[index++];
     let next;
     if (next_string == 'soon' || next_string == 'tomorrow') {
-      next = Date.now() + 1000 * 60 * 60 * 24 - 1000 * 60 * 60 * 12;
-      // this relies on the fact we only send out once a day at noon
-      // 12 hours guarantees its after 12:00 the same day, but no later than 12 next day
-      // so it will be correctly hit on next days event
+      next = Date.now() + 1000 * 60 * 60 * 24;
     } else if (next_string == 'in') {
       let count_string = tokens[index++];
       let unit_string = tokens[index++];
@@ -611,12 +608,12 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       if (isNaN(count)) return discord.respond(channel_id, event_id, 'I do not know how much ' + count + ' is.');
       if (!unit_string.endsWith('s')) unit_string += 's';
       switch (unit_string) {
-        case 'minutes': next = Date.now() + 1000 * 60 * count - 1000 * 30; break;
-        case 'hours': next = Date.now() + 1000 * 60 * 60 * count - 1000 * 60 * 30; break;
-        case 'days': next = Date.now() + 1000 * 60 * 60 * 24 * count - 1000 * 60 * 60 * 12; break;
-        case 'weeks': next = Date.now() + 1000 * 60 * 60 * 24 * 7 * count - 1000 * 60 * 60 * 12; break;
-        case 'months': next = Date.now() + 1000 * 60 * 60 * 24 * 30 * count - 1000 * 60 * 60 * 12; break;
-        case 'years': next = Date.now() + 1000 * 60 * 60 * 24 * 365 * count - 1000 * 60 * 60 * 12; break;
+        case 'minutes': next = Date.now() + 1000 * 60 * count; break;
+        case 'hours': next = Date.now() + 1000 * 60 * 60 * count; break;
+        case 'days': next = Date.now() + 1000 * 60 * 60 * 24 * count; break;
+        case 'weeks': next = Date.now() + 1000 * 60 * 60 * 24 * 7 * count; break;
+        case 'months': next = Date.now() + 1000 * 60 * 60 * 24 * 30 * count; break;
+        case 'years': next = Date.now() + 1000 * 60 * 60 * 24 * 365 * count; break;
         default: return discord.respond(channel_id, event_id, 'I do not know ' + unit_string + '.');
       }
     } else if (next_string == 'on') {
@@ -882,10 +879,6 @@ async function handleDelayedCommand(channel_id, event_id, user_id, message) {
   return delayed_memory.materialize(`response:` + memory.mask(message) + `:user:${user_id}`)
     .then(materialized => materialized ? reactOK(channel_id, event_id) : Promise.resolve())
 }
-
-
-
-
 
 async function reactOK(channel_id, event_id) {
   return discord.react(channel_id, event_id, '👍');
