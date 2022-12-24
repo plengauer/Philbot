@@ -1,4 +1,3 @@
-const process = require('process');
 const memory = require('../../../shared/memory.js');
 const discord = require('../../../shared/discord.js');
 const permissions = require('../../../shared/permissions.js');
@@ -6,9 +5,10 @@ const features = require('../../../shared/features.js');
 
 async function handle() {
   return Promise.all([
+    memory.clean(),
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => verifyPermissions(guild.id)))),
     sendBirthdayGreetings()
-  ]).then(() => memory.clean())
+  ])
   .then(() => undefined)
 }
 

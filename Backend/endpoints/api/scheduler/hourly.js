@@ -11,7 +11,7 @@ async function handle() {
   return Promise.all([
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => handleGuild(guild)))),
     sendReminders(),
-  ]).then(() => memory.clean())
+  ])
   .then(() => undefined)
 }
 
