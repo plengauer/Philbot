@@ -18,9 +18,9 @@ cp -f -T config.properties.scheduler ./scheduler/config.properties &&
 echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
 echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties &&
 
-cat nodejs.service.template | sed 's~$directory~'$(pwd)'\/backend~g' | sed 's/$package/philbot-backend/g' > philbot_backend.service &&
-cat nodejs.service.template | sed 's~$directory~'$(pwd)'\/discordgateway2http~g' | sed 's/$package/philbot-discordgateway2http/g' > philbot_discordgateway2http.service &&
-cat ruby.service.template | sed 's~$directory~'$(pwd)'\/scheduler~g' | sed 's/$gem/philbot-scheduler/g' > philbot_scheduler.service &&
+cat service.template | sed 's~$directory~'$(pwd)'\/backend~g' | sed 's/$technology/node.js/g' | sed 's/$module/philbot-backend/g' > philbot_backend.service &&
+cat service.template | sed 's~$directory~'$(pwd)'\/discordgateway2http~g' | sed 's/$technology/node.js/g' | sed 's/$module/philbot-discordgateway2http/g' > philbot_discordgateway2http.service &&
+cat service.template | sed 's~$directory~'$(pwd)'\/scheduler~g' | sed 's/$technology/ruby/g' | sed 's/$module/philbot-scheduler/g' > philbot_scheduler.service &&
 
 # sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT &&
 sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
