@@ -25,6 +25,8 @@ require 'net/http'
 #   )
 # end
 
+$stdout.sync = true
+
 def get_sleep_time(interval)
     time = Time.new
     sleep_time = 60 - time.sec
