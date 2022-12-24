@@ -37,7 +37,14 @@ async function clear(keys) {
 }
 
 async function read(key) {
-  return new Promise((resolve, reject) => fs.readFile(filename(key), { encoding: 'utf-8' }, (error, content) => error ? reject(error) : resolve(JSON.parse(content))))
+  return new Promise((resolve, reject) => fs.readFile(filename(key), { encoding: 'utf-8' }, (error, content) => error ? reject(error) : resolve(content)))
+    .then(content => new Promise((resolve, reject) => {
+      try {
+        resolve(JSON.parse(content));
+      } catch (error) {
+        fs.rename(filename(key), filename(key) + '.damaged', () => reject(error));
+      }
+    }))
     .then(entry => entry.ttl && entry.timestamp + entry.ttl * 1000 < Date.now() ? Promise.reject(new Error('expired')) : Promise.resolve(entry));
 }
 
