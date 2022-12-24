@@ -171,39 +171,49 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     let converted_unit = 'metric';
     if ((context.includes('degrees') && context.includes('f')) || context.includes('fahrenheit')) {
       if (context.includes('c') || context.includes('celsius')) continue;
+      unit = 'fahrenheit';
       converted_value = (value - 32) * 5/9;
       converted_unit = 'c';
     } else if (context.includes('foot') || context.includes('feet') || context.includes('ft')) {
+      unit = 'feet';
       converted_value = value * 0.3048 * 100;
       converted_unit = 'cm';
     } else if (context.includes('inch') || context.includes('inches') || context[0] == 'in') {
+      unit = 'inches';
       converted_value = value * 0.0254 * 100;
       converted_unit = 'cm';
     } else if (context.includes('yard') || context.includes('yards') || context.includes('yd') || context.includes('yds')) {
+      unit = 'yards';
       converted_value = value * 0.9144;
       converted_unit = 'm';
     } else if (context.includes('mile') || context.includes('miles') || context.includes('mi')) {
+      unit = 'miles';
       converted_value = value * 1609.344 / 1000;
       converted_unit = 'km';
     } else if (context.includes('pound') || context.includes('pounds') || context.includes('lb') || context.includes('lbs')) {
+      unit = 'pounds';
       converted_value = value * 453.59237 / 1000;
       converted_unit = 'kg';
     } else if (context.includes('ounce') || context.includes('ounces') || context.includes('oz')) {
+      unit = 'ounces';
       converted_value = value * 28.349523125;
       converted_unit = 'g';
     } else if (context.includes('stone') || context.includes('stones') || context.includes('st')) {
+      unit = 'stones';
       converted_value = value * 6.35029318;
       converted_unit = 'kg';
     } else if (context.includes('gallon') || context.includes('gallons') || context.includes('gal') || context.includes('gals')) {
+      unit = 'gallons';
       converted_value = value * 3.785411784;
       converted_unit = 'l';
     } else if (context.includes('pint') || context.includes('pints') || context.includes('pt')) {
+      unit = 'pints';
       converted_value = value * 473.176473 / 1000;
       converted_unit = 'l';
     } else {
       continue;
     }
-    let promise = discord.respond(channel_id, event_id, 'That is ' + converted_value + ' ' + converted_unit + ' in non-retard units.');
+    let promise = discord.respond(channel_id, event_id, `${value} ${unit} are ${converted_value} ${converted_units} in metric units.`);
     promises.push(promise);
   }
   
