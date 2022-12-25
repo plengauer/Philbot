@@ -3,6 +3,7 @@ const delayed_memory = require('../../../shared/delayed_memory.js');
 const discord = require('../../../shared/discord.js');
 const datefinder = require('../../../shared/datefinder.js');
 const features = require('../../../shared/features.js');
+const subscriptions = require('../../shared/subscriptions.js');
 
 const mute_ttl = 60 * 60 * 24 * 7 * 4;
 const scheduling_distance = 1000 * 60 * 60 * 24 * 4;
@@ -11,6 +12,7 @@ async function handle() {
   return Promise.all([
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => handleGuild(guild)))),
     sendReminders(),
+    subscriptions.tick()
   ])
   .then(() => undefined)
 }

@@ -41,6 +41,7 @@ async function request_simple(options) {
   if (!options.path.startsWith('/')) throw new Error('Path must start with a "/"');
   if (options.body && typeof options.body != 'string') throw new Error('Body must be string');
   if (options.body && !options.headers['content-type']) throw new Error('Body must have content-type header');
+  if (options.headers && options.headers['authorization'] && options.secure != undefined && !options.secure) throw new Error('Authorization header requires https');
 
   if (!options.method) options.method = 'GET';
   if (!options.headers) options.headers = {};
