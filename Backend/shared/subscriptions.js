@@ -63,10 +63,11 @@ async function checkAndNotify(guild_id, channel_id) {
 }
 
 async function checkAndNotifyForConfig(guild_id, channel_id, config) {
-  let last_check_key = `subscriptions:last:guild:${guild_id}:channel:${channel_id}:external_channel:${youtube_channel_id}`;
+  console.log(guild_id + ' @ ' + channel_id + ': ' + config.youtube + ' ' + config.feed);
+  let last_check_key = `subscriptions:last:guild:${guild_id}:channel:${channel_id}:feed:${youtube_channel_id}`;
   let now = Date.now();
   let last_check = await memory.get(last_check_key, now);
-  await memory.set(last_check_key, now);
+  await memory.set(last_check_key, now, 60 * 60 * 24 * 7);
   if (config.type != 'youtube') { // for now this is the only supported type
     return;
   }
