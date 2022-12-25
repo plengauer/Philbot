@@ -90,8 +90,8 @@ async function request_redirected(options, request) {
       if (300 <= response.status && response.status < 400 && response.headers['location']) {
         let location = response.headers['location'];
         if (location.startsWith('http://') || location.startsWith('https://')) {
-          location = location.substring(location.indexOf('://') + 3);
           options.secure = location.startsWith('https://');
+          location = location.substring(location.indexOf('://') + 3);
           options.hostname = location.includes('/') ? location.substring(0, location.indexOf('/')) : location;
           options.path = location.includes('/') ? location.substring(location.indexOf('/'), location.length) : '/';
         } else if (location.startsWith('/')) {
