@@ -6,6 +6,9 @@ const request = require('request');
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 
+const SHARD_INDEX = process.env.SHARD_INDEX ? parseInt(process.env.SHARD_INDEX) : 0;
+const SHARD_COUNT = process.env.SHARD_COUNT ? parseInt(process.env.SHARD_COUNT) : 1;
+
 connect(restoreState());
 
 async function connect(prev_state = {}) {
@@ -92,7 +95,7 @@ async function sendIdentify(state) {
             browser: 'Philbot'
         },
         'large_threshold': 250,
-        'shard': [0, 1],
+        'shard': [SHARD_INDEX, SHARD_COUNT],
         'presence': {
             'activities': [{
                 'name': 'You',
@@ -191,17 +194,30 @@ async function http(event, payload, delay = undefined) {
 }
 
 function saveState(state) {
-    return fs.writeFileSync('.state.json', JSON.stringify({ session_id: state.session_id, resume_gateway_url: state.resume_gateway_url, sequence: state.sequence }));
+    return fs.writeFileSync('.state.json.' + SHARD_INDEX, JSON.stringify({ session_id: state.session_id, resume_gateway_url: state.resume_gateway_url, sequence: state.sequence }));
 }
 
 function restoreState() {
     try {
-        return JSON.parse(fs.readFileSync('.state.json'));
+        return JSON.parse(fs.readFileSync('.state.json.' + SHARD_INDEX));
     } catch {
         return {};
     }
 }
 
 function deduplicate(event, payload) {
+    if (event == 'PRESENCE_UPDATE') {
+        let last = null; // TODO
+        if (!last ||
+            payload.guild_id != last.guild_id || payload.status != last.status ||
+            !Object.keys(payload.user).every(key => payload.user[key] == last.user[key]) ||
+            !Object.keys(payload.client_status).every(key => payload.client_status[key] == last.client_status[key]) ||
+            payload.activities.length != last.activities.length
+        ) return false;
+        for (let i = 0; i < payload.activities.length; i++) {
+            if (!Object.keys(payload.activities[i]).every(key => payload.activities[i][key] == last.activities[i][key])) return false;
+        }
+        return true;
+    }
     return false;
 }
