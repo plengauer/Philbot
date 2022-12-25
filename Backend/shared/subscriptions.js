@@ -28,8 +28,8 @@ async function add(guild_id, channel_id, link) {
         .then(result => result.items)
         .catch(error => null);
       if (!items) throw new Error(`Cannot find a channel for youtube user ${link}!`);
-      if (result.items.length == 0) throw new Error(`Youtube user ${link} has no channel!`);
-      if (result.items.length > 1) throw new Error(`Youtube user ${link} has more than one channel!`);
+      if (items.length == 0) throw new Error(`Youtube user ${link} has no channel!`);
+      if (items.length > 1) throw new Error(`Youtube user ${link} has more than one channel!`);
       return add(guild_id, channel_id, `https://www.youtube.com/channel/${link}`);
     } else {
       throw new Error('Link must be to a channel!')
