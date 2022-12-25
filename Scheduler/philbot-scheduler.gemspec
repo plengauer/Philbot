@@ -5,5 +5,5 @@ Gem::Specification.new do |s|
   s.description = ""
   s.authors     = ["Philipp Lengauer"]
   s.email       = 'p.lengauer@gmail.com'
-  s.files       = ["lib/scheduler.rb"]
+  s.files       = ["Gemfile", "lib/scheduler.rb"]
 end
