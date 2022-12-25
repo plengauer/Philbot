@@ -4,7 +4,20 @@ const curl = require('./curl.js');
 const discord = require('./discord.js');
 
 async function add(guild_id, channel_id, link) {
-  let subscription = null;
+  let subscription = await link2subscription(link);
+  return memory.get(configkey(guild_id, channel_id), [])
+    .then(configs => configs.concat([ subscription ]))
+    .then(configs => memory.set(configkey(guild_id, channel_id), configs));
+}
+
+async function remove(guild_id, channel_id, link) {
+  let subscription = await link2subscription(link);
+  return memory.get(configkey(guild_id, channel_id), [])
+    .then(configs => configs.filter(config => config.type == subscription.type && config.feed == subscription.feed))
+    .then(configs => configs.length > 0 ? memory.set(configkey(guild_id, channel_id), configs) : memory.unset(configkey(guild_id, channel_id)));
+}
+
+async function link2subscription(link) {
   if (link.startsWith('https://www.youtube.com/')) {
     // https://www.youtube.com/channel/UCeB4uRJGZJBjilC8LEF0cBA
     // https://www.youtube.com/@VivaLaDirtLeague
@@ -16,7 +29,7 @@ async function add(guild_id, channel_id, link) {
       link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
       let response = await curl.request_full({ hostname: 'www.youtube.com', path: `/channel/${link}` });
       if (response.status != 200) throw new Error(`Link ${link} is invalid!`);
-      subscription.feed = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
+      return { type: 'youtube', feed: link };
     } else if (link.startsWith('@')) {
       link = link.substring('@'.length);
       link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
@@ -37,15 +50,6 @@ async function add(guild_id, channel_id, link) {
   } else {
     throw new Error('Link must be to a valid feed (like a youtube channel)!');
   }
-  return memory.get(configkey(guild_id, channel_id), [])
-    .then(configs => configs.concat([ subscription ]))
-    .then(configs => memory.set(configkey(guild_id, channel_id), configs));
-}
-
-async function remove(guild_id, channel_id, link) {
-  return memory.get(configkey(guild_id, channel_id), [])
-    .then(configs => configs.filter(config => config.link == link))
-    .then(configs => configs.length > 0 ? memory.set(configkey(guild_id, channel_id), configs) : memory.unset(configkey(guild_id, channel_id)));
 }
 
 async function tick() {
@@ -53,6 +57,7 @@ async function tick() {
 }
 
 async function checkAndNotify(guild_id, channel_id) {
+  console.log(guild_id + ' @ ' + channel_id);
   return memory.get(configkey(guild_id, channel_id), [])
     .then(configs => Promise.all(configs.map(config => checkAndNotifyForConfig(guild_id, channel_id, config))));
 }
