@@ -194,7 +194,7 @@ async function post_paged(channel_id, content, tts, referenced_message_id) {
       content: content,
       tts: tts,
       message_reference: referenced_message_id ? { message_id: referenced_message_id } : undefined,
-      flags: (content.includes('https://discord.com/') || content.match(/http:\/\//g).length + content.match(/https:\/\//g).length > 1) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0
+      flags: (content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0
     });
 }
 
