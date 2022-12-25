@@ -7,8 +7,7 @@ exit $?
 if [ $technology = "node.js" ]
 then
     package=$module
-    npm install $package &&
-    npm update &&
+    (npm update || npm install $package) &&
     export SERVICE_VERSION=$(cat node_modules/$package/package.json | jq -r .version) &&
     cd node_modules/$package &&
     npm start

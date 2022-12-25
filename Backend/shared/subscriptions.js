@@ -74,7 +74,7 @@ async function checkAndNotifyForConfig(guild_id, channel_id, config) {
   if (config.type != 'youtube') { // for now this is the only supported type
     return;
   }
-  let items = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', channelId: config.feed, order: 'date', maxResults: 50, publishedAfter: last_check.toISOString() })
+  let items = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', channelId: config.feed, order: 'date', maxResults: 50, publishedAfter: new Date(last_check).toISOString() })
     .then(result => result.items)
     .catch(error = null);
   if (!items) {
