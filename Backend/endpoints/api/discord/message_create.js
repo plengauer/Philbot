@@ -25,7 +25,9 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   
   let mentioned = false;
   let me = await discord.me();
-  if (message.startsWith(`@${me.username}`)) {
+  if (me.id == user_id) {
+    return; // avoid cycles
+  } else if (message.startsWith(`@${me.username}`)) {
     mentioned = true;
     message = message.substring(1 + me.username.length).trim();
   } else if (message.startsWith(`<@${me.id}>`) || message.startsWith(`<@!${me.id}>`)) {
