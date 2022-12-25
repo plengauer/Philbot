@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Backend/
+        working-directory: ./Scheduler/
     permissions:
       contents: read
       packages: write
