@@ -2,12 +2,14 @@ name: Publish Scheduler
 
 on:
   push:
-    branches: "main"
+    branches: main
 
 jobs:
-  build:
-    name: Build + Publish
+  publish-gem:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Backend/
     permissions:
       contents: read
       packages: write

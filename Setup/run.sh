@@ -19,7 +19,7 @@ then
     mkdir -p gems &&
     gem install --install-dir=gems $gem &&
     export SERVICE_VERSION= &&
-    ruby gems/gems/$gem-*/*.rb
+    ruby gems/gems/$gem-*/lib/*.rb
 else
     exit 1
 fi
