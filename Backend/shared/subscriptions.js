@@ -51,4 +51,4 @@ function configkey(guild_id, channel_id) {
   return `subscriptions:config:guild:${guild_id}:channel:${channel_id}`;
 }
 
-module.exports = { add, tick }
+module.exports = { add, remove, tick }
