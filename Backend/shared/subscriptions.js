@@ -16,12 +16,12 @@ async function add(guild_id, channel_id, link) {
       let response = await curl.request_full({ hostname: 'www.youtube.com', path: `/channel/${link}` });
       if (response.status != 200) throw new Error(`Link ${link} is invalid!`);
       subscription.feed = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
-    } else if (link.startsWith('https://www.youtube.com/@')) {
-      link = link.substring('https://www.youtube.com/@'.length);
+    } else if (link.startsWith('@')) {
+      link = link.substring('@'.length);
       link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
       return add(guild_id, channel_id, `https://www.youtube.com/user/${link}`);
-    } else if (link.startsWith('https://www.youtube.com/user/')) {
-      link = link.substring('https://www.youtube.com/user/'.length);
+    } else if (link.startsWith('user/')) {
+      link = link.substring('user/'.length);
       link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
       let items = await HTTP_YOUTUBE('/channels', { forUsername: link })
         .then(result => result.items)
@@ -30,12 +30,14 @@ async function add(guild_id, channel_id, link) {
       if (result.items.length == 0) throw new Error(`Youtube user ${link} has no channel!`);
       if (result.items.length > 1) throw new Error(`Youtube user ${link} has more than one channel!`);
       return add(guild_id, channel_id, `https://www.youtube.com/channel/${link}`);
+    } else {
+      throw new Error('Link must be to a channel!')
     }
   } else {
     throw new Error('Link must be to a valid feed (like a youtube channel)!');
   }
   return memory.get(configkey(guild_id, channel_id), [])
-    .then(configs => configs.concat([{ type: 'youtube', feed: link }]))
+    .then(configs => configs.concat([ subscription ]))
     .then(configs => memory.set(configkey(guild_id, channel_id), configs));
 }
 
