@@ -1,3 +1,4 @@
+const process = require('process');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
 const discord = require('./discord.js');
@@ -81,7 +82,7 @@ async function checkAndNotifyForConfig(guild_id, channel_id, config) {
 async function HTTP_YOUTUBE(endpoint, parameters) {
   return curl.request({
       hostname: 'www.googleapis.com',
-      path: `/youtube/v3${endpoint}?key=${process.env.YOUTUBE_API_KEY}&` + Object.keys(parameters).map(key => `${key}=` + encodeURIComponent(parameters[key])).join('&'),
+      path: `/youtube/v3${endpoint}?key=${process.env.YOUTUBE_API_TOKEN}&` + Object.keys(parameters).map(key => `${key}=` + encodeURIComponent(parameters[key])).join('&'),
     });
 }
 
