@@ -1,5 +1,0 @@
-*) better deduplication of events in terms of hints
-
-*) deploy to EC 2 with public domain
-*) deduplicate events, presence_update for example
-*) re-implement voice player
