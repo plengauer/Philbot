@@ -32,7 +32,7 @@ async function revoke_invite_permissions(guild) {
     .then(roles => roles.filter(role => permissions.decompile(role.permissions).includes('CREATE_INVITE')).map(role => discord.guild_role_modify(
         guild.id, role.id, role.name,
         permissions.compile(permissions.decompile(role.permissions).filter(permission => permission != 'CREATE_INVITE')),
-        role.hoist, role.mentionable)).then(() => role).catch(e => null)
+        role.hoist, role.mentionable).then(() => role).catch(e => null))
       )
     .then(promises => Promise.all(promises))
     .then(roles => roles.filter(role => !!role));
