@@ -53,17 +53,20 @@ async function link2subscription(link) {
 }
 
 async function tick() {
-  return discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => discord.guild_channels_list(guild.id).then(channel => checkAndNotify(guild.id, channel.id)))));
+  return discord.guilds_list()
+    .then(guilds => Promise.all(guilds.map(guild =>
+      discord.guild_channels_list(guild.id).then(channels =>
+        Promise.all(channels.map(channel => checkAndNotify(guild.id, channel.id)))))
+      )
+    );
 }
 
 async function checkAndNotify(guild_id, channel_id) {
-  console.log(guild_id + ' @ ' + channel_id);
   return memory.get(configkey(guild_id, channel_id), [])
     .then(configs => Promise.all(configs.map(config => checkAndNotifyForConfig(guild_id, channel_id, config))));
 }
 
 async function checkAndNotifyForConfig(guild_id, channel_id, config) {
-  console.log(guild_id + ' @ ' + channel_id + ': ' + config.youtube + ' ' + config.feed);
   let last_check_key = `subscriptions:last:guild:${guild_id}:channel:${channel_id}:feed:${youtube_channel_id}`;
   let now = Date.now();
   let last_check = await memory.get(last_check_key, now);
