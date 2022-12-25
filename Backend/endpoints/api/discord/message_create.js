@@ -14,7 +14,7 @@ const identity = require('../../../shared/identity.js');
 const features = require('../../../shared/features.js');
 const permissions = require('../../../shared/permissions.js');
 const raid_protection = require('../../../shared/raid_protection.js');
-const subscriptions = reqire('../../../shared/subscriptions.js');
+const subscriptions = require('../../../shared/subscriptions.js');
 
 async function handle(payload) {
   return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)

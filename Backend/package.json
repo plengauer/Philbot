@@ -1,6 +1,6 @@
 {
   "name": "philbot-backend",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "philbot-opentelemetry": "^1.0.1",
