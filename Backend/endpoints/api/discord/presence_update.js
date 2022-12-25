@@ -86,10 +86,6 @@ async function sendHint(guild_id, user_id, activity) {
   if (!hint) {
     return Promise.resolve();
   }
-
-  // when a user is in two guilds, they race to send hints, hints are sent twice
-  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-  await delay(Math.floor(Math.random() * 20 * 1000));
   
   let custom_auto_mute_appendix = hint.ttl_key ? `:key:${hint.ttl_key}` : '';
   
