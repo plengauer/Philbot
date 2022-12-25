@@ -1,0 +1,23 @@
+name: Publish Backend
+
+on:
+  push:
+    branches:  main
+
+jobs:
+  publish-npm:
+    if: github.repository == 'octo-org/octo-repo-prod'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Backend/
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 19
+          registry-url: https://registry.npmjs.org/
+      - run: npm publish
+        continue-on-error: true
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
