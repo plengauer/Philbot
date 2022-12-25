@@ -33,7 +33,7 @@ async function link2subscription(link) {
     } else if (link.startsWith('@')) {
       link = link.substring('@'.length);
       link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
-      return add(guild_id, channel_id, `https://www.youtube.com/user/${link}`);
+      return link2subscription(`https://www.youtube.com/user/${link}`);
     } else if (link.startsWith('user/')) {
       link = link.substring('user/'.length);
       link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
@@ -43,7 +43,7 @@ async function link2subscription(link) {
       if (!items) throw new Error(`Cannot find a channel for youtube user ${link}!`);
       if (items.length == 0) throw new Error(`Youtube user ${link} has no channel!`);
       if (items.length > 1) throw new Error(`Youtube user ${link} has more than one channel!`);
-      return add(guild_id, channel_id, `https://www.youtube.com/channel/${items[0].id}`);
+      return link2subscription(`https://www.youtube.com/channel/${items[0].id}`);
     } else {
       throw new Error('Link must be to a channel!')
     }
