@@ -3,9 +3,39 @@ const curl = require('./curl.js');
 const discord = require('./discord.js');
 
 async function add(guild_id, channel_id, link) {
-  if (link.startsWith('https://www.youtube.com/channel/')) throw new Error(`${link} must be a valid link to a youtube channel.`);
+  let subscription = null;
+  if (link.startsWith('https://www.youtube.com/')) {
+    // https://www.youtube.com/channel/UCeB4uRJGZJBjilC8LEF0cBA
+    // https://www.youtube.com/@VivaLaDirtLeague
+    // https://www.youtube.com/user/VivaLaDirtLeague
+    link = link.substring('https://www.youtube.com/'.length);
+    subscription = { type: 'youtube' };
+    if (link.startsWith('channel/')) {
+      link = link.substring('channel/'.length);
+      link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
+      let response = await curl.request_full({ hostname: 'www.youtube.com', path: `/channel/${link}` });
+      if (response.status != 200) throw new Error(`Link ${link} is invalid!`);
+      subscription.feed = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
+    } else if (link.startsWith('https://www.youtube.com/@')) {
+      link = link.substring('https://www.youtube.com/@'.length);
+      link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
+      return add(guild_id, channel_id, `https://www.youtube.com/user/${link}`);
+    } else if (link.startsWith('https://www.youtube.com/user/')) {
+      link = link.substring('https://www.youtube.com/user/'.length);
+      link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
+      let items = await HTTP_YOUTUBE('/channels', { forUsername: link })
+        .then(result => result.items)
+        .catch(error => null);
+      if (!items) throw new Error(`Cannot find a channel for youtube user ${link}!`);
+      if (result.items.length == 0) throw new Error(`Youtube user ${link} has no channel!`);
+      if (result.items.length > 1) throw new Error(`Youtube user ${link} has more than one channel!`);
+      return add(guild_id, channel_id, `https://www.youtube.com/channel/${link}`);
+    }
+  } else {
+    throw new Error('Link must be to a valid feed (like a youtube channel)!');
+  }
   return memory.get(configkey(guild_id, channel_id), [])
-    .then(configs => configs.concat([{ type: 'youtube', link: link }]))
+    .then(configs => configs.concat([{ type: 'youtube', feed: link }]))
     .then(configs => memory.set(configkey(guild_id, channel_id), configs));
 }
 
@@ -25,26 +55,32 @@ async function checkAndNotify(guild_id, channel_id) {
 }
 
 async function checkAndNotifyForConfig(guild_id, channel_id, config) {
-  let youtube_channel_id = config.link.substring(config.link.lastIndexOf('/') + 1);
   let last_check_key = `subscriptions:last:guild:${guild_id}:channel:${channel_id}:external_channel:${youtube_channel_id}`;
   let now = Date.now();
   let last_check = await memory.get(last_check_key, now);
   await memory.set(last_check_key, now);
-  let result = await curl.request({
-      hostname: 'www.googleapis.com',
-      path: `/youtube/v3/search?key=${process.env.YOUTUBE_API_KEY}&part=snippet&type=video&channelId=${youtube_channel_id}&order=date&maxResults=50&publishedAfter=` + encodeURIComponent(last_check.toISOString()),
-    })
+  if (config.type != 'youtube') { // for now this is the only supported type
+    return;
+  }
+  let items = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', channelId: config.feed, order: 'date', maxResults: 50, publishedAfter: last_check.toISOString() })
     .then(result => result.items)
     .catch(error = null);
-  if (!result) {
+  if (!items) {
     return discord.post(channel_id, `Subscription for ${config.link} is broken!`);
-  } else if (result.length == 0) {
+  } else if (items.length == 0) {
     return;
-  } else if (result.length == 1) {
+  } else if (items.length == 1) {
     return discord.post(channel_id, `${items[0].channelTitle} has published **${items[0].snippet.title}**: https://www.youtube.com/watch?v=${items[0].id.videoId}.`);
   } else {
     return discord.post(channel_id, `${items[0].channelTitle} has published ${items.length} new videos: ` + items.map(item => `https://www.youtube.com/watch?v=${item.id.videoId}`).join(', ') + '.');
   }
+}
+
+async function HTTP_YOUTUBE(endpoint, parameters) {
+  return curl.request({
+      hostname: 'www.googleapis.com',
+      path: `/youtube/v3${endpoint}?key=${process.env.YOUTUBE_API_KEY}&` + Object.keys(parameters).map(key => `${key}=` + encodeURIComponent(parameters[key])).join('&'),
+    });
 }
 
 function configkey(guild_id, channel_id) {
