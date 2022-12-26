@@ -82,9 +82,9 @@ async function checkAndNotifyForConfig(guild_id, channel_id, config) {
   } else if (items.length == 0) {
     return;
   } else if (items.length == 1) {
-    return discord.post(channel_id, `${items[0].channelTitle} has published **${items[0].snippet.title}**: https://www.youtube.com/watch?v=${items[0].id.videoId}.`);
+    return discord.post(channel_id, `${items[0].snippet.channelTitle} has published **${items[0].snippet.title}**: https://www.youtube.com/watch?v=${items[0].id.videoId}.`);
   } else {
-    return discord.post(channel_id, `${items[0].channelTitle} has published ${items.length} new videos: ` + items.map(item => `https://www.youtube.com/watch?v=${item.id.videoId}`).join(', ') + '.');
+    return discord.post(channel_id, `${items[0].snippet.channelTitle} has published ${items.length} new videos: ` + items.map(item => `https://www.youtube.com/watch?v=${item.id.videoId}`).join(', ') + '.');
   }
 }
 
