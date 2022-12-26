@@ -28,7 +28,7 @@ async function link2subscription(link) {
       link = link.substring('channel/'.length);
       link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
       let response = await curl.request_full({ hostname: 'www.youtube.com', path: `/channel/${link}` });
-      if (response.status != 200) throw new Error(`Link ${link} is invalid!`);
+      if (response.status != 200) throw new Error(`Channel ${link} does not exist!`);
       return { type: 'youtube', feed: link };
     } else if (link.startsWith('@')) {
       link = link.substring('@'.length);
