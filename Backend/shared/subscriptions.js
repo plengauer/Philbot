@@ -13,7 +13,7 @@ async function add(guild_id, channel_id, link) {
 async function remove(guild_id, channel_id, link) {
   let subscription = await link2subscription(link);
   return memory.get(configkey(guild_id, channel_id), [])
-    .then(configs => configs.filter(config => config.type == subscription.type && config.feed == subscription.feed))
+    .then(configs => configs.filter(config => config.type != subscription.type || config.feed != subscription.feed))
     .then(configs => configs.length > 0 ? memory.set(configkey(guild_id, channel_id), configs) : memory.unset(configkey(guild_id, channel_id)));
 }
 
