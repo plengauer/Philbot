@@ -17,6 +17,7 @@ const endpoint_scheduler_daily = require('./endpoints/api/scheduler/daily.js');
 const endpoint_scheduler_hourly = require('./endpoints/api/scheduler/hourly.js');
 const endpoint_discord_guild_create = require('./endpoints/api/discord/guild_create.js');
 const endpoint_discord_guild_member_add = require('./endpoints/api/discord/guild_member_add.js');
+const endpoint_discord_guild_scheduled_event_create = require('./endpoints/api/discord/guild_scheduled_event_create.js');
 const endpoint_discord_message_create = require('./endpoints/api/discord/message_create.js');
 const endpoint_discord_presence_update = require('./endpoints/api/discord/presence_update.js');
 const endpoint_discord_voice_state_update = require('./endpoints/api/discord/voice_state_update.js');
@@ -157,6 +158,7 @@ async function dispatchAPI(path, payload) {
         case '/scheduler/hourly': return endpoint_scheduler_hourly.handle();
         case '/discord/guild_create': return endpoint_discord_guild_create.handle(payload);
         case '/discord/guild_member_add': return endpoint_discord_guild_member_add.handle(payload);
+        case '/discord/guild_scheduled_event_create': return endpoint_discord_guild_scheduled_event_create.handle(payload);
         case '/discord/message_create': return endpoint_discord_message_create.handle(payload);
         case '/discord/presence_update': return endpoint_discord_presence_update.handle(payload);
         case '/discord/voice_state_update': return endpoint_discord_voice_state_update.handle(payload);
