@@ -28,7 +28,7 @@ let revisions_done = [];
 let operations = [];
 
 let server = http.createServer((request, response) => handleSafely(request, response));
-server.on('error', error => console.error(error));
+server.on('error', error => { console.error(error); shutdown(); });
 server.on('close', () => shutdown())
 server.listen(process.env.PORT ?? 80);
 setInterval(checkTimeout, 1000 * 60);
@@ -63,15 +63,15 @@ function handle(request, response) {
     request.on('end', () => {
         let payload = null;
         if (request.method == 'POST' && buffer.length > 0) {
-	    try {
-	        payload = JSON.parse(buffer);
-	    } catch {
+            try {
+                payload = JSON.parse(buffer);
+            } catch {
                 response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
                 response.end();
                 return;
-	    }
+            }
         }
-    	dispatchAnyWithTimeout(url.parse(request.url).pathname, payload, response);
+    	dispatchAnyWithTimeout(url.parse(request.url).pathname, payload, response).catch(error => console.error(`HTTP SERVER dispatching ${request.url} failed: ` + error.stack));
     });
 }
 
@@ -96,11 +96,17 @@ async function dispatchAnyWithTimeout(path, payload, response) {
 
 async function dispatchAny(path, payload, response) {
     if (path.includes('..')) {
-        return { status: 403, body: 'Forbidden' };
+        response.writeHead(403, 'Forbidden');
+        response.end();
+        return;
     } else if (path == '/') {
-        return { status: 301, body: 'Moved Permanently', headers: { location: '/index.html' }};
+        response.writeHead(301, 'Moved Permanently', { location: '/index.html' });
+        response.end();
+        return;
     } else if (path.endsWith('/')) {
-        return { status: 301, body: 'Moved Permanently', headers: { location: path.substring(0, path.length - 1) } };
+        response.writeHead(301, 'Moved Permanently', { location: path.substring(0, path.length - 1) });
+        response.end();
+        return;
     } else if (fs.existsSync('./endpoints/www/' + path)) {
         path = './endpoints/www/' + path;
         let contentType;
