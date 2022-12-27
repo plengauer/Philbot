@@ -275,7 +275,7 @@ function remember(options, response) {
   if (cachesize() + response.body.length > CACHE_SIZE && to_evict.map(k => cache[k].value.length).reduce((l1, l2) => l1 + l2, 0) < response.body.length) return;
   // as long as cache is too big, throw away the one with lowest hits
   while (cachesize() + response.body.length > CACHE_SIZE) {
-    let keys = Object.keys(cache).filter(k => to_evict.includes(k));
+    let keys = to_evict.filter(k => cache[k].value);
     if (keys.length == 0) throw new Error('Here be dragons!');
     let lowest = 0;
     for (let i = 1; i < keys.length; i++) {
