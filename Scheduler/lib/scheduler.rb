@@ -3,6 +3,8 @@ require 'opentelemetry/exporter/otlp'
 require 'uri'
 require 'net/http'
 
+$stdout.sync = true
+
 OpenTelemetry::SDK.configure do |c|
   c.service_name = ENV['SERVICE_NAME']
   c.service_version = ENV['SERVICE_VERSION']
@@ -24,8 +26,6 @@ OpenTelemetry::SDK.configure do |c|
     )
   )
 end
-
-$stdout.sync = true
 
 def get_sleep_time(interval)
     time = Time.new
