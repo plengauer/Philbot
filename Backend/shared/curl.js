@@ -28,10 +28,11 @@ async function request(options) {
 }
 
 async function request_full(options) {
-  let stage_3 = options => request_simple(options);
-  let stage_2 = options => request_failed(options, stage_3);
-  let stage_1 = options => request_rate_limited(options, stage_2);
-  let stage_0 = options => request_redirected(options, stage_1);
+  let stage_4 = options => request_simple(options);
+  let stage_3 = options => request_failed(options, stage_4);
+  let stage_2 = options => request_rate_limited(options, stage_3);
+  let stage_1 = options => request_redirected(options, stage_2);
+  let stage_0 = options => request_cached(options, stage_1)
   return stage_0(options);
 }
 
@@ -234,6 +235,63 @@ function create_rate_limit(max, length, count, fake = false) {
     count: count,
     fake: fake
   } 
+}
+
+async function request_cached(options, request) {
+  // this implementation has two potential problems
+  // *) due to the different caching durations, the eviction algorithm will prefer requests with high durations, even if lower duration requests occur more often (simply because they have more time racking up hits)
+  // *) cache size is 10Mb, is that acceptible? we may wanna move to a filesystem based cache at some point (memory.js?)
+  if (options.cache) {
+    let cached = lookup(options);
+    if (cached) return cached;
+  }
+  let response = await request(options)
+  if (options.cache) remember(options, response);
+  return response;
+}
+
+const CACHE_SIZE = 1024 * 1024 * 10;
+var cache = {};
+
+function lookup(options) {
+  // evict all timed out entries
+  for (let k of Object.keys(cache).filter(k => cache[k].timestamp + options.cache * 1000 < Date.now())) cache[k] = undefined;
+  // lookup
+  let entry = cache[cachekey(options)];
+  if (!entry) return null;
+  entry.hits++;
+  return entry.value;
+}
+
+function remember(options, response) {
+  // is the current response eligable to be cached?
+  if (!response.body || response.body.length > CACHE_SIZE) return;
+  // make entry
+  let key = cachekey(options);
+  cache[key] = cache[key] ?? { value: null, hits: 0, timestamp: Date.now() };
+  // find entries that this new one would supercede and see if it would be enough to store the new entry
+  let to_evict = Object.keys(cache).filter(k => cache[k].value).filter(k => cache[k].hits < cache[key].hits); 
+  if (cachesize() + response.body.length > CACHE_SIZE && to_evict.map(k => cache[k].value.length).reduce((l1, l2) => l1 + l2, 0) < response.body.length) return;
+  // as long as cache is too big, throw away the one with lowest hits
+  while (cachesize() + response.body.length > CACHE_SIZE) {
+    let keys = Object.keys(cache).filter(k => to_evict.includes(k));
+    if (keys.length == 0) throw new Error('Here be dragons!');
+    let lowest = 0;
+    for (let i = 1; i < keys.length; i++) {
+      lowest = cache[keys[i]].hits < cache[keys[lowest]].hits ? i : lowest;
+    }
+    cache[keys[lowest]].value = undefined;
+  }
+  // cache!
+  cache[key].value = response;
+}
+
+function cachesize() {
+  return Object.keys(cache).map(key => cache[key]).filter(entry => entry.value).map(entry => entry.value.body.length).reduce((s1, s2) => s1 + s2, 0);
+}
+
+function cachekey(options) {
+  return `${options.hostname}${options.path}`; // TODO include headers? or payload?
 }
 
 module.exports = { request, request_full, request_simple }

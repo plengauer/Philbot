@@ -137,7 +137,7 @@ async function handleHeartbeatACK(state) {
 }
 
 async function sendHeartbeatLater(state) {
-    return setTimeout(() => sendHeartbeat(state), state.heartbeat_interval * Math.random());
+    return setTimeout(() => sendHeartbeat(state), state.heartbeat_interval);
 }
 
 async function sendHeartbeat(state) {
