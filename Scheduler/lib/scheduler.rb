@@ -1,29 +1,29 @@
-# require 'opentelemetry/sdk'
-# require 'opentelemetry/exporter/otlp'
+require 'opentelemetry/sdk'
+require 'opentelemetry/exporter/otlp'
 require 'uri'
 require 'net/http'
 
-# OpenTelemetry::SDK.configure do |c|
-#   c.service_name = ENV['SERVICE_NAME']
-#   c.service_version = ENV['SERVICE_VERSION']
-#   c.use_all
-#   for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties", "/var/lib/dynatrace/enrichment/dt_metadata.properties"] do
-#     begin
-#       c.resource = OpenTelemetry::SDK::Resources::Resource.create(Hash[*File.read(name.start_with?("/var") ? name : File.read(name)).split(/[=\n]+/)])
-#     rescue
-#     end
-#   end
-#   c.add_span_processor(
-#     OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
-#       OpenTelemetry::Exporter::OTLP::Exporter.new(
-#         endpoint: ENV['OPENTELEMETRY_TRACES_API_ENDPOINT'],
-#         headers: {
-#           "Authorization": "Api-Token " + ENV['OPENTELEMETRY_TRACES_API_TOKEN']
-#         }
-#       )
-#     )
-#   )
-# end
+OpenTelemetry::SDK.configure do |c|
+  c.service_name = ENV['SERVICE_NAME']
+  c.service_version = ENV['SERVICE_VERSION']
+  c.use_all
+  for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties", "/var/lib/dynatrace/enrichment/dt_metadata.properties"] do
+    begin
+      c.resource = OpenTelemetry::SDK::Resources::Resource.create(Hash[*File.read(name.start_with?("/var") ? name : File.read(name)).split(/[=\n]+/)])
+    rescue
+    end
+  end
+  c.add_span_processor(
+    OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
+      OpenTelemetry::Exporter::OTLP::Exporter.new(
+        endpoint: ENV['OPENTELEMETRY_TRACES_API_ENDPOINT'],
+        headers: {
+          "Authorization": "Api-Token " + ENV['OPENTELEMETRY_TRACES_API_TOKEN']
+        }
+      )
+    )
+  )
+end
 
 $stdout.sync = true
 
