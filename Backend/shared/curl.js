@@ -255,7 +255,7 @@ var cache = {};
 
 function lookup(options) {
   // evict all timed out entries
-  for (let k of Object.keys(cache).filter(k => cache[k].timestamp + options.cache * 1000 < Date.now())) cache[k] = undefined;
+  for (let k of Object.keys(cache).filter(k => cache[k].timestamp + options.cache * 1000 < Date.now())) delete cache[k];
   // lookup
   let entry = cache[cachekey(options)];
   if (!entry) return null;
