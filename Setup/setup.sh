@@ -3,7 +3,7 @@ sudo systemctl stop philbot_discordgateway2http
 sudo systemctl stop philbot_scheduler
 
 curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&
-sudo apt-get -y install nodejs ruby iptables-persistent &&
+sudo apt-get -y install nodejs ruby ruby-bundler iptables-persistent &&
 
 mkdir -p memory &&
 mkdir -p backend &&
