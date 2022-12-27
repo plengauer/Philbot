@@ -243,6 +243,7 @@ async function request_cached(options, request) {
   // *) cache size is 10Mb, is that acceptible? we may wanna move to a filesystem based cache at some point (memory.js?)
   if (options.cache) {
     let cached = lookup(options);
+    if (cached) console.log(`HTTP cache hit (${options.hostname}${options.path})`);
     if (cached) return cached;
   }
   let response = await request(options)
