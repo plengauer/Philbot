@@ -55,7 +55,7 @@ File.open(ENV["CONFIG_FILE"]).readlines.map(&:chomp).each do |line|
     threads << Thread.new {    
         while true
             sleep(get_sleep_time(interval))
-            puts url
+            puts 'HTTP GET ' + url
             begin
                 Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json' })
             rescue
