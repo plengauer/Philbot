@@ -251,7 +251,7 @@ async function request_cached(options, request) {
   return response;
 }
 
-const CACHE_SIZE = 1024 * 1024 * 10;
+const CACHE_SIZE = process.env.HTTP_CACHE_SIZE ? parseInt(process.env.HTTP_CACHE_SIZE) : (1024 * 1024 * 10);
 var cache = {};
 
 function lookup(options) {
