@@ -241,13 +241,19 @@ async function request_cached(options, request) {
   // this implementation has two potential problems
   // *) due to the different caching durations, the eviction algorithm will prefer requests with high durations, even if lower duration requests occur more often (simply because they have more time racking up hits)
   // *) cache size is 10Mb, is that acceptible? we may wanna move to a filesystem based cache at some point (memory.js?)
+  if (options.cache && !options.method) throw new Error('Caching needs HTTP method explicitly set!');
+  if (options.cache && options.method == 'GET' && method.body) throw new Error('Cannot cache GET requests with body!'); // https://stackoverflow.com/questions/978061/http-get-with-request-body
   if (options.cache) {
-    let cached = lookup(options);
-    if (cached) console.log(`HTTP cache hit (${options.hostname}${options.path})`);
-    if (cached) return cached;
+    if (options.method == 'GET') {
+      let cached = lookup(options);
+      if (cached) console.log(`HTTP cache hit (${options.hostname}${options.path}) (count = ` + cachecount() + ', size = ' + cachesize() + 'B)');
+      if (cached) return cached;    
+    } else {
+      invalidate(options);
+    }
   }
   let response = await request(options)
-  if (options.cache) remember(options, response);
+  if (options.cache && options.method == 'GET') remember(options, response);
   return response;
 }
 
@@ -287,12 +293,24 @@ function remember(options, response) {
   cache[key].value = response;
 }
 
+function invalidate(options) {
+  let key = cachekey(options);
+  for (let t = 1; t < key.length; t++) {
+    let higher = key.substring(0, t);
+    if(cache[higher]) cache[higher].value = undefined;
+  }
+}
+
+function cachecount() {
+  return Object.keys(cache).length;
+}
+
 function cachesize() {
   return Object.keys(cache).map(key => cache[key]).filter(entry => entry.value).map(entry => entry.value.body.length).reduce((s1, s2) => s1 + s2, 0);
 }
 
 function cachekey(options) {
-  return `${options.hostname}${options.path}`; // TODO include headers? or payload?
+  return `${options.hostname}${options.path}`;
 }
 
 module.exports = { request, request_full, request_simple }
