@@ -838,7 +838,7 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'activate a feature');
     let feature = message.split(' ').slice(1).join(' ');
     if (!features.list().includes(feature)) return reactNotOK(channel_id, event_id);
-    let needed_permissions = await Promise.all(permissions.required(feature).map(permission => discord.guild_member_has_permission(guild_id, me.id, permission).then(has => has ? null : permission))).then(names => names.filter(name => !!name));
+    let needed_permissions = await Promise.all(permissions.required([ feature ]).map(permission => discord.guild_member_has_permission(guild_id, me.id, permission).then(has => has ? null : permission))).then(names => names.filter(name => !!name));
     if (needed_permissions.length > 0) {
       return discord.respond(channel_id, event_id, `Before I can activate ${feature}, pls grant me the following permissions (via Server Settings -> Roles -> ${me.username} -> Permissions): ` + needed_permissions.map(name => `**${name}**`).join(', ') + '.');
     }
