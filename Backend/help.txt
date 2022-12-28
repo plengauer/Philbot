@@ -33,5 +33,8 @@ Sometimes groups of people assemble to join a server all at the same time to the
 **Subscriptions**
 Watching and sharing youtube videos is fun. If you want a discord channel to be notified when a youtube channel posts a new video, use '${name} subscribe to https://www.youtube.com/channel/UCchBatdUMZoMfJ3rIzgV84g' in that channel. To unsubscribe, use '${name} unsubscribe from https://www.youtube.com/channel/UCchBatdUMZoMfJ3rIzgV84g' in the same discord channel.
 
+**Role Management**
+Sometimes managing roles is a tedious task. You can tell me what roles to automatically assign based on emoji reactions to a message. Use '${name} auto-set role :thumbsup: @Member' as reply to any message and I will assign the 'Member' role to everybody who reacts to the original message with a thumbs up. You may delete the command afterwards if you dont want it to clutter the channel.
+
 **About Myself**
 I have an AI-powered personality and I consider myself a prankster, just start a conversation with me and you will see. ${about_instruction} to learn more about me and how to add me to your own server.

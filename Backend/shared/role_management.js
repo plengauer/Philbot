@@ -13,7 +13,7 @@ async function on_reaction_add(guild_id, channel_id, message_id, user_id, emoji)
         if (config.emoji != emoji) continue;
         let member = await discord.guild_member_retrieve(guild_id, user_id);
         if (member.roles.includes(config.role_id)) continue;
-        await discord.guild_member_role_assign(guild_id, user_id, config.role_id);
+        await discord.guild_member_role_assign(guild_id, member.user.id, config.role_id);
     }
 }
 
@@ -23,12 +23,16 @@ async function on_reaction_remove(guild_id, channel_id, message_id, user_id, emo
         if (config.emoji != emoji) continue;
         let member = await discord.guild_member_retrieve(guild_id, user_id);
         if (!member.roles.includes(config.role_id)) continue;
-        await discord.guild_member_role_unassign(guild_id, user_id, config.role_id);
+        await discord.guild_member_role_unassign(guild_id, member.user.id, config.role_id);
     }
+}
+
+async function clean() {
+    // clean all configs where either the message or the roles do not exist anymore
 }
 
 function memorykey(guild_id, channel_id, message_id) {
     return `role_management:config:guild:${guild_id}:channel:${channel_id}:message:${message_id}`;
 }
 
-module.exports = { configure, on_reaction_add, on_reaction_remove }
+module.exports = { configure, on_reaction_add, on_reaction_remove, clean }

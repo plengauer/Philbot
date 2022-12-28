@@ -52,7 +52,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   
   return Promise.all([
       handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
-      mentioned ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
+      mentioned ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
       guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_created(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
     ]);
 }
@@ -264,14 +264,14 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   return Promise.all(promises);
 }
 
-async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me) {
+async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me) {
   return Promise.all([
-    handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, me),
+    handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me),
     handleDelayedCommand(channel_id, event_id, user_id, message)
   ]);
 }
 
-async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, me) {
+async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me) {
   if (message.length == 0) {
     return Promise.resolve();
     
@@ -889,13 +889,14 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
+    if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
     let tokens = message.split(' ').slice(2);
     let emoji = tokens[0];
     let role = tokens.slice(1).join(' ');
     let guild = await discord.guild_retrieve(guild_id);
     if (role.startsWith('<@&') && role.endsWith('>')) {
-      role = role.substring(3, -1);
-      if (!guild.roles.some(role => role.id == role)) return discord.respond(channel_id, event_id, 'Role does not exist!');
+      role = role.substring(3, role.length - 1);
+      if (!guild.roles.some(r => r.id == role)) return discord.respond(channel_id, event_id, 'Role does not exist!');
     } else {
       role = guild.roles.filter(role => role.name == role).map(role => role.id).find(id => true);
       if (!role) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + tokens.slice(1).join(' ') + '!');
