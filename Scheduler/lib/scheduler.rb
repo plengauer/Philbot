@@ -62,13 +62,13 @@ File.open(ENV["CONFIG_FILE"]).readlines.map(&:chomp).each do |line|
               puts 'HTTP GET ' + url
               begin
                 Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json' })
+              end
               rescue
               end
             end
             ensure
               span&.finish
             end
-            
         end
     }
 end
