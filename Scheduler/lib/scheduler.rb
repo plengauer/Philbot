@@ -27,6 +27,8 @@ OpenTelemetry::SDK.configure do |c|
   )
 end
 
+tracer = OpenTelemetry.tracer_provider.tracer('scheduler', '1.0')
+
 def get_sleep_time(interval)
     time = Time.new
     sleep_time = 60 - time.sec
@@ -55,11 +57,18 @@ File.open(ENV["CONFIG_FILE"]).readlines.map(&:chomp).each do |line|
     threads << Thread.new {    
         while true
             sleep(get_sleep_time(interval))
-            puts 'HTTP GET ' + url
-            begin
+            span = tracer.start_span('Scheduler ' + interval)
+            OpenTelemetry::Trace.with_span(span, kind: :consumer) do |span, context|
+              puts 'HTTP GET ' + url
+              begin
                 Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json' })
-            rescue
+              rescue
+              end
             end
+            ensure
+              span&.finish
+            end
+            
         end
     }
 end
