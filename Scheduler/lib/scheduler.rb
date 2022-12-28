@@ -57,7 +57,7 @@ File.open(ENV["CONFIG_FILE"]).readlines.map(&:chomp).each do |line|
     threads << Thread.new {    
         while true
             sleep(get_sleep_time(interval))
-            OpenTelemetry::Trace.in_span('Scheduler ' + interval, kind: :consumer) do |span, context|
+            tracer.in_span('Scheduler ' + interval, kind: :consumer) do |span, context|
                 puts 'HTTP GET ' + url
                 begin
                     Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json' })
