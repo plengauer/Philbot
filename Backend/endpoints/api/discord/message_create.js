@@ -15,6 +15,7 @@ const features = require('../../../shared/features.js');
 const permissions = require('../../../shared/permissions.js');
 const raid_protection = require('../../../shared/raid_protection.js');
 const subscriptions = require('../../../shared/subscriptions.js');
+const role_management = require('../../../shared/role_management.js');
 
 async function handle(payload) {
   return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
@@ -865,8 +866,8 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     return raid_protection.all_clear(guild_id).then(() => reactOK(channel_id, event_id));
 
   } else if (message.startsWith('subscribe to ')) {
-    guild_id = guild_id ?? await resolveGuildID(user_id);
     let link = message.split(' ').slice(2).join(' ').trim();
+    guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!link) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'add subscription');
@@ -875,14 +876,31 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       .catch(error => discord.respond(channel_id, event_id, error.message));
 
   } else if (message.startsWith('unsubscribe from ')) {
-    guild_id = guild_id ?? await resolveGuildID(user_id);
     let link = message.split(' ').slice(2).join(' ').trim();
+    guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!link) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'remove subscription');
     return subscriptions.remove(guild_id, channel_id, link)
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
+  
+  } else if (message.startsWith('auto-set role ')) {
+    guild_id = guild_id ?? await resolveGuildID(user_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
+    let tokens = message.split(' ').slice(2);
+    let emoji = tokens[0];
+    let role = tokens.slice(1).join(' ');
+    let guild = await discord.guild_retrieve(guild_id);
+    if (role.startsWith('<@&') && role.endsWith('>')) {
+      role = role.substring(3, -1);
+      if (!guild.roles.some(role => role.id == role)) return discord.respond(channel_id, event_id, 'Role does not exist!');
+    } else {
+      role = guild.roles.filter(role => role.name == role).map(role => role.id).find(id => true);
+      if (!role) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + tokens.slice(1).join(' ') + '!');
+    }
+    return role_management.configure(guild_id, channel_id, referenced_message_id, emoji, role).then(() => reactOK(channel_id, event_id));
 
   } else {
     guild_id = guild_id ?? await resolveGuildID(user_id);
