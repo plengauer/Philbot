@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'philbot-scheduler'
-  s.version     = '1.1.6'
+  s.version     = '1.1.7'
   s.summary     = ""
   s.description = ""
   s.authors     = ["Philipp Lengauer"]
