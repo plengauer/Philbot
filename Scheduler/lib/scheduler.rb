@@ -59,13 +59,11 @@ File.open(ENV["CONFIG_FILE"]).readlines.map(&:chomp).each do |line|
             sleep(get_sleep_time(interval))
             span = tracer.start_span('Scheduler ' + interval)
             OpenTelemetry::Trace.with_span(span, kind: :consumer) do |span, context|
-              puts 'HTTP GET ' + url
-              begin
-                Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json' })
-              end
-              rescue
-              end
-            end
+                puts 'HTTP GET ' + url
+                begin
+                    Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json' })
+                rescue
+                end
             ensure
               span&.finish
             end
