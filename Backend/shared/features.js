@@ -5,7 +5,8 @@ function list() {
       'player',
       'repeating events',
       'tournament',
-      'raid protection'
+      'raid protection',
+      'role management'
     ];
 }
 
