@@ -109,7 +109,8 @@ async function getInformation(details, state, user_id) {
     let others = players.filter(other => other.id != player.id).map(other => other.id);
     for (let other of others) {
       if (player.matches.filter(match => match.participants.filter(participant => participant.summonerId == other).length > 0).length > 1 && !premades.some(premade => premade.id == player.id)) {
-        premades.push(player);
+        if (!premades.some(premade => premade.id == player.id)) premades.push(player);
+        if (!premades.some(premade => premade.id == other.id)) premades.push(other);
       }
     }
   }
