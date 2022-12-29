@@ -597,7 +597,7 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     else {
       guild_id = guild_id ?? await resolveGuildID(user_id);
       if (!guild_id) return discord.respond(channel_id, event_id, 'I do not know who you mean.');
-      if (to_id.startsWith('<@') && to_id.endsWith('>')) {
+      if (to_name.startsWith('<@') && to_name.endsWith('>')) {
         to_id = discord.substring(2, to_id.length - 1);
       } else {
         to_id = await discord.guild_members_list(guild_id)
