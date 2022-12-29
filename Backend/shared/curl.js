@@ -242,7 +242,7 @@ async function request_cached(options, request) {
   // *) due to the different caching durations, the eviction algorithm will prefer requests with high durations, even if lower duration requests occur more often (simply because they have more time racking up hits)
   // *) cache size is 10Mb, is that acceptible? we may wanna move to a filesystem based cache at some point (memory.js?)
   if (options.cache && !options.method) throw new Error('Caching needs HTTP method explicitly set!');
-  if (options.cache && options.method == 'GET' && method.body) throw new Error('Cannot cache GET requests with body!'); // https://stackoverflow.com/questions/978061/http-get-with-request-body
+  if (options.cache && options.method == 'GET' && options.body) throw new Error('Cannot cache GET requests with body!'); // https://stackoverflow.com/questions/978061/http-get-with-request-body
   if (options.cache) {
     if (options.method == 'GET') {
       let cached = lookup(options);
@@ -295,9 +295,11 @@ function remember(options, response) {
 
 function invalidate(options) {
   let key = cachekey(options);
-  for (let t = 1; t < key.length; t++) {
-    let higher = key.substring(0, t);
-    if(cache[higher]) cache[higher].value = undefined;
+  while (key.length > 0) {
+    if(cache[key]) cache[key].value = undefined;
+    if (key.endsWith('/')) key = key.substring(0, key.length - 1);
+    else if (key.includes('/')) key = key.substring(0, key.lastIndexOf('/'));
+    else key = "";
   }
 }
 
