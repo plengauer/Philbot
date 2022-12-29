@@ -20,7 +20,7 @@ async function connect(prev_state = {}) {
     state.socket = new WebSocket(state.resume_gateway_url + '?v=10&encoding=json');
     state.socket.on('open', () => console.log('GATEWAY connection established (' + state.resume_gateway_url + ')'));
     state.socket.on('message', message => handleMessage(state, message));
-    state.socket.on('error', error => console.error('GATEWAY connection error: ' + error));
+    state.socket.on('error', error => { console.error('GATEWAY connection error: ' + error); state.resume_gateway_url = null; state.session_id = null; });
     state.socket.on('close', code => handleClose(state, code));
     return state;
 }
