@@ -5,8 +5,8 @@ const memory = require('../memory.js');
 
 const servers = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
 
-async function http_get(server, endpoint, cache = false) {
-  return curl.request({ method: 'GET', hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': process.env.RIOT_API_TOKEN }, rate_limit_hint: { strip_digits : true }, cache: cache ? 60 * 60 * 24 : undefined});
+async function http_get(server, endpoint, ttc = undefined) {
+  return curl.request({ method: 'GET', hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': process.env.RIOT_API_TOKEN }, rate_limit_hint: { strip_digits : true }, cache: ttc });
 }
 
 function getConfigHint() {
@@ -170,7 +170,7 @@ function calculateMatchMetricMedian(player, mode, type, getMetric) {
 }
 
 async function getSummoner(server, summonerName) {
-  return http_get(server, '/lol/summoner/v4/summoners/by-name/' + encodeURIComponent(summonerName), true)
+  return http_get(server, '/lol/summoner/v4/summoners/by-name/' + encodeURIComponent(summonerName), 60 * 60 * 24)
     .then(summoner => {
       summoner.server = server;
       return summoner;
@@ -181,7 +181,7 @@ async function getSummoner(server, summonerName) {
 }
 
 async function getActiveGame(server, summonerId) {
-  return http_get(server, '/lol/spectator/v4/active-games/by-summoner/' + summonerId, false)
+  return http_get(server, '/lol/spectator/v4/active-games/by-summoner/' + summonerId)
     .catch(e => {
       if (e.message.includes('HTTP error 404')) return null;
       else throw e;
@@ -205,7 +205,7 @@ async function getPlayerInfo(server, summonerId, summonerName, championId) {
 }
 
 async function getMastery(server, summonerId, championId) {
-  return http_get(server, '/lol/champion-mastery/v4/champion-masteries/by-summoner/' + summonerId + '/by-champion/' + championId, true)
+  return http_get(server, '/lol/champion-mastery/v4/champion-masteries/by-summoner/' + summonerId + '/by-champion/' + championId, 60 * 60)
     .then(result => { return { level: result.championLevel, points: result.championPoints }; })
     .catch(e => {
       if (e.message.includes('HTTP error 404')) return { level: 0, points: 0 };
@@ -215,17 +215,17 @@ async function getMastery(server, summonerId, championId) {
 
 async function getMatches(server, summonerId) {
   return getPuuid(server, summonerId)
-    .then(puuid => http_get(getBasicServer(server), '/lol/match/v5/matches/by-puuid/' + puuid + '/ids?start=0&count=100', true))
+    .then(puuid => http_get(getBasicServer(server), '/lol/match/v5/matches/by-puuid/' + puuid + '/ids?start=0&count=100', 60 * 60))
     .then(match_ids => match_ids.slice(0, 45)) // cant make too many calls to the API, so lets limit a bit
     .then(match_ids => Promise.all(match_ids.map(getMatch)));
 }
 
 async function getPuuid(server, summonerId) {
-  return http_get(server, '/lol/summoner/v4/summoners/' + summonerId, true).then(result => result.puuid);
+  return http_get(server, '/lol/summoner/v4/summoners/' + summonerId, 60 * 60).then(result => result.puuid);
 }
 
 async function getMatch(match_id) {
-  return http_get(getBasicServer(match_id.substring(0, match_id.indexOf('_')).toLowerCase()), '/lol/match/v5/matches/' + match_id, true).then(match => match.info);
+  return http_get(getBasicServer(match_id.substring(0, match_id.indexOf('_')).toLowerCase()), '/lol/match/v5/matches/' + match_id, 60 * 60).then(match => match.info);
 }
 
 function getBasicServer(server) {
@@ -288,7 +288,7 @@ function median(values) {
   else return values[half];
 }
 
-module.exports = { getInformation, getSummoner, http_get }
+module.exports = { getInformation, getSummoner }
 
 
 
