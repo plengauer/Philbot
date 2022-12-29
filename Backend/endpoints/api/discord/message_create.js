@@ -354,8 +354,9 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       .then(url => discord.respond(channel_id, event_id,  ('' + fs.readFileSync('./about.txt'))
           .replace(/\$\{name\}/g, `<@${me.id}>`)
           .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
-          .replace(/\$\{link_monitoring\}/g, url + '/monitoring')
+          .replace(/\$\{link_code\}/g, url + '/code')
           .replace(/\$\{link_discord_add\}/g, url + '/deploy')
+          .replace(/\$\{link_monitoring\}/g, url + '/monitoring')
           + '\nUse ' + url + '/about to share this about with others outside your discord server.'
         )
       );

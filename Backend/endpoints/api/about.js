@@ -7,8 +7,9 @@ async function handle() {
   let about = ('' + fs.readFileSync('./about.txt'))
     .replace(/\$\{name\}/g, `${me.username}`)
     .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
-    .replace(/\$\{link_monitoring\}/g, `this <a href="/monitoring">link</a>`)
+    .replace(/\$\{link_code\}/g, `this <a href="/code">link</a>`)
     .replace(/\$\{link_discord_add\}/g, `this <a href="/deploy">link</a>`)
+    .replace(/\$\{link_monitoring\}/g, `this <a href="/monitoring">link</a>`)
     .replace(/\*\*(.*)\*\*/g, '<b>$1</b>')
     .replace(/\n/g, '<p/>');
   return {
