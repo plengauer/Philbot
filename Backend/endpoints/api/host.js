@@ -1,4 +1,4 @@
-const curl = require('./curl.js');
+const curl = require('../../shared/curl.js');
 
 async function handle() {
   try {
