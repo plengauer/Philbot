@@ -16,6 +16,7 @@ cp -f -T environment.properties.scheduler ./scheduler/environment.properties &&
 cp -f -T config.properties.scheduler ./scheduler/config.properties &&
 
 echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
+echo STATE_STORAGE_DIRECTORY=$(pwd)/discordgateway2http/ >> ./discordgateway2http/environment.properties &&
 echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties &&
 
 cat service.template | sed 's~$directory~'$(pwd)'\/backend~g' | sed 's/$technology/node.js/g' | sed 's/$module/philbot-backend/g' > philbot_backend.service &&

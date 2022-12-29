@@ -8,6 +8,7 @@ const tracer = opentelemetry.trace.getTracer('discord.gateway');
 
 const SHARD_INDEX = process.env.SHARD_INDEX ? parseInt(process.env.SHARD_INDEX) : 0;
 const SHARD_COUNT = process.env.SHARD_COUNT ? parseInt(process.env.SHARD_COUNT) : 1;
+const STATE_FILE = (process.env.STATE_STORAGE_DIRECTORY ?? './') + '.state.json.' + SHARD_INDEX + '.' + SHARD_COUNT;
 
 connect(restoreState());
 
@@ -194,12 +195,12 @@ async function http(event, payload, delay = undefined) {
 }
 
 function saveState(state) {
-    return fs.writeFileSync('.state.json.' + SHARD_INDEX, JSON.stringify({ session_id: state.session_id, resume_gateway_url: state.resume_gateway_url, sequence: state.sequence }));
+    return fs.writeFileSync(STATE_FILE, JSON.stringify({ session_id: state.session_id, resume_gateway_url: state.resume_gateway_url, sequence: state.sequence }));
 }
 
 function restoreState() {
     try {
-        return JSON.parse(fs.readFileSync('.state.json.' + SHARD_INDEX));
+        return JSON.parse(fs.readFileSync(STATE_FILE));
     } catch {
         return {};
     }
