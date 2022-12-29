@@ -261,7 +261,7 @@ var cache = {};
 
 function lookup(options) {
   // evict all timed out entries
-  for (let k of Object.keys(cache).filter(k => cache[k].timestamp + options.cache * 1000 < Date.now())) delete cache[k];
+  for (let k of Object.keys(cache).filter(k => cache[k].timestamp + cache[k].ttl * 1000 < Date.now())) delete cache[k];
   // lookup
   let entry = cache[cachekey(options)];
   if (!entry) return null;
@@ -274,7 +274,7 @@ function remember(options, response) {
   if (!response.body || response.body.length > CACHE_SIZE) return;
   // make entry
   let key = cachekey(options);
-  cache[key] = cache[key] ?? { value: null, hits: 0, timestamp: Date.now() };
+  cache[key] = cache[key] ?? { value: null, hits: 0, timestamp: Date.now(), ttl: options.cache };
   // find entries that this new one would supercede and see if it would be enough to store the new entry
   let to_evict = Object.keys(cache).filter(k => cache[k].value).filter(k => cache[k].hits < cache[key].hits); 
   if (cachesize() + response.body.length > CACHE_SIZE && to_evict.map(k => cache[k].value.length).reduce((l1, l2) => l1 + l2, 0) < response.body.length) return;
