@@ -597,10 +597,14 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     else {
       guild_id = guild_id ?? await resolveGuildID(user_id);
       if (!guild_id) return discord.respond(channel_id, event_id, 'I do not know who you mean.');
-      to_id = await discord.guild_members_list(guild_id)
-        .then(members => members.filter(member => member.user.username == to_name || (member.nick && member.nick == to_name)))
-        .then(members => members.length > 0 ? members[0].user.id : undefined);
-      if (!to_id) return discord.respond(channel_id, event_id, 'I do not know ' + to_name + '.');
+      if (to_id.startsWith('<@') && to_id.endsWith('>')) {
+        to_id = discord.substring(2, to_id.length - 1);
+      } else {
+        to_id = await discord.guild_members_list(guild_id)
+          .then(members => members.filter(member => member.user.username == to_name || (member.nick && member.nick == to_name)))
+          .then(members => members.length > 0 ? members[0].user.id : undefined);
+        if (!to_id) return discord.respond(channel_id, event_id, 'I do not know ' + to_name + '.');
+      }
     }
     let next_string = tokens[index++];
     let next;
