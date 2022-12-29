@@ -588,7 +588,7 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       .then(hint => hint != null ? discord.respond(channel_id, event_id, hint.text) : reactNotOK(channel_id, event_id));
       
   } else if (message.toLowerCase().startsWith('remind ')) {
-    let tokens = message.split(' ');
+    let tokens = message.split(' ').filter(token => token.length > 0);
     let index = 1;
     let to_name = tokens[index++];
     // if (to_name != 'me') return discord.respond(channel_id, event_id, 'I can only remind yourself for now.');
@@ -630,14 +630,17 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       let split = date_string.indexOf('.');
       if (split < 0) return discord.respond(channel_id, event_id, 'I do not understand the date ' + date_string + '.');
       let day = parseInt(date_string.substring(0, split));
-      let month = parseInt(date_string.substring(split + 1));
+      let month = parseInt(date_string.substring(split + 1)) - 1;
       if (isNaN(day) || isNaN(month)) return discord.respond(channel_id, event_id, 'I do not understand the date ' + date_string + '.');
       let nextdate = new Date();
-      nextdate.setUTCMonth(month - 1);
+      if (month < nextdate.getUTCMonth() || (nextdate.getUTCMonth() == month && nextdate < day)) nextdate.setUTCFullYear(nextdate.getFullYear() + 1);
+      nextdate.setUTCDate(1); // do this to avoid problems where the day is out of range for a specific month
+      nextdate.setUTCMonth(month);
       nextdate.setUTCDate(day);
+      nextdate.setUTCHours(12, 0, 0, 0);
       next = nextdate.getTime();
     } else {
-      next = Date.now() + 1000 * 60 * 60 * 24 - 1000 * 60 * 60 * 12;
+      next = Date.now() + 1000 * 60 * 60 * 24;
     }
     let text = tokens.slice(index++).join(' ');
     let reminder = {
