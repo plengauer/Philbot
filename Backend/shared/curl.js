@@ -246,7 +246,6 @@ async function request_cached(options, request) {
   if (options.cache) {
     if (options.method == 'GET') {
       let cached = lookup(options);
-      if (cached) console.log(`HTTP cache hit (${options.hostname}${options.path}) (count = ` + cachecount() + ', size = ' + cachesize() + 'B)');
       if (cached) return cached;    
     } else {
       invalidate(options);
@@ -301,10 +300,6 @@ function invalidate(options) {
     else if (key.includes('/')) key = key.substring(0, key.lastIndexOf('/'));
     else key = "";
   }
-}
-
-function cachecount() {
-  return Object.keys(cache).length;
 }
 
 function cachesize() {
