@@ -116,6 +116,7 @@ async function dispatchAny(path, payload, response) {
         if (path.endsWith('.txt')) contentType = 'text/plain';
         else if (path.endsWith('.html')) contentType = 'text/html';
         else if (path.endsWith('.xml')) contentType = 'text/xml';
+        else if (path.endsWith('.json')) contentType = 'application/json';
         else if (path.endsWith('.ico')) contentType = 'image/vnd.microsoft.icon';
         else contentType = 'text/plain';
         return new Promise(resolve => {
