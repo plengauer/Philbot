@@ -598,7 +598,10 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       guild_id = guild_id ?? await resolveGuildID(user_id);
       if (!guild_id) return discord.respond(channel_id, event_id, 'I do not know who you mean.');
       if (to_name.startsWith('<@') && to_name.endsWith('>')) {
+        if (to_name.startsWith('!')) to_name = to_name.substring(1);
         to_id = to_name.substring(2, to_name.length - 1);
+      } else if (to_name.startsWith('<@&')) {
+        return discord.respond(channel_id, event_id, 'I can only remind individual users, not roles.')
       } else {
         to_id = await discord.guild_members_list(guild_id)
           .then(members => members.filter(member => member.user.username == to_name || (member.nick && member.nick == to_name)))
