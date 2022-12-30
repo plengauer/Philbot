@@ -26,8 +26,6 @@ const endpoint_discord_message_reaction_remove = require('./endpoints/api/discor
 const endpoint_discord_presence_update = require('./endpoints/api/discord/presence_update.js');
 const endpoint_discord_voice_state_update = require('./endpoints/api/discord/voice_state_update.js');
 
-const tracer = opentelemetry.trace.getTracer('philbot.backend');
-
 let revision = 0;
 let revision_done = -1;
 let revisions_done = [];
@@ -77,15 +75,15 @@ function handle(request, response) {
                 return;
             }
         }
-    	dispatchAnyWithTimeout(url.parse(request.url).pathname, payload, response).catch(error => console.error(`HTTP SERVER dispatching ${request.url} failed: ` + error.stack));
+    	dispatchAnyWithTimeout(url.parse(request.url).pathname, url.parse(request.url, true).query, request.headers, payload, response).catch(error => console.error(`HTTP SERVER dispatching ${request.url} failed: ` + error.stack));
     });
 }
 
-async function dispatchAnyWithTimeout(path, payload, response) {
+async function dispatchAnyWithTimeout(path, params, headers, payload, response) {
     let operation = { revision: revision++, timestamp: Date.now() };
     operations.push(operation);
     console.log(`HTTP SERVER request #${operation.revision}: serving ${path}`);
-    return dispatchAny(path, payload, response)
+    return dispatchAny(path, params, headers, payload, response)
         .finally(() => {
             let duration = Date.now() - operation.timestamp;
             console.log(`HTTP SERVER request #${operation.revision}: served ${path} (${duration}ms)`);
@@ -100,7 +98,7 @@ async function dispatchAnyWithTimeout(path, payload, response) {
         });
 }
 
-async function dispatchAny(path, payload, response) {
+async function dispatchAny(path, params, headers, payload, response) {
     if (path.includes('..')) {
         response.writeHead(403, 'Forbidden');
         response.end();
@@ -129,10 +127,10 @@ async function dispatchAny(path, payload, response) {
             stream.pipe(response);
         });
     } else {
-        return dispatchAPI(path, payload)
+        return dispatchAPI(path, params, headers, payload)
             .catch(error => {
                 console.error(error.stack);
-                tracer.getCurrentSpan()?.recordException(error);
+                opentelemetry.trace.getSpan(opentelemetry.context.active())?.recordException(error);
                 return { status: 500, body: 'An internal error has occurred!' };
             })
             .then(result => {
@@ -151,7 +149,7 @@ async function dispatchAny(path, payload, response) {
                     result.headers['content-encoding'] = 'identity';  
                 }
                 if (500 <= result.status && result.status < 600) {
-                    tracer.getCurrentSpan()?.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
+                    opentelemetry.trace.getSpan(opentelemetry.context.active())?.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
                 }
                 response.writeHead(result.status, result.headers);
                 if (result.body) response.write(result.body);
@@ -160,10 +158,10 @@ async function dispatchAny(path, payload, response) {
     }
 }
 
-async function dispatchAPI(path, payload) {
+async function dispatchAPI(path, params, headers, payload) {
     switch (path) {
         case '/about': return endpoint_about.handle();
-        case '/autorefresh': return endpoint_autorefresh.handle();
+        case '/autorefresh': return endpoint_autorefresh.handle(params, headers);
         case '/configure': return endpoint_configure.handle();
         case '/debug': return endpoint_debug.handle();
         case '/deploy': return endpoint_deploy.handle();

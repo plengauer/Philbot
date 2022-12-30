@@ -1,26 +1,21 @@
 const curl = require('../../shared/curl.js');
+const identity = require('../../shared/identity.js');
 
-////// UNDER CONSTRUCTION
-
-async function handle() {
-  if (context.http.method != 'GET') {
-    return respondError(501, 'Not Implemented');
-  }
-  
-  let method = context.params.method;
-  let interval = context.params.interval;
-  let host = context.params.host;
-  let path = context.params.path;
-  let headers = context.http.headers;
-  if (!host && !path) {
+async function handle(params, headers) {
+  let method = params.method;
+  let interval = params.interval;
+  let host = params.host;
+  let path = params.path;
+  if (!host) {
     return respondError(404, 'Not Found');
   }
   
   method = method ?? 'inject';
   interval = interval ?? 60;
-  host = host ?? context.host;
+  host = host ?? '127.0.0.1';
   path = path ?? '/';
   
+  let public_url = await identity.getPublicURL();
   switch (method) {
     case 'none':
       return respond(302, { 'content-type': 'text/plain', 'location': `https://${host}${path}` }, 'Found');
@@ -30,16 +25,16 @@ async function handle() {
       if (response.status != 200) {
         return respond(response.status, filterOutgoingHeaders(response.headers), response.body);
       }
-      return respond(200, filterOutgoingHeaders(response.headers), inject(response.body, interval, context.host, context.http.url));
+      return respond(200, filterOutgoingHeaders(response.headers), inject(response.body, interval, params, public_url));
     case 'embed':
-      return respond(200, { 'content-type': 'text/html' }, inject(embed(host, path), interval, context.host, context.http.url));
+      return respond(200, { 'content-type': 'text/html' }, inject(embed(host, path), interval, params, public_url));
     default:
       return respondError(501, 'Not Implemented');
   }
 }
 
 function respond(status, headers, body) {
-  return { statusCode: status, headers: headers, body: body };
+  return { status: status, headers: headers, body: body };
 }
 
 function respondError(code, message) {
@@ -64,8 +59,9 @@ function filterHeaders(input, includeExact, includeStartsWith, exclude) {
   return output;
 }
 
-function inject(body, interval, host, path) {
-  return body.replace(/<\/head>/g, `<meta http-equiv="Refresh" content="${interval}; URL=https://${context.host}${context.http.url}"/>$&`);
+async function inject(body, interval, params, public_url) {
+  let url = public_url + '/autorefresh?' + Object.keys(params).map(key => `${key}=${params[key]}`).join('&');
+  return body.replace(/<\/head>/g, `<meta http-equiv="Refresh" content="${interval}; URL=${url}"/>$&`);
 }
 
 function embed(host, path) {
