@@ -3,6 +3,7 @@ const process = require('process');
 const http = require('http');
 const url = require("url");
 const fs = require("fs");
+const opentelemetry = require('@opentelemetry/api');
 
 const endpoint_about = require('./endpoints/api/about.js');
 const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');
@@ -24,6 +25,8 @@ const endpoint_discord_message_reaction_add = require('./endpoints/api/discord/m
 const endpoint_discord_message_reaction_remove = require('./endpoints/api/discord/message_reaction_remove.js');
 const endpoint_discord_presence_update = require('./endpoints/api/discord/presence_update.js');
 const endpoint_discord_voice_state_update = require('./endpoints/api/discord/voice_state_update.js');
+
+const tracer = opentelemetry.trace.getTracer('philbot.backend');
 
 let revision = 0;
 let revision_done = -1;
@@ -129,6 +132,7 @@ async function dispatchAny(path, payload, response) {
         return dispatchAPI(path, payload)
             .catch(error => {
                 console.error(error.stack);
+                tracer.getCurrentSpan()?.recordException(error);
                 return { status: 500, body: 'An internal error has occurred!' };
             })
             .then(result => {
@@ -145,6 +149,9 @@ async function dispatchAny(path, payload, response) {
                     }
                     result.headers['content-type'] = result.headers['content-type'] ?? 'text/plain';
                     result.headers['content-encoding'] = 'identity';  
+                }
+                if (500 <= result.status && result.status < 600) {
+                    tracer.getCurrentSpan()?.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
                 }
                 response.writeHead(result.status, result.headers);
                 if (result.body) response.write(result.body);
