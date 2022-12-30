@@ -90,8 +90,10 @@ async function checkAndNotifyForConfig(guild_id, channel_id, config) {
 
 async function HTTP_YOUTUBE(endpoint, parameters) {
   return curl.request({
+      method: 'GET',
       hostname: 'www.googleapis.com',
       path: `/youtube/v3${endpoint}?key=${process.env.YOUTUBE_API_TOKEN}&` + Object.keys(parameters).filter(key => parameters[key]).map(key => `${key}=` + encodeURIComponent(parameters[key])).join('&'),
+      cache: 60
     });
 }
 

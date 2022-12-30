@@ -61,7 +61,7 @@ async function getAffixByID(id) {
     case 130: return "Encrypted";
     case 131: return "Shrouded";
     case 132: return "Thundering";
-    default: return curl.request_simple({hostname: 'www.wowhead.com', path: '/affix=' + id})
+    default: return curl.request_simple({ method: 'GET', hostname: 'www.wowhead.com', path: '/affix=' + id, cache: 60 * 60 * 24 })
       .then(response => {
         if (!(300 <= response.status && response.status < 400)) throw new Error();
         if (!response.headers['location']) throw new Error();
@@ -117,7 +117,7 @@ async function getInformation(config) {
   }
   
   let affixes = [];
-  let page = await curl.request({ hostname: 'wowaffixes.info', headers: { 'accept': 'text/html' }});
+  let page = await curl.request({ method: 'GET', hostname: 'wowaffixes.info', headers: { 'accept': 'text/html' }, cache: 60 });
   // <h2>+6 Week</h2>
   // <a href="https://en.wowhead.com/affix=9/" class="affixes affixes-9"></a><br />
   let index = -1;

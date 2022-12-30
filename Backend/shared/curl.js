@@ -238,9 +238,13 @@ function create_rate_limit(max, length, count, fake = false) {
 }
 
 async function request_cached(options, request) {
-  // this implementation has two potential problems
+  // this is a really stupid cache implementation, but its good enough (David Goodenough) for most cases
   // *) due to the different caching durations, the eviction algorithm will prefer requests with high durations, even if lower duration requests occur more often (simply because they have more time racking up hits)
   // *) cache size is 10Mb, is that acceptible? we may wanna move to a filesystem based cache at some point (memory.js?)
+  // *) relying solely on hits without aligned windows and different ttls and not considering response size is questionable
+  // *) cache size calculation assumes sizeof(char) == sizeof(byte) which we know may/will not be a true in UTF-8
+  // *) calling the same URL with different ttls will make the cache always prefer the smaller ttl. im sure there is something more optimal
+  // => good enough
   if (options.cache && !options.method) throw new Error('Caching needs HTTP method explicitly set!');
   if (options.cache && options.method == 'GET' && options.body) throw new Error('Cannot cache GET requests with body!'); // https://stackoverflow.com/questions/978061/http-get-with-request-body
   if (options.cache) {
@@ -260,10 +264,11 @@ const CACHE_SIZE = process.env.HTTP_CACHE_SIZE ? parseInt(process.env.HTTP_CACHE
 var cache = {};
 
 function lookup(options) {
+  let key = cachekey(options);
   // evict all timed out entries
-  for (let k of Object.keys(cache).filter(k => cache[k].timestamp + cache[k].ttl * 1000 < Date.now())) delete cache[k];
+  for (let k of Object.keys(cache).filter(k => cache[k].timestamp + (key == k ? Math.min(options.cache, cache[k].ttl) : cache[k].ttl) * 1000 < Date.now())) delete cache[k];
   // lookup
-  let entry = cache[cachekey(options)];
+  let entry = cache[key];
   if (!entry) return null;
   entry.hits++;
   return entry.value;

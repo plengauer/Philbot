@@ -1,7 +1,7 @@
 const curl = require('./curl.js');
 
 async function findNext(start, day, hour, minute, timezone) {
-  return curl.request({ hostname: 'worldtimeapi.org', path: '/api/timezone/' + timezone})
+  return curl.request({ method: 'GET', hostname: 'worldtimeapi.org', path: '/api/timezone/' + timezone, cache: 60 })
     .then(time => (time.raw_offset + (time.dst ? time.dst_offset : 0)) * 1000)
     .then(offset => {
       let next = new Date(start);
