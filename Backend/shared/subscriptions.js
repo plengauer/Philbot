@@ -67,7 +67,7 @@ async function checkAndNotify(guild_id, channel_id) {
 }
 
 async function checkAndNotifyForConfig(guild_id, channel_id, config) {
-  let last_check_key = `subscriptions:last:guild:${guild_id}:channel:${channel_id}:feed:${config.feed}:filter:` + memory.mask(config.filter);
+  let last_check_key = `subscriptions:last:guild:${guild_id}:channel:${channel_id}:feed:${config.feed}` + (config.filter ? ':filter:' + memory.mask(config.filter) : '');
   let now = Date.now() - 1000 * 60 * 5; // videos take some time to get fully released, lets give publishers some time to distribute to get reliable query results
   let last_check = await memory.get(last_check_key, undefined);
   if (!last_check) return memory.set(last_check_key, now, 60 * 60 * 24 * 7); // first time, nothing to do, just prepare for next time
