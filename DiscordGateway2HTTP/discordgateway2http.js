@@ -161,6 +161,10 @@ async function handleDispatch(state, sequence, event, payload) {
         case 'RESUMED': return handleResumed();
         default:
             const span = tracer.startSpan('Discord ' + event.toLowerCase().replace(/_/g, ' '), { kind: opentelemetry.SpanKind.CONSUMER }, opentelemetry.ROOT_CONTEXT);
+            span.setAttribute('discord.guild.id', payload.guild_id ?? (event.startsWith('GUILD_') ? payload.id : undefined));
+            span.setAttribute('discord.channel.id', payload.channel_id ?? (event.startsWith('CHANNEL_') ? payload.id : undefined));
+            span.setAttribute('discord.role.id', payload.role_id ?? (event.startsWith('ROLE_') ? payload.id : undefined));
+            span.setAttribute('discord.user.id', payload.user_id ?? payload.user?.id ?? payload.member?.user.id ?? (event.startsWith('USER_') ? payload.id : undefined));
             return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
                     () => dispatch(event, payload)
                 )
