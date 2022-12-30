@@ -69,11 +69,11 @@ async function checkAndNotify(guild_id, channel_id) {
 async function checkAndNotifyForConfig(guild_id, channel_id, config) {
   let last_check_key = `subscriptions:last:guild:${guild_id}:channel:${channel_id}:feed:${config.feed}:filter:${config.filter}`;
   let now = Date.now() - 1000 * 60 * 5; // videos take some time to get fully released, lets give publishers some time to distribute to get reliable query results
-  let last_check = await memory.get(last_check_key, now);
-  if (config.type != 'youtube') { // for now this is the only supported type
-    return;
-  }
-  let items = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', channelId: config.feed, order: 'date', maxResults: 50, publishedAfter: new Date(last_check).toISOString(), publishedBefore: new Date(now - 1).toISOString(), q: config.filter })
+  let last_check = await memory.get(last_check_key, undefined);
+  if (!last_check) return; // first time, nothing to do
+  if (last_check >= now) throw new Error('Here be dragons (ticks too fast)');
+  if (config.type != 'youtube') return; // for now this is the only supported type
+  let items = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', channelId: config.feed, order: 'date', maxResults: 50, publishedAfter: new Date(last_check).toISOString(), publishedBefore: new Date(now - 1000).toISOString(), q: config.filter })
     .then(result => memory.set(last_check_key, now, 60 * 60 * 24 * 7).then(() => result))
     .then(result => result.items)
     .catch(error = null);
