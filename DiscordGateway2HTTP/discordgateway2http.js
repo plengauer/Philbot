@@ -28,7 +28,7 @@ async function connect(prev_state = {}) {
 
 async function getGateway() {
     return new Promise(resolve => request({ url: 'https://discord.com/api/v10/gateway/bot', headers: { authorization: 'Bot ' + process.env.DISCORD_API_TOKEN }, json: true }, (err, res, body) => {
-        if (err) return resolve('wss:gateway.discord.gg');
+        if (err) return resolve('wss://gateway.discord.gg');
         return resolve(body.url);
     }));
 }
