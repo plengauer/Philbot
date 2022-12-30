@@ -877,22 +877,26 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     return raid_protection.all_clear(guild_id).then(() => reactOK(channel_id, event_id));
 
   } else if (message.startsWith('subscribe to ')) {
-    let link = message.split(' ').slice(2).join(' ').trim();
+    let tokens = message.split(' ').slice(2).filter(token => token.length > 0);
+    let link = tokens[0];
+    let filter = tokens.slice(1).join(' ');
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!link) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'add subscription');
-    return subscriptions.add(guild_id, channel_id, link)
+    return subscriptions.add(guild_id, channel_id, link, filter)
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
 
   } else if (message.startsWith('unsubscribe from ')) {
-    let link = message.split(' ').slice(2).join(' ').trim();
+    let tokens = message.split(' ').slice(2).filter(token => token.length > 0);
+    let link = tokens[0];
+    let filter = tokens.slice(1).join(' ');
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!link) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'remove subscription');
-    return subscriptions.remove(guild_id, channel_id, link)
+    return subscriptions.remove(guild_id, channel_id, link, filter)
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
   
