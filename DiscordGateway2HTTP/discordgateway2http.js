@@ -168,6 +168,11 @@ async function handleDispatch(state, sequence, event, payload) {
             span.setAttribute('discord.role.id', payload.role_id ?? (event.startsWith('ROLE_') ? payload.id : undefined));
             span.setAttribute('discord.user.id', payload.user_id ?? payload.user?.id ?? payload.member?.user?.id ?? payload.author?.id ?? (event.startsWith('USER_') ? payload.id : undefined));
             span.setAttribute('discord.message.id', payload.message_id ?? (event.startsWith('MESSAGE_') ? payload.id : undefined));
+            span.setAttribute('discord.status', payload.status);
+            span.setAttribute('discord.client_status.desktop', payload.client_status?.desktop);
+            span.setAttribute('discord.client_status.mobile', payload.client_status?.mobile);
+            span.setAttribute('discord.client_status.web', payload.client_status?.web);
+            span.setAttribute('discord.activities', payload.activities?.map(activity => activity.name + (activity.details ? ', ' + activity.details : '') + (activity.state ? ', ' + activity.state : '')))
             return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
                     () => dispatch(event, payload)
                 )

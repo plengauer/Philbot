@@ -14,10 +14,6 @@ async function handle(payload) {
 }
 
 async function handle0(guild_id, user_id, activities) {
-  for (let activity of activities) {
-    console.log(`Activity: ${activity.name}, ${activity.details}, ${activity.state}`);
-  }
-  
   // sanitize
   for (let activity of activities) {
     if (activity.name.startsWith('SnowRunner ::  KSIVA:')) {

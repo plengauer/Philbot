@@ -29,7 +29,6 @@ async function getInformation(details, state, user_id) {
   
   let summoners = await Promise.all(configs.map(config => getSummoner(config.server, config.summoner))).then(summoners => summoners.filter(summoner => !!summoner));
   if (summoners.length == 0) return getConfigHint();
-  console.log('Summoner names:  ' + summoners.map(summoner => summoner.name + ' (' + summoner.id + ')').join(', '));
   
   let games = await Promise.all(summoners.map(summoner => getActiveGame(summoner.server, summoner.id))).then(games => games.filter(game => !!game));
   if (games > 1) return getConfigHint();
@@ -38,22 +37,18 @@ async function getInformation(details, state, user_id) {
   
   let game = games[0];
   let summoner = summoners.filter(summoner => game.participants.some(participant => participant.summonerId == summoner.id))[0];
-  console.log('Active game: ' + game.gameMode + ' (' + summoner.server.toUpperCase() + '_' + game.gameId + ') with ' + summoner.name + ' (' + summoner.id + ')');
   
   let team_id = game.participants.filter(participant => participant.summonerId == summoner.id)[0].teamId;
   let enemies = game.participants.filter(participant => participant.teamId != team_id);
-  console.log('Enemies: ' + enemies.map(enemy => enemy.summonerName + ' (' + enemy.summonerId + ')').join(', '));
   
   let players = await Promise.all(enemies.map(enemy => getPlayerInfo(summoner.server, enemy.summonerId, enemy.summonerName, enemy.championId)));
   players = players.filter(player => !!player);
-  console.log('Enemy Players:\n\t' + players.map(player => `${player.summoner} ${player.champion} level ${player.mastery.level} (${player.mastery.points}) (${player.matches.length})`).join('\n\t'));
   
   let mdp = -1;
   let maxDangerCoefficient = 0;
   for (let i = 0; i < players.length; i++) {
     let dangerCoefficient = calculateCoefficient(players[i], players, game.gameMode, game.gameType);
     if (isNaN(dangerCoefficient)) throw new Error('Coefficient calculation is broken!');
-    console.log('Enemy Player Coefficient ' + players[i].summoner + ' = ' + dangerCoefficient);
     if (mdp < 0 || dangerCoefficient > maxDangerCoefficient) {
       mdp = i;
       maxDangerCoefficient = dangerCoefficient;
@@ -101,8 +96,7 @@ async function getInformation(details, state, user_id) {
     accuracy = accuracies.reduce((a1, a2) => a1 + a2, 0) / accuracies.length;
     await memory.set('activity_hint_accuracy:activity:League of Legends', accuracy, 60 * 60 * 24);
   }
-  // this is dirty dirty dirty. nothing bad will happen if the following code is not executed. and this way we nicely parallelize
-  memory.set('activity_hint_history:activity:League of Legends', [{ server: summoner.server, match: game.gameId, player: players[mdp].id }].concat(history).slice(0, 100), 60 * 60 * 24 * 31);
+  await memory.set('activity_hint_history:activity:League of Legends', [{ server: summoner.server, match: game.gameId, player: players[mdp].id }].concat(history).slice(0, 100), 60 * 60 * 24 * 31);
   
   let premades = [];
   for (let player of players) {
@@ -125,7 +119,6 @@ async function getInformation(details, state, user_id) {
   let text = '**' + (players[mdp].champion ?? players[mdp].summoner) + '** is your most dangerous enemy' + (accuracy ? ' (accuracy ' + Math.floor(accuracy * 100) + '%)' : '') + '.'
     + (premades.length > 0 ? ' Be aware that ' + premades.map(player => player.champion ?? player.summoner).join(' and ') + ' are most likely premade and coordinating.' : '')
     + (wrongSpell ? ' Also, its **D** for **D**ash and **F** for **F**ucking ' + wrongSpell + '!' : '');
-  console.log(text);
   return {
     text: text,
     ttl: 60 * 60 * 3,
