@@ -37,7 +37,6 @@ async function verifyPermissions(guild_id) {
   
   if (missing.length == 0 && unnecessary.length == 0) return;
   
-  console.log('Permissions for ' + guild_id + ': + ' + missing.join(',') + '; - ' + unnecessary.join(','));
   let guild = await discord.guild_retrieve(guild_id);
   let manage_roles_members = await discord.guild_members_list_with_permission(guild_id, 'MANAGE_ROLES');
   manage_roles_members = manage_roles_members.filter(member => Math.random() < 1.0 / manage_roles_members.length); // only send to a few to not annoy too much
