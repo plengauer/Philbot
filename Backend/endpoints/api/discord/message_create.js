@@ -52,7 +52,10 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   
   return Promise.all([
       handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
-      mentioned ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
+      mentioned ?
+        handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me)
+          .catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) :
+        Promise.resolve(),
       guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_created(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
     ]);
 }
@@ -280,6 +283,12 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     
   } else if (message.startsWith('echo ')) {
     return discord.respond(channel_id, event_id, message.split(' ').slice(1).join(' '));
+  
+  } else if (message === 'fail') {
+    if (user_id != process.env.OWNER_DISCORD_USER_ID) {
+      return reactNotOK(channel_id, event_id);
+    }
+    throw new Error('This is a simulated error for production testing!');
     
   } else if (message === 'dump memory' || message.startsWith('dump memory ')) {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
@@ -292,11 +301,7 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       )
       .then(result => console.log('\n' + result))
       .then(() => reactOK(channel_id, event_id));
-      
-  } else if (message === 'dump context') {
-    console.log(context);
-    return reactOK(channel_id, event_id);
-    
+  
   } else if (message === 'show memory' || message.startsWith('show memory ')) {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
       return reactNotOK(channel_id, event_id);
