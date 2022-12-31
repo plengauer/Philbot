@@ -17,7 +17,7 @@ function mention_role(role_id) {
 }
 
 async function me() {
-  return HTTP(`/users/@me`, 'GET');
+  return HTTP(`/users/@me`, 'GET', undefined, 60 * 60);
 }
 
 async function guild_retrieve(guild_id) {
@@ -246,8 +246,8 @@ function guild_member_has_permission_0(guild, roles, member, permission) {
     .some(permission_names => permission_names.includes(permission) || permission_names.includes('ADMINISTRATOR'))
 }
 
-async function HTTP(endpoint, method, payload = undefined) {
-  return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` }, cache: 60 * 15 });
+async function HTTP(endpoint, method, payload = undefined, ttc = undefined) {
+  return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` }, cache: ttc ?? 60 });
 }
 
 module.exports = {
