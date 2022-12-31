@@ -10,7 +10,7 @@ async function handle(params, headers) {
     return respondError(404, 'Not Found');
   }
   
-  method = method ?? 'inject';
+  method = method ?? 'embed';
   interval = interval ?? 60;
   host = host ?? '127.0.0.1';
   path = path ?? '/';
@@ -59,7 +59,7 @@ function filterHeaders(input, includeExact, includeStartsWith, exclude) {
   return output;
 }
 
-async function inject(body, interval, params, public_url) {
+function inject(body, interval, params, public_url) {
   let url = public_url + '/autorefresh?' + Object.keys(params).map(key => `${key}=${params[key]}`).join('&');
   return body.replace(/<\/head>/g, `<meta http-equiv="Refresh" content="${interval}; URL=${url}"/>$&`);
 }
