@@ -33,11 +33,11 @@ def get_sleep_time(interval)
     time = Time.new
     sleep_time = 60 - time.sec
     if interval == 'minutely' then return sleep_time end
-    sleep_time += (60 - time.min) * 60
+    sleep_time += (60 - time.min - 1) * 60
     if interval == 'hourly' then return sleep_time end
-    sleep_time += (24 - time.hour) * 60 * 60
+    sleep_time += (24 - time.hour - 1) * 60 * 60
     if interval == 'daily' then return sleep_time end
-    sleep_time += (31 - time.day) * 24 * 60 * 60
+    sleep_time += (Time.days_in_month(time.month, time.year) - time.day - 1) * 24 * 60 * 60
     if interval == 'monthly' then return sleep_time end
     exit(1)
 end
