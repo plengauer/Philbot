@@ -58,6 +58,7 @@ async function remove(key) {
 
 async function ls() {
   return new Promise((resolve, reject) => fs.readdir(directory, (error, files) => error ? reject(error) : resolve(files)))
+    .then(paths => paths.filter(path => !path.endsWith('.damaged')))
     .then(paths => paths.map(path => path.substring(path.lastIndexOf('/') + 1)))
     .then(files => files.map(file => file.substring(0, file.lastIndexOf('.'))))
 }
