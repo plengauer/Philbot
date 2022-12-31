@@ -220,7 +220,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     } else {
       continue;
     }
-    let promise = discord.respond(channel_id, event_id, `${value} ${unit} are ${converted_value} ${converted_units} in metric units.`);
+    let promise = discord.respond(channel_id, event_id, `${value} ${unit} are ${converted_value} ${converted_unit} in metric units.`);
     promises.push(promise);
   }
   
