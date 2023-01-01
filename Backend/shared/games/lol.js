@@ -96,7 +96,7 @@ async function getInformation(details, state, user_id) {
     accuracy = accuracies.reduce((a1, a2) => a1 + a2, 0) / accuracies.length;
     await memory.set('activity_hint_accuracy:activity:League of Legends', accuracy, 60 * 60 * 24);
   }
-  await memory.set('activity_hint_history:activity:League of Legends', [{ server: summoner.server, match: game.gameId, player: players[mdp].id }].concat(history.filter(match => match.server != server || match.match != match || match.player != players[mdp].id)).slice(0, 100), 60 * 60 * 24 * 31);
+  await memory.set('activity_hint_history:activity:League of Legends', [{ server: summoner.server, match: game.gameId, player: players[mdp].id }].concat(history.filter(match => match.server != summoner.server || match.match != game.gameId || match.player != players[mdp].id)).slice(0, 100), 60 * 60 * 24 * 31);
   
   let premades = [];
   for (let player of players) {
