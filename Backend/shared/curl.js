@@ -139,7 +139,9 @@ async function request_rate_limited_v2(options, request) {
   if (!options.hostname) throw new Error("Need hostname");
   if (!options.path) throw new Error("Need path");
 
-  let cpath = options.rate_limit_hint?.strip_digits ? options.path.split('/').filter(segment => !/\d/.test(segment)).join('/') : options.path;
+  let cpath = options.path;
+  if (cpath.includes('?')) cpath = cpath.substring(0, cpath.indexOf('?'));
+  if (options.rate_limit_hint?.strip_digits) cpath = cpath.split('/').filter(segment => !/\d/.test(segment)).join('/');
 
   // we need to update the feedback from the other side and keep our own count because
   // (1) the server side knows about requests that we dont and (2) sending many requests
