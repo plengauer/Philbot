@@ -143,6 +143,10 @@ async function request_rate_limited_v2(options, request) {
   if (cpath.includes('?')) cpath = cpath.substring(0, cpath.indexOf('?')); // doing this is not always correct, but better underestimate than overestimate
   if (options.rate_limit_hint?.strip_digits) cpath = cpath.split('/').filter(segment => !/\d/.test(segment)).join('/');
 
+  // a lot of the bucketizing is best effort here, but that is fine
+  // if bucket is too big (i.e., two requests are considered to be the same bucket even if they are not), we will not make as many requests as possible
+  // if a bucket is too small (i.e., two requests that should to the same bucket are going to different ones), we will eventually run into 429 errors approach the rate limit (which we will then only auto calibrate)
+
   // we need to update the feedback from the other side and keep our own count because
   // (1) the server side knows about requests that we dont and (2) sending many requests
   // in parallel may result in us violating the rate limit quite drastically
