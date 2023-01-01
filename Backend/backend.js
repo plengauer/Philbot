@@ -14,6 +14,7 @@ const endpoint_help = require('./endpoints/api/help.js');
 const endpoint_monitoring = require('./endpoints/api/monitoring.js');
 const endpoint_code = require('./endpoints/api/code.js');
 const endpoint_host = require('./endpoints/api/host.js');
+const endpoint_http = require('./endpoints/api/httpstack.js');
 const endpoint_scheduler_monthly = require('./endpoints/api/scheduler/monthly.js');
 const endpoint_scheduler_daily = require('./endpoints/api/scheduler/daily.js');
 const endpoint_scheduler_hourly = require('./endpoints/api/scheduler/hourly.js');
@@ -169,6 +170,7 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/monitoring': return endpoint_monitoring.handle();
         case '/code': return endpoint_code.handle();
         case '/host': return endpoint_host.handle();
+        case '/http': return endpoint_http.handle();
         case '/scheduler/monthly': return endpoint_scheduler_monthly.handle();
         case '/scheduler/daily': return endpoint_scheduler_daily.handle();
         case '/scheduler/hourly': return endpoint_scheduler_hourly.handle();
