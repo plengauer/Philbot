@@ -1,5 +1,6 @@
 require 'opentelemetry/sdk'
 require 'opentelemetry/exporter/otlp'
+require 'opentelemetry/instrumentation/all'
 require 'uri'
 require 'net/http'
 
@@ -19,9 +20,7 @@ OpenTelemetry::SDK.configure do |c|
     OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
       OpenTelemetry::Exporter::OTLP::Exporter.new(
         endpoint: ENV['OPENTELEMETRY_TRACES_API_ENDPOINT'],
-        headers: {
-          "Authorization": "Api-Token " + ENV['OPENTELEMETRY_TRACES_API_TOKEN']
-        }
+        headers: { "Authorization": "Api-Token " + ENV['OPENTELEMETRY_TRACES_API_TOKEN'] }
       )
     )
   )
