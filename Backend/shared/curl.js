@@ -140,7 +140,7 @@ async function request_rate_limited_v2(options, request) {
   if (!options.path) throw new Error("Need path");
 
   let cpath = options.path;
-  if (cpath.includes('?')) cpath = cpath.substring(0, cpath.indexOf('?'));
+  if (cpath.includes('?')) cpath = cpath.substring(0, cpath.indexOf('?')); // doing this is not always correct, but better underestimate than overestimate
   if (options.rate_limit_hint?.strip_digits) cpath = cpath.split('/').filter(segment => !/\d/.test(segment)).join('/');
 
   // we need to update the feedback from the other side and keep our own count because
