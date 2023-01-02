@@ -7,7 +7,7 @@ async function handle() {
         body: '<html><head><title>Philbot HTTP Cache</title></head><body>'
             + '<h1>Rate Limits</h1><br/>'
             + '<table><tr><th>Bucket</th><th>Requests</th><th>Expiration</th></tr>'
-            + curl.ratelimits_summary().map(entry => `<tr><td>${sanitize(entry.bucket)}</td><td>${entry.count}+${entry.active} of ${entry.max}</td><td>` + Math.ceil((entry.timestamp + entry.length * 1000 - Date.now()) / 1000) + 's</td></tr>').join('')
+            + curl.ratelimits_summary().filter(entry => !entry.artificial).map(entry => `<tr><td>${sanitize(entry.bucket)}</td><td>${entry.count}+${entry.active} of ${entry.max}</td><td>` + Math.ceil((entry.timestamp + entry.length * 1000 - Date.now()) / 1000) + 's</td></tr>').join('')
             + '</table>'
             + '<h1>Cache Entries</h1><br/>'
             + '<table><tr><th>Key</th><th>Hits</th><th>Expiration</th><th>Status</th><th>Headers</th><th>Length</th></tr>'
