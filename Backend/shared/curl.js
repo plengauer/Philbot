@@ -78,7 +78,8 @@ async function request_simple(options) {
       request.on('timeout', () => {
           let duration = Date.now() - time;
           console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => TIMEOUT (${duration}ms)`);
-          reject(new Error(`HTTP Timeout`));
+          if (options.fail_on_timeout == undefined || options.fail_on_timeout) reject(new Error(`HTTP Timeout`));
+          else resolve({ status: 504, headers: {}, body: 'Gateway Timeout' });
         });
       if (options.body) {
         request.write(options.body);
