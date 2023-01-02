@@ -163,6 +163,7 @@ async function handleDispatch(state, sequence, event, payload) {
             const span = tracer.startSpan('Discord ' + event.toLowerCase().replace(/_/g, ' '), { kind: opentelemetry.SpanKind.CONSUMER }, opentelemetry.ROOT_CONTEXT);
             span.setAttribute('discord.gateway.url', state.resume_gateway_url);
             span.setAttribute('discord.gateway.sequence', sequence);
+            span.setAttribute('discord.gateway.shard', state.SHARD_INDEX);
             span.setAttribute('discord.guild.id', payload.guild_id ?? (event.startsWith('GUILD_') ? payload.id : undefined));
             span.setAttribute('discord.channel.id', payload.channel_id ?? (event.startsWith('CHANNEL_') ? payload.id : undefined));
             span.setAttribute('discord.role.id', payload.role_id ?? (event.startsWith('ROLE_') ? payload.id : undefined));
