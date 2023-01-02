@@ -1,4 +1,3 @@
-
 const curl = require('../../shared/curl.js');
 
 async function handle() {
