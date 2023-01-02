@@ -11,7 +11,7 @@ async function handle() {
             + '</table>'
             + '<h1>Cache Entries</h1><br/>'
             + '<table><tr><th>Key</th><th>Hits</th><th>Expiration</th><th>Status</th><th>Headers</th><th>Length</th></tr>'
-            + curl.cache_summary().map(entry => `<tr><td>${sanitize(entry.key)}</td><td>${entry.hits}</td><td>` + Math.ceil((entry.timestamp + entry.ttl * 1000 - Date.now()) / 1000) + `s</td><td>${entry.value?.status}</td><td>${entry.value?.headers.length}</td><td>${entry.value?.body.length}</td></tr>`)
+            + curl.cache_summary().map(entry => `<tr><td>${sanitize(entry.key)}</td><td>${entry.hits}</td><td>` + Math.ceil((entry.timestamp + entry.ttl * 1000 - Date.now()) / 1000) + `s</td><td>${entry.value?.status}</td><td>` + (entry.value ? Object.keys(entry.value.headers).length : 'undefined') + `</td><td>${entry.value?.body.length}</td></tr>`)
             + '</table>'
             + '</body></html>'
     }
