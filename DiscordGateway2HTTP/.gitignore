@@ -1,2 +1,2 @@
 environment.properties
-.state.json.*
+.state.*.json
