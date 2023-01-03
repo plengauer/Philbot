@@ -203,7 +203,7 @@ async function checkTimeout() {
     if (timedouts.length == 0) return;
     // if we have timed out operations, lets close the server to not accept new operations, and then remove all timed out operations as if they would not exist
     timedouts.forEach(timedout => console.log(`HTTP SERVER request hanging #${timedout.revision}`));
-    console.log('HTTP SERVER closing for new connection');
+    console.log('HTTP SERVER closing for new connections');
     server.close();
     console.log(`HTTP SERVER waiting for ${operations.length} in-progress operations to complete`);
     for (let i = 0; i < 10 && operations.length > 0; i++) await new Promise(resolve => setTimeout(resolve, 1000));
