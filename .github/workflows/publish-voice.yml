@@ -26,9 +26,9 @@ jobs:
       run: python -m build
     - name: Publish package
       run: twine upload --username philipplengauer ./dist/*
-        continue-on-error: true
-        env:
-          TWINE_PASSWORD: ${{secrets.PYPI_PASSWORD}}
+      continue-on-error: true
+      env:
+        TWINE_PASSWORD: ${{secrets.PYPI_PASSWORD}}
       # uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
       # continue-on-error: true
       # with:
