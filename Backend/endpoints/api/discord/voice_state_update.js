@@ -5,12 +5,14 @@ const features = require('../../../shared/features.js');
 
 async function handle(payload) {
   return Promise.all([
-    payload.channel_id ? checkAndStartEvents(payload.guild_id, payload.channel_id) : Promise.resolve(),
     payload.channel_id ?
       memory.set(`voice_channel:user:${payload.user_id}`, { guild_id: payload.guild_id, channel_id: payload.channel_id }, 60 * 60 * 24).then(() => playGreeting(payload.guild_id, payload.user_id)) :
       memory.unset(`voice_channel:user:${payload.user_id}`),
-    payload.channel_id ? Promise.resolve() : checkUnexpectedVoiceDisconnect(payload.guild_id, payload.channel_id, payload.user_id)
-  ]).then(() => undefined)
+    payload.channel_id ? checkAndStartEvents(payload.guild_id, payload.channel_id) : Promise.resolve(),
+    discord.me().then(me => me.id == payload.user_id ? player.on_voice_state_update(payload.guild_id, payload.channel_id, payload.session_id) : Promise.resolve())
+  ])
+  .then(results => results[0])
+  .then(reply => reply && reply.command ? { status: 200, body: reply } : undefined);
 }
 
 async function checkAndStartEvents(guild_id, channel_id) {
@@ -37,19 +39,6 @@ async function playGreeting(guild_id, user_id) {
   } else {
     return Promise.resolve();
   }
-}
-
-async function checkUnexpectedVoiceDisconnect(guild_id, channel_id, user_id) {
-  return Promise.all([
-    discord.me().then(me => me.id == user_id),
-    player.hasRecentVoiceOperation(guild_id).then(value => !value)
-  ]).then(values => {
-    if (values.every(value => !!value)) {
-      return player.playNext(guild_id, null);
-    } else {
-      return Promise.resolve();
-    }
-  })
 }
 
 module.exports = { handle }

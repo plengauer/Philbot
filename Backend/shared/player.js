@@ -1,79 +1,31 @@
 const process = require('process');
 const memory = require('./memory.js');
 const discord = require('./discord.js');
-const ytdl = require('ytdl-core');
-const ytSearch = require('yt-search');
-const { google } = require('googleapis');
-const youtube = google.youtube('v3');
+const curl = require('./curl.js');
 const retry = require('./retry.js').retry;
 
-async function markVoiceOperation(guild_id, ttl = 10) {
-  return memory.set(`player:recent_voice_operation:guild:${guild_id}`, true, ttl);
+async function on_voice_state_update(guild_id, channel_id, session_id) {
+  return discord.me()
+    .then(me => HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id }))
 }
 
-async function hasRecentVoiceOperation(guild_id) {
-  return memory.get(`player:recent_voice_operation:guild:${guild_id}`, false);
-}
-
-async function play0(guild_id, user_id, voice_channel, youtube_link) {
-  let voice_channel_id = null;
-  if (voice_channel) {
-    for (const channel of await discord.guild_channels_list(guild_id)) {
-      if (channel.name === voice_channel) {
-        voice_channel_id = channel.id;
-        break;
-      }
-    }
-    if (!voice_channel_id) {
-      return 1;
-    }
-  } else {
-    if (user_id) {
-      voice_channel_id = (await memory.get(`voice_channel:user:${user_id}`, null))?.channel_id;
-    }
-    if (!voice_channel_id) {
-      voice_channel_id = await memory.get(`player:voice_channel:guild:${guild_id}`, null);
-    }
-  }
-  if (!voice_channel_id) {
-    return 2;
-  }
-  
-  try {
-    await discord.voice_track_play(guild_id, voice_channel_id, await ytdl.getInfo(youtube_link));
-  } catch (e) {
-    if ((e.stack.includes('Status code: 410') || e.stack.includes('Video unavailable') || e.stack.includes('private video'))) {
-      return 5;
-    } else {
-      throw e;
-    }
-  }
-  return Promise.all([
-    memory.set(`player:voice_channel:guild:${guild_id}`, voice_channel_id, 60 * 60 * 24),
-    markVoiceOperation(guild_id)
-  ]).then(() => 0);
+async function on_voice_server_update(guild_id, endpoint, token) {
+  return HTTP_VOICE('voice_server_update', { guild_id: guild_id, endpoint: endpoint, token: token });
 }
 
 async function play(guild_id, user_id, voice_channel, search_string) {
   if (search_string.includes('youtube.com/watch?v=')) {
     return play0(guild_id, user_id, voice_channel, search_string);
   } else if (search_string.includes('youtube.com/playlist?list=')) {
-    let list = search_string.split('list=')[1]; // be brave!
     let items = [];
     let pageToken = null;
     do {
-      let result = (await youtube.playlistItems.list({
-        auth: process.env.YOUTUBE_API_TOKEN,
-        playlistId: list,
-        part: 'snippet',
-        maxResults: 1000,
-        pageToken: pageToken
-      })).data;
+      let result = await HTTP_YOUTUBE('/playlistItems', { part: 'snippet', maxResults: 1000, pageToken: pageToken, playlistId: search_string.split('list=')[1] });
       items = items.concat(result.items);
       pageToken = result.nextPageToken;
     } while(pageToken != null && pageToken.length > 0);
     if (items.length == 0) {
-      return 3;
+      throw new Error('The playlist is empty!');
     }
     youtube_links = [];
     for (let index = 0; index < items.length; index++) {
@@ -82,32 +34,52 @@ async function play(guild_id, user_id, voice_channel, search_string) {
     await prependAllToQueue(guild_id, youtube_links.slice(1));
     return play0(guild_id, user_id, voice_channel, youtube_links[0]);
   } else {
-    let results = await ytSearch(search_string);
-    if (!results?.all?.length) {
-      return 4;
-    }
-    for (let index = 0; index < results.all.length && index < 5; index++) {
-      let result = await play0(guild_id, user_id, voice_channel, results.all[index].url);
-      if (result != 5) return result;
-    }
-    return 5;
+    let result = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'rating', maxResults: 1, q: search_string })
+    if (result.length == 0) throw new Error('No video found!');
+    return play0(guild_id, user_id, voice_channel, results.items[0].id.videoId);
   }
 }
 
+async function HTTP_YOUTUBE(endpoint, parameters) {
+  return curl.request({
+      method: 'GET',
+      hostname: 'www.googleapis.com',
+      path: `/youtube/v3${endpoint}?key=${process.env.YOUTUBE_API_TOKEN}&` + Object.keys(parameters).filter(key => parameters[key]).map(key => `${key}=` + encodeURIComponent(parameters[key])).join('&'),
+      cache: 60 * 60 * 24
+    });
+}
+
+async function play0(guild_id, user_id, voice_channel_name, youtube_link) {
+  let voice_channel_id = null;
+  if (voice_channel_name) {
+    voice_channel_id = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == voice_channel_name));
+    if (!voice_channel_id) throw new Error('I dont know the voice channel ' + voice_channel + '!');
+  } else {
+    if (user_id) voice_channel_id = (await memory.get(`voice_channel:user:${user_id}`, null))?.channel_id;
+    if (!voice_channel_id) voice_channel_id = await memory.get(`player:voice_channel:guild:${guild_id}`, null);
+  }
+  if (!voice_channel_id) throw new Error('I dont know which voice channel to use!');
+  await memory.set(`player:voice_channel:guild:${guild_id}`, voice_channel_id, 60 * 60 * 24);
+  return HTTP_VOICE('voice_content_update', { guild_id: guild_id, url: youtube_link })
+    .then(() => discord.me())
+    .then(me => memory.get(`voice_channel:user:${me.id}`))
+    .then(channel_id => channel_id != voice_channel_id ? { command: 'voice connect', guild_id: guild_id, channel_id: voice_channel_id } : undefined);
+}
+
+async function HTTP_VOICE(operation, payload) {
+  return curl.request({ secure: false, method: 'POST', hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: `/${operation}`, body: payload, timeout: 1000 * 60 * 60 * 24 });
+}
+
 async function stop(guild_id) {
-  return markVoiceOperation(guild_id, 60)
-    .then(() => { throw new Error('Not implemented! (VOICE DISCONNECT)'); });
+  return { command: 'voice disconnect', guild_id: guild_id };
 }
 
 async function pause(guild_id) {
-  return markVoiceOperation(guild_id, 60 * 60)
-    .then(() => { throw new Error('Not implemented! (VOICE PAUSE)'); });
-    // at some point it automatically disconnects, and thats ok
+  throw new Error('Not implemented! (VOICE PAUSE)');
 }
 
 async function resume(guild_id) {
   throw new Error('Not implemented! (VOICE RESUME)');
-    //.then(() => markVoiceOperation(guild_id));
 }
 
 async function popFromQueue(guild_id) {
@@ -151,49 +123,16 @@ async function shuffleQueue(guild_id) {
   return setQueue(guild_id, queue);
 }
 
-async function clearQueue0(guild_id, id) {
-  return memory.unset(`music_queue:guild:${guild_id}:part:${id}`);
-}
-
-async function getQueue0(guild_id, id) {
-  return memory.get(`music_queue:guild:${guild_id}:part:${id}`, []);
-}
-
-async function setQueue0(guild_id, id, queue) {
-  return memory.set(`music_queue:guild:${guild_id}:part:${id}`, queue, 60 * 60 * 12);
-}
-
 async function clearQueue(guild_id) {
-  for (let id = 0;; id++) {
-    let part = await getQueue0(guild_id, id);
-    if (part.length == 0) {
-      break;
-    }
-    await clearQueue0(guild_id, id);
-  }
+  return memory.unset(`music_queue:guild:${guild_id}`);
 }
 
 async function getQueue(guild_id) {
-  let queue = [];
-  for (let id = 0;; id++) {
-    let part = await getQueue0(guild_id, id);
-    if (part.length == 0) {
-      break;
-    }
-    queue = queue.concat(part);
-  }
-  return queue;
+  return memory.get(`music_queue:guild:${guild_id}`, []);
 }
 
 async function setQueue(guild_id, queue) {
-  let max_elements = 250;
-  let id = 0;
-  while (queue.length > 0) {
-    let part = queue.slice(0, max_elements);
-    await setQueue0(guild_id, id++, part);
-    queue = queue.slice(part.length);
-  }
-  return clearQueue0(guild_id, id++);
+  return memory.set(`music_queue:guild:${guild_id}`, queue, 60 * 60 * 12);
 }
 
-module.exports = { hasRecentVoiceOperation, play, stop, pause, resume, playNext, appendToQueue, shuffleQueue, clearQueue, getQueue }
+module.exports = { on_voice_state_update, on_voice_server_update, play, stop, pause, resume, playNext, appendToQueue, shuffleQueue, clearQueue, getQueue }

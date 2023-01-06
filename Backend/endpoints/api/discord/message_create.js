@@ -19,7 +19,7 @@ const role_management = require('../../../shared/role_management.js');
 
 async function handle(payload) {
   return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
-    .then(() => undefined);
+    .then(reply => reply && reply.command ? { status: 200, body: reply } : undefined);
 }
 
 async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id) {
@@ -51,13 +51,13 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   }
   
   return Promise.all([
-      handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
       mentioned ?
         handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me)
           .catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) :
         Promise.resolve(),
-      guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_created(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
-    ]);
+      handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
+        guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_created(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
+    ]).then(results => results[0]);
 }
 
 async function handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned) {
@@ -271,7 +271,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
   return Promise.all([
     handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me),
     handleDelayedCommand(channel_id, event_id, user_id, message)
-  ]);
+  ]).then(results => results[0] ?? results[1]);
 }
 
 async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me) {
@@ -389,8 +389,7 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       );
   
   } else if (message.startsWith('play ')) {
-    return discord.respond(channel_id, event_id, "Voice functionality has been temporarily disabled. I'm working on restoring it as soon as possible!");
-    guild_id = guild_id ?? await resolveGuildID(user_id);
+    // return discord.respond(channel_id, event_id, "Voice functionality has been temporarily disabled. I'm working on restoring it as soon as possible!");
     if (!guild_id) return reactNotOk(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     message = message.split(' ').slice(1).join(' ');
@@ -406,26 +405,15 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     } else {
       search_string = message;
     }
-    return (search_string === 'next' ? player.playNext(guild_id, user_id) : player.play(guild_id, user_id, voice_channel, search_string))
-      .then(result => {
-        switch(result) {
-          case 0: return reactOK(channel_id, event_id).then(shuffle ? player.shuffleQueue(guild_id) : Promise.resolve());
-          case 1: return discord.respond(channel_id, event_id, `I'm sorry, I don't find the channel ${voice_channel}.`);
-          case 2: return discord.respond(channel_id, event_id, `Please tell me which voice channel to use.`);
-          case 3: return discord.respond(channel_id, event_id, `The playlist is empty.`);
-          case 4: return discord.respond(channel_id, event_id, `No results found for your search string. Please try a different one.`);
-          case 5: return discord.respond(channel_id, event_id, 'Video is currently not available.');
-          case 6: return discord.respond(channel_id, event_id, 'The queue is empty.')
-          default: return discord.respond(channel_id, event_id, 'Something went wrong.');
-        }
-      });
-    
+    return  (search_string === 'next' ? player.playNext(guild_id, user_id) : player.play(guild_id, user_id, voice_channel, search_string))
+      .then(command => reactOK(channel_id, event_id).then(() => command))
+      .catch(error => discord.respond(channel_id, event_id, error.message));
+      
   } else if (message === "stop") {
-    return discord.respond(channel_id, event_id, "Voice functionality has been temporarily disabled. I'm working on restoring it as soon as possible!");
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOk(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
-    return player.stop(guild_id).then(() => reactOK(channel_id, event_id));
+    return player.stop(guild_id).then(command => reactOK(channel_id, event_id).then(() => command));
     
   } else if (message === "pause") {
     return discord.respond(channel_id, event_id, "Voice functionality has been temporarily disabled. I'm working on restoring it as soon as possible!");

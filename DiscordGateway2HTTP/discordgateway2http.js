@@ -175,36 +175,46 @@ async function handleDispatch(state, sequence, event, payload) {
             span.setAttribute('discord.client_status.web', payload.client_status?.web);
             span.setAttribute('discord.activities', payload.activities?.map(activity => activity.name + (activity.details ? ', ' + activity.details : '') + (activity.state ? ', ' + activity.state : '')))
             return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
-                    () => dispatch(event, payload)
+                    () => dispatch(state, event, payload)
                 )
                 .finally(() => span.end())
     }
 }
 
-async function dispatch(event, payload) {
+async function dispatch(state, event, payload) {
     if (deduplicate(event, payload)) {
         console.log('GATEWAY deduplicate ' + event.toLowerCase());
         return;
     }
     console.log('GATEWAY dispatch ' + event.toLowerCase());
-    return http(event, payload);
+    return http(event, payload)
+        .then(result => result ? handleReply(state, result) : Promise.resolve());
+}
+
+async function handleReply(state, payload) {
+    switch (payload.command) {
+        case 'voice connect': return send(state, 4, { guild_id: payload.guild_id, channel_id: payload.channel_id, self_mute: false, self_deaf: false });
+        case 'voice disconnect': return send(state, 4, { guild_id: payload.guild_id, channel_id: null });
+        default: console.error('Unknown command: ' + payload.command);
+    }
 }
 
 async function http(event, payload, delay = undefined) {
+    if (delay && delay > 1000 * 60 * 15) throw new Error('HTTP RETRIES EXCEEDED')
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
     let body = JSON.stringify(payload);
     let url = 'http://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
     let time = Date.now();
-    return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: body })
-        .on('response', response => {
-    	    console.log('HTTP POST ' + url + ' => ' + response.statusCode + ' (' + (Date.now() - time) + 'ms)');
-    	    return response.statusCode == 503 || response.statusCode == 429 ? reject(response.statusCode) : resolve(response.body);
-        })
-        .on('error', error => {
-    	    console.log('HTTP POST ' + url + ' => ' + error);
+    return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: body }, (error, response, body) => {
+        if (error) {
+            console.log('HTTP POST ' + url + ' => ' + error);
             return reject(error);
-        })
-    ).catch(() => http(event, payload, delay ? delay * 2 : 1000));
+        }
+        console.log('HTTP POST ' + url + ' => ' + response.statusCode + ' (' + (Date.now() - time) + 'ms)');
+        if (response.statusCode == 503 || response.statusCode == 429) return reject(response.statusCode);
+        if (response.headers['content-type'] == 'application/json') return resolve(JSON.parse(response.body));
+        return resolve();
+    })).catch(() => http(event, payload, delay ? delay * 2 : 1000));
 }
 
 function saveState(state) {

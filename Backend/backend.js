@@ -28,6 +28,7 @@ const endpoint_discord_message_reaction_add = require('./endpoints/api/discord/m
 const endpoint_discord_message_reaction_remove = require('./endpoints/api/discord/message_reaction_remove.js');
 const endpoint_discord_presence_update = require('./endpoints/api/discord/presence_update.js');
 const endpoint_discord_voice_state_update = require('./endpoints/api/discord/voice_state_update.js');
+const endpoint_discord_voice_server_update = require('./endpoints/api/discord/voice_server_update.js');
 
 let revision = 0;
 let revision_done = -1;
@@ -188,6 +189,7 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/discord/message_reaction_remove': return endpoint_discord_message_reaction_remove.handle(payload);
         case '/discord/presence_update': return endpoint_discord_presence_update.handle(payload);
         case '/discord/voice_state_update': return endpoint_discord_voice_state_update.handle(payload);
+        case '/discord/voice_server_update': return endpoint_discord_voice_server_update.handle(payload);
         default: return { status: 404, body: 'Not found' };
     }
 }
