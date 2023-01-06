@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "philbot-voice"
-version = "0.4.0"
+version = "0.5.0"
 description = ""
 authors = ["philipp.lengauer <p.lengauer@gmail.com>"]
 packages = [{include = "philbot-voice"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 numpy = "^1.24.1"
 Flask = "^2.2.2"
 websocket-client = "^1.4.2"
