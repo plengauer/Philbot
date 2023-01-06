@@ -315,7 +315,7 @@ def voice_content_update():
 def main():
     threading.Thread(target=run_server).start()
     print('VOICE CONNECTION server running')
-    app.run(port=12345)
     print('VOICE ready')
+    app.run(port=12345)
 
 # https://github.com/ytdl-org/youtube-dl/blob/master/README.md#embedding-youtube-dl
