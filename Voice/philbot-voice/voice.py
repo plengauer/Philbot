@@ -211,7 +211,7 @@ class Context:
                     my_port = UDP_PORT
                     print('VOICE GATEWAY opening UDP socket')
                     self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    self.socket.bind((my_ip, my_port))
+                    self.socket.bind(('127.0.0.1', my_port))
                     threading.Thread(target=self.__run_server).start()
                     print('VOICE CONNECTION server ready')
                     print('VOICE GATEWAY sending select protocol')
