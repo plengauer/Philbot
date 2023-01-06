@@ -3,8 +3,6 @@ import time
 import threading
 import socket
 import json
-import ctypes
-import numpy
 from flask import Flask, request
 import websocket
 import nacl.secret
