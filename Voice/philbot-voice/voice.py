@@ -22,11 +22,8 @@ def run_server():
     server.bind(('127.0.0.1', PORT))
     while True:
         server.recvfrom(1024 * 1024)
-threading.Thread(target=run_server).start()
-print('VOICE CONNECTION server running')
 
 app = Flask(__name__)
-print('VOICE ready')
 
 def time_seconds():
     return int(time.time())
@@ -315,7 +312,10 @@ def voice_content_update():
     context.on_content_update(resolve_url(body['url']))
     return 'Success'
 
-if __name__ == '__main__':
+def main():
+    threading.Thread(target=run_server).start()
+    print('VOICE CONNECTION server running')
     app.run(port=12345)
+    print('VOICE ready')
 
 # https://github.com/ytdl-org/youtube-dl/blob/master/README.md#embedding-youtube-dl
