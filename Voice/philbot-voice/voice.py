@@ -21,7 +21,8 @@ def run_server():
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     server.bind(('127.0.0.1', PORT))
     while True:
-        server.recvfrom(1024 * 1024)
+        data, address = server.recvfrom(1024 * 1024)
+        print('VOICE SERVER received voice data packet from ' + address[0] + ':' + str(address[1]))
 
 app = Flask(__name__)
 
@@ -101,6 +102,16 @@ class Context:
     def __init__(self, guild_id):
         self.guild_id = guild_id
 
+    def __test(self, file):
+        buffer = file.get_buffer()
+        while buffer:
+            frame = bytes(buffer[0].contents)
+            buffer_length = len(frame)
+            frame_length = buffer[1]
+            frame_length_half = buffer[1] // 2
+            print('DEBUG ' + str(buffer_length) + ' : ' + str(frame_length) + ' : ' + str(frame_length_half))
+            buffer = file.get_buffer()
+
     def __stream(self, url, ssrc, secret_key, ip, port):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
         my_socket = self.socket
@@ -112,6 +123,7 @@ class Context:
         opus_frame_duration = 20
         filename = self.url[len('file://'):]
         secret_box = nacl.secret.SecretBox(bytes(secret_key))
+        # self.__test(pyogg.OpusFileStream(filename))
         file = pyogg.OpusFileStream(filename)
         sequence = 0
         frame = file.get_buffer()
@@ -138,7 +150,6 @@ class Context:
             else:
                 time.sleep(sleep_time / 1000.0)
             timestamp = new_timestamp
-        file.clean_up()
 
     def __ws_on_open(self, ws):
         with self.lock:
@@ -147,7 +158,7 @@ class Context:
     def __heartbeat(self, interval):
         my_ws = self.ws
         while True:
-            time.sleep(interval)
+            time.sleep(interval / 1000.0)
             with self.lock:
                 if (self.ws != None and my_ws == self.ws):
                     print('VOICE GATEWAY sending heartbeat')
