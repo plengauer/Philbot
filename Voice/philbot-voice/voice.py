@@ -26,13 +26,6 @@ UDP_MAX_PAYLOAD = 65507
 HTTP_PORT = int(environ.get('PORT', str(12345)))
 UDP_PORT = int(environ.get('PORT', str(12346)))
 
-def run_server():
-    server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-    server.bind(('127.0.0.1', UDP_PORT))
-    while True:
-        data, address = server.recvfrom(1024 * 1024)
-        print('VOICE SERVER received voice data packet from ' + address[0] + ':' + str(address[1]))
-
 app = Flask(__name__)
 
 def time_seconds():
@@ -121,6 +114,17 @@ class Context:
             print('DEBUG ' + str(buffer_length) + ' : ' + str(frame_length) + ' : ' + str(frame_length_half))
             buffer = file.get_buffer()
 
+    def __run_server(self):
+        my_socket = self.socket
+        if my_socket == None:
+            return
+        while True:
+            with self.lock:
+                if (my_socket != self.socket):
+                    return
+            data, address = my_socket.recvfrom(UDP_MAX_PAYLOAD)
+            print('VOICE CONNECTION received voice data packet from ' + address[0] + ':' + str(address[1]))
+
     def __stream(self, url, ssrc, secret_key, ip, port):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
         my_socket = self.socket
@@ -205,6 +209,11 @@ class Context:
                     # modes = payload['d']['modes']
                     my_ip = '3.73.14.87' # TODO
                     my_port = UDP_PORT
+                    print('VOICE GATEWAY opening UDP socket')
+                    self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    self.socket.bind((my_ip, my_port))
+                    threading.Thread(target=self.__run_server).start()
+                    print('VOICE CONNECTION server ready')
                     print('VOICE GATEWAY sending select protocol')
                     self.ws.send(json.dumps({
                         "op": 1,
@@ -231,8 +240,6 @@ class Context:
                         }
                     }))
                     time.sleep(1) # give the discord server time to catch up
-                    print('VOICE GATEWAY opening UDP socket')
-                    self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     threading.Thread(target=self.__stream, kwargs = { 'url': self.url, 'ssrc': self.ssrc, 'secret_key': self.secret_key, 'ip': self.ip, 'port': self.port }).start()
                 case 5:
                     print('VOICE GATEWAY received speaking')
@@ -357,8 +364,6 @@ def main():
         )
     ))
 
-    threading.Thread(target=run_server).start()
-    print('VOICE CONNECTION server running')
     print('VOICE ready')
     app.run(port=HTTP_PORT)
 
