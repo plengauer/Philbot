@@ -4,7 +4,7 @@ version = "0.2.0"
 description = ""
 authors = ["philipp.lengauer <p.lengauer@gmail.com>"]
 readme = "README.md"
-packages = [{include = "philbot_voice"}]
+packages = [{include = "philbot-voice"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
