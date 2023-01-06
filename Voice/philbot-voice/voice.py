@@ -23,11 +23,12 @@ from opentelemetry.sdk.trace.export import (
 # TODO callback when playback is finished
 
 UDP_MAX_PAYLOAD = 65507
-PORT = environ.get('PORT', 12345)
+HTTP_PORT = int(environ.get('PORT', str(12345)))
+UDP_PORT = int(environ.get('PORT', str(12346)))
 
 def run_server():
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-    server.bind(('127.0.0.1', PORT + 1))
+    server.bind(('127.0.0.1', UDP_PORT))
     while True:
         data, address = server.recvfrom(1024 * 1024)
         print('VOICE SERVER received voice data packet from ' + address[0] + ':' + str(address[1]))
@@ -203,7 +204,7 @@ class Context:
                     self.port = payload['d']['port']
                     # modes = payload['d']['modes']
                     my_ip = '3.73.14.87' # TODO
-                    my_port = PORT
+                    my_port = UDP_PORT
                     print('VOICE GATEWAY sending select protocol')
                     self.ws.send(json.dumps({
                         "op": 1,
@@ -359,6 +360,6 @@ def main():
     threading.Thread(target=run_server).start()
     print('VOICE CONNECTION server running')
     print('VOICE ready')
-    app.run(port=PORT)
+    app.run(port=HTTP_PORT)
 
 # https://github.com/ytdl-org/youtube-dl/blob/master/README.md#embedding-youtube-dl

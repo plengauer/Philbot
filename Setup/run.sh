@@ -26,7 +26,7 @@ then
     pip3 install $package --upgrade &&
     export PYTHONPATH=$(find ~/.local/lib/python*/site-packages/$package -prune | tr '\n' ':') &&
     export SERVICE_VERSION=$(pip show $package | grep Version | cut -d':' -f2 | sed 's/ //g') &&
-    opentelemetry-instrument python3 -u -m $package
+    ~/.local/bin/opentelemetry-instrument python3 -u -m $package
 else
     exit 1
 fi
