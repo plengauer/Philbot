@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "philbot-voice"
-version = "0.8.0"
+version = "0.9.0"
 description = ""
 authors = ["philipp.lengauer <p.lengauer@gmail.com>"]
 packages = [{include = "philbot-voice"}]
@@ -19,4 +19,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-philbot-voice = "philbot-voice:main"
+philbot-voice = "voice:main"
