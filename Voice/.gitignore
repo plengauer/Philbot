@@ -1,6 +1,7 @@
 environment.properties
 build
 dist
+__pycache__
 *.egg-info
 *.part
 *.aac
