@@ -8,7 +8,15 @@ import websocket
 import nacl.secret
 import pyogg
 import youtube_dl
-
+from opentelemetry import trace as OpenTelemetry
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter,
+)
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider, sampling
+from opentelemetry.sdk.trace.export import (
+    BatchSpanProcessor,
+)
 # TODO resume after restart, somehow saving and restoring state
 # TODO cache and file lookahead so files are created ahead of time
 # TODO resolve public IP properly
@@ -19,7 +27,7 @@ PORT = environ.get('PORT', 12345)
 
 def run_server():
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-    server.bind(('127.0.0.1', PORT))
+    server.bind(('127.0.0.1', PORT + 1))
     while True:
         data, address = server.recvfrom(1024 * 1024)
         print('VOICE SERVER received voice data packet from ' + address[0] + ':' + str(address[1]))
@@ -224,7 +232,6 @@ class Context:
                     time.sleep(1) # give the discord server time to catch up
                     print('VOICE GATEWAY opening UDP socket')
                     self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, UDP_MAX_PAYLOAD * 2)
                     threading.Thread(target=self.__stream, kwargs = { 'url': self.url, 'ssrc': self.ssrc, 'secret_key': self.secret_key, 'ip': self.ip, 'port': self.port }).start()
                 case 5:
                     print('VOICE GATEWAY received speaking')
@@ -324,9 +331,34 @@ def voice_content_update():
     return 'Success'
 
 def main():
+    merged = dict()
+    for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
+        try:
+            data = ''
+            with open(name) as f:
+                data = json.load(f if name.startswith("/var") else open(f.read()))
+            merged.update(data)
+        except:
+            pass
+    merged.update({
+        "service.name": environ['SERVICE_NAME'],
+        "service.version": environ['SERVICE_VERSION']
+    })
+    resource = Resource.create(merged)
+    tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource=resource)
+    OpenTelemetry.set_tracer_provider(tracer_provider)
+    tracer_provider.add_span_processor(
+        BatchSpanProcessor(OTLPSpanExporter(
+            endpoint=environ['OPENTELEMETRY_TRACES_API_ENDPOINT'],
+            headers={
+                "Authorization": environ['OPENTELEMETRY_TRACES_API_TOKEN']
+            },
+        )
+    ))
+
     threading.Thread(target=run_server).start()
     print('VOICE CONNECTION server running')
     print('VOICE ready')
-    app.run(port=12345)
+    app.run(port=PORT)
 
 # https://github.com/ytdl-org/youtube-dl/blob/master/README.md#embedding-youtube-dl

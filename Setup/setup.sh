@@ -4,13 +4,16 @@ sudo systemctl stop philbot_discordgateway2http
 sudo systemctl stop philbot_scheduler
 
 curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&
-sudo apt-get -y install nodejs ruby ruby-bundler python3 ffmpeg iptables-persistent &&
+sudo apt-get -y install nodejs ruby ruby-bundler python3 python3-pip ffmpeg libopusfile0 iptables-persistent &&
+wget -O libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2
 
 mkdir -p memory &&
 mkdir -p backend &&
 mkdir -p voice &&
 mkdir -p discordgateway2http &&
 mkdir -p scheduler &&
+
+tar -xf libopus.tar.bz2 -C voice/ && rm libopus.tar.bz2 &&
 
 cp -f -T environment.properties.backend ./backend/environment.properties &&
 cp -f -T environment.properties.voice ./voice/environment.properties &&
@@ -19,6 +22,7 @@ cp -f -T environment.properties.scheduler ./scheduler/environment.properties &&
 cp -f -T config.properties.scheduler ./scheduler/config.properties &&
 
 echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
+echo LD_LIBRARY_PATH=$(pwd)/voice/lib/ >> ./voice/environment.properties &&
 echo STATE_STORAGE_DIRECTORY=$(pwd)/discordgateway2http/ >> ./discordgateway2http/environment.properties &&
 echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties &&
 
