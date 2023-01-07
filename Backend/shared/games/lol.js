@@ -5,8 +5,6 @@ const memory = require('../memory.js');
 
 const SERVERS = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
 
-getInformation('Summoner\s Rift', 'In Game', '288800273873502208').then(hint => console.log(hint.text))
-
 async function http_get(server, endpoint, ttc = undefined) {
   return curl.request({ method: 'GET', hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': process.env.RIOT_API_TOKEN }, rate_limit_hint: { strip_digits : true }, cache: ttc });
 }
@@ -28,7 +26,7 @@ async function getInformation(details, state, user_id) {
   servers = await Promise.all(SERVERS.map(server => memory.get('mute:activity:League of Legends:server:' + server, false).then(muted => muted ? null : server)))
     .then(servers => servers.filter(server => server))
   
-  let configs = await discord.user_retrieve(user_id).then(() => { return { username: 'OxPF miraimiri' }; })
+  let configs = await discord.user_retrieve(user_id)
     .then(result => result.username)
     .then(user_name => memory.get('activity_hint_config:activity:League of Legends:user:' + user_id, servers.map(server => { return { summoner: user_name, server: server }; })));
   
