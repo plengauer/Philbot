@@ -109,16 +109,6 @@ class Context:
     def __init__(self, guild_id):
         self.guild_id = guild_id
 
-    def __test(self, file):
-        buffer = file.get_buffer()
-        while buffer:
-            frame = bytes(buffer[0].contents)
-            buffer_length = len(frame)
-            frame_length = buffer[1]
-            frame_length_half = buffer[1] // 2
-            print('DEBUG ' + str(buffer_length) + ' : ' + str(frame_length) + ' : ' + str(frame_length_half))
-            buffer = file.get_buffer()
-
     def __run_server(self):
         my_socket = self.socket
         if my_socket == None:
@@ -126,9 +116,9 @@ class Context:
         while True:
             with self.lock:
                 if (my_socket != self.socket):
-                    return
+                    break
             data, address = my_socket.recvfrom(UDP_MAX_PAYLOAD)
-            print('VOICE CONNECTION received voice data packet from ' + address[0] + ':' + str(address[1]))
+            print('VOICE CONNECTION received voice data package from ' + address[0] + ':' + str(address[1] + ': ' + str(len(data)) + 'b'))
 
     def __stream(self, url, ssrc, secret_key, ip, port):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
@@ -141,7 +131,6 @@ class Context:
         opus_frame_duration = 20
         filename = self.url[len('file://'):]
         secret_box = nacl.secret.SecretBox(bytes(secret_key))
-        # self.__test(pyogg.OpusFileStream(filename))
         file = pyogg.OpusFileStream(filename)
         sequence = 0
         frame = file.get_buffer()
@@ -149,7 +138,7 @@ class Context:
         while frame:
             if sequence % (1000 / opus_frame_duration) == 0:
                 print('VOICE CONNECTION streaming (sequence ' + str(sequence) + ')')
-            package = create_voice_package(sequence, ssrc, secret_box, bytes(frame[0].contents)[0:frame[1]])
+            package = create_voice_package(sequence, ssrc, secret_box, bytes(frame[0].contents)[0:frame[1]//2])
             if (len(package) > UDP_MAX_PAYLOAD):
                 raise RuntimeError('Package too big for UDP')
             with self.lock:
@@ -222,7 +211,7 @@ class Context:
                     while not my_port:
                         try:
                             my_port = random.randint(UDP_PORT_MIN, UDP_PORT_MAX)
-                            self.socket.bind(('127.0.0.1', my_port))
+                            self.socket.bind(('0.0.0.0', my_port))
                             break
                         except:
                             my_port = None
@@ -246,7 +235,7 @@ class Context:
                     self.secret_key = payload['d']['secret_key']
                     print('VOICE GATEWAY sending speaking')
                     self.ws.send(json.dumps({
-                        "op": 1,
+                        "op": 5,
                         "d": {
                             "speaking": 1,
                             "delay": 0,
