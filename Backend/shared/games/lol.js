@@ -3,7 +3,9 @@ const curl = require('../curl.js');
 const discord = require('../discord.js');
 const memory = require('../memory.js');
 
-const servers = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
+const SERVERS = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
+
+getInformation('Summoner\s Rift', 'In Game', '288800273873502208').then(hint => console.log(hint.text))
 
 async function http_get(server, endpoint, ttc = undefined) {
   return curl.request({ method: 'GET', hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': process.env.RIOT_API_TOKEN }, rate_limit_hint: { strip_digits : true }, cache: ttc });
@@ -14,7 +16,7 @@ function getConfigHint() {
     text: 'I cannot determine your summoner name. If you want me to give you hints about your current game, tell me your summoner name and the server you are on.'
       + ' Respond with \'configure League of Legends euw1 NoobSlayerXXX\', filling in your server and your summoner name.'
       + ' If you have more than one account, separate you can list more than one server + summoner name pairs, separate the pairs with \';\'.'
-      + ' Valid servers are ' + servers.join(', ') + '.',
+      + ' Valid servers are ' + SERVERS.join(', ') + '.',
     ttl: 60 * 60 * 24 * 7
   };
 }
@@ -22,8 +24,11 @@ function getConfigHint() {
 async function getInformation(details, state, user_id) {
   // estimation about calls 1+1+5+5*(1+1+100) = 517
   if (!process.env.RIOT_API_TOKEN) return null;
+
+  servers = await Promise.all(SERVERS.map(server => memory.get('mute:activity:League of Legends:server:' + server, false).then(muted => muted ? null : server)))
+    .then(servers => servers.filter(server => server))
   
-  let configs = await discord.user_retrieve(user_id)
+  let configs = await discord.user_retrieve(user_id).then(() => { return { username: 'OxPF miraimiri' }; })
     .then(result => result.username)
     .then(user_name => memory.get('activity_hint_config:activity:League of Legends:user:' + user_id, servers.map(server => { return { summoner: user_name, server: server }; })));
   
@@ -31,7 +36,7 @@ async function getInformation(details, state, user_id) {
   if (summoners.length == 0) return getConfigHint();
   
   let games = await Promise.all(summoners.map(summoner => getActiveGame(summoner.server, summoner.id))).then(games => games.filter(game => !!game));
-  if (games > 1) return getConfigHint();
+  if (games.length > 1) return getConfigHint();
   if (games.length == 0 && details && state && (details.includes('Summoner\'s Rift') || details.includes('ARAM')) && !(details.includes('AI') || details.includes('Custom')) && (state == 'In Game' || state == 'Im Spiel' || state == 'En Jeu')) return getConfigHint(); // be careful to not catch TFT by accident
   if (games.length == 0) return null;
   
@@ -118,7 +123,7 @@ async function getInformation(details, state, user_id) {
   
   let text = '**' + (players[mdp].champion ?? players[mdp].summoner) + '** is your most dangerous enemy' + (accuracy && accuracy > 0.6 ? ' (accuracy ' + Math.floor(accuracy * 100) + '%)' : '') + '.'
     + (premades.length > 0 ? ' Be aware that ' + premades.map(player => player.champion ?? player.summoner).join(' and ') + ' are most likely premade and coordinating.' : '')
-    + (wrongSpell ? ' Also, its **D** for **D**ash and **F** for **F**ucking ' + wrongSpell + '!' : '');
+    + (wrongSpell && Math.random() > 0.9 ? ' Also, its **D** for **D**ash and **F** for **F**ucking ' + wrongSpell + '!' : '');
   return {
     text: text,
     ttl: 60 * 60 * 3,
