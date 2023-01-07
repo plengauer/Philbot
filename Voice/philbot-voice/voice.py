@@ -1,8 +1,10 @@
 from os import path, environ
 import time
+import random
 import threading
 import socket
 import json
+import requests
 from flask import Flask, request
 import websocket
 import nacl.secret
@@ -17,14 +19,17 @@ from opentelemetry.sdk.trace import TracerProvider, sampling
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
 )
+
+# TODO now we need to select a separate port every time, and we need to open up more UDP on the EC2
 # TODO resume after restart, somehow saving and restoring state
 # TODO cache and file lookahead so files are created ahead of time
 # TODO resolve public IP properly
 # TODO callback when playback is finished
 
 UDP_MAX_PAYLOAD = 65507
-HTTP_PORT = int(environ.get('PORT', str(12345)))
-UDP_PORT = int(environ.get('PORT', str(12346)))
+HTTP_PORT = int(environ.get('HTTP_PORT', str(12345)))
+UDP_PORT_MIN = int(environ.get('UDP_PORT_MIN', str(12346)))
+UDP_PORT_MAX = int(environ.get('UDP_PORT_MAX', str(65535)))
 
 app = Flask(__name__)
 
@@ -169,13 +174,14 @@ class Context:
             print('VOICE GATEWAY connection established')
 
     def __heartbeat(self, interval):
+        start = time_millis()
         my_ws = self.ws
         while True:
             time.sleep(interval / 1000.0)
             with self.lock:
                 if (self.ws != None and my_ws == self.ws):
                     print('VOICE GATEWAY sending heartbeat')
-                    self.ws.send(json.dumps({ "op": 4, "d": 42 }))
+                    self.ws.send(json.dumps({ "op": 4, "d": time_millis() - start }))
                 else:
                     return
 
@@ -206,14 +212,22 @@ class Context:
                     self.ssrc = payload['d']['ssrc']
                     self.ip = payload['d']['ip']
                     self.port = payload['d']['port']
-                    # modes = payload['d']['modes']
-                    my_ip = '3.73.14.87' # TODO
-                    my_port = UDP_PORT
-                    print('VOICE GATEWAY opening UDP socket')
+                    modes = payload['d']['modes']
+                    if ("xsalsa20_poly1305" not in modes):
+                        raise RuntimeError('Mode not supported')
+                    my_ip = requests.get('https://ipv4.icanhazip.com/').text.strip()
+                    my_port = None
+                    print('VOICE CONNECTION opening UDP socket')
                     self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    self.socket.bind(('127.0.0.1', my_port))
+                    while not my_port:
+                        try:
+                            my_port = random.randint(UDP_PORT_MIN, UDP_PORT_MAX)
+                            self.socket.bind(('127.0.0.1', my_port))
+                            break
+                        except:
+                            my_port = None
                     threading.Thread(target=self.__run_server).start()
-                    print('VOICE CONNECTION server ready')
+                    print('VOICE CONNECTION server ready at ' + my_ip + ':' + str(my_port))
                     print('VOICE GATEWAY sending select protocol')
                     self.ws.send(json.dumps({
                         "op": 1,
