@@ -901,18 +901,46 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
     if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
-    let tokens = message.split(' ').slice(2);
-    let emoji = tokens[0];
-    let role = tokens.slice(1).join(' ');
+    let tokens = message.split(' ').slice(2).filter(token => token.length > 0);
     let guild = await discord.guild_retrieve(guild_id);
-    if (role.startsWith('<@&') && role.endsWith('>')) {
-      role = role.substring(3, role.length - 1);
-      if (!guild.roles.some(r => r.id == role)) return discord.respond(channel_id, event_id, 'Role does not exist!');
+    if (tokens[0] == 'list') {
+      return role_management.summary(guild_id).then(summary => discord.respond(channel_id, event_id, summary));
+    } else if (referenced_message_id) {
+      let emoji = tokens[0];
+      // if (!emoji.startsWith(':') || !emoji.endsWith(':')) return discord.respond(channel_id, event_id, emoji + ' is not a valid emoji!');
+      let role_string = tokens.slice(1).join(' ');
+      let role_id = discord.parse_role(role_string);
+      if (!role_id) {
+        role_id = guild.roles.filter(role => role.name == role_string).map(role => role.id).find(id => true);
+        if (!role_id) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + role_string + '!');
+      }
+      return role_management.add_reaction_trigger(guild_id, channel_id, referenced_message_id, emoji, role_id).then(() => reactOK(channel_id, event_id));  
     } else {
-      role = guild.roles.filter(role => role.name == role).map(role => role.id).find(id => true);
-      if (!role) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + tokens.slice(1).join(' ') + '!');
+      let index = 0;
+      if (tokens[index] != 'all' && tokens[index] != 'any') return discord.respond(channel_id, event_id, 'You must specify either "any" or "all", not ' + tokens[index] + '!');
+      let all = tokens[index++] == 'all';
+      let roles = [];
+      while (index < tokens.length && tokens[index] != '=>') {
+        let role_id = discord.parse_role(tokens[index]);
+        if (!role_id) {
+          role_id = guild.roles.filter(role => role.name == tokens[index]).map(role => role.id).find(id => true);
+          if (!role_id) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + role_string + '!');
+        }
+        roles.push(role_id);
+        index++;
+      }
+      if (roles.length == 0) return discord.respond(channel_id, event_id, 'You must specifiy at least one role as trigger!');
+      if (index >= tokens.length || tokens[index] != '=>') return discord.respond(channel_id, event_id, 'You must follow the trigger roles with "=>"!');
+      index++;
+      let role_id = discord.parse_role(tokens[index]);
+      if (!role_id) {
+        role_id = guild.roles.filter(role => role.name == tokens[index]).map(role => role.id).find(id => true);
+        if (!role_id) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + tokens[index] + '!');
+      }
+      index++;
+      if (index < tokens.length) return discord.respond(channel_id, event_id, 'I do not understand the end of your command!');
+      return role_management.add_role_trigger(guild_id, roles, all, role_id).then(() => reactOK(channel_id, event_id));
     }
-    return role_management.configure(guild_id, channel_id, referenced_message_id, emoji, role).then(() => reactOK(channel_id, event_id));
 
   } else {
     guild_id = guild_id ?? await resolveGuildID(user_id);

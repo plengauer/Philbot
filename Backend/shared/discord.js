@@ -8,12 +8,26 @@ function parse_mention(mention) {
   return mention.substring(2, mention.length - 1);
 }
 
+function parse_role(mention) {
+  mention = mention.trim();
+  if (!mention.startsWith('<@&') || !mention.endsWith('>')) return null;
+  return mention.substring(3, mention.length - 1);
+}
+
 function mention_user(user_id) {
   return `<@${user_id}>`;
 }
 
 function mention_role(role_id) {
   return `<@&${role_id}>`;
+}
+
+function message_link_create(guild_id, channel_id, message_id) {
+  return `https://discord.com/channels/${guild_id}/${channel_id}/${message_id}`;
+}
+
+function scheduledevent_link_create(guild_id, event_id) {
+  return `https://discord.com/events/${guild_id}/${event_id}`;
 }
 
 async function me() {
@@ -165,10 +179,6 @@ async function scheduledevent_modify(guild_id, event_id, event) {
   return HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}`, 'PATCH', event); 
 }
 
-function scheduledevent_link_create(guild_id, event_id) {
-  return `https://discord.com/events/${guild_id}/${event_id}`;
-}
-
 async function invite_delete(invite_code)  {
   return HTTP(`/invites/${invite_code}`, 'DELETE'); 
 }
@@ -252,8 +262,12 @@ async function HTTP(endpoint, method, payload = undefined, ttc = undefined) {
 
 module.exports = {
   parse_mention,
+  parse_role,
   mention_user,
   mention_role,
+
+  message_link_create,
+  scheduledevent_link_create,
   
   me,
 
@@ -287,7 +301,6 @@ module.exports = {
   scheduledevents_list,
   scheduledevent_create,
   scheduledevent_modify,
-  scheduledevent_link_create,
 
   invite_delete,
   
