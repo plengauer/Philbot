@@ -122,6 +122,7 @@ async function clean() {
 }
 
 async function summary(guild_id) {
+    let channels = await discord.guild_channels_list(guild_id);
     return 'Automatic Role Management Rules:\n'
         + await memory.get(reaction_trigger_memorykey(guild_id), [])
             .then(configs => configs.map(config => discord.message_link_create(guild_id, config.trigger_channel_id, config.trigger_message_id) + ` ${config.emoji} => ` + discord.mention_role(config.result_role_id)))
@@ -132,7 +133,7 @@ async function summary(guild_id) {
             .then(summaries => summaries.join('\n'))
             + '\n'
         + await memory.get(voice_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => config.condition_role_ids.map(role_id => discord.mention_role(role_id)).join(config.all ? ' & ' : ' | ') + ` => ` + discord.mention_role(config.result_role_id)))
+            .then(configs => configs.map(config => (config.condition_channel_id ? channels.find(channel => channel.id == config.condition_channel_id) : 'any') + ` => ` + discord.mention_role(config.result_role_id)))
             .then(summaries => summaries.join('\n'))
         ;
 }
