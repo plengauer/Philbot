@@ -2,7 +2,9 @@ const memory = require('./memory.js');
 const discord = require('./discord.js');
 
 async function add_reaction_trigger(guild_id, channel_id, message_id, emoji, role_id) {
-    return memory.get(reaction_trigger_memorykey(guild_id), [])
+    return discord.react(channel_id, message_id, emoji)
+        .catch(e => {/* ignore me */})
+        .then(() => memory.get(reaction_trigger_memorykey(guild_id), []))
         .then(configs => configs.filter(config => config.message_id != message_id && config.emoji != emoji).concat([{ trigger_channel_id: channel_id, trigger_message_id: message_id, emoji: emoji, result_role_id: role_id }]))
         .then(configs => memory.set(reaction_trigger_memorykey(guild_id), configs));
 }
@@ -32,8 +34,8 @@ async function evaluate_config_on_reaction_update(config, guild_id, user_id, add
     let expected = added;
     let actual = member.roles.includes(config.result_role_id);
     if (expected == actual) return; // all is fine
-    else if (expected && !actual) return discord.guild_member_role_assign(guild_id, user_id, config.result_role_id);
-    else if (!expected && actual) return discord.guild_member_role_unassign(guild_id, user_id, config.result_role_id);
+    else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, config.result_role_id);
+    else if (!expected && actual) return guild_member_role_unassign(guild_id, user_id, config.result_role_id);
     else throw new Error('Here be dragons!');
 }
 
@@ -56,13 +58,37 @@ async function evaluate_config_on_role_update(config, guild_id, user_id, user_ro
     let expected = config.all ? config.condition_role_ids.every(role_id => role_id == guild_id || user_role_ids.includes(role_id)) : config.condition_role_ids.some(role_id => role_id == guild_id || user_role_ids.includes(role_id));
     let actual = user_role_ids.includes(config.result_role_id);
     if (expected == actual) return; // all is fine
-    else if (expected && !actual) return discord.guild_member_role_assign(guild_id, user_id, config.result_role_id);
-    else if (!expected && actual) return discord.guild_member_role_unassign(guild_id, user_id, config.result_role_id);
+    else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, config.result_role_id);
+    else if (!expected && actual) return guild_member_role_unassign(guild_id, user_id, config.result_role_id);
     else throw new Error('Here be dragons!');
 }
 
 function role_trigger_memorykey(guild_id) {
     return `role_management:config:trigger:role:guild:${guild_id}`;
+}
+
+async function guild_member_role_assign(guild_id, user_id, role_id) {
+    return discord.guild_member_role_assign(guild_id, user_id, role_id)
+        .catch(error => report_failure(guild_id, user_id, role_id, true));
+}
+
+async function guild_member_role_unassign(guild_id, user_id, role_id) {
+    return discord.guild_member_role_unassign(guild_id, user_id, role_id)
+        .catch(error => report_failure(guild_id, user_id, role_id, false));
+}
+
+async function report_failure(guild_id, user_id, role_id, assign) {
+    let me = await discord.me();
+    let guild = await discord.guild_retrieve(guild_id);
+    let reportees = await discord.guild_members_list_with_permission(guild_id, 'MANAGE_SERVER');
+    let role = await discord.guild_role_retrieve(guild_id, role_id);
+    let member = await discord.guild_member_retrieve(guild_id, user_id);
+    let operation = assign ? 'assign' : 'unassign';
+    let report = `I failed to ${operation} the role **${role.name}** to **${member.nick ?? member.user.username}** in ${guild.name}.`
+        + ` This can happen if I dont have enough permissions or my role is not ranked higher than the roles im supposed to ${operation}.`
+        + ` Please assign the role manually.`
+        + ` To avoid similar issues in the future, make sure that my own role (${me.username}) has the "Manage Roles" permission and that it is ranked higher than any role you want me to auto-assign.`;
+    return Promise.all(reportees.map(reportee => discord.try_dms(reportee.user.id, report)));
 }
 
 async function clean() {

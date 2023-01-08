@@ -89,6 +89,12 @@ async function guild_roles_list(guild_id) {
   return HTTP(`/guilds/${guild_id}/roles`, 'GET');
 }
 
+async function guild_role_retrieve(guild_id, role_id) {
+  return guild_roles_list(guild_id)
+    .then(roles => roles.find(role => role.id == role_id))
+    .then(role => new Promise((resolve, reject) => role ? resolve(role) : reject(new Error())));
+}
+
 async function guild_role_create(guild_id, name, permissions = undefined, hoist = false, mentionable = true) {
   return HTTP(`/guilds/${guild_id}/roles`, 'POST', {
       name: name,
@@ -282,6 +288,7 @@ module.exports = {
   guild_member_role_unassign,
   
   guild_roles_list,
+  guild_role_retrieve,
   guild_role_create,
   guild_role_modify,
   
