@@ -40,7 +40,7 @@ async function evaluate_config_on_reaction_update(config, guild_id, user_id, add
 }
 
 function reaction_trigger_memorykey(guild_id) {
-    return `role_management:config:trigger:reaction:guild:${guild_id}:`;
+    return `role_management:config:trigger:reaction:guild:${guild_id}`;
 }
 
 async function add_role_trigger(guild_id, role_ids, all, role_id) {
