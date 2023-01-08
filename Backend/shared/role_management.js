@@ -1,6 +1,28 @@
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 
+async function add_role_trigger(guild_id, role_ids, all, role_id) {
+    return memory.get(role_trigger_memorykey(guild_id), [])
+        .then(configs => configs.concat([{ condition_role_ids: role_ids, all: all, result_role_id: role_id }]))
+        .then(configs => memory.set(role_trigger_memorykey(guild_id), configs));
+}
+
+async function on_guild_member_roles_update(guild_id, user_id, role_ids) {
+    return memory.get(role_trigger_memorykey(guild_id), [])
+        .then(configs => Promise.all(configs.map(config => evaluate_config_on_role_update(config, guild_id, user_id, role_ids))))
+}
+
+async function evaluate_config_on_role_update(config, guild_id, user_id, user_role_ids) {
+    let role_check_simple = role_id => role_id == guild_id || user_role_ids.includes(role_id);
+    let role_check = role_id => role_id.startsWith('!') ? !role_check_simple(role_id.substring(1)) : role_check_simple(role_id) ;
+    let expected = config.all ? config.condition_role_ids.every(role_check) : config.condition_role_ids.some(role_check);
+    return evaluate(guild_id, user_id, config.result_role_id, expected);
+}
+
+function role_trigger_memorykey(guild_id) {
+    return `role_management:config:trigger:role:guild:${guild_id}`;
+}
+
 async function add_reaction_trigger(guild_id, channel_id, message_id, emoji, role_id) {
     return discord.react(channel_id, message_id, emoji)
         .catch(e => {/* ignore me */})
@@ -37,25 +59,6 @@ function reaction_trigger_memorykey(guild_id) {
     return `role_management:config:trigger:reaction:guild:${guild_id}`;
 }
 
-async function add_role_trigger(guild_id, role_ids, all, role_id) {
-    return memory.get(role_trigger_memorykey(guild_id), [])
-        .then(configs => configs.concat([{ condition_role_ids: role_ids, all: all, result_role_id: role_id }]))
-        .then(configs => memory.set(role_trigger_memorykey(guild_id), configs));
-}
-
-async function on_guild_member_roles_update(guild_id, user_id, role_ids) {
-    return memory.get(role_trigger_memorykey(guild_id), [])
-        .then(configs => Promise.all(configs.map(config => evaluate_config_on_role_update(config, guild_id, user_id, role_ids))))
-}
-
-async function evaluate_config_on_role_update(config, guild_id, user_id, user_role_ids) {
-    return evaluate(guild_id, user_id, config.result_role_id, config.all ? config.condition_role_ids.every(role_id => role_id == guild_id || user_role_ids.includes(role_id)) : config.condition_role_ids.some(role_id => role_id == guild_id || user_role_ids.includes(role_id)));
-}
-
-function role_trigger_memorykey(guild_id) {
-    return `role_management:config:trigger:role:guild:${guild_id}`;
-}
-
 async function add_voice_trigger(guild_id, channel_id, role_id) {
     return memory.get(voice_trigger_memorykey(guild_id), [])
         .then(configs => configs.concat([{ condition_channel_id: channel_id, result_role_id: role_id }]))
@@ -76,6 +79,11 @@ function voice_trigger_memorykey(guild_id) {
 }
 
 async function evaluate(guild_id, user_id, role_id, expected) {
+    let negate = role_id.startsWith('!');
+    if (negate) {
+        role_id = role_id.substring(1);
+        expected = !expected;
+    }
     let actual = await discord.guild_member_has_role(guild_id, user_id, role_id);
     if (expected == actual) return; // all is fine
     else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, role_id);
@@ -118,15 +126,15 @@ async function summary(guild_id) {
     let channels = await discord.guild_channels_list(guild_id);
     return 'Automatic Role Management Rules:\n'
         + await memory.get(reaction_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => discord.message_link_create(guild_id, config.trigger_channel_id, config.trigger_message_id) + ` ${config.emoji} => ` + discord.mention_role(config.result_role_id)))
+            .then(configs => configs.map(config => 'Message ' + discord.message_link_create(guild_id, config.trigger_channel_id, config.trigger_message_id) + ` ${config.emoji} => ` + discord.mention_role(config.result_role_id)))
+            .then(summaries => summaries.join('\n'))
+        + '\n'
+        + await memory.get(voice_trigger_memorykey(guild_id), [])
+            .then(configs => configs.map(config => (config.condition_channel_id ? 'Channel ' + channels.find(channel => channel.id == config.condition_channel_id) : 'any') + ` => ` + discord.mention_role(config.result_role_id)))
             .then(summaries => summaries.join('\n'))
         + '\n'
         + await memory.get(role_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => config.condition_role_ids.map(role_id => discord.mention_role(role_id)).join(config.all ? ' & ' : ' | ') + ` => ` + discord.mention_role(config.result_role_id)))
-            .then(summaries => summaries.join('\n'))
-            + '\n'
-        + await memory.get(voice_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => (config.condition_channel_id ? channels.find(channel => channel.id == config.condition_channel_id) : 'any') + ` => ` + discord.mention_role(config.result_role_id)))
+            .then(configs => configs.map(config => config.condition_role_ids.map(role_id => discord.mention_role(role_id)).join(config.all ? ' and ' : ' or ') + ` => ` + discord.mention_role(config.result_role_id)))
             .then(summaries => summaries.join('\n'))
         ;
 }
