@@ -126,17 +126,23 @@ async function summary(guild_id) {
     let channels = await discord.guild_channels_list(guild_id);
     return 'Automatic Role Management Rules:\n'
         + await memory.get(reaction_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => 'Message ' + discord.message_link_create(guild_id, config.trigger_channel_id, config.trigger_message_id) + ` ${config.emoji} => ` + discord.mention_role(config.result_role_id)))
+            .then(configs => configs.map(config => 'Message ' + discord.message_link_create(guild_id, config.trigger_channel_id, config.trigger_message_id) + ` ${config.emoji} => ` + summary_role_name(config.result_role_id)))
             .then(summaries => summaries.join('\n'))
         + '\n'
         + await memory.get(voice_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => (config.condition_channel_id ? 'Channel ' + channels.find(channel => channel.id == config.condition_channel_id) : 'any') + ` => ` + discord.mention_role(config.result_role_id)))
+            .then(configs => configs.map(config => (config.condition_channel_id ? 'Channel ' + channels.find(channel => channel.id == config.condition_channel_id) : 'any') + ` => ` + summary_role_name(config.result_role_id)))
             .then(summaries => summaries.join('\n'))
         + '\n'
         + await memory.get(role_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => config.condition_role_ids.map(role_id => discord.mention_role(role_id)).join(config.all ? ' and ' : ' or ') + ` => ` + discord.mention_role(config.result_role_id)))
+            .then(configs => configs.map(config => config.condition_role_ids.map(role_id => summary_role_name(role_id)).join(config.all ? ' and ' : ' or ') + ` => ` + summary_role_name(config.result_role_id)))
             .then(summaries => summaries.join('\n'))
         ;
+}
+
+function summary_role_name(role_id) {
+    let negate = role_id.startsWith('!');
+    if (negate) role_id.substring(1);
+    return (negate ? 'not ' : '') + discord.mention_role(role_id);
 }
 
 module.exports = {
