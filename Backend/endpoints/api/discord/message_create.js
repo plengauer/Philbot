@@ -905,6 +905,18 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     let guild = await discord.guild_retrieve(guild_id);
     if (tokens[0] == 'list') {
       return role_management.summary(guild_id).then(summary => discord.respond(channel_id, event_id, summary));
+    } else if (tokens[0] == 'voice') {
+      let input = tokens.slice(1).join(' ');
+      let index = input.indexOf('=>');
+      let channel_string = input.substring(0, index).trim();
+      let role_string = input.substring(index + 2).trim();
+      let channel = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == channel_string));
+      let role_id = discord.parse_role(role_string);
+      if (!role_id) {
+        role_id = guild.roles.filter(role => role.name == role_string).map(role => role.id).find(id => true);
+        if (!role_id) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + role_string + '!');
+      }
+      return role_management.add_voice_trigger(guild_id, channel.id, role_id)
     } else if (referenced_message_id) {
       let emoji = tokens[0];
       // if (!emoji.startsWith(':') || !emoji.endsWith(':')) return discord.respond(channel_id, event_id, emoji + ' is not a valid emoji!');

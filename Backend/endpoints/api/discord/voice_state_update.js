@@ -2,6 +2,7 @@ const memory = require('../../../shared/memory.js');
 const discord = require('../../../shared/discord.js');
 const player = require('../../../shared/player.js');
 const features = require('../../../shared/features.js');
+const role_management = require('../../../shared/role_management.js');
 
 async function handle(payload) {
   return Promise.all([
@@ -9,7 +10,8 @@ async function handle(payload) {
       memory.set(`voice_channel:user:${payload.user_id}`, { guild_id: payload.guild_id, channel_id: payload.channel_id }, 60 * 60 * 24).then(() => playGreeting(payload.guild_id, payload.user_id)) :
       memory.unset(`voice_channel:user:${payload.user_id}`),
     payload.channel_id ? checkAndStartEvents(payload.guild_id, payload.channel_id) : Promise.resolve(),
-    discord.me().then(me => me.id == payload.user_id ? player.on_voice_state_update(payload.guild_id, payload.channel_id, payload.session_id) : Promise.resolve())
+    discord.me().then(me => me.id == payload.user_id ? player.on_voice_state_update(payload.guild_id, payload.channel_id, payload.session_id) : Promise.resolve()),
+    features.isActive(payload.guild_id, 'role management').then(active => active ? role_management.on_voice_state_update(payload.guild_id, payload.user_id, payload.channel_id) : Promise.resolve())
   ])
   .then(results => results[0])
   .then(reply => reply && reply.command ? { status: 200, body: reply } : undefined);

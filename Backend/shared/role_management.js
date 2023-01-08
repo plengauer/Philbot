@@ -67,12 +67,38 @@ function role_trigger_memorykey(guild_id) {
     return `role_management:config:trigger:role:guild:${guild_id}`;
 }
 
+async function add_voice_trigger(guild_id, channel_id, role_id) {
+    return memory.get(voice_trigger_memorykey(guild_id), [])
+        .then(configs => configs.concat([{ condition_channel_id: channel_id, result_role_id: role_id }]))
+        .then(configs => memory.set(voice_trigger_memorykey(guild_id), configs));
+}
+
+async function on_voice_state_update(guild_id, user_id, channel_id) {
+    return memory.get(voice_trigger_memorykey(guild_id), [])
+        .then(configs => Promise.all(configs.map(config => evaluate_config_on_voice_state_update(config, guild_id, user_id, channel_id))))
+}
+
+async function evaluate_config_on_voice_state_update(config, guild_id, user_id, user_role_ids) {
+    let expected = config.all ? config.condition_role_ids.every(role_id => role_id == guild_id || user_role_ids.includes(role_id)) : config.condition_role_ids.some(role_id => role_id == guild_id || user_role_ids.includes(role_id));
+    let actual = user_role_ids.includes(config.result_role_id);
+    if (expected == actual) return; // all is fine
+    else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, config.result_role_id);
+    else if (!expected && actual) return guild_member_role_unassign(guild_id, user_id, config.result_role_id);
+    else throw new Error('Here be dragons!');
+}
+
+function voice_trigger_memorykey(guild_id) {
+    return `role_management:config:trigger:voice:guild:${guild_id}`;
+}
+
 async function guild_member_role_assign(guild_id, user_id, role_id) {
+    if (guild_id == role_id) return; // everbody is @everyone
     return discord.guild_member_role_assign(guild_id, user_id, role_id)
         .catch(error => report_failure(guild_id, user_id, role_id, true));
 }
 
 async function guild_member_role_unassign(guild_id, user_id, role_id) {
+    if (guild_id == role_id) return discord.guild_member_kick(guild_id, user_id); // if we remove @everyone, that means kicking
     return discord.guild_member_role_unassign(guild_id, user_id, role_id)
         .catch(error => report_failure(guild_id, user_id, role_id, false));
 }
@@ -111,5 +137,6 @@ async function summary(guild_id) {
 module.exports = {
     add_reaction_trigger, on_reaction_add, on_reaction_remove,
     add_role_trigger, on_guild_member_roles_update,
+    add_voice_trigger, on_voice_state_update,
     clean, summary
 }
