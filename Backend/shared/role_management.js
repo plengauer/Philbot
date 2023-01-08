@@ -141,7 +141,7 @@ async function summary(guild_id) {
 
 function summary_role_name(role_id) {
     let negate = role_id.startsWith('!');
-    if (negate) role_id.substring(1);
+    if (negate) role_id = role_id.substring(1);
     return (negate ? 'not ' : '') + discord.mention_role(role_id);
 }
 
