@@ -78,7 +78,7 @@ async function on_voice_state_update(guild_id, user_id, channel_id) {
 }
 
 async function evaluate_config_on_voice_state_update(config, guild_id, user_id, channel_id) {
-    let expected = channel_id && (!config.channel_id || config.channel_id == channel_id);
+    let expected = channel_id && (!config.condition_channel_id || config.condition_channel_id == channel_id);
     let actual = await discord.guild_member_has_role(guild_id, user_id, config.result_role_id);
     if (expected == actual) return; // all is fine
     else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, config.result_role_id);
@@ -128,6 +128,10 @@ async function summary(guild_id) {
             .then(summaries => summaries.join('\n'))
         + '\n'
         + await memory.get(role_trigger_memorykey(guild_id), [])
+            .then(configs => configs.map(config => config.condition_role_ids.map(role_id => discord.mention_role(role_id)).join(config.all ? ' & ' : ' | ') + ` => ` + discord.mention_role(config.result_role_id)))
+            .then(summaries => summaries.join('\n'))
+            + '\n'
+        + await memory.get(voice_trigger_memorykey(guild_id), [])
             .then(configs => configs.map(config => config.condition_role_ids.map(role_id => discord.mention_role(role_id)).join(config.all ? ' & ' : ' | ') + ` => ` + discord.mention_role(config.result_role_id)))
             .then(summaries => summaries.join('\n'))
         ;
