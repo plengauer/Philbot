@@ -77,7 +77,11 @@ async function guild_member_move(guild_id, user_id, channel_id) {
     });
 }
 
-async function guild_member_role_assign (guild_id, user_id, role_id) {
+async function guild_member_has_role(guild_id, user_id, role_id) {
+  return guild_id == role_id || guild_member_retrieve(guild_id, user_id).then(member => member.roles.includes(role_id));
+}
+
+async function guild_member_role_assign(guild_id, user_id, role_id) {
   return HTTP(`/guilds/${guild_id}/members/${user_id}/roles/${role_id}`, 'PUT');
 }
 
@@ -284,6 +288,7 @@ module.exports = {
   guild_member_retrieve,
   guild_member_kick,
   guild_member_move,
+  guild_member_has_role,
   guild_member_role_assign,
   guild_member_role_unassign,
   

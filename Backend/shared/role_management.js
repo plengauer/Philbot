@@ -30,9 +30,8 @@ async function on_reaction_remove(guild_id,channel_id, message_id, user_id, emoj
 }
 
 async function evaluate_config_on_reaction_update(config, guild_id, user_id, added) {
-    let member = await discord.guild_member_retrieve(guild_id, user_id);
     let expected = added;
-    let actual = member.roles.includes(config.result_role_id);
+    let actual = await discord.guild_member_has_role(guild_id, user_id, config.result_role_id);
     if (expected == actual) return; // all is fine
     else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, config.result_role_id);
     else if (!expected && actual) return guild_member_role_unassign(guild_id, user_id, config.result_role_id);
@@ -56,7 +55,7 @@ async function on_guild_member_roles_update(guild_id, user_id, role_ids) {
 
 async function evaluate_config_on_role_update(config, guild_id, user_id, user_role_ids) {
     let expected = config.all ? config.condition_role_ids.every(role_id => role_id == guild_id || user_role_ids.includes(role_id)) : config.condition_role_ids.some(role_id => role_id == guild_id || user_role_ids.includes(role_id));
-    let actual = user_role_ids.includes(config.result_role_id);
+    let actual = await discord.guild_member_has_role(guild_id, user_id, config.result_role_id);
     if (expected == actual) return; // all is fine
     else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, config.result_role_id);
     else if (!expected && actual) return guild_member_role_unassign(guild_id, user_id, config.result_role_id);
@@ -78,9 +77,9 @@ async function on_voice_state_update(guild_id, user_id, channel_id) {
         .then(configs => Promise.all(configs.map(config => evaluate_config_on_voice_state_update(config, guild_id, user_id, channel_id))))
 }
 
-async function evaluate_config_on_voice_state_update(config, guild_id, user_id, user_role_ids) {
-    let expected = config.all ? config.condition_role_ids.every(role_id => role_id == guild_id || user_role_ids.includes(role_id)) : config.condition_role_ids.some(role_id => role_id == guild_id || user_role_ids.includes(role_id));
-    let actual = user_role_ids.includes(config.result_role_id);
+async function evaluate_config_on_voice_state_update(config, guild_id, user_id, channel_id) {
+    let expected = channel_id && (!config.channel_id || config.channel_id == channel_id);
+    let actual = await discord.guild_member_has_role(guild_id, user_id, config.result_role_id);
     if (expected == actual) return; // all is fine
     else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, config.result_role_id);
     else if (!expected && actual) return guild_member_role_unassign(guild_id, user_id, config.result_role_id);

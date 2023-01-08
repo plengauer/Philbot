@@ -910,7 +910,7 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
       let index = input.indexOf('=>');
       let channel_string = input.substring(0, index).trim();
       let role_string = input.substring(index + 2).trim();
-      let channel = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == channel_string));
+      let channel = channel_string == 'any' ? null : await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == channel_string));
       let role_id = discord.parse_role(role_string);
       if (!role_id) {
         role_id = guild.roles.filter(role => role.name == role_string).map(role => role.id).find(id => true);
