@@ -36,14 +36,27 @@ function tokenize(input) {
 }
 
 async function parse_condition(parser, guild_id, expectEOF = false) {
+    let inner = await parse_condition_or(parser, guild_id);
+    if (expectEOF && parser.cursor < parser.tokens.length) throw new Error('The rule is not valid!')
+    return inner;
+}
+
+async function parse_condition_or(parser, guild_id) {
+    let elements = [ await parse_condition_and(parser, guild_id) ];
+    while (parser.cursor < parser.tokens.length && parser.tokens[parser.cursor] == 'or') {
+        parser_next(parser);
+        elements.push(await parse_condition_and(parser, guild_id));
+    }
+    return elements.length == 1 ? elements[0] : { type: 'or', inners: elements };
+}
+
+async function parse_condition_and(parser, guild_id) {
     let elements = [ await parse_condition_element(parser, guild_id) ];
-    let connector = null;
-    while (parser.cursor < parser.tokens.length && parser.tokens[parser.cursor] != ')' && (!connector || parser.tokens[parser.cursor] == connector)) {
-        connector = parser_next(parser);
+    while (parser.cursor < parser.tokens.length && parser.tokens[parser.cursor] == 'and') {
+        parser_next(parser);
         elements.push(await parse_condition_element(parser, guild_id));
     }
-    if (expectEOF && parser.cursor < parser.tokens.length) throw new Error('The rule is not valid!')
-    return elements.length == 1 ? elements[0] : { type: connector, inners: elements };
+    return elements.length == 1 ? elements[0] : { type: 'and', inners: elements };
 }
 
 async function parse_condition_element(parser, guild_id) {
