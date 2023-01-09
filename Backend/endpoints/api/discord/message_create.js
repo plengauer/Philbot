@@ -895,64 +895,23 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     return subscriptions.remove(guild_id, channel_id, link, filter)
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
-  
-  } else if (message.startsWith('auto-set role ')) {
+
+  } else if (message == 'automatic roles list' || message == 'automatic roles list rules') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
     if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
-    let tokens = message.split(' ').slice(2).filter(token => token.length > 0);
-    let guild = await discord.guild_retrieve(guild_id);
-    if (tokens[0] == 'list') {
-      return role_management.summary(guild_id).then(summary => discord.respond(channel_id, event_id, summary));
-    } else if (tokens[0] == 'voice') {
-      let input = tokens.slice(1).join(' ');
-      let index = input.indexOf('=>');
-      let channel_string = input.substring(0, index).trim();
-      let role_string = input.substring(index + 2).trim();
-      let channel = channel_string == 'any' ? null : await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == channel_string));
-      let role_id = discord.parse_role(role_string);
-      if (!role_id) {
-        role_id = guild.roles.filter(role => role.name == role_string).map(role => role.id).find(id => true);
-        if (!role_id) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + role_string + '!');
-      }
-      return role_management.add_voice_trigger(guild_id, channel ? channel.id : null, role_id).then(() => reactOK(channel_id, event_id));
-    } else if (referenced_message_id) {
-      let emoji = tokens[0];
-      // if (!emoji.startsWith(':') || !emoji.endsWith(':')) return discord.respond(channel_id, event_id, emoji + ' is not a valid emoji!');
-      let role_string = tokens.slice(1).join(' ');
-      let role_id = discord.parse_role(role_string);
-      if (!role_id) {
-        role_id = guild.roles.filter(role => role.name == role_string).map(role => role.id).find(id => true);
-        if (!role_id) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + role_string + '!');
-      }
-      return role_management.add_reaction_trigger(guild_id, channel_id, referenced_message_id, emoji, role_id).then(() => reactOK(channel_id, event_id));  
-    } else {
-      let index = 0;
-      if (tokens[index] != 'all' && tokens[index] != 'any') return discord.respond(channel_id, event_id, 'You must specify either "any" or "all", not ' + tokens[index] + '!');
-      let all = tokens[index++] == 'all';
-      let roles = [];
-      while (index < tokens.length && tokens[index] != '=>') {
-        let role_id = discord.parse_role(tokens[index]);
-        if (!role_id) {
-          role_id = guild.roles.filter(role => role.name == tokens[index]).map(role => role.id).find(id => true);
-          if (!role_id) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + role_string + '!');
-        }
-        roles.push(role_id);
-        index++;
-      }
-      if (roles.length == 0) return discord.respond(channel_id, event_id, 'You must specifiy at least one role as trigger!');
-      if (index >= tokens.length || tokens[index] != '=>') return discord.respond(channel_id, event_id, 'You must follow the trigger roles with "=>"!');
-      index++;
-      let role_id = discord.parse_role(tokens[index]);
-      if (!role_id) {
-        role_id = guild.roles.filter(role => role.name == tokens[index]).map(role => role.id).find(id => true);
-        if (!role_id) return discord.respond(channel_id, event_id, 'I cannot find a role with the name ' + tokens[index] + '!');
-      }
-      index++;
-      if (index < tokens.length) return discord.respond(channel_id, event_id, 'I do not understand the end of your command!');
-      return role_management.add_role_trigger(guild_id, roles, all, role_id).then(() => reactOK(channel_id, event_id));
-    }
+    return role_management.to_string(guild_id).then(string => discord.respond(channel_id, event_id, string));
+
+  } else if (message.startsWith('automatic roles create rule ')) {
+    guild_id = guild_id ?? await resolveGuildID(user_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
+    if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
+    message = message.split(' ').slice(4).join(' ');
+    return role_management.add_new_rule(guild_id, message)
+      .then(() => reactOK(channel_id, event_id))
+      .catch(error => discord.respond(channel_id, event_id, error.message));
 
   } else {
     guild_id = guild_id ?? await resolveGuildID(user_id);

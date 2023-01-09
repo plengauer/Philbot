@@ -190,7 +190,11 @@ async function scheduledevent_modify(guild_id, event_id, event) {
 }
 
 async function invite_delete(invite_code)  {
-  return HTTP(`/invites/${invite_code}`, 'DELETE'); 
+  return HTTP(`/invites/${invite_code}`, 'DELETE');
+}
+
+async function message_retrieve(channel_id, message_id) {
+  return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'GET'); 
 }
 
 async function respond(channel_id, event_id, content, tts = false) {
@@ -240,7 +244,23 @@ function getSplitIndex(string, limit) {
   return index;
 }
 
-async function react(channel_id, message_id, emoji) {
+async function reactions_list(channel_id, message_id, emoji) {
+  let limit = 100;
+  let list = [];
+  while (true) {
+    let page = await reactions_list_paged(channel_id, message_id, emoji, limit, list.length > 0 ? list[list.length - 1] : undefined);
+    list = list.concat(page);
+    if (page.length < limit) break;
+  }
+  return list;
+}
+
+async function reactions_list_paged(channel_id, message_id, emoji, limit, after = undefined) {
+  let encoded_emoji = encodeURIComponent(emoji);
+  return HTTP(`/channels/${channel_id}/messages/${message_id}/reactions/${encoded_emoji}?limit=${limit}` + (after ? 'after=' + after : ''), 'GET');
+}
+
+async function reaction_create(channel_id, message_id, emoji) {
   let encoded_emoji = encodeURIComponent(emoji);
   return HTTP(`/channels/${channel_id}/messages/${message_id}/reactions/${encoded_emoji}/@me`, 'PUT');
 }
@@ -267,7 +287,7 @@ function guild_member_has_permission_0(guild, roles, member, permission) {
 }
 
 async function HTTP(endpoint, method, payload = undefined, ttc = undefined) {
-  return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` }, cache: ttc ?? 60 });
+  return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` }, cache: ttc });
 }
 
 module.exports = {
@@ -316,11 +336,16 @@ module.exports = {
 
   invite_delete,
   
+  message_retrieve,
+
   post,
   respond,
   dms,
   try_dms,
-  react,
+  
+  reactions_list,
+  reaction_create,
+  react: async function(channel_id, message_id, emoji) { return reaction_create(channel_id, message_id, emoji); }, // backwards compatibility
   
   guild_member_has_permission,
   guild_members_list_with_permission,

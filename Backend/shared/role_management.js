@@ -1,94 +1,178 @@
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 
-async function add_role_trigger(guild_id, role_ids, all, role_id) {
-    return memory.get(role_trigger_memorykey(guild_id), [])
-        .then(configs => configs.concat([{ condition_role_ids: role_ids, all: all, result_role_id: role_id }]))
-        .then(configs => memory.set(role_trigger_memorykey(guild_id), configs));
+async function add_new_rule(guild_id, input) {
+    let rule = await parse_rule(input, guild_id);
+    return memory.get(memorykey(guild_id), [])
+        .then(rules => rules.concat(rule))
+        .then(rules => memory.set(memorykey(guild_id), rules));
 }
 
-async function on_guild_member_roles_update(guild_id, user_id, role_ids) {
-    return memory.get(role_trigger_memorykey(guild_id), [])
-        .then(configs => Promise.all(configs.map(config => evaluate_config_on_role_update(config, guild_id, user_id, role_ids))))
+// this is super inefficient parsing, yolo!
+async function parse_rule(input, guild_id) {
+    let split = input.indexOf('=');
+    if (split < 0) throw new Error('A rule must have a ":" to separate the condition from the result!');
+    return {
+        condition: await parse_condition({ tokens: tokenize(input.substring(0, split)), cursor: 0 }, guild_id, true),
+        actions: await parse_actions({ tokens: tokenize(input.substring(split + 1)), cursor: 0 }, guild_id, true)
+    };
 }
 
-async function evaluate_config_on_role_update(config, guild_id, user_id, user_role_ids) {
-    let role_check_simple = role_id => role_id == guild_id || user_role_ids.includes(role_id);
-    let role_check = role_id => role_id.startsWith('!') ? !role_check_simple(role_id.substring(1)) : role_check_simple(role_id) ;
-    let expected = config.all ? config.condition_role_ids.every(role_check) : config.condition_role_ids.some(role_check);
-    return evaluate(guild_id, user_id, config.result_role_id, expected);
+function tokenize(input) {
+    const lookaheads = [ '<', '(', ')', ',' ];
+    let tokens = [];
+    let start = 0;
+    for (let cursor = 0; cursor < input.length; cursor++) {
+        if (input.charAt(cursor) == ' ' || lookaheads.some(lookahead => input.charAt(cursor) == lookahead)) {
+            tokens.push(input.substring(start, cursor));
+            start = cursor;
+        }
+    }
+    tokens.push(input.substring(start));
+    return tokens.map(token => token.trim()).filter(token => token.length > 0);
 }
 
-function role_trigger_memorykey(guild_id) {
-    return `role_management:config:trigger:role:guild:${guild_id}`;
+async function parse_condition(parser, guild_id, expectEOF = false) {
+    let elements = [ await parse_condition_element(parser, guild_id) ];
+    let connector = null;
+    while (parser.cursor < parser.tokens.length && parser.tokens[parser.cursor] != ')' && (!connector || parser.tokens[parser.cursor] == connector)) {
+        connector = parser_next(parser);
+        elements.push(await parse_condition_element(parser, guild_id));
+    }
+    if (expectEOF && parser.cursor < parser.tokens.length) throw new Error('The rule is not valid!')
+    return elements.length == 1 ? elements[0] : { type: connector, inners: elements };
 }
 
-async function add_reaction_trigger(guild_id, channel_id, message_id, emoji, role_id) {
-    return discord.react(channel_id, message_id, emoji)
-        .catch(e => {/* ignore me */})
-        .then(() => memory.get(reaction_trigger_memorykey(guild_id), []))
-        .then(configs => configs.filter(config => config.message_id != message_id && config.emoji != emoji).concat([{ trigger_channel_id: channel_id, trigger_message_id: message_id, emoji: emoji, result_role_id: role_id }]))
-        .then(configs => memory.set(reaction_trigger_memorykey(guild_id), configs));
-}
-
-async function on_reaction_add(guild_id, channel_id, message_id, user_id, emoji) {
-    let configs = await memory.get(reaction_trigger_memorykey(guild_id, message_id, emoji), []);
-    for (let config of configs) {
-        if (config.trigger_channel_id != channel_id) continue;
-        if (config.trigger_message_id != message_id) continue;
-        if (config.emoji != emoji) continue;
-        await evaluate_config_on_reaction_update(config, guild_id, user_id, true);
+async function parse_condition_element(parser, guild_id) {
+    switch (parser.tokens[parser.cursor]) {
+        case 'role': return parse_trigger_role(parser, guild_id)
+        case 'connect': return parse_trigger_connect(parser, guild_id);
+        case 'disconnect': return parse_trigger_disconnect(parser);
+        case 'reaction': return parse_trigger_reaction(parser, guild_id);
+        case 'not': return { type: parser_next(parser), inner: await parse_condition_element(parser, guild_id) };
+        default: 
+            if (parser.tokens[parser.cursor].startsWith('<')) return parse_trigger_role(parser, guild_id);
+            else if (parser.tokens[parser.cursor].startsWith('(')) {
+                parser_next(parser);
+                let result = await parse_condition(parser, guild_id)
+                if (parser_next(parser) != ')') throw new Error('The rule is missing a ")"!');
+                return result;
+            } else throw new Error('The rule does not allow "' + parser_next(parser) + '"!');
     }
 }
 
-async function on_reaction_remove(guild_id,channel_id, message_id, user_id, emoji) {
-    let configs = await memory.get(reaction_trigger_memorykey(guild_id, message_id, emoji), []);
-    for (let config of configs) {
-        if (config.trigger_channel_id != channel_id) continue;
-        if (config.trigger_message_id != message_id) continue;
-        if (config.emoji != emoji) continue;
-        await evaluate_config_on_reaction_update(config, guild_id, user_id, false);
+async function parse_trigger_reaction(parser, guild_id) {
+    if (parser_next(parser) != 'reaction') throw new Error('Expected "reaction"');
+    // https://discord.com/channels/${guild_id}/${channel_id}/${message_id}
+    let emoji = parser_next(parser);
+    let link = parser_next(parser);
+    let link_tokens = link.split('/').filter(token => token.trim().length > 0).slice(-3);
+    let link_guild_id = link_tokens[0];
+    let link_channel_id = link_tokens[1];
+    let link_message_id = link_tokens[2];
+    if (guild_id != link_guild_id) throw new Error('The message is from a different server!');
+    if (!(await discord.guild_channels_list(guild_id)).some(channel => channel.id == link_channel_id)) throw new Error('The channel of the message does not exist!');
+    if (!(await discord.message_retrieve(link_channel_id, link_message_id).then(() => true).catch(() => false))) throw new Error('The message does not exist!');
+    return { type: 'reaction', channel_id: link_channel_id, message_id: link_message_id, emoji: emoji };
+}
+
+async function parse_trigger_role(parser, guild_id) {
+    let role_string = parser_next(parser);
+    let role_id = null;
+    if (role_string == 'role') {
+        role_string = parser_next(parser);
+        role_id = await discord.guild_roles_list(guild_id).then(roles => roles.find(role => role.name == role_string));
+        if (!role_id) throw new Error('I cannot find the role ' + role_string + '!');
+    } else {
+        role_id = discord.parse_role(role_string);
+        if (!role_id || !(await discord.guild_roles_list(guild_id)).some(role => role.id == role_id)) throw new Error('I cannot find the role ' + role_string + '!');
     }
+    return { type: "role", role_id: role_id };
 }
 
-async function evaluate_config_on_reaction_update(config, guild_id, user_id, added) {
-    return evaluate(guild_id, user_id, config.result_role_id, added);
+async function parse_trigger_connect(parser, guild_id) {
+    if (parser_next(parser) != 'connect') throw new Error('Expected "connect"');
+    let channel_name = parse_next(channel_id);
+    let channel_id = null;
+    if (channel_name == 'any') {
+        channel_id = null;
+    } else {
+        channel_id = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == channel_name));
+        if (!channel_id) throw new Error('I cannot find the channel ' + channel_name + '!');
+    }
+    return { type: 'connect', channel_id: channel_id };
 }
 
-function reaction_trigger_memorykey(guild_id) {
-    return `role_management:config:trigger:reaction:guild:${guild_id}`;
+async function parse_trigger_disconnect(parser) {
+    if (parser_next(parser) != 'disconnect') throw new Error('Expected "disconnect"');
+    return { type: 'disconnect' };
 }
 
-async function add_voice_trigger(guild_id, channel_id, role_id) {
-    return memory.get(voice_trigger_memorykey(guild_id), [])
-        .then(configs => configs.concat([{ condition_channel_id: channel_id, result_role_id: role_id }]))
-        .then(configs => memory.set(voice_trigger_memorykey(guild_id), configs));
+async function parse_actions(parser, guild_id) {
+    let actions = [ await parse_condition_element(parser, guild_id) ];
+    while (parser.cursor < parser.tokens.length) {
+        if (parser_next(parser) != ',') throw new Error('The actions of a rule must be separated by ","!');
+        actions.push(await parse_condition_element(parser, guild_id));
+    }
+    if (parser.cursor < parser.tokens.length) throw new Error('The rule is not valid!')
+    return actions;
+}
+
+function parser_next(parser) {
+    if (parser.cursor >= parser.tokens.length) throw new Error('The rule is incomplete!')
+    return parser.tokens[parser.cursor++];
+}
+
+async function on_guild_member_roles_update(guild_id, user_id) {
+    return on_event(guild_id, user_id);
+}
+
+async function on_reaction_add(guild_id, user_id) {
+    return on_event(guild_id, user_id);
+}
+
+async function on_reaction_remove(guild_id, user_id) {
+    return on_event(guild_id, user_id);
 }
 
 async function on_voice_state_update(guild_id, user_id, channel_id) {
-    return memory.get(voice_trigger_memorykey(guild_id), [])
-        .then(configs => Promise.all(configs.map(config => evaluate_config_on_voice_state_update(config, guild_id, user_id, channel_id))))
+    return on_event(guild_id, user_id, { type: channel_id ? 'connect' : 'disconnect', channel_id: channel_id });
 }
 
-async function evaluate_config_on_voice_state_update(config, guild_id, user_id, channel_id) {
-    return evaluate(guild_id, user_id, config.result_role_id, channel_id && (!config.condition_channel_id || config.condition_channel_id == channel_id));
+async function on_event(guild_id, user_id, event = undefined) {
+    return memory.get(memorykey(guild_id), [])
+        .then(rules => Promise.all(rules.map(rule => execute(rule, guild_id, user_id, event))));
 }
 
-function voice_trigger_memorykey(guild_id) {
-    return `role_management:config:trigger:voice:guild:${guild_id}`;
+async function execute(rule, guild_id, user_id, event) {
+    return evaluate(rule.condition, guild_id, user_id, event)
+        .then(expected => expected != undefined ? Promise.all(rule.actions.map(action => apply(action, expected, guild_id, user_id))) : Promise.resolve());
 }
 
-async function evaluate(guild_id, user_id, role_id, expected) {
-    let negate = role_id.startsWith('!');
-    if (negate) {
-        role_id = role_id.substring(1);
-        expected = !expected;
+async function evaluate(condition, guild_id, user_id, event) {
+    switch(condition.type) {
+        case 'and': return Promise.all(condition.inners.map(inner => evaluate(inner, guild_id, user_id, event))).then(results => results.every(result => result != undefined) ? results.every(result => !!result) : undefined);
+        case 'or': return Promise.all(condition.inners.map(inner => evaluate(inner, guild_id, user_id, event))).then(results => results.every(result => result != undefined) ? results.some(result => !!result) : undefined);
+        case 'not': return evaluate(condition.inner, event).then(result => !result);
+        case 'role': return discord.guild_member_has_role(guild_id, user_id, condition.role_id);
+        case 'reaction': return discord.reactions_list(condition.channel_id, condition.message_id, condition.emoji).then(users => users.some(user => user.id == user_id));
+        case 'connect': return (event && event.type == 'connect' && (!condition.channel_id || condition.channel_id == event.channel_id)) ? true : undefined;
+        case 'disconnect': return (event && event.type == 'disconnect') ? true : undefined;
+        default: throw new Error('Unknown condition type: ' + condition.type + '!');
     }
-    let actual = await discord.guild_member_has_role(guild_id, user_id, role_id);
-    if (expected == actual) return; // all is fine
-    else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, role_id);
-    else if (!expected && actual) return guild_member_role_unassign(guild_id, user_id, role_id);
-    else throw new Error('Here be dragons!');
+}
+
+async function apply(action, expected, guild_id, user_id) {
+    switch (action.type) {
+        case 'not': return apply(action.inner, !expected, guild_id, user_id);
+        case 'role':
+            let actual = await discord.guild_member_has_role(guild_id, user_id, action.role_id);
+            if (expected == actual) return; // all is fine
+            else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, action.role_id);
+            else if (!expected && actual) return guild_member_role_unassign(guild_id, user_id, action.role_id);
+            else throw new Error('Here be dragons!');
+        default: throw new Error('Role actions may only be actions and roles, but was ' + action.type + '!');
+    }
 }
 
 async function guild_member_role_assign(guild_id, user_id, role_id) {
@@ -117,37 +201,45 @@ async function report_failure(guild_id, user_id, role_id, assign) {
     return Promise.all(reportees.map(reportee => discord.try_dms(reportee.user.id, report)));
 }
 
+function memorykey(guild_id) {
+    return `role_management:rules:guild:${guild_id}`;
+}
+
 async function clean() {
     // clean all configs where either the message or the roles or the guilds do not exist anymore
     // there are just too many ways that we need to react (message delete, message bulk delete, role delete, channel delete, guild delete)
 }
 
-async function summary(guild_id) {
-    let channels = await discord.guild_channels_list(guild_id);
-    return 'Automatic Role Management Rules:\n'
-        + await memory.get(reaction_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => 'Message ' + discord.message_link_create(guild_id, config.trigger_channel_id, config.trigger_message_id) + ` ${config.emoji} => ` + summary_role_name(config.result_role_id)))
-            .then(summaries => summaries.join('\n'))
-        + '\n'
-        + await memory.get(voice_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => (config.condition_channel_id ? 'Channel ' + channels.find(channel => channel.id == config.condition_channel_id) : 'any') + ` => ` + summary_role_name(config.result_role_id)))
-            .then(summaries => summaries.join('\n'))
-        + '\n'
-        + await memory.get(role_trigger_memorykey(guild_id), [])
-            .then(configs => configs.map(config => config.condition_role_ids.map(role_id => summary_role_name(role_id)).join(config.all ? ' and ' : ' or ') + ` => ` + summary_role_name(config.result_role_id)))
-            .then(summaries => summaries.join('\n'))
+async function to_string(guild_id) {
+    return 'Automatic Role Rules:\n'
+        + await memory.get(memorykey(guild_id), [])
+            .then(rules => rules.map(rule => rule_to_string(rule, guild_id)))
+            .then(promises => Promise.all(promises))
+            .then(strings => strings.join('\n'))
         ;
 }
 
-function summary_role_name(role_id) {
-    let negate = role_id.startsWith('!');
-    if (negate) role_id = role_id.substring(1);
-    return (negate ? 'not ' : '') + discord.mention_role(role_id);
+async function rule_to_string(rule, guild_id) {
+    return (await condition_to_string(rule.condition, guild_id)) + ' = ' + (await Promise.all(rule.actions.map(action => condition_to_string(action)))).join(',')
+}
+
+async function condition_to_string(condition, guild_id) {
+    switch(condition.type) {
+        case 'and': return '(' + (await Promise.all(condition.inners.map(inner => condition_to_string(inner, guild_id)))).join(' and ') + ')';
+        case 'or': return '(' + (await Promise.all(condition.inners.map(inner => condition_to_string(inner, guild_id)))).join(' or ') + ')';
+        case 'not': return 'not ' + await condition_to_string(condition.inner, guild_id);
+        case 'role': return discord.mention_role(condition.role_id);
+        case 'reaction': return condition.emoji + ' ' + discord.message_link_create(guild_id, condition.channel_id, condition.message_id);
+        case 'connect': return 'connect ' + (condition.channel_id ? (await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == condition.channel_id)))?.name : 'any');
+        case 'disconnect': return 'disconnect';
+        default: throw new Error('Unknown condition type: ' + condition.type + '!');
+    }
 }
 
 module.exports = {
-    add_reaction_trigger, on_reaction_add, on_reaction_remove,
-    add_role_trigger, on_guild_member_roles_update,
-    add_voice_trigger, on_voice_state_update,
-    clean, summary
+    add_new_rule,
+    on_reaction_add, on_reaction_remove,
+    on_guild_member_roles_update,
+    on_voice_state_update,
+    clean, to_string
 }
