@@ -26,6 +26,29 @@ from opentelemetry.sdk.trace.export import (
 # TODO resolve public IP properly
 # TODO callback when playback is finished
 
+merged = dict()
+for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
+    try:
+        data = ''
+        with open(name) as f:
+            data = json.load(f if name.startswith("/var") else open(f.read()))
+        merged.update(data)
+    except:
+        pass
+merged.update({
+  "service.name": environ['SERVICE_NAME'],
+  "service.version": environ['SERVICE_VERSION']
+})
+resource = Resource.create(merged)
+tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource=resource)
+tracer_provider.add_span_processor(
+    BatchSpanProcessor(OTLPSpanExporter(
+        endpoint=environ['OPENTELEMETRY_TRACES_API_ENDPOINT'],
+        headers={ "Authorization": environ['OPENTELEMETRY_TRACES_API_TOKEN'] },
+    ))
+)
+OpenTelemetry.set_tracer_provider(tracer_provider)
+
 UDP_MAX_PAYLOAD = 65507
 HTTP_PORT = int(environ.get('HTTP_PORT', str(12345)))
 UDP_PORT_MIN = int(environ.get('UDP_PORT_MIN', str(12346)))
@@ -342,31 +365,6 @@ def voice_content_update():
     return 'Success'
 
 def main():
-    merged = dict()
-    for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
-        try:
-            data = ''
-            with open(name) as f:
-                data = json.load(f if name.startswith("/var") else open(f.read()))
-            merged.update(data)
-        except:
-            pass
-    merged.update({
-        "service.name": environ['SERVICE_NAME'],
-        "service.version": environ['SERVICE_VERSION']
-    })
-    resource = Resource.create(merged)
-    tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource=resource)
-    OpenTelemetry.set_tracer_provider(tracer_provider)
-    tracer_provider.add_span_processor(
-        BatchSpanProcessor(OTLPSpanExporter(
-            endpoint=environ['OPENTELEMETRY_TRACES_API_ENDPOINT'],
-            headers={
-                "Authorization": environ['OPENTELEMETRY_TRACES_API_TOKEN']
-            },
-        )
-    ))
-
     print('VOICE ready')
     app.run(port=HTTP_PORT)
 
