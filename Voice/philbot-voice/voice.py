@@ -364,13 +364,6 @@ def voice_content_update():
     context.on_content_update(resolve_url(body['url']))
     return 'Success'
 
-@app.route('/voice_progress', methods=['POST'])
-def voice_content_update():
-    body = request.json
-    context = get_context(body['guild_id'])
-    context.on_content_update(resolve_url(body['url']))
-    return 'Success'
-
 def main():
     print('VOICE ready')
     app.run(port=HTTP_PORT)
