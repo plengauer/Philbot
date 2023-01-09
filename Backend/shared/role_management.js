@@ -1,6 +1,9 @@
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 
+// auto respond with emoji
+// manually run rules
+
 async function add_new_rule(guild_id, input) {
     let rule = await parse_rule(input, guild_id);
     return memory.get(memorykey(guild_id), [])
@@ -73,6 +76,11 @@ async function parse_trigger_reaction(parser, guild_id) {
     if (guild_id != link_guild_id) throw new Error('The message is from a different server!');
     if (!(await discord.guild_channels_list(guild_id)).some(channel => channel.id == link_channel_id)) throw new Error('The channel of the message does not exist!');
     if (!(await discord.message_retrieve(link_channel_id, link_message_id).then(() => true).catch(() => false))) throw new Error('The message does not exist!');
+    try {
+        await discord.reaction_create(link_channel_id, link_message_id, emoji);
+    } catch {
+        // just swallow
+    }
     return { type: 'reaction', channel_id: link_channel_id, message_id: link_message_id, emoji: emoji };
 }
 
@@ -140,8 +148,16 @@ async function on_voice_state_update(guild_id, user_id, channel_id) {
 }
 
 async function on_event(guild_id, user_id, event = undefined) {
+    let me = await discord.me();
+    if (me.id == user_id) return;
     return memory.get(memorykey(guild_id), [])
         .then(rules => Promise.all(rules.map(rule => execute(rule, guild_id, user_id, event))));
+}
+
+async function update_all(guild_id) {
+    return discord.guild_members_list(guild_id)
+        .then(members => members.map(member => member.user.id))
+        .then(user_ids => Promise.all(user_ids.map(user_id => on_event(guild_id, user_id))));
 }
 
 async function execute(rule, guild_id, user_id, event) {
@@ -241,5 +257,6 @@ module.exports = {
     on_reaction_add, on_reaction_remove,
     on_guild_member_roles_update,
     on_voice_state_update,
+    update_all,
     clean, to_string
 }

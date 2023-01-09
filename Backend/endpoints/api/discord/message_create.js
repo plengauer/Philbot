@@ -912,6 +912,13 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     return role_management.add_new_rule(guild_id, message)
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
+    
+  } else if (message == 'automatic roles update') {
+    guild_id = guild_id ?? await resolveGuildID(user_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
+    if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
+    return role_management.update_all(guild_id).then(() => reactOK(channel_id, event_id));
 
   } else {
     guild_id = guild_id ?? await resolveGuildID(user_id);
