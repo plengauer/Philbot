@@ -113,7 +113,7 @@ async function parse_trigger_role(parser, guild_id) {
 
 async function parse_trigger_connect(parser, guild_id) {
     if (parser_next(parser) != 'connect') throw new Error('Expected "connect"');
-    let channel_name = parser_next(channel_id);
+    let channel_name = parser_next(parser);
     let channel_id = null;
     if (channel_name == 'any') {
         channel_id = null;
