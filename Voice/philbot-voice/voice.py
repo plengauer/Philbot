@@ -28,13 +28,13 @@ from opentelemetry.sdk.trace.export import (
 
 merged = dict()
 for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
-try:
-    data = ''
-    with open(name) as f:
-        data = json.load(f if name.startswith("/var") else open(f.read()))
-    merged.update(data)
-except:
-    pass
+    try:
+        data = ''
+        with open(name) as f:
+            data = json.load(f if name.startswith("/var") else open(f.read()))
+        merged.update(data)
+    except:
+        pass
 merged.update({
   "service.name": environ['SERVICE_NAME'],
   "service.version": environ['SERVICE_VERSION']
