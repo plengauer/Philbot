@@ -67,7 +67,7 @@ async function parse_condition_element(parser, guild_id) {
         case 'reaction': return parse_trigger_reaction(parser, guild_id);
         case 'not': return { type: parser_next(parser), inner: await parse_condition_element(parser, guild_id) };
         default: 
-            if (parser.tokens[parser.cursor].startsWith('<')) return parse_trigger_role(parser, guild_id);
+            if (parser.tokens[parser.cursor].startsWith('<') || parser.tokens[parser.cursor].startsWith('@')) return parse_trigger_role(parser, guild_id);
             else if (parser.tokens[parser.cursor].startsWith('(')) {
                 parser_next(parser);
                 let result = await parse_condition(parser, guild_id)
@@ -102,7 +102,7 @@ async function parse_trigger_role(parser, guild_id) {
     let role_id = null;
     if (role_string == 'role') {
         role_string = parser_next(parser);
-        role_id = await discord.guild_roles_list(guild_id).then(roles => roles.find(role => role.name == role_string));
+        role_id = await discord.guild_roles_list(guild_id).then(roles => roles.find(role => role.name == role_string)?.id);
         if (!role_id) throw new Error('I cannot find the role ' + role_string + '!');
     } else if (role_string == '@everyone') {
         return guild_id;
