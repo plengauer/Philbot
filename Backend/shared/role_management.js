@@ -104,6 +104,8 @@ async function parse_trigger_role(parser, guild_id) {
         role_string = parser_next(parser);
         role_id = await discord.guild_roles_list(guild_id).then(roles => roles.find(role => role.name == role_string));
         if (!role_id) throw new Error('I cannot find the role ' + role_string + '!');
+    } else if (role_string == '@everyone') {
+        return guild_id;
     } else {
         role_id = discord.parse_role(role_string);
         if (!role_id || !(await discord.guild_roles_list(guild_id)).some(role => role.id == role_id)) throw new Error('I cannot find the role ' + role_string + '!');
