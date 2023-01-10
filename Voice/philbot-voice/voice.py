@@ -44,7 +44,7 @@ tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource=resource)
 tracer_provider.add_span_processor(
     BatchSpanProcessor(OTLPSpanExporter(
         endpoint=environ['OPENTELEMETRY_TRACES_API_ENDPOINT'],
-        headers={ "Authorization": environ['OPENTELEMETRY_TRACES_API_TOKEN'] },
+        headers={ "Authorization": 'Api-Token ' + environ['OPENTELEMETRY_TRACES_API_TOKEN'] },
     ))
 )
 OpenTelemetry.set_tracer_provider(tracer_provider)
