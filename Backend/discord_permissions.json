@@ -1,5 +1,5 @@
 {
-  "minimum": [ "VIEW_CHANNELS", "ADD_REACTIONS", "SEND_MESSAGES", "EMBED_LINKS" ],
+  "minimum": [ "VIEW_CHANNELS", "ADD_REACTIONS", "SEND_MESSAGES", "EMBED_LINKS", "READ_MESSAGE_HISTORY" ],
   "player": [ "CONNECT", "SPEAK" ],
   "repeating events": [ "MANAGE_EVENTS" ],
   "tournament": [ "MANAGE_CHANNELS", "MANAGE_ROLES", "MOVE_MEMBERS", "MUTE_MEMBERS", "DEAFEN_MEMBERS" ],
