@@ -257,7 +257,12 @@ async function reactions_list(channel_id, message_id, emoji) {
 
 async function reactions_list_paged(channel_id, message_id, emoji, limit, after = undefined) {
   let encoded_emoji = encodeURIComponent(emoji);
-  return HTTP(`/channels/${channel_id}/messages/${message_id}/reactions/${encoded_emoji}?limit=${limit}` + (after ? 'after=' + after : ''), 'GET');
+  try {
+    return await HTTP(`/channels/${channel_id}/messages/${message_id}/reactions/${encoded_emoji}?limit=${limit}` + (after ? 'after=' + after : ''), 'GET')
+  } catch (error) {
+    if (error.message.toLowerCase().includes('unknown emoji')) return [];
+    else throw error;
+  }
 }
 
 async function reaction_create(channel_id, message_id, emoji) {
@@ -283,7 +288,7 @@ function guild_member_has_permission_0(guild, roles, member, permission) {
   return guild.owner_id == member.user.id || roles
     .filter(role => member.roles.includes(role.id))
     .map(role => permissions.decompile(role.permissions))
-    .some(permission_names => permission_names.includes(permission) || permission_names.includes('ADMINISTRATOR'))
+    .some(permission_names => permission_names.includes(permission) || permission_names.includes('ADMINISTRATOR'));
 }
 
 async function HTTP(endpoint, method, payload = undefined, ttc = undefined) {
