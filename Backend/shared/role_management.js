@@ -184,7 +184,7 @@ async function evaluate(condition, guild_id, user_id, event) {
     switch(condition.type) {
         case 'and': return Promise.all(condition.inners.map(inner => evaluate(inner, guild_id, user_id, event))).then(results => results.every(result => result != undefined) ? results.every(result => !!result) : undefined);
         case 'or': return Promise.all(condition.inners.map(inner => evaluate(inner, guild_id, user_id, event))).then(results => results.every(result => result != undefined) ? results.some(result => !!result) : undefined);
-        case 'not': return evaluate(condition.inner, event).then(result => !result);
+        case 'not': return evaluate(condition.inner, guild_id, user_id, event).then(result => !result);
         case 'role': return discord.guild_member_has_role(guild_id, user_id, condition.role_id);
         case 'reaction': return discord.reactions_list(condition.channel_id, condition.message_id, condition.emoji).then(users => users.some(user => user.id == user_id));
         case 'connect': return (event && event.type == 'connect' && (!condition.channel_id || condition.channel_id == event.channel_id)) ? true : undefined;
