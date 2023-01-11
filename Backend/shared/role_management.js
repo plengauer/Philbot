@@ -190,7 +190,7 @@ async function execute(guild_id, user_id, event) {
         memory.get(memorykey(guild_id), [])
     	    .then(rules => Promise.all(rules.map(rule => evaluate(rule.condition, guild_id, user_id, event).then(expected => expected != undefined ? Promise.all(rule.actions.map(action => extract(action, expected, guild_id, user_id))) : []))))
     	    .then(actionss => reduce(actionss.flatMap(actions => actions).filter(action => !!action)))
-            .then(actions => Promise.all(actions.map(action => apply(action))))
+            .then(actions => Promise.all(actions.map(action => apply(action, guild_id, user_id))))
     );
 }
 
