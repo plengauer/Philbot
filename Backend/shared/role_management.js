@@ -165,8 +165,7 @@ async function on_voice_state_update(guild_id, user_id, channel_id) {
 async function on_event(guild_id, user_id, event = undefined) {
     let me = await discord.me();
     if (me.id == user_id) return;
-    return memory.get(memorykey(guild_id), [])
-        .then(rules => Promise.all(rules.map(rule => execute(rule, guild_id, user_id, event))));
+    return execute(guild_id, user_id, event);
 }
 
 async function update_all(guild_id) {
@@ -175,9 +174,11 @@ async function update_all(guild_id) {
         .then(user_ids => Promise.all(user_ids.map(user_id => on_event(guild_id, user_id))));
 }
 
-async function execute(rule, guild_id, user_id, event) {
-    return evaluate(rule.condition, guild_id, user_id, event)
-        .then(expected => expected != undefined ? Promise.all(rule.actions.map(action => apply(action, expected, guild_id, user_id))) : Promise.resolve());
+async function execute(guild_id, user_id, event) {
+    return memory.get(memorykey(guild_id), [])
+    	.then(rules => Promise.all(rules.map(rule => evaluate(rule.condition, guild_id).then(expected => expected != undefined ? Promise.all(rule.actions.map(action => extract(action, expected, guild_id, user_id))) : []))))
+    	.then(actionss => reduce(actionss.flatMap(actions => actions)))
+        .then(actions => Promise.all(actions.map(action => apply(action))));
 }
 
 async function evaluate(condition, guild_id, user_id, event) {
@@ -193,17 +194,32 @@ async function evaluate(condition, guild_id, user_id, event) {
     }
 }
 
-async function apply(action, expected, guild_id, user_id) {
+async function extract(action, expected, guild_id, user_id) {
     switch (action.type) {
-        case 'not': return apply(action.inner, !expected, guild_id, user_id);
+        case 'not': return extract(action.inner, !expected, guild_id, user_id);
         case 'role':
             let actual = await discord.guild_member_has_role(guild_id, user_id, action.role_id);
-            if (expected == actual) return; // all is fine
-            else if (expected && !actual) return guild_member_role_assign(guild_id, user_id, action.role_id);
-            else if (!expected && actual) return guild_member_role_unassign(guild_id, user_id, action.role_id);
+            if (expected == actual) return null;
+            else if (expected && !actual) return action.role_id;
+            else if (!expected && actual) return '!' + action.role_id;
             else throw new Error('Here be dragons!');
         default: throw new Error('Role actions may only be actions and roles, but was ' + action.type + '!');
     }
+}
+
+function reduce(actions, guild_id) {
+    let result = [];
+    for (let action of actions) {
+        if (result.includes(action.startsWith('!') ? action.substring(1) : ('!' + action))) continue; // TODO notify?
+        if (action == '!' + guild_id) return [ action ];
+        result.push(action);
+    }
+    return result;
+}
+
+async function apply(action, guild_id, user_id) {
+    if (action.startsWith('!')) return guild_member_role_unassign(guild_id, user_id, action.substring(1));
+    else return guild_member_role_assign(guild_id, user_id, action);
 }
 
 async function guild_member_role_assign(guild_id, user_id, role_id) {
