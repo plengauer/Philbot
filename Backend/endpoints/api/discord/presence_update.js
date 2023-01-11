@@ -66,7 +66,7 @@ async function handle0(guild_id, user_id, activities) {
       sendManualNotifications(guild_id, user_id, user_name, activities.map(a => a.name), members),
       sendAutomaticNotifications(guild_id, guild.name, activities.map(a => a.name), members),
       sendEmergencyNotifications(guild_id, user_id, user_name, activities, members),
-      features.isActive(guild_id, "role management").then(active => active ? Promise.all(activities.map(activity => role_management.on_activity(guild_id, user_id, activity.name))) : Promise.resolve())
+      features.isActive(guild_id, "role management").then(active => active ? Promise.all(activities.map(activity => role_management.on_presence_update(guild_id, user_id, activity.name))) : Promise.resolve())
     ]);
 }
 

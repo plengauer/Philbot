@@ -224,7 +224,7 @@ async function extract(action, expected, guild_id, user_id) {
 function reduce(actions, guild_id) {
     let result = [];
     for (let action of actions) {
-        if (result.includes(action.startsWith('!')) ? action.substring(1) : ('!' + action)) continue; // TODO notify?
+        if (result.includes(action.startsWith('!') ? action.substring(1) : ('!' + action))) continue; // TODO notify?
         if (action == '!' + guild_id) return [ action ];
         result.push(action);
     }
