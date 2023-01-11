@@ -2,6 +2,8 @@ const discord = require('../../../shared/discord.js');
 const memory = require('../../../shared/memory.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
 const games = require('../../../shared/games/games.js');
+const features = require('../../../shared/features.js');
+const role_management = require('../../../shared/role_management.js');
 
 const mute_ttl = 60 * 60 * 24 * 7 * 4;
 const mute_auto_ttl = 60 * 60 * 2;
@@ -63,7 +65,8 @@ async function handle0(guild_id, user_id, activities) {
       sendHints(guild_id, user_id, activities),
       sendManualNotifications(guild_id, user_id, user_name, activities.map(a => a.name), members),
       sendAutomaticNotifications(guild_id, guild.name, activities.map(a => a.name), members),
-      sendEmergencyNotifications(guild_id, user_id, user_name, activities, members)
+      sendEmergencyNotifications(guild_id, user_id, user_name, activities, members),
+      features.isActive(payload.guild_id, "role management").then(active => active ? Promise.all(activities.map(activity => role_management.on_activity(guild_id, user_id, activity.name))) : Promise.resolve())
     ]);
 }
 

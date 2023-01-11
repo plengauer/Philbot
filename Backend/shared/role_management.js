@@ -169,6 +169,10 @@ async function on_voice_state_update(guild_id, user_id, channel_id) {
     return on_event(guild_id, user_id, { type: channel_id ? 'connect' : 'disconnect', channel_id: channel_id });
 }
 
+async function on_presence_update(guild_id, user_id, activity) {
+    return on_event(guild_id, user_id, { type: 'activity', activity: activity });
+}
+
 async function on_event(guild_id, user_id, event = undefined) {
     let me = await discord.me();
     if (me.id == user_id) return;
