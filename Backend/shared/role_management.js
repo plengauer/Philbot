@@ -189,7 +189,7 @@ async function execute(guild_id, user_id, event) {
     return synchronized.locked(guild_id + '/' + user_id, () => 
         memory.get(memorykey(guild_id), [])
     	    .then(rules => Promise.all(rules.map(rule => evaluate(rule.condition, guild_id, user_id, event).then(expected => expected != undefined ? Promise.all(rule.actions.map(action => extract(action, expected, guild_id, user_id))) : []))))
-    	    .then(actionss => reduce(actionss.flatMap(actions => actions)))
+    	    .then(actionss => reduce(actionss.flatMap(actions => actions).filter(action => !!action)))
             .then(actions => Promise.all(actions.map(action => apply(action))))
     );
 }
@@ -224,7 +224,7 @@ async function extract(action, expected, guild_id, user_id) {
 function reduce(actions, guild_id) {
     let result = [];
     for (let action of actions) {
-        if (result.includes(action.startsWith('!') ? action.substring(1) : ('!' + action))) continue; // TODO notify?
+        if (result.includes(action.startsWith('!')) ? action.substring(1) : ('!' + action)) continue; // TODO notify?
         if (action == '!' + guild_id) return [ action ];
         result.push(action);
     }
