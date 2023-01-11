@@ -1,5 +1,6 @@
 const memory = require('./memory.js');
 const discord = require('./discord.js');
+const synchronized = require('./synchronized.js');
 
 // auto respond with emoji
 // manually run rules
@@ -181,10 +182,12 @@ async function update_all(guild_id) {
 }
 
 async function execute(guild_id, user_id, event) {
-    return memory.get(memorykey(guild_id), [])
-    	.then(rules => Promise.all(rules.map(rule => evaluate(rule.condition, guild_id).then(expected => expected != undefined ? Promise.all(rule.actions.map(action => extract(action, expected, guild_id, user_id))) : []))))
-    	.then(actionss => reduce(actionss.flatMap(actions => actions)))
-        .then(actions => Promise.all(actions.map(action => apply(action))));
+    return synchronized.locked(guild_id + '/' + user_id, () => 
+        memory.get(memorykey(guild_id), [])
+    	    .then(rules => Promise.all(rules.map(rule => evaluate(rule.condition, guild_id).then(expected => expected != undefined ? Promise.all(rule.actions.map(action => extract(action, expected, guild_id, user_id))) : []))))
+    	    .then(actionss => reduce(actionss.flatMap(actions => actions)))
+            .then(actions => Promise.all(actions.map(action => apply(action))))
+    );
 }
 
 async function evaluate(condition, guild_id, user_id, event) {
