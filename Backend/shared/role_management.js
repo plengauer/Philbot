@@ -302,6 +302,7 @@ module.exports = {
     add_new_rule,
     on_reaction_add, on_reaction_remove,
     on_guild_member_roles_update,
+    on_presence_update,
     on_voice_state_update,
     update_all,
     clean, to_string
