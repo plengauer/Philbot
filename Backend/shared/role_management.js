@@ -65,6 +65,7 @@ async function parse_condition_element(parser, guild_id) {
         case 'connect': return parse_trigger_connect(parser, guild_id);
         case 'disconnect': return parse_trigger_disconnect(parser);
         case 'reaction': return parse_trigger_reaction(parser, guild_id);
+        case 'activity': return parse_trigger_activity(parser, guild_id);
         case 'not': return { type: parser_next(parser), inner: await parse_condition_element(parser, guild_id) };
         default: 
             if (parser.tokens[parser.cursor].startsWith('<') || parser.tokens[parser.cursor].startsWith('@')) return parse_trigger_role(parser, guild_id);
@@ -124,6 +125,11 @@ async function parse_trigger_connect(parser, guild_id) {
         if (!channel_id) throw new Error('I cannot find the channel ' + channel_name + '!');
     }
     return { type: 'connect', channel_id: channel_id };
+}
+
+async function parse_trigger_activity(parser, guild_id) {
+    if (parser_next(parser) != 'activity') throw new Error('Expected "activity"');
+    return { type: 'activity', activity: parser_next(parser) };
 }
 
 async function parse_trigger_disconnect(parser) {
@@ -190,6 +196,7 @@ async function evaluate(condition, guild_id, user_id, event) {
         case 'reaction': return discord.reactions_list(condition.channel_id, condition.message_id, condition.emoji).then(users => users.some(user => user.id == user_id));
         case 'connect': return (event && event.type == 'connect' && (!condition.channel_id || condition.channel_id == event.channel_id)) ? true : undefined;
         case 'disconnect': return (event && event.type == 'disconnect') ? true : undefined;
+        case 'activity': return (event && event.type == 'activity' && event.activity == condition.activity) ? true : undefined;
         default: throw new Error('Unknown condition type: ' + condition.type + '!');
     }
 }
@@ -279,6 +286,7 @@ async function condition_to_string(condition, guild_id) {
         case 'reaction': return condition.emoji + ' ' + discord.message_link_create(guild_id, condition.channel_id, condition.message_id);
         case 'connect': return 'connect ' + (condition.channel_id ? (await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == condition.channel_id)))?.name : 'any');
         case 'disconnect': return 'disconnect';
+        case 'activity': return 'activity ' + condition.activity;
         default: throw new Error('Unknown condition type: ' + condition.type + '!');
     }
 }
