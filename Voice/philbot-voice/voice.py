@@ -1,18 +1,19 @@
 from os import path, environ
 import time
 import random
-import threading
-import socket
 import json
-import requests
-import subprocess
-from flask import Flask, request
-import websocket
+import struct
+import ctypes
 import nacl.secret
+import wave
 import pyogg
 import pyogg.opus
-import ctypes
-import wave
+import threading
+import socket
+import requests
+import subprocess
+import websocket
+from flask import Flask, request
 import youtube_dl
 from opentelemetry import trace as OpenTelemetry
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
@@ -66,29 +67,20 @@ def time_seconds():
 def time_millis():
     return round(time.time() * 1000)
 
-def create_voice_package_header(sequence, ssrc):
-    timestamp = time_seconds()
-    header = bytearray()
-    header.append(0x80)
-    header.append(0x78)
-    header.append((sequence >> 8) & 0xFF)
-    header.append((sequence >> 0) & 0xFF)
-    header.append((timestamp >> (3*8)) & 0xFF)
-    header.append((timestamp >> (2*8)) & 0xFF)
-    header.append((timestamp >> (1*8)) & 0xFF)
-    header.append((timestamp >> (0*8)) & 0xFF)
-    header.append((ssrc >> (3*8)) & 0xFF)
-    header.append((ssrc >> (2*8)) & 0xFF)
-    header.append((ssrc >> (1*8)) & 0xFF)
-    header.append((ssrc >> (0*8)) & 0xFF)
-    for _ in range(12):
-        header.append(0x00)
+def create_voice_package_header(sequence, timestamp, ssrc):
+    header = bytearray(12)
+    header[0] = 0x80
+    header[1] = 0x78
+    struct.pack_into('>H', header, 2, sequence)
+    struct.pack_into('>I', header, 4, timestamp)
+    struct.pack_into('>I', header, 8, ssrc)
     return bytes(header)
 
-def create_voice_package(sequence, ssrc, secret_box, voice_chunk):
-    header = create_voice_package_header(sequence, ssrc)
-    encrypted_voice_chunk = secret_box.encrypt(voice_chunk, header)
-    return header + encrypted_voice_chunk.ciphertext
+def create_voice_package(sequence, timestamp, ssrc, secret_box, voice_chunk):
+    header = create_voice_package_header(sequence, timestamp, ssrc)
+    nonce = bytearray(24)
+    nonce[:12] = header
+    return header + secret_box.encrypt(voice_chunk, bytes(nonce)).ciphertext
 
 def download_from_youtube(url):
     codec = 'wav'
@@ -188,6 +180,7 @@ class Context:
                     time.sleep(sleep_time / 1000.0)
                 timestamp = new_timestamp
         elif filename.endswith('.wav') or filename.endswith('.wave'):
+            # https://github.com/Rapptz/discord.py/blob/master/discord/voice_client.py
             package_duration = 20
             file = wave.open(filename, "rb")
             # encoder = pyogg.opus.OpusEncoder()
@@ -198,7 +191,7 @@ class Context:
             if (file.getframerate() != 48000):
                 file.close()
                 subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
-                subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', filename]).check_returncode()
+                subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', '-f', 's16le', filename]).check_returncode()
                 subprocess.run(['rm', filename + '.backup']).check_returncode()
                 file = wave.open(filename, 'rb')
             if file.getframerate() != 48000:
@@ -222,6 +215,8 @@ class Context:
             desired_frame_size = int(desired_frame_duration * file.getframerate())
             timestamp = time_millis()
             while True:
+                if sequence % 50 == 0:
+                    print(str(sequence // 50))
                 pcm = file.readframes(desired_frame_size)
                 if len(pcm) == 0:
                     break
@@ -236,13 +231,13 @@ class Context:
                     pyogg.opus.opus_int32(len(buffer))
                 )
                 opus = bytes(buffer[:encoded_bytes])
-                package = create_voice_package(sequence, ssrc, secret_box, opus)
+                package = create_voice_package(sequence, sequence * desired_frame_size, ssrc, secret_box, opus)
                 with self.lock:
                     if (my_socket != self.socket):
                         break
                     my_socket.sendto(package, (ip, port))
                 new_timestamp = time_millis()
-                sleep_time = package_duration * 1000 - (new_timestamp - timestamp)
+                sleep_time = package_duration - (new_timestamp - timestamp)
                 if sleep_time < 0:
                     # we are behind, what to do?
                     pass
