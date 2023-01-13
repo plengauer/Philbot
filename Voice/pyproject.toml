@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "philbot-voice"
-version = "0.30.0"
+version = "0.31.0"
 description = ""
 authors = ["philipp.lengauer <p.lengauer@gmail.com>"]
 packages = [{include = "philbot-voice"}]

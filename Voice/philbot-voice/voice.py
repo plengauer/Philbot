@@ -101,6 +101,7 @@ def download_from_youtube(url):
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': codec, # apparently this makes aac first, opus later
+            'preferredquality': '128' # kbps
         }],
         'outtmpl': filename + '.aac',
         'nooverwrites': False
@@ -193,8 +194,12 @@ class Context:
             # encoder.set_sampling_frequency(file.getframerate())
             # encoder.set_channels(file.getnchannels())
             # https://www.opus-codec.org/docs/html_api/group__opusencoder.html
+            if file.getframerate() != 48000:
+                raise RuntimeError('unexpected frequency: ' + str(file.getframerate()))
+            if file.getnchannels() != 2:
+                raise RuntimeError('unexpected channel count: ' + str(file.getnchannels()))
             if file.getsampwidth() != 2:
-                raise RuntimeError()
+                raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
             error = ctypes.c_int(0)
             encoder = pyogg.opus.opus_encoder_create(
                 pyogg.opus.opus_int32(file.getframerate()),
