@@ -87,7 +87,7 @@ def create_voice_package_header(sequence, ssrc):
 def create_voice_package(sequence, ssrc, secret_box, voice_chunk):
     header = create_voice_package_header(sequence, ssrc)
     encrypted_voice_chunk = secret_box.encrypt(voice_chunk, header)
-    return header + encrypted_voice_chunk
+    return header + encrypted_voice_chunk.ciphertext
 
 def download_from_youtube(url):
     codec = 'wav'
@@ -195,7 +195,11 @@ class Context:
             # https://www.opus-codec.org/docs/html_api/group__opusencoder.html
             if (file.getsampwidth() != 2):
                 raise RuntimeError()
-            encoder = pyogg.opus.opus_encoder_create(pyogg.opus.opus_int32(file.getframerate()), ctypes.c_int(file.getnchannels()), ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP), None)
+            encoder = pyogg.opus.opus_encoder_create(
+                pyogg.opus.opus_int32(file.getframerate()),
+                ctypes.c_int(file.getnchannels()),
+                ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP), None
+            )
             buffer = b"\x00" * 1024 * 1024
             buffer_length = len(buffer)
             desired_frame_duration = package_duration / 1000
