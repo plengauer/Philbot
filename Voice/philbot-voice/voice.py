@@ -146,7 +146,7 @@ class Context:
                     break
             try:
                 data, address = my_socket.recvfrom(UDP_MAX_PAYLOAD)
-                print('VOICE CONNECTION received voice data package from ' + address[0] + ':' + str(address[1]) + ': ' + str(len(data)) + 'b')
+                # print('VOICE CONNECTION received voice data package from ' + address[0] + ':' + str(address[1]) + ': ' + str(len(data)) + 'b')
             except:
                 break
         print('VOICE CONNECTION terminated')
@@ -196,7 +196,7 @@ class Context:
             if (file.getsampwidth() != 2):
                 raise RuntimeError()
             encoder = pyogg.opus.opus_encoder_create(pyogg.opus.opus_int32(file.getframerate()), ctypes.c_int(file.getnchannels()), ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP), None)
-            buffer = b"\x00" * 1024
+            buffer = b"\x00" * 1024 * 1024
             buffer_length = len(buffer)
             desired_frame_duration = package_duration / 1000
             desired_frame_size = int(desired_frame_duration * file.getframerate())
@@ -232,6 +232,7 @@ class Context:
                     time.sleep(sleep_time / 1000.0)
                 timestamp = new_timestamp
                 sequence += 1
+            pyogg.opus.opus_encoder_destroy(encoder)
         else:
             raise RuntimeError()
         print('VOICE CONNECTION stream completed')
