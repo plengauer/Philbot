@@ -9,6 +9,8 @@ from flask import Flask, request
 import websocket
 import nacl.secret
 import pyogg
+import pyogg.opus
+import ctypes
 import wave
 import youtube_dl
 from opentelemetry import trace as OpenTelemetry
@@ -142,8 +144,12 @@ class Context:
             with self.lock:
                 if (my_socket != self.socket):
                     break
-            data, address = my_socket.recvfrom(UDP_MAX_PAYLOAD)
-            print('VOICE CONNECTION received voice data package from ' + address[0] + ':' + str(address[1] + ': ' + str(len(data)) + 'b'))
+            try:
+                data, address = my_socket.recvfrom(UDP_MAX_PAYLOAD)
+                print('VOICE CONNECTION received voice data package from ' + address[0] + ':' + str(address[1]) + ': ' + str(len(data)) + 'b')
+            except:
+                break
+        print('VOICE CONNECTION terminated')
 
     def __stream(self, url, ssrc, secret_key, ip, port):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
@@ -182,29 +188,45 @@ class Context:
                     time.sleep(sleep_time / 1000.0)
                 timestamp = new_timestamp
         elif filename.endswith('.wav') or filename.endswith('.wave'):
+            package_duration = 20
             file = wave.open(filename, "rb")
-            encoder = pyogg.opus_encoder.OpusEncoder()
-            encoder.set_application("audio")
-            encoder.set_sampling_frequency(file.getframerate())
-            encoder.set_channels(file.getnchannels())
-            desired_frame_duration = 20/1000 # milliseconds
+            # encoder = pyogg.opus.OpusEncoder()
+            # encoder.set_application("audio")
+            # encoder.set_sampling_frequency(file.getframerate())
+            # encoder.set_channels(file.getnchannels())
+            # https://www.opus-codec.org/docs/html_api/group__opusencoder.html
+            if (file.getsampwidth() != 2):
+                raise RuntimeError()
+            encoder = pyogg.opus.opus_encoder_create(pyogg.opus.opus_int32(file.getframerate()), ctypes.c_int(file.getnchannels()), ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP), None)
+            buffer = b"\x00" * 1024
+            buffer_length = len(buffer)
+            desired_frame_duration = package_duration / 1000
             desired_frame_size = int(desired_frame_duration * file.getframerate())
             timestamp = time_millis()
             while True:
+                if (sequence % 50 == 0):
+                    print('.')
                 pcm = file.readframes(desired_frame_size)
                 if len(pcm) == 0:
                     break
                 effective_frame_size = len(pcm) // file.getsampwidth() // file.getnchannels()
                 if effective_frame_size < desired_frame_size:
                     pcm += b"\x00" * (desired_frame_size - effective_frame_size) * file.getsampwidth() * file.getnchannels()
-                opus = encoder.encode(pcm)
+                # opus = encoder.encode(pcm)
+                encoded_bytes = pyogg.opus.opus_encode(encoder,
+                    ctypes.cast(pcm, pyogg.opus.opus_int16_p),
+                    ctypes.c_int(effective_frame_size),
+                    ctypes.cast(buffer, pyogg.opus.c_uchar_p),
+                    pyogg.opus.opus_int32(buffer_length)
+                )
+                opus = bytes(buffer[:encoded_bytes])
                 package = create_voice_package(sequence, ssrc, secret_box, opus)
                 with self.lock:
                     if (my_socket != self.socket):
                         return
                     my_socket.sendto(package, (ip, port))
                 new_timestamp = time_millis()
-                sleep_time = desired_frame_duration - (new_timestamp - timestamp)
+                sleep_time = package_duration * 1000 - (new_timestamp - timestamp)
                 if sleep_time < 0:
                     # we are behind, what to do?
                     pass
@@ -214,7 +236,6 @@ class Context:
                     time.sleep(sleep_time / 1000.0)
                 timestamp = new_timestamp
                 sequence += 1
-                
         else:
             raise RuntimeError()
 
