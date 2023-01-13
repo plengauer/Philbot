@@ -318,7 +318,7 @@ class Context:
                     threading.Thread(target=self.__run_server).start()
                     print('VOICE CONNECTION server ready at ' + my_ip + ':' + str(my_port))
                     print('VOICE GATEWAY sending select protocol')
-                    self.ws.send(json.dumps({
+                    ws.send(json.dumps({
                         "op": 1,
                         "d": {
                             "protocol": "udp",
@@ -332,9 +332,11 @@ class Context:
                 case 4:
                     print('VOICE GATEWAY received session description')
                     self.mode = payload['d']['mode']
+                    if self.mode != "xsalsa20_poly1305":
+                        raise RuntimeError('unexpected mode: ' + self.mode)
                     self.secret_key = payload['d']['secret_key']
                     print('VOICE GATEWAY sending speaking')
-                    self.ws.send(json.dumps({
+                    ws.send(json.dumps({
                         "op": 5,
                         "d": {
                             "speaking": 1,
