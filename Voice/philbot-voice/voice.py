@@ -193,13 +193,17 @@ class Context:
             # encoder.set_sampling_frequency(file.getframerate())
             # encoder.set_channels(file.getnchannels())
             # https://www.opus-codec.org/docs/html_api/group__opusencoder.html
-            if (file.getsampwidth() != 2):
+            if file.getsampwidth() != 2:
                 raise RuntimeError()
+            error = ctypes.c_int(0)
             encoder = pyogg.opus.opus_encoder_create(
                 pyogg.opus.opus_int32(file.getframerate()),
                 ctypes.c_int(file.getnchannels()),
-                ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP), None
+                ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP),
+                ctypes.addressof(error)
             )
+            if error != 0:
+                raise RuntimeError(str(error))
             buffer = b"\x00" * 1024 * 1024
             buffer_length = len(buffer)
             desired_frame_duration = package_duration / 1000
