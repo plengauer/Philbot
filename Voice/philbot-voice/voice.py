@@ -5,6 +5,7 @@ import threading
 import socket
 import json
 import requests
+import subprocess
 from flask import Flask, request
 import websocket
 import nacl.secret
@@ -194,12 +195,19 @@ class Context:
             # encoder.set_sampling_frequency(file.getframerate())
             # encoder.set_channels(file.getnchannels())
             # https://www.opus-codec.org/docs/html_api/group__opusencoder.html
+            if (file.getframerate() != 48000):
+                file.close()
+                subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
+                subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', filename]).check_returncode()
+                subprocess.run(['rm', filename + '.backup']).check_returncode()
+                file = wave.open(filename, 'rb')
             if file.getframerate() != 48000:
                 raise RuntimeError('unexpected frequency: ' + str(file.getframerate()))
             if file.getnchannels() != 2:
                 raise RuntimeError('unexpected channel count: ' + str(file.getnchannels()))
             if file.getsampwidth() != 2:
                 raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
+            print('VOICE CONNECTION streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
             error = ctypes.c_int(0)
             encoder = pyogg.opus.opus_encoder_create(
                 pyogg.opus.opus_int32(file.getframerate()),
@@ -246,6 +254,7 @@ class Context:
                 timestamp = new_timestamp
                 sequence += 1
             pyogg.opus.opus_encoder_destroy(encoder)
+            file.close()
         else:
             raise RuntimeError()
         print('VOICE CONNECTION stream completed')
