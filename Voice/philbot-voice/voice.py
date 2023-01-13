@@ -9,6 +9,7 @@ from flask import Flask, request
 import websocket
 import nacl.secret
 import pyogg
+import wave
 import youtube_dl
 from opentelemetry import trace as OpenTelemetry
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
@@ -87,23 +88,24 @@ def create_voice_package(sequence, ssrc, secret_box, voice_chunk):
     return header + encrypted_voice_chunk
 
 def download_from_youtube(url):
+    codec = 'wav'
     filename = url[url.index('v=') + 2:]
     if '&' in filename:
         filename = filename[:filename.index('&')]
-    if path.exists(filename + '.opus'):
-        return 'file://' + filename + '.opus'
+    if path.exists(filename + '.' + codec):
+        return 'file://' + filename + '.' + codec
     options = {
         'format': 'bestaudio',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'opus', # apparently this makes aac first, opus later
+            'preferredcodec': codec, # apparently this makes aac first, opus later
         }],
         'outtmpl': filename + '.aac',
         'nooverwrites': False
     }
     with youtube_dl.YoutubeDL(options) as ydl:
         ydl.download([url])
-        return 'file://' + filename + '.opus'
+        return 'file://' + filename + '.' + codec
 
 def resolve_url(url):
     if url.startswith('https://www.youtube.com/watch?v='):
@@ -151,35 +153,70 @@ class Context:
         if not url.startswith('file://'):
             raise RuntimeError
         print('VOICE CONNECTION streaming')
-        opus_frame_duration = 20
         filename = self.url[len('file://'):]
         secret_box = nacl.secret.SecretBox(bytes(secret_key))
-        file = pyogg.OpusFileStream(filename)
         sequence = 0
-        frame = file.get_buffer()
-        timestamp = time_millis()
-        while frame:
-            if sequence % (1000 / opus_frame_duration) == 0:
-                print('VOICE CONNECTION streaming (sequence ' + str(sequence) + ')')
-            package = create_voice_package(sequence, ssrc, secret_box, bytes(frame[0].contents)[0:frame[1]//2])
-            if (len(package) > UDP_MAX_PAYLOAD):
-                raise RuntimeError('Package too big for UDP')
-            with self.lock:
-                if (my_socket != self.socket):
-                    return
-                my_socket.sendto(package, (ip, port))
-            sequence += 1
+        if filename.endswith('.opus') or filename.endswith('.ogg'):
+            opus_frame_duration = 20
+            file = pyogg.OpusFileStream(filename)
             frame = file.get_buffer()
-            new_timestamp = time_millis()
-            sleep_time = opus_frame_duration - (new_timestamp - timestamp)
-            if sleep_time < 0:
-                # we are behind, what to do?
-                pass
-            elif sleep_time == 0:
-                pass
-            else:
-                time.sleep(sleep_time / 1000.0)
-            timestamp = new_timestamp
+            timestamp = time_millis()
+            while frame:
+                package = create_voice_package(sequence, ssrc, secret_box, bytes(frame[0].contents)[0:frame[1]//2])
+                if (len(package) > UDP_MAX_PAYLOAD):
+                    raise RuntimeError('Package too big for UDP')
+                with self.lock:
+                    if (my_socket != self.socket):
+                        return
+                    my_socket.sendto(package, (ip, port))
+                sequence += 1
+                frame = file.get_buffer()
+                new_timestamp = time_millis()
+                sleep_time = opus_frame_duration - (new_timestamp - timestamp)
+                if sleep_time < 0:
+                    # we are behind, what to do?
+                    pass
+                elif sleep_time == 0:
+                    pass
+                else:
+                    time.sleep(sleep_time / 1000.0)
+                timestamp = new_timestamp
+        elif filename.endswith('.wav') or filename.endswith('.wave'):
+            file = wave.open(filename, "rb")
+            encoder = pyogg.opus_encoder.OpusEncoder()
+            encoder.set_application("audio")
+            encoder.set_sampling_frequency(file.getframerate())
+            encoder.set_channels(file.getnchannels())
+            desired_frame_duration = 20/1000 # milliseconds
+            desired_frame_size = int(desired_frame_duration * file.getframerate())
+            timestamp = time_millis()
+            while True:
+                pcm = file.readframes(desired_frame_size)
+                if len(pcm) == 0:
+                    break
+                effective_frame_size = len(pcm) // file.getsampwidth() // file.getnchannels()
+                if effective_frame_size < desired_frame_size:
+                    pcm += b"\x00" * (desired_frame_size - effective_frame_size) * file.getsampwidth() * file.getnchannels()
+                opus = encoder.encode(pcm)
+                package = create_voice_package(sequence, ssrc, secret_box, opus)
+                with self.lock:
+                    if (my_socket != self.socket):
+                        return
+                    my_socket.sendto(package, (ip, port))
+                new_timestamp = time_millis()
+                sleep_time = desired_frame_duration - (new_timestamp - timestamp)
+                if sleep_time < 0:
+                    # we are behind, what to do?
+                    pass
+                elif sleep_time == 0:
+                    pass
+                else:
+                    time.sleep(sleep_time / 1000.0)
+                timestamp = new_timestamp
+                sequence += 1
+                
+        else:
+            raise RuntimeError()
 
     def __ws_on_open(self, ws):
         with self.lock:
