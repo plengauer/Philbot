@@ -218,7 +218,6 @@ class Context:
             if error.value != 0:
                 raise RuntimeError(str(error))
             buffer = b"\x00" * 1024 * 1024
-            buffer_length = len(buffer)
             desired_frame_duration = package_duration / 1000
             desired_frame_size = int(desired_frame_duration * file.getframerate())
             timestamp = time_millis()
@@ -234,7 +233,7 @@ class Context:
                     ctypes.cast(pcm, pyogg.opus.opus_int16_p),
                     ctypes.c_int(effective_frame_size),
                     ctypes.cast(buffer, pyogg.opus.c_uchar_p),
-                    pyogg.opus.opus_int32(buffer_length)
+                    pyogg.opus.opus_int32(len(buffer))
                 )
                 opus = bytes(buffer[:encoded_bytes])
                 package = create_voice_package(sequence, ssrc, secret_box, opus)
