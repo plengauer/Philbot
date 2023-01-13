@@ -200,7 +200,7 @@ class Context:
                 pyogg.opus.opus_int32(file.getframerate()),
                 ctypes.c_int(file.getnchannels()),
                 ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP),
-                ctypes.addressof(error)
+                ctypes.byref(error)
             )
             if error != 0:
                 raise RuntimeError(str(error))
