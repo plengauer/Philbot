@@ -169,11 +169,9 @@ class Context:
             timestamp = time_millis()
             while frame:
                 package = create_voice_package(sequence, ssrc, secret_box, bytes(frame[0].contents)[0:frame[1]//2])
-                if (len(package) > UDP_MAX_PAYLOAD):
-                    raise RuntimeError('Package too big for UDP')
                 with self.lock:
                     if (my_socket != self.socket):
-                        return
+                        break
                     my_socket.sendto(package, (ip, port))
                 sequence += 1
                 frame = file.get_buffer()
@@ -204,8 +202,6 @@ class Context:
             desired_frame_size = int(desired_frame_duration * file.getframerate())
             timestamp = time_millis()
             while True:
-                if (sequence % 50 == 0):
-                    print('.')
                 pcm = file.readframes(desired_frame_size)
                 if len(pcm) == 0:
                     break
@@ -223,7 +219,7 @@ class Context:
                 package = create_voice_package(sequence, ssrc, secret_box, opus)
                 with self.lock:
                     if (my_socket != self.socket):
-                        return
+                        break
                     my_socket.sendto(package, (ip, port))
                 new_timestamp = time_millis()
                 sleep_time = package_duration * 1000 - (new_timestamp - timestamp)
@@ -238,6 +234,7 @@ class Context:
                 sequence += 1
         else:
             raise RuntimeError()
+        print('VOICE CONNECTION stream completed')
 
     def __ws_on_open(self, ws):
         with self.lock:
@@ -327,6 +324,9 @@ class Context:
                     threading.Thread(target=self.__stream, kwargs = { 'url': self.url, 'ssrc': self.ssrc, 'secret_key': self.secret_key, 'ip': self.ip, 'port': self.port }).start()
                 case 5:
                     print('VOICE GATEWAY received speaking')
+                    # nothing else to do ...
+                case 13:
+                    print('VOICE GATEWAY client disconnect')
                     # nothing else to do ...
                 case _:
                     print('VOICE GATEWAY unknown opcode')
