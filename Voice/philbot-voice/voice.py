@@ -202,7 +202,7 @@ class Context:
                 ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP),
                 ctypes.byref(error)
             )
-            if error != 0:
+            if error.value != 0:
                 raise RuntimeError(str(error))
             buffer = b"\x00" * 1024 * 1024
             buffer_length = len(buffer)
