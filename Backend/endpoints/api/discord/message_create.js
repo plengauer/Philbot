@@ -268,13 +268,6 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
 }
 
 async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me) {
-  return Promise.all([
-    handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me),
-    handleDelayedCommand(channel_id, event_id, user_id, message)
-  ]).then(results => results[0] ?? results[1]);
-}
-
-async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me) {
   if (message.length == 0) {
     return Promise.resolve();
     
@@ -919,6 +912,9 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
     if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
     return role_management.update_all(guild_id).then(() => reactOK(channel_id, event_id));
+  
+  } else if (await delayed_memory.materialize(`response:` + memory.mask(message) + `:user:${user_id}`)) {
+    return reactOK(channel_id, event_id);
 
   } else {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -932,11 +928,6 @@ async function handleBuiltInCommand(guild_id, channel_id, event_id, user_id, use
     }
     return discord.respond(channel_id, event_id, `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`);
   }
-}
-
-async function handleDelayedCommand(channel_id, event_id, user_id, message) {
-  return delayed_memory.materialize(`response:` + memory.mask(message) + `:user:${user_id}`)
-    .then(materialized => materialized ? reactOK(channel_id, event_id) : Promise.resolve())
 }
 
 async function reactOK(channel_id, event_id) {
