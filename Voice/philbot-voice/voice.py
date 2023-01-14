@@ -238,8 +238,8 @@ class Context:
         with self.lock:
             remove(filename)
             self.url = None
-            self.__stop()            
-        requests.post(self.callback_url, json = { "guild_id": self.guild_id, "user_id": self.user_id })
+            self.__stop()
+        threading.Thread(target=requests.post, kwargs={ "url": self.callback_url, "json": { "guild_id": self.guild_id, "user_id": self.user_id } }).start()
 
     def __ws_on_open(self, ws):
         with self.lock:
