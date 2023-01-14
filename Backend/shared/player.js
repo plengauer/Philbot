@@ -2,13 +2,12 @@ const process = require('process');
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const curl = require('./curl.js');
-const retry = require('./retry.js').retry;
 const identity = require('./identity.js');
-const { resolve } = require('path');
 
 async function on_voice_state_update(guild_id, channel_id, session_id) {
-  return discord.me()
-    .then(me => HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: identity.getPublicURL() + '/discord/voice_playback_finished' }))
+  let me = await discord.me();
+  let public_url = await identity.getPublicURL();
+  return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: public_url + '/discord/voice_playback_finished' });
 }
 
 async function on_voice_server_update(guild_id, endpoint, token) {
@@ -84,11 +83,11 @@ async function stop(guild_id) {
 }
 
 async function pause(guild_id) {
-  throw new Error('Not implemented! (VOICE PAUSE)');
+  return HTTP_VOICE('voice_pause', { guild_id: guild_id });
 }
 
 async function resume(guild_id) {
-  throw new Error('Not implemented! (VOICE RESUME)');
+  return HTTP_VOICE('voice_resume', { guild_id: guild_id });
 }
 
 async function popFromQueue(guild_id) {

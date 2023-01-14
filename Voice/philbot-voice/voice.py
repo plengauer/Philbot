@@ -234,7 +234,7 @@ class Context:
             sequence += 1
         pyogg.opus.opus_encoder_destroy(encoder)
         file.close()
-        print('VOICE CONNECTION stream completed (' + str(too_slow_count) + ' too slow)')
+        print('VOICE CONNECTION stream completed (' + str(too_slow_count * 100 / sequence) + '% too slow)')
         with self.lock:
             remove(filename)
             self.url = None
