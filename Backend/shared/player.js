@@ -3,7 +3,8 @@ const memory = require('./memory.js');
 const discord = require('./discord.js');
 const curl = require('./curl.js');
 const retry = require('./retry.js').retry;
-const identity = require('./identity.js')
+const identity = require('./identity.js');
+const { resolve } = require('path');
 
 async function on_voice_state_update(guild_id, channel_id, session_id) {
   return discord.me()
@@ -15,8 +16,16 @@ async function on_voice_server_update(guild_id, endpoint, token) {
 }
 
 async function play(guild_id, user_id, voice_channel, search_string) {
+  let links = await resolve_search_string(search_string);
+  if (links.length > 1) {
+    await prependAllToQueue(guild_id, links.slice(1));
+  }
+  return play0(guild_id, user_id, voice_channel, links[0]);
+}
+
+async function resolve_search_string(search_string) {
   if (search_string.includes('youtube.com/watch?v=')) {
-    return play0(guild_id, user_id, voice_channel, search_string);
+    return [ search_string ];
   } else if (search_string.includes('youtube.com/playlist?list=')) {
     let items = [];
     let pageToken = null;
@@ -32,12 +41,11 @@ async function play(guild_id, user_id, voice_channel, search_string) {
     for (let index = 0; index < items.length; index++) {
       youtube_links.push('https://www.youtube.com/watch?v=' + items[index].snippet.resourceId.videoId);
     }
-    await prependAllToQueue(guild_id, youtube_links.slice(1));
-    return play0(guild_id, user_id, voice_channel, youtube_links[0]);
+    return youtube_links;
   } else {
     let result = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'rating', maxResults: 1, q: search_string })
     if (result.length == 0) throw new Error('No video found!');
-    return play0(guild_id, user_id, voice_channel, 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId);
+    return [ 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId ];
   }
 }
 
@@ -91,17 +99,18 @@ async function popFromQueue(guild_id) {
   return item;
 }
 
+async function peekFromQueue(guild_id) {
+  let queue = await getQueue(guild_id);
+  if (queue.length == 0) return null;
+  return queue[0];
+}
+
 async function playNext(guild_id, user_id) {
-  return retry(() => 
-    popFromQueue(guild_id)
-      .then(item => item ?
-        play(guild_id, user_id, null, item) :
-        stop(guild_id).catch(ex => {/* just swallow exception */}).then(() => 6)
-      ).then(result => {
-        if (result == 5) throw 5; // to trigger retry on video not available
-        return result;
-      })
-  );
+  let next = await popFromQueue(guild_id);
+  if (!next) return stop(guild_id).catch(ex => {/* just swallow exception */});
+  let lookahead = await peekFromQueue(guild_id).then(item => resolve_search_string(item)[0]).catch(ex => null);
+  if (lookahead) HTTP_VOICE('voice_content_lookahead', { url: lookahead }).catch(ex => null); // DO NOT AWAIT!
+  return play(guild_id, user_id, null, next);
 }
 
 async function appendToQueue(guild_id, item) {
