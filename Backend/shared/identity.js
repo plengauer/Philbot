@@ -1,4 +1,3 @@
-const { resolve } = require('path');
 const process = require('process');
 const curl = require('./curl.js');
 

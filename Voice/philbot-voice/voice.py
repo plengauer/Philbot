@@ -1,4 +1,4 @@
-from os import path, environ
+from os import path, environ, remove
 import time
 import random
 import json
@@ -25,11 +25,8 @@ from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
 )
 
-# TODO now we need to select a separate port every time, and we need to open up more UDP on the EC2
 # TODO resume after restart, somehow saving and restoring state
 # TODO cache and file lookahead so files are created ahead of time
-# TODO resolve public IP properly
-# TODO callback when playback is finished
 
 merged = dict()
 for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
@@ -111,6 +108,7 @@ def resolve_url(url):
 
 class Context:
     lock = threading.Lock()
+    callback_url = None
     guild_id = None
     channel_id = None
     user_id = None
@@ -128,7 +126,6 @@ class Context:
     mode = None
     secret_key = None
 
-    heartbeater = None
     listener = None
     streamer = None
 
@@ -156,10 +153,7 @@ class Context:
         filename = self.url[len('file://'):]
         if not self.url.endswith('.wav') and not self.url.endswith('.wave'):
             raise RuntimeError
-        secret_box = nacl.secret.SecretBox(bytes(self.secret_key))
-        sequence = 0
         # https://github.com/Rapptz/discord.py/blob/master/discord/voice_client.py
-        package_duration = 20
         file = wave.open(filename, "rb")
         if (file.getframerate() != 48000):
             file.close()
@@ -175,21 +169,26 @@ class Context:
             raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
         if self.mode != "xsalsa20_poly1305":
             raise RuntimeError('unexpected mode: ' + self.mode)
+
         print('VOICE CONNECTION streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
+        timestamp_start = time_millis()
+        secret_box = nacl.secret.SecretBox(bytes(self.secret_key))
+        sequence = 0
+        frame_duration = 20
         error = ctypes.c_int(0)
         encoder = pyogg.opus.opus_encoder_create(
             pyogg.opus.opus_int32(file.getframerate()),
             ctypes.c_int(file.getnchannels()),
-            ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP),
+            ctypes.c_int(pyogg.opus.OPUS_APPLICATION_AUDIO),
             ctypes.byref(error)
         )
         if error.value != 0:
             raise RuntimeError(str(error.value))
         buffer = b"\x00" * 1024 * 1024
-        desired_frame_duration = package_duration / 1000
-        desired_frame_size = int(desired_frame_duration * file.getframerate())
+        desired_frame_size = int(file.getframerate() * frame_duration / 1000)
         timestamp = time_millis()
         last_heartbeat = 0
+        too_slow_count = 0
         while True:
             pcm = file.readframes(desired_frame_size)
             if len(pcm) == 0:
@@ -215,39 +214,32 @@ class Context:
             if last_heartbeat + self.heartbeat_interval // 2 <= time_millis():
                 try:
                     last_heartbeat = time_millis()
-                    self.ws.send(json.dumps({ "op": 3, "d": sequence }))
+                    self.ws.send(json.dumps({ "op": 3, "d": last_heartbeat }))
+                    # self.ws.send(json.dumps({ "op": 3, "d": sequence }))
                     # self.ws.send(json.dumps({ "op": 3, "d": sequence * package_duration }))
-                    # self.ws.send(json.dumps({ "op": 3, "d": int(sequence * desired_frame_duration) }))
+                    # self.ws.send(json.dumps({ "op": 3, "d": int(sequence * frame_duration / 1000) }))
                     # self.ws.send(json.dumps({ "op": 3, "d": sequence * desired_frame_size }))
                 except: # TODO limit to socket close exceptions
                     pass
             new_timestamp = time_millis()
-            sleep_time = package_duration - (new_timestamp - timestamp)
+            sleep_time = frame_duration - (new_timestamp - timestamp)
             if sleep_time < 0:
                 # we are behind, what to do?
-                pass
+                too_slow_count += 1
             elif sleep_time == 0:
                 pass
             else:
-                time.sleep(sleep_time / 1000.0)
+                time.sleep(sleep_time / 1000.0 * 2) # I have no fucking idea why multiplying this by two results in a clean audio stream!!! (times to is actually just a tad too slow, but not noticable by humans)
             timestamp = new_timestamp
             sequence += 1
         pyogg.opus.opus_encoder_destroy(encoder)
         file.close()
-        print('VOICE CONNECTION stream completed')
-
-    def __heartbeat(self):
-        start = time_millis()
-        while True:
-            time.sleep(self.heartbeat_interval / 1000)
-            with self.lock:
-                if not self.heartbeater:
-                    break
-            print('VOICE GATEWAY sending heartbeat')
-            try: 
-                self.ws.send(json.dumps({ "op": 3, "d": time_millis() - start }))
-            except: # TODO limit to socket close exceptions only
-                pass
+        print('VOICE CONNECTION stream completed (' + str(too_slow_count) + ' too slow)')
+        with self.lock:
+            remove(filename)
+            self.url = None
+            self.__stop()            
+        requests.post(self.callback_url, json = { "guild_id": self.guild_id, "user_id": self.user_id })
 
     def __ws_on_open(self, ws):
         with self.lock:
@@ -262,8 +254,6 @@ class Context:
                     print('VOICE GATEWAY received hello')
                     payload = json.loads(message)
                     self.heartbeat_interval = payload['d']['heartbeat_interval']
-                    #self.heartbeater = threading.Thread(target=self.__heartbeat)
-                    #self.heartbeater.start()
                     print('VOICE GATEWAY sending identify')
                     ws.send(json.dumps({
                         "op": 0,
@@ -340,20 +330,15 @@ class Context:
 
     def __ws_on_close(self, ws, close_code, close_message):
         print('VOICE GATEWAY connection closing (' + str(close_code) + ': ' + close_message + ')')
-        heartbeater = None
         listener = None
         streamer = None
         with self.lock:
-            heartbeater = self.heartbeater
             listener = self.listener
             streamer = self.streamer
             self.listener = None
             self.streamer = None
-            self.heartbeater = None
             if self.socket:
                 self.socket.close()
-        if heartbeater:
-            heartbeater.join()
         if listener:
             listener.join()
         if streamer:
@@ -388,11 +373,12 @@ class Context:
             self.__stop()
             self.__try_start()
 
-    def on_state_update(self, channel_id, user_id, session_id):
+    def on_state_update(self, channel_id, user_id, session_id, callback_url):
         with self.lock:
             self.channel_id = channel_id
             self.user_id = user_id
             self.session_id = session_id
+            self.callback_url = callback_url
             if not self.channel_id:
                 self.endpoint = None
                 self.token = None
@@ -424,7 +410,7 @@ def ping():
 def voice_state_update():
     body = request.json
     context = get_context(body['guild_id'])
-    context.on_state_update(body['channel_id'], body['user_id'], body['session_id'])
+    context.on_state_update(body['channel_id'], body['user_id'], body['session_id'], body['callback_url'])
     return 'Success'
 
 @app.route('/voice_server_update', methods=['POST'])

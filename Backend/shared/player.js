@@ -3,10 +3,11 @@ const memory = require('./memory.js');
 const discord = require('./discord.js');
 const curl = require('./curl.js');
 const retry = require('./retry.js').retry;
+const identity = require('./identity.js')
 
 async function on_voice_state_update(guild_id, channel_id, session_id) {
   return discord.me()
-    .then(me => HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id }))
+    .then(me => HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: identity.getPublicURL() + '/discord/voice_playback_finished' }))
 }
 
 async function on_voice_server_update(guild_id, endpoint, token) {
@@ -36,7 +37,7 @@ async function play(guild_id, user_id, voice_channel, search_string) {
   } else {
     let result = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'rating', maxResults: 1, q: search_string })
     if (result.length == 0) throw new Error('No video found!');
-    return play0(guild_id, user_id, voice_channel, results.items[0].id.videoId);
+    return play0(guild_id, user_id, voice_channel, 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId);
   }
 }
 
