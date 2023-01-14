@@ -155,13 +155,7 @@ class Context:
         if not self.url.endswith('.wav') and not self.url.endswith('.wave'):
             raise RuntimeError
         # https://github.com/Rapptz/discord.py/blob/master/discord/voice_client.py
-        file = None
-        try:
-            file = wave.open(filename, "rb")
-        except:
-            data, samplerate = soundfile.read(filename)
-            soundfile.write(filename, data, samplerate)
-            file = wave.open(filename, "rb")
+        file = wave.open(filename, "rb")
         if (file.getframerate() != 48000):
             file.close()
             subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
