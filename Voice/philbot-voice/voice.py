@@ -154,103 +154,77 @@ class Context:
             raise RuntimeError
         print('VOICE CONNECTION streaming')
         filename = self.url[len('file://'):]
+        if not url.endswith('.wav') and not url.endswith('.wave'):
+            raise RuntimeError
         secret_box = nacl.secret.SecretBox(bytes(secret_key))
         sequence = 0
-        if filename.endswith('.opus') or filename.endswith('.ogg'):
-            opus_frame_duration = 20
-            file = pyogg.OpusFileStream(filename)
-            frame = file.get_buffer()
-            timestamp = time_millis()
-            while frame:
-                package = create_voice_package(sequence, ssrc, secret_box, bytes(frame[0].contents)[0:frame[1]//2])
-                with self.lock:
-                    if (my_socket != self.socket):
-                        break
-                    my_socket.sendto(package, (ip, port))
-                sequence += 1
-                frame = file.get_buffer()
-                new_timestamp = time_millis()
-                sleep_time = opus_frame_duration - (new_timestamp - timestamp)
-                if sleep_time < 0:
-                    # we are behind, what to do?
-                    pass
-                elif sleep_time == 0:
-                    pass
-                else:
-                    time.sleep(sleep_time / 1000.0)
-                timestamp = new_timestamp
-        elif filename.endswith('.wav') or filename.endswith('.wave'):
-            # https://github.com/Rapptz/discord.py/blob/master/discord/voice_client.py
-            package_duration = 20
-            file = wave.open(filename, "rb")
-            # encoder = pyogg.opus.OpusEncoder()
-            # encoder.set_application("audio")
-            # encoder.set_sampling_frequency(file.getframerate())
-            # encoder.set_channels(file.getnchannels())
-            # https://www.opus-codec.org/docs/html_api/group__opusencoder.html
-            if (file.getframerate() != 48000):
-                file.close()
-                subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
-                subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', '-f', 's16le', filename]).check_returncode()
-                subprocess.run(['rm', filename + '.backup']).check_returncode()
-                file = wave.open(filename, 'rb')
-            if file.getframerate() != 48000:
-                raise RuntimeError('unexpected frequency: ' + str(file.getframerate()))
-            if file.getnchannels() != 2:
-                raise RuntimeError('unexpected channel count: ' + str(file.getnchannels()))
-            if file.getsampwidth() != 2:
-                raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
-            print('VOICE CONNECTION streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
-            error = ctypes.c_int(0)
-            encoder = pyogg.opus.opus_encoder_create(
-                pyogg.opus.opus_int32(file.getframerate()),
-                ctypes.c_int(file.getnchannels()),
-                ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP),
-                ctypes.byref(error)
-            )
-            if error.value != 0:
-                raise RuntimeError(str(error))
-            buffer = b"\x00" * 1024 * 1024
-            desired_frame_duration = package_duration / 1000
-            desired_frame_size = int(desired_frame_duration * file.getframerate())
-            timestamp = time_millis()
-            while True:
-                if sequence % 50 == 0:
-                    print(str(sequence // 50))
-                pcm = file.readframes(desired_frame_size)
-                if len(pcm) == 0:
-                    break
-                effective_frame_size = len(pcm) // file.getsampwidth() // file.getnchannels()
-                if effective_frame_size < desired_frame_size:
-                    pcm += b"\x00" * (desired_frame_size - effective_frame_size) * file.getsampwidth() * file.getnchannels()
-                # opus = encoder.encode(pcm)
-                encoded_bytes = pyogg.opus.opus_encode(encoder,
-                    ctypes.cast(pcm, pyogg.opus.opus_int16_p),
-                    ctypes.c_int(effective_frame_size),
-                    ctypes.cast(buffer, pyogg.opus.c_uchar_p),
-                    pyogg.opus.opus_int32(len(buffer))
-                )
-                opus = bytes(buffer[:encoded_bytes])
-                package = create_voice_package(sequence, sequence * desired_frame_size, ssrc, secret_box, opus)
-                with self.lock:
-                    if (my_socket != self.socket):
-                        break
-                    my_socket.sendto(package, (ip, port))
-                new_timestamp = time_millis()
-                sleep_time = package_duration - (new_timestamp - timestamp)
-                if sleep_time < 0:
-                    # we are behind, what to do?
-                    pass
-                elif sleep_time == 0:
-                    pass
-                else:
-                    time.sleep(sleep_time / 1000.0)
-                timestamp = new_timestamp
-                sequence += 1
-            pyogg.opus.opus_encoder_destroy(encoder)
+        # https://github.com/Rapptz/discord.py/blob/master/discord/voice_client.py
+        package_duration = 20
+        file = wave.open(filename, "rb")
+        # encoder = pyogg.opus.OpusEncoder()
+        # encoder.set_application("audio")
+        # encoder.set_sampling_frequency(file.getframerate())
+        # encoder.set_channels(file.getnchannels())
+        # https://www.opus-codec.org/docs/html_api/group__opusencoder.html
+        if (file.getframerate() != 48000):
             file.close()
-        else:
-            raise RuntimeError()
+            subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
+            subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', '-f', 's16le', filename]).check_returncode()
+            subprocess.run(['rm', filename + '.backup']).check_returncode()
+            file = wave.open(filename, 'rb')
+        if file.getframerate() != 48000:
+            raise RuntimeError('unexpected frequency: ' + str(file.getframerate()))
+        if file.getnchannels() != 2:
+            raise RuntimeError('unexpected channel count: ' + str(file.getnchannels()))
+        if file.getsampwidth() != 2:
+            raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
+        print('VOICE CONNECTION streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
+        error = ctypes.c_int(0)
+        encoder = pyogg.opus.opus_encoder_create(
+            pyogg.opus.opus_int32(file.getframerate()),
+            ctypes.c_int(file.getnchannels()),
+            ctypes.c_int(pyogg.opus.OPUS_APPLICATION_VOIP),
+            ctypes.byref(error)
+        )
+        if error.value != 0:
+            raise RuntimeError(str(error))
+        buffer = b"\x00" * 1024 * 1024
+        desired_frame_duration = package_duration / 1000
+        desired_frame_size = int(desired_frame_duration * file.getframerate())
+        timestamp = time_millis()
+        while True:
+            pcm = file.readframes(desired_frame_size)
+            if len(pcm) == 0:
+                break
+            effective_frame_size = len(pcm) // file.getsampwidth() // file.getnchannels()
+            if effective_frame_size < desired_frame_size:
+                pcm += b"\x00" * (desired_frame_size - effective_frame_size) * file.getsampwidth() * file.getnchannels()
+            # opus = encoder.encode(pcm)
+            encoded_bytes = pyogg.opus.opus_encode(encoder,
+                ctypes.cast(pcm, pyogg.opus.opus_int16_p),
+                ctypes.c_int(effective_frame_size),
+                ctypes.cast(buffer, pyogg.opus.c_uchar_p),
+                pyogg.opus.opus_int32(len(buffer))
+            )
+            opus = bytes(buffer[:encoded_bytes])
+            package = create_voice_package(sequence, sequence * desired_frame_size, ssrc, secret_box, opus)
+            with self.lock:
+                if (my_socket != self.socket):
+                    break
+                my_socket.sendto(package, (ip, port))
+            new_timestamp = time_millis()
+            sleep_time = package_duration - (new_timestamp - timestamp)
+            if sleep_time < 0:
+                # we are behind, what to do?
+                pass
+            elif sleep_time == 0:
+                pass
+            else:
+                time.sleep(sleep_time / 1000.0)
+            timestamp = new_timestamp
+            sequence += 1
+        pyogg.opus.opus_encoder_destroy(encoder)
+        file.close()
         print('VOICE CONNECTION stream completed')
 
     def __ws_on_open(self, ws):
