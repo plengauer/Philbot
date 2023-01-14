@@ -427,6 +427,12 @@ def voice_content_update():
     context.on_content_update(resolve_url(body['url']))
     return 'Success'
 
+@app.route('/voice_content_lookahead', methods=['POST'])
+def voice_content_lookahead():
+    body = request.json
+    resolve_url(body['url'])
+    return 'Success'
+
 def main():
     print('VOICE ready')
     app.run(port=HTTP_PORT)
