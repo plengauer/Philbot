@@ -330,7 +330,7 @@ class Context:
             self.ws.close()
 
     def __ws_on_close(self, ws, close_code, close_message):
-        print('VOICE GATEWAY connection closing (' + str(close_code) + ': ' + close_message + ')')
+        print('VOICE GATEWAY connection closing (' + str(close_code) if close_code else 'None' + ': ' + close_message if close_message else '' + ')')
         listener = None
         streamer = None
         with self.lock:
