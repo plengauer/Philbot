@@ -6,7 +6,6 @@ import struct
 import ctypes
 import nacl.secret
 import wave
-import soundfile
 import pyogg
 import pyogg.opus
 import threading
