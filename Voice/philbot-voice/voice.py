@@ -158,7 +158,7 @@ class Context:
         if (file.getframerate() != 48000):
             file.close()
             subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
-            subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', '-f', 's16le', filename]).check_returncode()
+            subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', filename]).check_returncode() # , '-f', 's16le'
             subprocess.run(['rm', filename + '.backup']).check_returncode()
             file = wave.open(filename, 'rb')
         if file.getframerate() != 48000:
