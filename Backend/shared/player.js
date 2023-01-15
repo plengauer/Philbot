@@ -107,7 +107,7 @@ async function peekFromQueue(guild_id) {
 async function playNext(guild_id, user_id) {
   let next = await popFromQueue(guild_id);
   if (!next) return stop(guild_id).catch(ex => {/* just swallow exception */});
-  let lookahead = await peekFromQueue(guild_id).then(item => item ? resolve_search_string(item)[0] : null).catch(ex => null);
+  let lookahead = await peekFromQueue(guild_id).then(item => item ? resolve_search_string(item).then(results => results[0]) : null).catch(ex => null);
   if (lookahead) HTTP_VOICE('voice_content_lookahead', { url: lookahead }).catch(ex => null); // DO NOT AWAIT!
   return play(guild_id, user_id, null, next);
 }
