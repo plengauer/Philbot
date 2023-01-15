@@ -134,9 +134,10 @@ class Context:
         self.guild_id = guild_id
         try:
             with open('.state.' + self.guild_id + '.json', 'r') as file:
-                state = json.load(file.read())
-                if self.guild_id != guild_id:
+                state = json.loads(file.read())
+                if state['guild_id'] != guild_id:
                     return # silently ignore state file
+                self.callback_url = state['callback_url']
                 self.channel_id = state['channel_id']
                 self.user_id = state['user_id']
                 self.session_id = state['session_id']
@@ -154,6 +155,7 @@ class Context:
                 with open(filename, 'w') as file:
                     file.write(json.dumps({
                         'guild_id': self.guild_id,
+                        'callback_url': self.callback_url,
                         'channel_id': self.channel_id,
                         'user_id': self.user_id,
                         'session_id': self.session_id,
@@ -496,12 +498,12 @@ def voice_content_lookahead():
     return 'Success'
 
 def main():
-    print('VOICE ready')
-    app.run(port=HTTP_PORT)
     for file in os.listdir('.'):
         if not file.startswith('.state.') or not file.endswith('.json'):
             continue
-        guild_id = file[len('.state.'), len(file) - len('.json')]
+        guild_id = file[len('.state.'):len(file) - len('.json')]
         get_context(guild_id)
+    print('VOICE ready')
+    app.run(port=HTTP_PORT)
 
 # https://github.com/ytdl-org/youtube-dl/blob/master/README.md#embedding-youtube-dl
