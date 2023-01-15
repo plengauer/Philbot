@@ -26,7 +26,8 @@ from opentelemetry.sdk.trace.export import (
 )
 
 # TODO resume after restart, somehow saving and restoring state
-# TODO cache and file lookahead so files are created ahead of time
+# TODO somehow switching content is not shutting down the websocket
+# TODO connect and disconnect have to be regular API calls, otherwise playback finished will not disconnect
 
 merged = dict()
 for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
