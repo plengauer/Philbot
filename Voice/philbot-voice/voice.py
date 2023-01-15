@@ -332,7 +332,7 @@ class Context:
         ws.close()
 
     def __ws_on_close(self, ws, close_code, close_message):
-        self.__teardown()
+        self.__stop()
     
     def __try_start(self):
         with self.lock:
