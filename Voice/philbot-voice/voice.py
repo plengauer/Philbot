@@ -13,7 +13,7 @@ import socket
 import requests
 import subprocess
 import websocket
-from flask import Flask, request
+from flask import Flask, request, Response
 import youtube_dl
 from opentelemetry import trace as OpenTelemetry
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
@@ -254,7 +254,8 @@ class Context:
     def __ws_on_message(self, ws, message):
         with self.lock:
             payload = json.loads(message)
-            print('VOICE GATEWAY received message: ' + str(payload['op']))
+            if payload['op'] != 6: 
+                print('VOICE GATEWAY received message: ' + str(payload['op'])) # heartbeat acks are very spammy
             match payload['op']:
                 case 8:
                     print('VOICE GATEWAY received hello')
@@ -430,13 +431,21 @@ def voice_server_update():
 def voice_content_update():
     body = request.json
     context = get_context(body['guild_id'])
-    context.on_content_update(resolve_url(body['url']))
+    try:
+        context.on_content_update(resolve_url(body['url']))
+    except youtube_dl.utils.DownloadError as e:
+        if ('Private video' in str(e)):
+            return Response('Private video', status = 403)
     return 'Success'
 
 @app.route('/voice_content_lookahead', methods=['POST'])
 def voice_content_lookahead():
     body = request.json
-    resolve_url(body['url'])
+    try:
+        resolve_url(body['url'])
+    except youtube_dl.utils.DownloadError as e:
+        if ('Private video' in str(e)):
+            return Response('Private video', status = 403)
     return 'Success'
 
 def main():
