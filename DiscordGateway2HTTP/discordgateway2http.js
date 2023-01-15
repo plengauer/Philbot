@@ -2,7 +2,9 @@ require('philbot-opentelemetry');
 const process = require('process');
 const fs = require('fs');
 const { WebSocket } = require('ws');
+const http = require('http');
 const request = require('request');
+const url = require('url');
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 
@@ -13,11 +15,17 @@ const STATE_FILE = (process.env.STATE_STORAGE_DIRECTORY ?? './') + '.state.' + S
 connect(restoreState());
 
 async function connect(prev_state = {}) {
+    prev_state.server?.closeAllConnections();
     state = {
         session_id: prev_state.session_id,
         sequence: prev_state.sequence,
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
     };
+    state.callback_port = process.env.PORT ?? 81;
+    state.server = http.createServer((request, response) => handleCallback(state, request, response));
+    state.server.on('error', error => { console.error(error); });
+    state.server.on('close', () => state.socket?.close());
+    state.server.listen(state.callback_port);
     state.socket = new WebSocket(state.resume_gateway_url + '?v=10&encoding=json');
     state.socket.on('open', () => console.log('GATEWAY connection established (' + state.resume_gateway_url + ')'));
     state.socket.on('message', message => handleMessage(state, message));
@@ -37,7 +45,7 @@ function handleMessage(state, message) {
     let event = JSON.parse(message);
     console.log('GATEWAY receive op ' + event.op + ' (' + event.s + ')');
     switch(event.op) {
-        case 0 /* ready | dispatch */: return handleDispatch(state, event.s, event.t, event.d);
+        case 0 /* ready | resumed | dispatch */: return handleDispatch(state, event.s, event.t, event.d);
         case 1 /* heartbeat request (heartbeat) */: return handleHeartbeatRequest(state);
         case 7 /* reconnect */: return handleReconnect(state);
         case 9 /* invalid session id */: return handleInvalidSession(state)
@@ -160,6 +168,8 @@ async function handleDispatch(state, sequence, event, payload) {
         case 'READY': return handleReady(state, payload);
         case 'RESUMED': return handleResumed();
         default:
+            let guild_id = payload.guild_id ?? (event.startsWith('GUILD_') ? payload.id : undefined);
+            if (guild_id) payload.callback = { guild_id: guild_id, url: 'http://127.0.0.1:' + state.callback_port }
             const span = tracer.startSpan('Discord ' + event.toLowerCase().replace(/_/g, ' '), { kind: opentelemetry.SpanKind.CONSUMER }, opentelemetry.ROOT_CONTEXT);
             span.setAttribute('discord.gateway.url', state.resume_gateway_url);
             span.setAttribute('discord.gateway.sequence', sequence);
@@ -187,19 +197,11 @@ async function dispatch(state, event, payload) {
         return;
     }
     console.log('GATEWAY dispatch ' + event.toLowerCase());
-    return http(event, payload)
+    return HTTP(event, payload)
         .then(result => result ? handleReply(state, result) : Promise.resolve());
 }
 
-async function handleReply(state, payload) {
-    switch (payload.command) {
-        case 'voice connect': return send(state, 4, { guild_id: payload.guild_id, channel_id: payload.channel_id, self_mute: false, self_deaf: false });
-        case 'voice disconnect': return send(state, 4, { guild_id: payload.guild_id, channel_id: null });
-        default: console.error('Unknown command: ' + payload.command);
-    }
-}
-
-async function http(event, payload, delay = undefined) {
+async function HTTP(event, payload, delay = undefined) {
     if (delay && delay > 1000 * 60 * 15) throw new Error('HTTP RETRIES EXCEEDED')
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
     let body = JSON.stringify(payload);
@@ -214,7 +216,53 @@ async function http(event, payload, delay = undefined) {
         if (response.statusCode == 503 || response.statusCode == 429) return reject(response.statusCode);
         if (response.headers['content-type'] == 'application/json') return resolve(JSON.parse(response.body));
         return resolve();
-    })).catch(() => http(event, payload, delay ? delay * 2 : 1000));
+    })).catch(() => HTTP(event, payload, delay ? delay * 2 : 1000));
+}
+
+async function handleCallback(state, request, response) {
+    console.log('HTTP CALLBACK SERVER serving ' + url.parse(request.url).pathname);
+    return new Promise(resolve => {
+        let buffer = '';
+        request.on('data', data => { buffer += data; });
+        request.on('end', () => {
+            let payload = null;
+            if (request.method != 'GET' && buffer.length > 0) {
+                try {
+                    payload = JSON.parse(buffer);
+                } catch {
+                    response.writeHead(400, 'Bad Request', { 'content-type': 'text/plain' });
+                    response.end();
+                    resolve();
+                    return;
+                }
+            }
+            try {
+                switch (url.parse(request.url).pathname) {
+                    case '/voice_state_update':
+                        if (request.method == 'POST') {
+                            if (payload.channel_id) {
+                                send(state, 4, { guild_id: payload.guild_id, channel_id: payload.channel_id, self_mute: false, self_deaf: false });
+                            } else {
+                                send(state, 4, { guild_id: payload.guild_id, channel_id: null });
+                            }
+                            response.writeHead(200, 'Success', { 'content-type': 'text/plain' });
+                            response.end();    
+                        } else {
+                            response.writeHead(405, 'Method not allowed', { 'content-type': 'text/plain' });
+                            response.end();
+                        }
+                        break;
+                    default:
+                        response.writeHead(404, 'Not Found', { 'content-type': 'text/plain' });
+                        response.end();
+                }
+            } catch(exception) {
+                response.writeHead(500, 'Internval server error', { 'content-type': 'text/plain' });
+                response.end();
+            }
+            resolve();
+        })
+    }).finally(() => console.log('HTTP CALLBACK SERVER served ' + url.parse(request.url).pathname));
 }
 
 function saveState(state) {

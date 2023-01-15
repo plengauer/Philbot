@@ -12,9 +12,7 @@ async function handle(payload) {
     payload.channel_id ? checkAndStartEvents(payload.guild_id, payload.channel_id) : Promise.resolve(),
     discord.me().then(me => me.id == payload.user_id ? player.on_voice_state_update(payload.guild_id, payload.channel_id, payload.session_id) : Promise.resolve()),
     features.isActive(payload.guild_id, 'role management').then(active => active ? role_management.on_voice_state_update(payload.guild_id, payload.user_id, payload.channel_id) : Promise.resolve())
-  ])
-  .then(results => results[0])
-  .then(reply => reply && reply.command ? { status: 200, body: reply } : undefined);
+  ]).then(() => undefined);
 }
 
 async function checkAndStartEvents(guild_id, channel_id) {

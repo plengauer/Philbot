@@ -1,6 +1,13 @@
+const url = require('url')
 const process = require('process');
 const permissions = require('./permissions.js');
 const curl = require('./curl.js');
+
+var callbacks = {};
+
+function register_callback(guild_id, url) {
+  callbacks[guild_id] = url;
+}
 
 function parse_mention(mention) {
   mention = mention.trim();
@@ -270,6 +277,14 @@ async function reaction_create(channel_id, message_id, emoji) {
   return HTTP(`/channels/${channel_id}/messages/${message_id}/reactions/${encoded_emoji}/@me`, 'PUT');
 }
 
+async function connect(guild_id, channel_id) {
+  return GATEWAY_HTTP('/voice_state_update', 'POST', guild_id, { guild_id: guild_id, channel_id: channel_id });
+}
+
+async function disconnect(guild_id) {
+  return GATEWAY_HTTP('/voice_state_update', 'POST', guild_id, { guild_id: guild_id, channel_id: null });
+}
+
 async function guild_members_list_with_permission(guild_id, permission) {
   return guild_members_list_with_any_permission(guild_id, [ permission ]);
 }
@@ -295,7 +310,14 @@ async function HTTP(endpoint, method, payload = undefined, ttc = undefined) {
   return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` }, cache: ttc ?? 10 });
 }
 
+async function GATEWAY_HTTP(endpoint, method, guild_id, payload = undefined, ttc = undefined) {
+  let callback_url = callbacks[guild_id];
+  return curl.request({ secure: false, method: method, hostname: url.parse(callback_url).hostname, port: url.parse(callback_url).port, path: endpoint, body: payload, cache: ttc ?? 10 })
+}
+
 module.exports = {
+  register_callback,
+
   parse_mention,
   parse_role,
   mention_user,
@@ -351,6 +373,9 @@ module.exports = {
   reactions_list,
   reaction_create,
   react: async function(channel_id, message_id, emoji) { return reaction_create(channel_id, message_id, emoji); }, // backwards compatibility
+
+  connect,
+  disconnect,
   
   guild_member_has_permission,
   guild_members_list_with_permission,

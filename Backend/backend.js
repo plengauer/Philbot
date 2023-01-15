@@ -31,6 +31,7 @@ const endpoint_discord_presence_update = require('./endpoints/api/discord/presen
 const endpoint_discord_voice_state_update = require('./endpoints/api/discord/voice_state_update.js');
 const endpoint_discord_voice_server_update = require('./endpoints/api/discord/voice_server_update.js');
 const endpoint_discord_voice_playback_finished = require('./endpoints/api/discord/voice_playback_finished.js');
+const discord = require('./shared/discord.js');
 
 let revision = 0;
 let revision_done = -1;
@@ -167,6 +168,7 @@ async function dispatchAny(path, params, headers, payload, response) {
 }
 
 async function dispatchAPI(path, params, headers, payload) {
+    if (path.startsWith('/discord/') && payload?.callback) discord.register_callback(payload.callback.guild_id, payload.callback.url);
     switch (path) {
         case '/about': return endpoint_about.handle();
         case '/autorefresh': return endpoint_autorefresh.handle(params, headers);

@@ -19,7 +19,7 @@ const role_management = require('../../../shared/role_management.js');
 
 async function handle(payload) {
   return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
-    .then(reply => reply && reply.command ? { status: 200, body: reply } : undefined);
+    .then(() => undefined);
 }
 
 async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id) {

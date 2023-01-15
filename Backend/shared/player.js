@@ -71,7 +71,7 @@ async function play0(guild_id, user_id, voice_channel_name, youtube_link) {
   return HTTP_VOICE('voice_content_update', { guild_id: guild_id, url: youtube_link })
     .then(() => discord.me())
     .then(me => memory.get(`voice_channel:user:${me.id}`))
-    .then(channel_id => channel_id != voice_channel_id ? { command: 'voice connect', guild_id: guild_id, channel_id: voice_channel_id } : undefined);
+    .then(connection => connection?.channel_id != voice_channel_id ? discord.connect(guild_id, voice_channel_id) : undefined);
 }
 
 async function HTTP_VOICE(operation, payload) {
@@ -79,7 +79,7 @@ async function HTTP_VOICE(operation, payload) {
 }
 
 async function stop(guild_id) {
-  return { command: 'voice disconnect', guild_id: guild_id };
+  return discord.disconnect(guild_id);
 }
 
 async function pause(guild_id) {
