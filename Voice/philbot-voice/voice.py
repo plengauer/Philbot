@@ -216,10 +216,6 @@ class Context:
                 try:
                     last_heartbeat = time_millis()
                     self.ws.send(json.dumps({ "op": 3, "d": last_heartbeat }))
-                    # self.ws.send(json.dumps({ "op": 3, "d": sequence }))
-                    # self.ws.send(json.dumps({ "op": 3, "d": sequence * package_duration }))
-                    # self.ws.send(json.dumps({ "op": 3, "d": int(sequence * frame_duration / 1000) }))
-                    # self.ws.send(json.dumps({ "op": 3, "d": sequence * desired_frame_size }))
                 except: # TODO limit to socket close exceptions
                     pass
             new_timestamp = time_millis()
@@ -269,7 +265,8 @@ class Context:
                         }
                     }))
                 case 6:
-                    print('VOICE GATEWAY heartbeat acknowledge')
+                    # print('VOICE GATEWAY heartbeat acknowledge') # this is quite spammy
+                    pass
                 case 2:
                     print('VOICE GATEWAY received voice ready')
                     self.ssrc = payload['d']['ssrc']
