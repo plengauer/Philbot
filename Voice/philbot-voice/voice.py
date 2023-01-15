@@ -434,7 +434,7 @@ def voice_content_update():
     try:
         context.on_content_update(resolve_url(body['url']))
     except youtube_dl.utils.DownloadError as e:
-        if ('Private video' in str(e)):
+        if 'Private video' in str(e):
             return Response('Private video', status = 403)
     return 'Success'
 
@@ -444,7 +444,7 @@ def voice_content_lookahead():
     try:
         resolve_url(body['url'])
     except youtube_dl.utils.DownloadError as e:
-        if ('Private video' in str(e)):
+        if 'Private video' in str(e):
             return Response('Private video', status = 403)
     return 'Success'
 
