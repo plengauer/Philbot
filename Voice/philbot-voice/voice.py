@@ -162,6 +162,12 @@ class Context:
             subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', filename]).check_returncode() # , '-f', 's16le'
             subprocess.run(['rm', filename + '.backup']).check_returncode()
             file = wave.open(filename, 'rb')
+        if (file.getnchannels() != 2):
+            file.close()
+            subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
+            subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ac', '2', filename]).check_returncode() # , '-f', 's16le'
+            subprocess.run(['rm', filename + '.backup']).check_returncode()
+            file = wave.open(filename, 'rb')
         if file.getframerate() != 48000:
             raise RuntimeError('unexpected frequency: ' + str(file.getframerate()))
         if file.getnchannels() != 2:
