@@ -162,7 +162,10 @@ class Context:
                         'url': self.url
                     }))
             else:
-                os.remove(filename)
+                try:
+                    os.remove(filename)
+                except:
+                    pass
 
     def __listen(self):
         print('VOICE CONNECTION listening')
