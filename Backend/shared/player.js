@@ -73,6 +73,8 @@ async function play0(guild_id, user_id, voice_channel_name, youtube_link) {
     .then(me => memory.get(`voice_channel:user:${me.id}`))
     .then(connection => connection?.channel_id != voice_channel_id ? discord.connect(guild_id, voice_channel_id) : undefined)
     .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('The video is private!')) : Promise.reject(error))
+    .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('The video is blocked!')) : Promise.reject(error))
+    .catch(error => error.message.includes('HTTP') && error.message.includes('404') ? Promise.reject(new Error('Cannot find the video!')) : Promise.reject(error))
 }
 
 async function HTTP_VOICE(operation, payload) {
@@ -111,7 +113,8 @@ async function playNext(guild_id, user_id) {
   let lookahead = await peekFromQueue(guild_id).then(item => item ? resolve_search_string(item).then(results => results[0]) : null).catch(ex => null);
   if (lookahead) HTTP_VOICE('voice_content_lookahead', { url: lookahead }).catch(ex => null); // DO NOT AWAIT!
   return play(guild_id, user_id, null, next)
-    .catch(error => error.message.includes('private') ? playNext(guild_id, user_id) : Promise.reject(error));
+    .catch(error => error.message.includes('private') ? playNext(guild_id, user_id) : Promise.reject(error))
+    .catch(error => error.message.includes('blocked') ? playNext(guild_id, user_id) : Promise.reject(error));
 }
 
 async function appendToQueue(guild_id, item) {

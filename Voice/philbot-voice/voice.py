@@ -1,4 +1,4 @@
-from os import path, environ, remove
+import os
 import time
 import random
 import json
@@ -39,23 +39,23 @@ for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dyna
     except:
         pass
 merged.update({
-  "service.name": environ['SERVICE_NAME'],
-  "service.version": environ['SERVICE_VERSION']
+  "service.name": os.environ['SERVICE_NAME'],
+  "service.version": os.environ['SERVICE_VERSION']
 })
 resource = Resource.create(merged)
 tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource=resource)
 tracer_provider.add_span_processor(
     BatchSpanProcessor(OTLPSpanExporter(
-        endpoint=environ['OPENTELEMETRY_TRACES_API_ENDPOINT'],
-        headers={ "Authorization": 'Api-Token ' + environ['OPENTELEMETRY_TRACES_API_TOKEN'] },
+        endpoint=os.environ['OPENTELEMETRY_TRACES_API_ENDPOINT'],
+        headers={ "Authorization": 'Api-Token ' + os.environ['OPENTELEMETRY_TRACES_API_TOKEN'] },
     ))
 )
 OpenTelemetry.set_tracer_provider(tracer_provider)
 
 UDP_MAX_PAYLOAD = 65507
-HTTP_PORT = int(environ.get('HTTP_PORT', str(12345)))
-UDP_PORT_MIN = int(environ.get('UDP_PORT_MIN', str(12346)))
-UDP_PORT_MAX = int(environ.get('UDP_PORT_MAX', str(65535)))
+HTTP_PORT = int(os.environ.get('HTTP_PORT', str(12345)))
+UDP_PORT_MIN = int(os.environ.get('UDP_PORT_MIN', str(12346)))
+UDP_PORT_MAX = int(os.environ.get('UDP_PORT_MAX', str(65535)))
 
 app = Flask(__name__)
 
@@ -85,7 +85,7 @@ def download_from_youtube(url):
     filename = url[url.index('v=') + 2:]
     if '&' in filename:
         filename = filename[:filename.index('&')]
-    if path.exists(filename + '.' + codec):
+    if os.path.exists(filename + '.' + codec):
         return 'file://' + filename + '.' + codec
     options = {
         'format': 'bestaudio',
@@ -132,6 +132,37 @@ class Context:
 
     def __init__(self, guild_id):
         self.guild_id = guild_id
+        try:
+            with open('.state.' + self.guild_id + '.json', 'r') as file:
+                state = json.load(file.read())
+                if self.guild_id != guild_id:
+                    return # silently ignore state file
+                self.channel_id = state['channel_id']
+                self.user_id = state['user_id']
+                self.session_id = state['session_id']
+                self.endpoint = state['endpoint']
+                self.token = state['token']
+                self.url = state['url']
+        except:
+            pass
+        self.__try_start()
+
+    def __save(self):
+        with self.lock:
+            filename = '.state.' + self.guild_id + '.json', 'w'
+            if self.channel_id:
+                with open(filename) as file:
+                    file.write(json.dumps({
+                        'guild_id': self.guild_id,
+                        'channel_id': self.channel_id,
+                        'user_id': self.user_id,
+                        'session_id': self.session_id,
+                        'endpoint': self.endpoint,
+                        'token': self.token,
+                        'url': self.url
+                    }))
+            else:
+                os.remove(filename)
 
     def __listen(self):
         print('VOICE CONNECTION listening')
@@ -237,10 +268,11 @@ class Context:
             sequence += 1
         pyogg.opus.opus_encoder_destroy(encoder)
         file.close()
-        print('VOICE CONNECTION stream completed (' + str(too_slow_count * 100 / sequence) + '% too slow)')
+        print('VOICE CONNECTION stream completed (' + str(too_slow_count * 100 / sequence if sequence > 0 else 0) + '% too slow)')
+        os.remove(filename)
         with self.lock:
-            remove(filename)
             self.url = None
+        self.__save()
         threading.Thread(target=self.__stream_end).start()
 
     def __stream_end(self):
@@ -378,6 +410,8 @@ class Context:
             self.token = token
         self.__stop()
         self.__try_start()
+        self.__save()
+
 
     def on_state_update(self, channel_id, user_id, session_id, callback_url):
         with self.lock:
@@ -392,12 +426,14 @@ class Context:
             self.__stop()
         else:
             self.__try_start()
+        self.__save()
 
     def on_content_update(self, url):
         self.__stop()
         with self.lock:
             self.url = url
         self.__try_start()
+        self.__save()
 
 contexts_lock = threading.Lock()
 contexts = {}
@@ -405,7 +441,7 @@ contexts = {}
 def get_context(guild_id):
     with contexts_lock:
         context = contexts.get(guild_id)
-        if (context == None):
+        if not context:
             context = contexts[guild_id] = Context(guild_id)
         return context
 
@@ -436,6 +472,10 @@ def voice_content_update():
     except youtube_dl.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
+        elif 'blocked' in str(e) or 'unavailable' in str(e):
+            return Response('Blocked video', status = 451)
+        else:
+            return Response('Video not found', status = 404)
     return 'Success'
 
 @app.route('/voice_content_lookahead', methods=['POST'])
@@ -446,10 +486,19 @@ def voice_content_lookahead():
     except youtube_dl.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
+        elif 'blocked' in str(e) or 'unavailable' in str(e):
+            return Response('Blocked video', status = 451)
+        else:
+            return Response('Video not found', status = 404)
     return 'Success'
 
 def main():
     print('VOICE ready')
     app.run(port=HTTP_PORT)
+    for file in os.listdir('.'):
+        if not file.startswith('.state.') or not file.endswith('.json'):
+            continue
+        guild_id = file[len('.state.'), len(file) - len('.json')]
+        get_context(guild_id)
 
 # https://github.com/ytdl-org/youtube-dl/blob/master/README.md#embedding-youtube-dl
