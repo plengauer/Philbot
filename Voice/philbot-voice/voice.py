@@ -239,8 +239,11 @@ class Context:
         with self.lock:
             remove(filename)
             self.url = None
-            self.__stop()
-        threading.Thread(target=requests.post, kwargs={ "url": self.callback_url, "json": { "guild_id": self.guild_id, "user_id": self.user_id } }).start()
+        threading.Thread(target=self.__stream_end).start()
+
+    def __stream_end(self):
+        self.__stop()
+        requests.post(self.callback_url, json={ "guild_id": self.guild_id, "user_id": self.user_id })
 
     def __ws_on_open(self, ws):
         with self.lock:
@@ -325,12 +328,22 @@ class Context:
                     print(json.dumps(payload))
 
     def __ws_on_error(self, ws, error):
-        with self.lock:
-            print('VOICE GATEWAY error ' + str(error))
-            self.ws.close()
+        print('VOICE GATEWAY error ' + str(error))
+        ws.close()
 
     def __ws_on_close(self, ws, close_code, close_message):
-        print('VOICE GATEWAY connection closing (' + str(close_code) if close_code else 'None' + ': ' + close_message if close_message else '' + ')')
+        self.__teardown()
+    
+    def __try_start(self):
+        with self.lock:
+            if self.ws or not self.channel_id or not self.session_id or not self.endpoint or not self.token or not self.url:
+                return
+            print('VOICE GATEWAY connection starting')
+            self.ws = websocket.WebSocketApp(self.endpoint + '?v=4', on_open=self.__ws_on_open, on_message=self.__ws_on_message, on_error=self.__ws_on_error, on_close=self.__ws_on_close)
+            threading.Thread(target=self.ws.run_forever).start()
+    
+    def __stop(self):
+        print('VOICE GATEWAY connection closing')
         listener = None
         streamer = None
         with self.lock:
@@ -353,26 +366,14 @@ class Context:
             self.secret_key = None
             self.ws = None
         print('VOICE GATEWAY connection closed')
-        with self.lock:
-            self.__try_start() # if we closed intentionally, channel id will be null
-    
-    def __try_start(self):
-        if self.ws or not self.channel_id or not self.session_id or not self.endpoint or not self.token or not self.url:
-            return
-        self.ws = websocket.WebSocketApp(self.endpoint + '?v=4', on_open=self.__ws_on_open, on_message=self.__ws_on_message, on_error=self.__ws_on_error, on_close=self.__ws_on_close)
-        threading.Thread(target=self.ws.run_forever).start()
-    
-    def __stop(self):
-        if not self.ws:
-            return
-        self.ws.close()
+        self.__try_start() # if we closed intentionally, channel id will be null
 
     def on_server_update(self, endpoint, token):
         with self.lock:
             self.endpoint = endpoint
             self.token = token
-            self.__stop()
-            self.__try_start()
+        self.__stop()
+        self.__try_start()
 
     def on_state_update(self, channel_id, user_id, session_id, callback_url):
         with self.lock:
@@ -383,15 +384,16 @@ class Context:
             if not self.channel_id:
                 self.endpoint = None
                 self.token = None
-                self.__stop()
-            else:
-                self.__try_start()
+        if not self.channel_id:
+            self.__stop()
+        else:
+            self.__try_start()
 
     def on_content_update(self, url):
+        self.__stop()
         with self.lock:
-            self.__stop()
             self.url = url
-            self.__try_start()
+        self.__try_start()
 
 contexts_lock = threading.Lock()
 contexts = {}
