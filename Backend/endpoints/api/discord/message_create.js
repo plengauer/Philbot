@@ -382,7 +382,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       );
   
   } else if (message.startsWith('play ')) {
-    if (!guild_id) return reactNotOk(channel_id, event_id);
+    guild_id = guild_id ?? await resolveGuildID(user_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     message = message.split(' ').slice(1).join(' ');
     let shuffle = message.startsWith('shuffled ');
@@ -403,43 +404,43 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       
   } else if (message === "stop") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!guild_id) return reactNotOk(channel_id, event_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.stop(guild_id).then(command => reactOK(channel_id, event_id).then(() => command));
     
   } else if (message === "pause") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!guild_id) return reactNotOk(channel_id, event_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.pause(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message === "resume") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!guild_id) return reactNotOk(channel_id, event_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.resume(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message.startsWith('queue ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!guild_id) return reactNotOk(channel_id, event_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.appendToQueue(guild_id, message.split(' ').slice(1).join(' ')).then(() => reactOK(channel_id, event_id))
       
   } else if (message === 'shuffle queue') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!guild_id) return reactNotOk(channel_id, event_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.shuffleQueue(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message === 'clear queue') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!guild_id) return reactNotOk(channel_id, event_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.clearQueue(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message === 'show queue') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!guild_id) return reactNotOk(channel_id, event_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     let queue = await player.getQueue(guild_id);
     if (queue.length == 0) {
