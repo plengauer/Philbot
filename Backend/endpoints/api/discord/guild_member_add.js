@@ -1,6 +1,7 @@
 const discord = require('../../../shared/discord.js');
 const features = require('../../../shared/features.js');
 const raid_protection = require('../../../shared/raid_protection.js');
+const role_management = require('../../../shared/role_management.js');
 
 async function handle(payload) {
   let guild_id = payload.guild_id;
@@ -12,7 +13,8 @@ async function handle(payload) {
           discord.try_dms(user_id, `Hi <@${user_id}>, welcome to ${guild.name}! I'm your friendly neighborhood bot. I can play music, tell jokes, or schedule weekly events, whatever you need. Type \'<@${me.id}> help\' to learn how to talk to me. In case you talk to me in a DM channel, just skip the \'<@${me.id}>\'. I'm always around and happy to help.`)
         )
       ),
-    features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_member_added(guild_id, user_id) : Promise.resolve())
+    features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_member_added(guild_id, user_id) : Promise.resolve()),
+    features.isActive(guild_id, "role management").then(active => active ? role_management.on_guild_member_added(guild_id, user.id) : Promise.resolve())
   ]).then(() => undefined);
 }
 

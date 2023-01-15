@@ -157,6 +157,10 @@ function parser_next(parser) {
     return parser.tokens[parser.cursor++];
 }
 
+async function on_guild_member_add(guild_id, user_id) {
+    return on_event(guild_id, user_id);
+}
+
 async function on_guild_member_roles_update(guild_id, user_id) {
     return on_event(guild_id, user_id);
 }
@@ -305,6 +309,7 @@ async function condition_to_string(condition, guild_id) {
 module.exports = {
     add_new_rule,
     on_reaction_add, on_reaction_remove,
+    on_guild_member_add,
     on_guild_member_roles_update,
     on_presence_update,
     on_voice_state_update,
