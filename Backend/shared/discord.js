@@ -222,6 +222,10 @@ async function try_dms(user_id, content) {
     });
 }
 
+async function trigger_typing_indicator(channel_id) {
+  return HTTP(`/channels/${channel_id}/typing`, 'POST');
+}
+
 async function post(channel_id, content, tts = false, referenced_message_id = undefined) {
   let limit = 2000;
   while (content.length > limit) {
@@ -365,6 +369,7 @@ module.exports = {
   
   message_retrieve,
 
+  trigger_typing_indicator,
   post,
   respond,
   dms,
