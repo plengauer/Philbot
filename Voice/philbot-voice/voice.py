@@ -246,7 +246,13 @@ class Context:
                 elif not filename and self.url:
                     filename = self.url[len('file://'):]
                     file = wave.open(filename, 'rb')
-                    print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
+                    if file.getframerate() != 48000 or file.getnchannels() != 2 or file.getsampwidth() != 2:
+                        print('VOICE CONNECTION ' + self.guild_id + ' skipping source because stream does not satisfy requirements')
+                        file.close()
+                        file = None
+                        filename = None
+                    else:
+                        print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
                 elif filename and self.url and filename != self.url[len('file://'):]:
                     file.close()
                     os.remove(filename)
