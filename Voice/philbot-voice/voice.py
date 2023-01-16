@@ -204,7 +204,7 @@ class Context:
     def __stream(self):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
         # https://github.com/Rapptz/discord.py/blob/master/discord/voice_client.py
-        print('VOICE CONNECTION streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
+        print('VOICE CONNECTION ' + self.guild_id + ' streaming')
 
         frame_duration = 20
         frame_rate = 48000
@@ -230,12 +230,11 @@ class Context:
         file = None
         timestamp = time_millis()
         last_heartbeat = timestamp
-        too_slow_count = 0
         while True:
             # check if source has changed
             with self.lock:
                 if not self.streamer:
-                    break;
+                    break
                 if not filename and not self.url:
                     pass
                 elif filename and not self.url:
@@ -243,14 +242,17 @@ class Context:
                     os.remove(filename)
                     file = None
                     filename = None
+                    print('VOICE CONNECTION ' + self.guild_id + ' stream completed')
                 elif not filename and self.url:
                     filename = self.url[len('file://'):]
                     file = wave.open(filename, 'rb')
+                    print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
                 elif filename and self.url and filename != self.url[len('file://'):]:
                     file.close()
                     os.remove(filename)
                     file = None
                     filename = None
+                    print('VOICE CONNECTION ' + self.guild_id + ' stream changing source')
             # encode a frame
             opus_frame = None
             if file:
@@ -287,7 +289,7 @@ class Context:
             sleep_time = frame_duration - (new_timestamp - timestamp)
             if sleep_time < 0:
                 # we are behind, what to do?
-                too_slow_count += 1
+                pass
             elif sleep_time == 0:
                 pass
             else:
@@ -299,7 +301,7 @@ class Context:
             os.remove(filename)
         pyogg.opus.opus_encoder_destroy(encoder)
         
-        print('VOICE CONNECTION ' + self.guild_id + ' stream completed (' + str(too_slow_count * 100 / sequence if sequence > 0 else 0) + '% too slow)')
+        print('VOICE CONNECTION ' + self.guild_id + ' stream closed')
         
 
     def __ws_on_open(self, ws):
@@ -316,7 +318,7 @@ class Context:
                     print('VOICE GATEWAY ' + self.guild_id + ' received hello')
                     payload = json.loads(message)
                     self.heartbeat_interval = payload['d']['heartbeat_interval']
-                    print('VOICE GATEWAY sending identify')
+                    print('VOICE GATEWAY ' + self.guild_id + ' sending identify')
                     ws.send(json.dumps({
                         "op": 0,
                         "d": {
