@@ -361,6 +361,9 @@ class Context:
                 case 5:
                     print('VOICE GATEWAY received speaking')
                     # nothing else to do ...
+                case 12:
+                    print('VOICE GATWAY received streaming')
+                    # nothing else to do ...
                 case 13:
                     print('VOICE GATEWAY client disconnect')
                     # nothing else to do ...
