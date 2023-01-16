@@ -346,7 +346,7 @@ class Context:
                     modes = payload['d']['modes']
                     my_ip = requests.get('https://ipv4.icanhazip.com/').text.strip()
                     my_port = None
-                    print('VOICE CONNECTION opening UDP socket')
+                    print('VOICE CONNECTION ' + self.guild_id + ' opening UDP socket')
                     self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     while not my_port:
                         try:
@@ -358,7 +358,7 @@ class Context:
                     print('VOICE CONNECTION ' + self.guild_id + ' server ready at ' + my_ip + ':' + str(my_port))
                     self.listener = threading.Thread(target=self.__listen)
                     self.listener.start()
-                    print('VOICE GATEWAY sending select protocol')
+                    print('VOICE GATEWAY ' + self.guild_id + ' sending select protocol')
                     ws.send(json.dumps({
                         "op": 1,
                         "d": {
@@ -374,7 +374,7 @@ class Context:
                     print('VOICE GATEWAY ' + self.guild_id + ' received session description')
                     self.mode = payload['d']['mode']
                     self.secret_key = payload['d']['secret_key']
-                    print('VOICE GATEWAY sending speaking')
+                    print('VOICE GATEWAY ' + self.guild_id + ' sending speaking')
                     ws.send(json.dumps({
                         "op": 5,
                         "d": {
