@@ -170,7 +170,7 @@ class Context:
                     pass
 
     def __listen(self):
-        print('VOICE CONNECTION listening')
+        print('VOICE CONNECTION ' + self.guild_id + ' listening')
         while True:
             with self.lock:
                 if not self.listener:
@@ -180,13 +180,13 @@ class Context:
                 # print('VOICE CONNECTION received voice data package from ' + address[0] + ':' + str(address[1]) + ': ' + str(len(data)) + 'b')
             except: # TODO limit to socket closed exceptions only
                 pass
-        print('VOICE CONNECTION listener terminated')
+        print('VOICE CONNECTION ' + self.guild_id + ' listener terminated')
 
     def __stream(self):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
         if not self.url.startswith('file://'):
             raise RuntimeError
-        print('VOICE CONNECTION streaming')
+        print('VOICE CONNECTION ' + self.guild_id + ' streaming')
         filename = self.url[len('file://'):]
         if not self.url.endswith('.wav') and not self.url.endswith('.wave'):
             raise RuntimeError
@@ -273,7 +273,7 @@ class Context:
             sequence += 1
         pyogg.opus.opus_encoder_destroy(encoder)
         file.close()
-        print('VOICE CONNECTION stream completed (' + str(too_slow_count * 100 / sequence if sequence > 0 else 0) + '% too slow)')
+        print('VOICE CONNECTION ' + self.guild_id + ' stream completed (' + str(too_slow_count * 100 / sequence if sequence > 0 else 0) + '% too slow)')
         os.remove(filename)
         with self.lock:
             self.url = None
@@ -286,16 +286,16 @@ class Context:
 
     def __ws_on_open(self, ws):
         with self.lock:
-            print('VOICE GATEWAY connection established')
+            print('VOICE GATEWAY ' + self.guild_id + ' connection established')
 
     def __ws_on_message(self, ws, message):
         with self.lock:
             payload = json.loads(message)
             if payload['op'] != 6: 
-                print('VOICE GATEWAY received message: ' + str(payload['op'])) # heartbeat acks are very spammy
+                print('VOICE GATEWAY ' + self.guild_id + ' received message: ' + str(payload['op'])) # heartbeat acks are very spammy
             match payload['op']:
                 case 8:
-                    print('VOICE GATEWAY received hello')
+                    print('VOICE GATEWAY ' + self.guild_id + ' received hello')
                     payload = json.loads(message)
                     self.heartbeat_interval = payload['d']['heartbeat_interval']
                     print('VOICE GATEWAY sending identify')
@@ -312,7 +312,7 @@ class Context:
                     # print('VOICE GATEWAY heartbeat acknowledge') # this is quite spammy
                     pass
                 case 2:
-                    print('VOICE GATEWAY received voice ready')
+                    print('VOICE GATEWAY ' + self.guild_id + ' received voice ready')
                     self.ssrc = payload['d']['ssrc']
                     self.ip = payload['d']['ip']
                     self.port = payload['d']['port']
@@ -328,7 +328,7 @@ class Context:
                             break
                         except:
                             my_port = None
-                    print('VOICE CONNECTION server ready at ' + my_ip + ':' + str(my_port))
+                    print('VOICE CONNECTION ' + self.guild_id + ' server ready at ' + my_ip + ':' + str(my_port))
                     self.listener = threading.Thread(target=self.__listen)
                     self.listener.start()
                     print('VOICE GATEWAY sending select protocol')
@@ -344,7 +344,7 @@ class Context:
                         }
                     }))
                 case 4:
-                    print('VOICE GATEWAY received session description')
+                    print('VOICE GATEWAY ' + self.guild_id + ' received session description')
                     self.mode = payload['d']['mode']
                     self.secret_key = payload['d']['secret_key']
                     print('VOICE GATEWAY sending speaking')
@@ -359,37 +359,37 @@ class Context:
                     self.streamer = threading.Thread(target=self.__stream)
                     self.streamer.start()
                 case 5:
-                    print('VOICE GATEWAY received speaking')
+                    print('VOICE GATEWAY ' + self.guild_id + ' received speaking')
                     # nothing else to do ...
                 case 12:
-                    print('VOICE GATWAY received streaming')
+                    print('VOICE GATWAY ' + self.guild_id + ' received streaming')
                     # nothing else to do ...
                 case 13:
-                    print('VOICE GATEWAY client disconnect')
+                    print('VOICE GATEWAY ' + self.guild_id + ' client disconnect')
                     # nothing else to do ...
                 case _:
-                    print('VOICE GATEWAY unknown opcode')
+                    print('VOICE GATEWAY ' + self.guild_id + ' unknown opcode')
                     print(json.dumps(payload))
 
     def __ws_on_error(self, ws, error):
-        print('VOICE GATEWAY error ' + str(error))
+        print('VOICE GATEWAY ' + self.guild_id + ' error ' + str(error))
         time.sleep(1)
         ws.close()
 
     def __ws_on_close(self, ws, close_code, close_message):
-        print('VOICE GATEWAY close ' + (str(close_code) if close_code else '?') + ': ' + (close_message if close_message else 'unknown'))
+        print('VOICE GATEWAY ' + self.guild_id + ' close ' + (str(close_code) if close_code else '?') + ': ' + (close_message if close_message else 'unknown'))
         self.__stop()
     
     def __try_start(self):
         with self.lock:
             if self.ws or not self.channel_id or not self.session_id or not self.endpoint or not self.token or not self.url:
                 return
-            print('VOICE GATEWAY connection starting')
+            print('VOICE GATEWAY ' + self.guild_id + ' connection starting')
             self.ws = websocket.WebSocketApp(self.endpoint + '?v=4', on_open=self.__ws_on_open, on_message=self.__ws_on_message, on_error=self.__ws_on_error, on_close=self.__ws_on_close)
             threading.Thread(target=self.ws.run_forever).start()
     
     def __stop(self):
-        print('VOICE GATEWAY connection shutting down')
+        print('VOICE GATEWAY ' + self.guild_id + ' connection shutting down')
         listener = None
         streamer = None
         with self.lock:
@@ -411,7 +411,7 @@ class Context:
             self.ssrc = None
             self.secret_key = None
             self.ws = None
-        print('VOICE GATEWAY connection shut down')
+        print('VOICE GATEWAY ' + self.guild_id + ' connection shut down')
         self.__try_start() # if we closed intentionally, channel id will be null
 
     def on_server_update(self, endpoint, token):
