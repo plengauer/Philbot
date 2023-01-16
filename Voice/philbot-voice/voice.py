@@ -269,7 +269,7 @@ class Context:
             else:
                 opus_frame = b"\x00" * desired_frame_size * sample_width * channels
             # send a frame
-            package = create_voice_package(sequence, sequence * desired_frame_size, self.ssrc, secret_box, opus_frame))
+            package = create_voice_package(sequence, sequence * desired_frame_size, self.ssrc, secret_box, opus_frame)
             sequence += 1
             try:
                 self.socket.sendto(package, (self.ip, self.port))
@@ -416,7 +416,7 @@ class Context:
             self.streamer = None
             if self.socket:
                 self.socket.close()
-            if (self.ws)
+            if self.ws:
                 self.ws.close()
         if listener:
             listener.join()
