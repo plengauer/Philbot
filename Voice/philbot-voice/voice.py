@@ -373,10 +373,11 @@ class Context:
 
     def __ws_on_error(self, ws, error):
         print('VOICE GATEWAY error ' + str(error))
+        time.sleep(1)
         ws.close()
 
     def __ws_on_close(self, ws, close_code, close_message):
-        print('VOICE GATEWAY close ' + (str(close_code) if close_code else '?') + (close_message if close_message else 'unknown'))
+        print('VOICE GATEWAY close ' + (str(close_code) if close_code else '?') + ': ' + (close_message if close_message else 'unknown'))
         self.__stop()
     
     def __try_start(self):
