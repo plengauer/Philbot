@@ -243,6 +243,7 @@ class Context:
                     file = None
                     filename = None
                     print('VOICE CONNECTION ' + self.guild_id + ' stream completed')
+                    threading.Thread(target=requests.post, kwargs={'url': self.callback_url, 'json': { "guild_id": self.guild_id, "user_id": self.user_id }}).start()
                 elif not filename and self.url:
                     filename = self.url[len('file://'):]
                     file = wave.open(filename, 'rb')
@@ -265,11 +266,8 @@ class Context:
             if file:
                 pcm = file.readframes(desired_frame_size)
                 if len(pcm) == 0:
-                    file.close()
-                    os.remove(filename)
-                    file = None
-                    filename = None
-                    threading.Thread(target=requests.post, kwargs={'url': self.callback_url, 'json': { "guild_id": self.guild_id, "user_id": self.user_id }}).start()
+                    with self.lock:
+                        self.url = None
                 effective_frame_size = len(pcm) // sample_width // channels
                 if effective_frame_size < desired_frame_size:
                     pcm += b"\x00" * (desired_frame_size - effective_frame_size) * sample_width * channels
