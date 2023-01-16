@@ -251,6 +251,7 @@ class Context:
                         file.close()
                         file = None
                         filename = None
+                        threading.Thread(target=requests.post, kwargs={'url': self.callback_url, 'json': { "guild_id": self.guild_id, "user_id": self.user_id }}).start()
                     else:
                         print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
                 elif filename and self.url and filename != self.url[len('file://'):]:
