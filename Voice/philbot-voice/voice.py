@@ -376,6 +376,7 @@ class Context:
         ws.close()
 
     def __ws_on_close(self, ws, close_code, close_message):
+        print('VOICE GATEWAY close ' + (str(close_code) if close_code else '?') + (close_message if close_message else 'unknown'))
         self.__stop()
     
     def __try_start(self):
@@ -387,7 +388,7 @@ class Context:
             threading.Thread(target=self.ws.run_forever).start()
     
     def __stop(self):
-        print('VOICE GATEWAY connection closing')
+        print('VOICE GATEWAY connection shutting down')
         listener = None
         streamer = None
         with self.lock:
@@ -409,7 +410,7 @@ class Context:
             self.ssrc = None
             self.secret_key = None
             self.ws = None
-        print('VOICE GATEWAY connection closed')
+        print('VOICE GATEWAY connection shut down')
         self.__try_start() # if we closed intentionally, channel id will be null
 
     def on_server_update(self, endpoint, token):
