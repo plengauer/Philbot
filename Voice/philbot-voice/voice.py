@@ -263,7 +263,7 @@ class Context:
                     threading.Thread(target=requests.post, kwargs={'url': self.callback_url, 'json': { "guild_id": self.guild_id, "user_id": self.user_id }}).start()
                 effective_frame_size = len(pcm) // sample_width // channels
                 if effective_frame_size < desired_frame_size:
-		    pcm += b"\x00" * (desired_frame_size - effective_frame_size) * sample_width * channels
+                    pcm += b"\x00" * (desired_frame_size - effective_frame_size) * sample_width * channels
                 encoded_bytes = pyogg.opus.opus_encode(encoder, ctypes.cast(pcm, pyogg.opus.opus_int16_p), ctypes.c_int(effective_frame_size), ctypes.cast(buffer, pyogg.opus.c_uchar_p), pyogg.opus.opus_int32(len(buffer)))
                 opus_frame = bytes(buffer[:encoded_bytes]
             else:
