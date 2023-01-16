@@ -265,7 +265,7 @@ class Context:
                 if effective_frame_size < desired_frame_size:
                     pcm += b"\x00" * (desired_frame_size - effective_frame_size) * sample_width * channels
                 encoded_bytes = pyogg.opus.opus_encode(encoder, ctypes.cast(pcm, pyogg.opus.opus_int16_p), ctypes.c_int(effective_frame_size), ctypes.cast(buffer, pyogg.opus.c_uchar_p), pyogg.opus.opus_int32(len(buffer)))
-                opus_frame = bytes(buffer[:encoded_bytes]
+                opus_frame = bytes(buffer[:encoded_bytes])
             else:
                 opus_frame = b"\x00" * desired_frame_size * sample_width * channels
             # send a frame
