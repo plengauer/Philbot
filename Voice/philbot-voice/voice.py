@@ -99,13 +99,32 @@ def download_from_youtube(url):
     }
     with youtube_dl.YoutubeDL(options) as ydl:
         ydl.download([url])
-        return 'file://' + filename + '.' + codec
+        return filename + '.' + codec
 
 def resolve_url(url):
+    filename = None    
     if url.startswith('https://www.youtube.com/watch?v='):
-        return download_from_youtube(url)
+        filename = download_from_youtube(url)
     else:
         raise RuntimeError
+    file = wave.open(filename, "rb")
+    if (file.getframerate() != 48000):
+        file.close()
+        subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
+        subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', filename]).check_returncode() # , '-f', 's16le'
+        subprocess.run(['rm', filename + '.backup']).check_returncode()
+        file = wave.open(filename, 'rb')
+    if (file.getnchannels() != 2):
+        file.close()
+        subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
+        subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ac', '2', filename]).check_returncode() # , '-f', 's16le'
+        subprocess.run(['rm', filename + '.backup']).check_returncode()
+        file = wave.open(filename, 'rb')
+    if file.getsampwidth() != 2:
+        raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
+    file.close()
+    return 'file://' + filename
+
 
 class Context:
     lock = threading.Lock()
@@ -184,82 +203,86 @@ class Context:
 
     def __stream(self):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
-        if not self.url.startswith('file://'):
-            raise RuntimeError
-        print('VOICE CONNECTION ' + self.guild_id + ' streaming')
-        filename = self.url[len('file://'):]
-        if not self.url.endswith('.wav') and not self.url.endswith('.wave'):
-            raise RuntimeError
         # https://github.com/Rapptz/discord.py/blob/master/discord/voice_client.py
-        file = wave.open(filename, "rb")
-        if (file.getframerate() != 48000):
-            file.close()
-            subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
-            subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', filename]).check_returncode() # , '-f', 's16le'
-            subprocess.run(['rm', filename + '.backup']).check_returncode()
-            file = wave.open(filename, 'rb')
-        if (file.getnchannels() != 2):
-            file.close()
-            subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
-            subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ac', '2', filename]).check_returncode() # , '-f', 's16le'
-            subprocess.run(['rm', filename + '.backup']).check_returncode()
-            file = wave.open(filename, 'rb')
-        if file.getframerate() != 48000:
-            raise RuntimeError('unexpected frequency: ' + str(file.getframerate()))
-        if file.getnchannels() != 2:
-            raise RuntimeError('unexpected channel count: ' + str(file.getnchannels()))
-        if file.getsampwidth() != 2:
-            raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
-        if self.mode != "xsalsa20_poly1305":
-            raise RuntimeError('unexpected mode: ' + self.mode)
-
         print('VOICE CONNECTION streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
-        timestamp_start = time_millis()
-        secret_box = nacl.secret.SecretBox(bytes(self.secret_key))
-        sequence = 0
+
         frame_duration = 20
+        frame_rate = 48000
+        sample_width = 2
+        channels = 2
+        desired_frame_size = int(frame_rate * frame_duration / 1000)
+        buffer = b"\x00" * 1024 * 1024
+        secret_box = nacl.secret.SecretBox(bytes(self.secret_key))
         error = ctypes.c_int(0)
         encoder = pyogg.opus.opus_encoder_create(
-            pyogg.opus.opus_int32(file.getframerate()),
-            ctypes.c_int(file.getnchannels()),
+            pyogg.opus.opus_int32(frame_rate),
+            ctypes.c_int(channels),
             ctypes.c_int(pyogg.opus.OPUS_APPLICATION_AUDIO),
             ctypes.byref(error)
         )
         if error.value != 0:
             raise RuntimeError(str(error.value))
-        buffer = b"\x00" * 1024 * 1024
-        desired_frame_size = int(file.getframerate() * frame_duration / 1000)
+        if self.mode != "xsalsa20_poly1305":
+            raise RuntimeError('unexpected mode: ' + self.mode)
+
+        sequence = 0
+        filename = None
+        file = None
         timestamp = time_millis()
-        last_heartbeat = 0
+        last_heartbeat = timestamp
         too_slow_count = 0
         while True:
-            pcm = file.readframes(desired_frame_size)
-            if len(pcm) == 0:
-                break
-            effective_frame_size = len(pcm) // file.getsampwidth() // file.getnchannels()
-            if effective_frame_size < desired_frame_size:
-                pcm += b"\x00" * (desired_frame_size - effective_frame_size) * file.getsampwidth() * file.getnchannels()
-            encoded_bytes = pyogg.opus.opus_encode(encoder,
-                ctypes.cast(pcm, pyogg.opus.opus_int16_p),
-                ctypes.c_int(effective_frame_size),
-                ctypes.cast(buffer, pyogg.opus.c_uchar_p),
-                pyogg.opus.opus_int32(len(buffer))
-            )
-            opus = bytes(buffer[:encoded_bytes])
-            package = create_voice_package(sequence, sequence * desired_frame_size, self.ssrc, secret_box, opus)
+            # check if source has changed
             with self.lock:
                 if not self.streamer:
-                    break
+                    break;
+                if not filename and not self.url:
+                    pass
+                elif filename and not self.url:
+                    file.close()
+                    os.remove(filename)
+                    file = None
+                    filename = None
+                elif not filename and self.url:
+                    filename = self.url[len('file://'):]
+                    file = wave.open(filename, 'rb')
+                elif filename and self.url and filename != self.url[len('file://'):]:
+                    file.close()
+                    os.remove(filename)
+                    file = None
+                    filename = None
+            # encode a frame
+            opus_frame = None
+            if file:
+                pcm = file.readframes(desired_frame_size)
+                if len(pcm) == 0:
+                    file.close()
+                    os.remove(filename)
+                    file = None
+                    filename = None
+                    threading.Thread(target=requests.post, kwargs={'url': self.callback_url, 'json': { "guild_id": self.guild_id, "user_id": self.user_id }}).start()
+                effective_frame_size = len(pcm) // sample_width // channels
+                if effective_frame_size < desired_frame_size:
+		    pcm += b"\x00" * (desired_frame_size - effective_frame_size) * sample_width * channels
+                encoded_bytes = pyogg.opus.opus_encode(encoder, ctypes.cast(pcm, pyogg.opus.opus_int16_p), ctypes.c_int(effective_frame_size), ctypes.cast(buffer, pyogg.opus.c_uchar_p), pyogg.opus.opus_int32(len(buffer)))
+                opus_frame = bytes(buffer[:encoded_bytes]
+            else:
+                opus_frame = b"\x00" * desired_frame_size * sample_width * channels
+            # send a frame
+            package = create_voice_package(sequence, sequence * desired_frame_size, self.ssrc, secret_box, opus_frame))
+            sequence += 1
             try:
                 self.socket.sendto(package, (self.ip, self.port))
             except: # TODO limit to socket close exceptions only
                 pass
+            # check if we need to heartbeat and do so if necessary
             if last_heartbeat + self.heartbeat_interval // 2 <= time_millis():
                 try:
                     last_heartbeat = time_millis()
                     self.ws.send(json.dumps({ "op": 3, "d": last_heartbeat }))
                 except: # TODO limit to socket close exceptions
                     pass
+            # sleep
             new_timestamp = time_millis()
             sleep_time = frame_duration - (new_timestamp - timestamp)
             if sleep_time < 0:
@@ -270,19 +293,14 @@ class Context:
             else:
                 time.sleep(sleep_time / 1000.0 * 2) # I have no fucking idea why multiplying this by two results in a clean audio stream!!! (times to is actually just a tad too slow, but not noticable by humans)
             timestamp = new_timestamp
-            sequence += 1
-        pyogg.opus.opus_encoder_destroy(encoder)
-        file.close()
-        print('VOICE CONNECTION ' + self.guild_id + ' stream completed (' + str(too_slow_count * 100 / sequence if sequence > 0 else 0) + '% too slow)')
-        os.remove(filename)
-        with self.lock:
-            self.url = None
-        self.__save()
-        threading.Thread(target=self.__stream_end).start()
 
-    def __stream_end(self):
-        self.__stop()
-        requests.post(self.callback_url, json={ "guild_id": self.guild_id, "user_id": self.user_id })
+        if filename:
+            file.close()
+            os.remove(filename)
+        pyogg.opus.opus_encoder_destroy(encoder)
+        
+        print('VOICE CONNECTION ' + self.guild_id + ' stream completed (' + str(too_slow_count * 100 / sequence if sequence > 0 else 0) + '% too slow)')
+        
 
     def __ws_on_open(self, ws):
         with self.lock:
@@ -373,8 +391,7 @@ class Context:
 
     def __ws_on_error(self, ws, error):
         print('VOICE GATEWAY ' + self.guild_id + ' error ' + str(error))
-        time.sleep(1)
-        ws.close()
+        # what to do?
 
     def __ws_on_close(self, ws, close_code, close_message):
         print('VOICE GATEWAY ' + self.guild_id + ' close ' + (str(close_code) if close_code else '?') + ': ' + (close_message if close_message else 'unknown'))
@@ -399,6 +416,8 @@ class Context:
             self.streamer = None
             if self.socket:
                 self.socket.close()
+            if (self.ws)
+                self.ws.close()
         if listener:
             listener.join()
         if streamer:
@@ -418,9 +437,9 @@ class Context:
         with self.lock:
             self.endpoint = endpoint
             self.token = token
+        self.__save()
         self.__stop()
         self.__try_start()
-        self.__save()
 
 
     def on_state_update(self, channel_id, user_id, session_id, callback_url):
@@ -439,7 +458,6 @@ class Context:
         self.__save()
 
     def on_content_update(self, url):
-        self.__stop()
         with self.lock:
             self.url = url
         self.__try_start()
