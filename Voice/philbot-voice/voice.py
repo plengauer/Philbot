@@ -86,7 +86,7 @@ def download_from_youtube(url):
     if '&' in filename:
         filename = filename[:filename.index('&')]
     if os.path.exists(filename + '.' + codec):
-        return 'file://' + filename + '.' + codec
+        return filename + '.' + codec
     options = {
         'format': 'bestaudio',
         'postprocessors': [{
