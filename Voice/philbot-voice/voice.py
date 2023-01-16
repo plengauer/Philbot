@@ -200,6 +200,19 @@ class Context:
             except: # TODO limit to socket closed exceptions only
                 pass
         print('VOICE CONNECTION ' + self.guild_id + ' listener terminated')
+    
+    def __callback(self):
+        delay = 1
+        while True:            
+            with self.lock:
+                if not self.streamer or self.url:
+                    break
+            try:
+                requests.post(self.callback_url, json={ "guild_id": self.guild_id, "user_id": self.user_id })
+                break
+            except:
+                time.sleep(delay)
+                delay *= 2
 
     def __stream(self):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
@@ -243,7 +256,7 @@ class Context:
                     file = None
                     filename = None
                     print('VOICE CONNECTION ' + self.guild_id + ' stream completed')
-                    threading.Thread(target=requests.post, kwargs={'url': self.callback_url, 'json': { "guild_id": self.guild_id, "user_id": self.user_id }}).start()
+                    threading.Thread(target=self.__callback).start()
                 elif not filename and self.url:
                     filename = self.url[len('file://'):]
                     file = wave.open(filename, 'rb')
@@ -252,7 +265,8 @@ class Context:
                         file.close()
                         file = None
                         filename = None
-                        threading.Thread(target=requests.post, kwargs={'url': self.callback_url, 'json': { "guild_id": self.guild_id, "user_id": self.user_id }}).start()
+                        self.url = None
+                        threading.Thread(target=self.__callback).start()
                     else:
                         print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
                 elif filename and self.url and filename != self.url[len('file://'):]:
@@ -307,7 +321,6 @@ class Context:
         pyogg.opus.opus_encoder_destroy(encoder)
         
         print('VOICE CONNECTION ' + self.guild_id + ' stream closed')
-        
 
     def __ws_on_open(self, ws):
         with self.lock:
@@ -509,6 +522,8 @@ def voice_content_update():
             return Response('Private video', status = 403)
         elif 'blocked' in str(e) or 'unavailable' in str(e):
             return Response('Blocked video', status = 451)
+        elif 'inappropriate' in str(e) or 'confirm your age' in str(e):
+            return Response('Age-restricted video', status = 451)
         else:
             return Response('Video not found', status = 404)
     return 'Success'
@@ -523,6 +538,8 @@ def voice_content_lookahead():
             return Response('Private video', status = 403)
         elif 'blocked' in str(e) or 'unavailable' in str(e):
             return Response('Blocked video', status = 451)
+        elif 'inappropriate' in str(e) or 'confirm your age' in str(e):
+            return Response('Age-restricted video', status = 451)
         else:
             return Response('Video not found', status = 404)
     return 'Success'
