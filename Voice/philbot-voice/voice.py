@@ -69,7 +69,7 @@ def create_voice_package_header(sequence, timestamp, ssrc):
     header = bytearray(12)
     header[0] = 0x80
     header[1] = 0x78
-    struct.pack_into('>H', header, 2, sequence)
+    struct.pack_into('>H', header, 2, sequence & 0xFFFF)
     struct.pack_into('>I', header, 4, timestamp)
     struct.pack_into('>I', header, 8, ssrc)
     return bytes(header)
