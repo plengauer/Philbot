@@ -1,5 +1,6 @@
-const player = require('../../../shared/player.js');
+const memory = require('../../../shared/memory.js');
 const discord = require('../../../shared/discord.js');
+const player = require('../../../shared/player.js');
 
 async function handle(payload) {
   return discord.me()
