@@ -331,7 +331,7 @@ class Context:
             elif sleep_time == 0:
                 pass
             else:
-                time.sleep(sleep_time / 1000.0 * 2) # I have no fucking idea why multiplying this by two results in a clean audio stream!!! (times to is actually just a tad too slow, but not noticable by humans)
+                time.sleep(sleep_time / 1000.0 * 2) # I have no fucking idea why multiplying this by two results in a clean audio stream!!! (times two is actually just a tad too slow, but not noticable by humans)
             timestamp = new_timestamp
 
         if filename:
