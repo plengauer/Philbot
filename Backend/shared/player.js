@@ -112,7 +112,7 @@ async function playNext(guild_id, user_id) {
   if (!next) return stop(guild_id).catch(ex => {/* just swallow exception */});
   let lookahead = await peekFromQueue(guild_id).then(item => item ? resolve_search_string(item).then(results => results[0]) : null).catch(ex => null);
   return play(guild_id, user_id, null, next)
-    .then(result => (lookahead ? HTTP_VOICE('voice_content_lookahead', { url: lookahead }).catch(ex => null) : Promise.resolve()).then(() => result))
+    .then(result => (lookahead ? HTTP_VOICE('voice_content_lookahead', { guild_id: guild_id, url: lookahead }).catch(ex => null) : Promise.resolve()).then(() => result))
     .catch(error => error.message.includes('Video is unavailable') ? playNext(guild_id, user_id) : Promise.reject(error))
 }
 

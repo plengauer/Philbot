@@ -80,11 +80,12 @@ def create_voice_package(sequence, timestamp, ssrc, secret_box, voice_chunk):
     nonce[:12] = header
     return header + secret_box.encrypt(voice_chunk, bytes(nonce)).ciphertext
 
-def download_from_youtube(url):
+def download_from_youtube(guild_id, url):
     codec = 'wav'
     filename = url[url.index('v=') + 2:]
     if '&' in filename:
         filename = filename[:filename.index('&')]
+    filename = guild_id + '.' + filename
     if os.path.exists(filename + '.' + codec):
         return filename + '.' + codec
     options = {
@@ -101,28 +102,30 @@ def download_from_youtube(url):
         ydl.download([url])
         return filename + '.' + codec
 
-def resolve_url(url):
+def resolve_url(guild_id, url):
     filename = None    
     if url.startswith('https://www.youtube.com/watch?v='):
-        filename = download_from_youtube(url)
+        filename = download_from_youtube(guild_id, url)
     else:
         raise RuntimeError
     file = wave.open(filename, "rb")
     if (file.getframerate() != 48000):
         file.close()
-        subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
-        subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ar', '48000', filename]).check_returncode() # , '-f', 's16le'
-        subprocess.run(['rm', filename + '.backup']).check_returncode()
+        os.rename(filename, '_' + filename)
+        subprocess.run(['ffmpeg', '-i', '_' + filename, '-ar', '48000', filename]).check_returncode() # , '-f', 's16le'
+        os.remove('_' + filename)
+        subprocess.run(['rm', '_' + filename]).check_returncode()
         file = wave.open(filename, 'rb')
     if (file.getnchannels() != 2):
         file.close()
-        subprocess.run(['mv', filename, filename + '.backup']).check_returncode()
-        subprocess.run(['ffmpeg', '-i', filename + '.backup', '-ac', '2', filename]).check_returncode() # , '-f', 's16le'
-        subprocess.run(['rm', filename + '.backup']).check_returncode()
+        os.rename(filename, '_' + filename)
+        subprocess.run(['ffmpeg', '-i', '_' + filename, '-ac', '2', filename]).check_returncode() # , '-f', 's16le'
+        os.remove('_' + filename)
         file = wave.open(filename, 'rb')
     if file.getsampwidth() != 2:
         raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
     file.close()
+    os.utime(filename)
     return 'file://' + filename
 
 
@@ -252,26 +255,42 @@ class Context:
                     pass
                 elif filename and not self.url:
                     file.close()
-                    os.remove(filename)
+                    try:
+                        os.remove(filename)
+                    except:
+                        pass
                     file = None
                     filename = None
                     print('VOICE CONNECTION ' + self.guild_id + ' stream completed')
                     threading.Thread(target=self.__callback).start()
                 elif not filename and self.url:
                     filename = self.url[len('file://'):]
-                    file = wave.open(filename, 'rb')
-                    if file.getframerate() != 48000 or file.getnchannels() != 2 or file.getsampwidth() != 2:
-                        print('VOICE CONNECTION ' + self.guild_id + ' skipping source because stream does not satisfy requirements')
-                        file.close()
-                        file = None
+                    if not os.path.exists(filename):
+                        print('VOICE CONNECTION ' + self.guild_id + ' skipping source because local file is not available')
                         filename = None
                         self.url = None
                         threading.Thread(target=self.__callback).start()
                     else:
-                        print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
+                        file = wave.open(filename, 'rb')
+                        if file.getframerate() != 48000 or file.getnchannels() != 2 or file.getsampwidth() != 2:
+                            print('VOICE CONNECTION ' + self.guild_id + ' skipping source because stream does not satisfy requirements')
+                            file.close()
+                            file = None
+                            try:
+                                os.remove(filename)
+                            except:
+                                pass
+                            filename = None
+                            self.url = None
+                            threading.Thread(target=self.__callback).start()
+                        else:
+                            print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
                 elif filename and self.url and filename != self.url[len('file://'):]:
                     file.close()
-                    os.remove(filename)
+                    try:
+                        os.remove(filename)
+                    except:
+                        pass
                     file = None
                     filename = None
                     print('VOICE CONNECTION ' + self.guild_id + ' stream changing source')
@@ -317,7 +336,10 @@ class Context:
 
         if filename:
             file.close()
-            os.remove(filename)
+            try:
+                os.remove(filename)
+            except:
+                pass
         pyogg.opus.opus_encoder_destroy(encoder)
         
         print('VOICE CONNECTION ' + self.guild_id + ' stream closed')
@@ -426,10 +448,12 @@ class Context:
             threading.Thread(target=self.ws.run_forever).start()
     
     def __stop(self):
-        print('VOICE GATEWAY ' + self.guild_id + ' connection shutting down')
         listener = None
         streamer = None
         with self.lock:
+            if not self.ws and self.socket and self.listener and self.streamer:
+                return
+            print('VOICE GATEWAY ' + self.guild_id + ' connection shutting down')
             listener = self.listener
             streamer = self.streamer
             self.listener = None
@@ -452,6 +476,11 @@ class Context:
             self.ws = None
         print('VOICE GATEWAY ' + self.guild_id + ' connection shut down')
         self.__try_start() # if we closed intentionally, channel id will be null
+        with self.lock:
+            if not self.ws:
+                for file in os.listdir('.'):
+                    if file.endswith('.wav') and self.guild_id in file:
+                        os.remove(file)
 
     def on_server_update(self, endpoint, token):
         with self.lock:
@@ -516,7 +545,7 @@ def voice_content_update():
     body = request.json
     context = get_context(body['guild_id'])
     try:
-        context.on_content_update(resolve_url(body['url']))
+        context.on_content_update(resolve_url(body['guild_id'], body['url']))
     except youtube_dl.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
@@ -532,7 +561,7 @@ def voice_content_update():
 def voice_content_lookahead():
     body = request.json
     try:
-        resolve_url(body['url'])
+        resolve_url(body['guild_id'], body['url'])
     except youtube_dl.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
@@ -546,10 +575,10 @@ def voice_content_lookahead():
 
 def main():
     for file in os.listdir('.'):
-        if not file.startswith('.state.') or not file.endswith('.json'):
-            continue
-        guild_id = file[len('.state.'):len(file) - len('.json')]
-        get_context(guild_id)
+        if file.startswith('.state.') or file.endswith('.json'):
+            get_context(file[len('.state.'):len(file) - len('.json')])
+        elif file.endswith('.wav') and os.path.getmtime(file) + 60 * 60 * 24 < time_seconds():
+            os.remove(file)
     print('VOICE ready')
     app.run(port=HTTP_PORT, threaded=True)
 
