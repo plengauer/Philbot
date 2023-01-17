@@ -551,6 +551,6 @@ def main():
         guild_id = file[len('.state.'):len(file) - len('.json')]
         get_context(guild_id)
     print('VOICE ready')
-    app.run(port=HTTP_PORT)
+    app.run(port=HTTP_PORT, threaded=True)
 
 # https://github.com/ytdl-org/youtube-dl/blob/master/README.md#embedding-youtube-dl
