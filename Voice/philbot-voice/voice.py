@@ -114,7 +114,6 @@ def resolve_url(guild_id, url):
         os.rename(filename, '_' + filename)
         subprocess.run(['ffmpeg', '-i', '_' + filename, '-ar', '48000', filename]).check_returncode() # , '-f', 's16le'
         os.remove('_' + filename)
-        subprocess.run(['rm', '_' + filename]).check_returncode()
         file = wave.open(filename, 'rb')
     if (file.getnchannels() != 2):
         file.close()
