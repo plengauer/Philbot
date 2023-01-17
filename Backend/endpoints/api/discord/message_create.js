@@ -16,7 +16,6 @@ const permissions = require('../../../shared/permissions.js');
 const raid_protection = require('../../../shared/raid_protection.js');
 const subscriptions = require('../../../shared/subscriptions.js');
 const role_management = require('../../../shared/role_management.js');
-const { clearInterval } = require('timers');
 
 async function handle(payload) {
   return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
