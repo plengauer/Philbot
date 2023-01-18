@@ -220,10 +220,10 @@ class Context:
                 delay *= 2
 
     def __callback_playback_finished(self):
-        self.__callback(self, 'voice_playback_finished');
+        self.__callback('voice_playback_finished');
 
     def __callback_invalid_session(self):
-        self.__callback(self, 'voice_reconnect');
+        self.__callback('voice_reconnect');
 
     def __stream(self):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
