@@ -440,7 +440,7 @@ class Context:
 
     def __ws_on_error(self, ws, error):
         print('VOICE GATEWAY ' + self.guild_id + ' error ' + str(error))
-        sleep(1) # sleep a bit not to completely block everybody by just-error looping in case something really goes wrong
+        time.sleep(1) # sleep a bit not to completely block everybody by just-error looping in case something really goes wrong
         # what else to do?
 
     def __ws_on_close(self, ws, close_code, close_message):
