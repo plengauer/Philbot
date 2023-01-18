@@ -374,7 +374,10 @@ class Context:
                     }))
                 case 6:
                     # print('VOICE GATEWAY heartbeat acknowledge') # this is quite spammy
-                    pass
+                    currentfile = self.url[len('file://'):] if self.url else None
+                    for file in os.listdir('.'):
+                        if file.endswith('.wav') and self.guild_id in file and os.path.getmtime(file) + 60 * 60 * 1 < time_seconds() and not currentfile == file:
+                            os.remove(file)
                 case 2:
                     print('VOICE GATEWAY ' + self.guild_id + ' received voice ready')
                     self.ssrc = payload['d']['ssrc']
