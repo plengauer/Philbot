@@ -250,6 +250,7 @@ class Context:
         last_heartbeat = timestamp
         while True:
             # check if source has changed
+            paused = False
             with self.lock:
                 if not self.streamer:
                     break
@@ -296,9 +297,10 @@ class Context:
                     file = None
                     filename = None
                     print('VOICE CONNECTION ' + self.guild_id + ' stream changing source')
+                paused = self.paused
             # encode a frame
             opus_frame = None
-            if file:
+            if file and not paused:
                 pcm = file.readframes(desired_frame_size)
                 if len(pcm) == 0:
                     with self.lock:
@@ -435,7 +437,8 @@ class Context:
 
     def __ws_on_error(self, ws, error):
         print('VOICE GATEWAY ' + self.guild_id + ' error ' + str(error))
-        # what to do?
+        sleep(1) # sleep a bit not to completely block everybody by just-error looping in case something really goes wrong
+        # what else to do?
 
     def __ws_on_close(self, ws, close_code, close_message):
         print('VOICE GATEWAY ' + self.guild_id + ' close ' + (str(close_code) if close_code else '?') + ': ' + (close_message if close_message else 'unknown'))
