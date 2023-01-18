@@ -118,7 +118,7 @@ async function playNext(guild_id, user_id) {
     let lookaheads = (await getQueue(guild_id)).slice(cursor, lookahead - successful_lookaheads).filter(item => !!item);
     cursor += lookaheads.length;
     if (lookaheads.length == 0) break;
-    lookaheads = await Promise.all(lookaheads.map(item => resolve_search_string(item).then(results => results[0]).then(link => link ? HTTP_VOICE('voice_content_lookahead', { guild_id: guild_id, url: link }).then(() => link) : null).catch(ex => null));
+    lookaheads = await Promise.all(lookaheads.map(item => resolve_search_string(item).then(results => results[0]).then(link => link ? HTTP_VOICE('voice_content_lookahead', { guild_id: guild_id, url: link }).then(() => link) : null).catch(ex => null)));
     lookaheads = lookaheads.filter(item => !!item);
     successful_lookaheads += lookaheads.length;
   }
