@@ -592,7 +592,7 @@ def voice_pause():
     return 'Success'
 
 @app.route('/voice_resume', methods=['POST'])
-def voice_pause():
+def voice_resume():
     body = request.json
     context = get_context(body['guild_id'])
     context.resume()
