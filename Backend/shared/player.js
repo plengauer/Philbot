@@ -7,7 +7,7 @@ const identity = require('./identity.js');
 async function on_voice_state_update(guild_id, channel_id, session_id) {
   let me = await discord.me();
   let public_url = await identity.getPublicURL();
-  return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: public_url + '/discord/voice_playback_finished' });
+  return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: public_url + '/discord/voice_callback' });
 }
 
 async function on_voice_server_update(guild_id, endpoint, token) {

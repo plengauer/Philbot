@@ -31,6 +31,7 @@ const endpoint_discord_presence_update = require('./endpoints/api/discord/presen
 const endpoint_discord_voice_state_update = require('./endpoints/api/discord/voice_state_update.js');
 const endpoint_discord_voice_server_update = require('./endpoints/api/discord/voice_server_update.js');
 const endpoint_discord_voice_playback_finished = require('./endpoints/api/discord/voice_playback_finished.js');
+const endpoint_discord_voice_reconnect = require('./endpoints/api/discord/voice_reconnect.js');
 const discord = require('./shared/discord.js');
 
 let revision = 0;
@@ -195,7 +196,8 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/discord/presence_update': return endpoint_discord_presence_update.handle(payload);
         case '/discord/voice_state_update': return endpoint_discord_voice_state_update.handle(payload);
         case '/discord/voice_server_update': return endpoint_discord_voice_server_update.handle(payload);
-        case '/discord/voice_playback_finished': return endpoint_discord_voice_playback_finished.handle(payload);
+        case '/discord/voice_callback/voice_playback_finished': return endpoint_discord_voice_playback_finished.handle(payload);
+        case '/discord/voice_callback/voice_reconnect': return endpoint_discord_voice_reconnect.handle(payload);
         default: return { status: 404, body: 'Not found' };
     }
 }

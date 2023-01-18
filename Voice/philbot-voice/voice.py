@@ -206,18 +206,24 @@ class Context:
                 pass
         print('VOICE CONNECTION ' + self.guild_id + ' listener terminated')
     
-    def __callback(self):
+    def __callback(self, reason):
         delay = 1
         while True:            
             with self.lock:
                 if not self.streamer or self.url:
                     break
             try:
-                requests.post(self.callback_url, json={ "guild_id": self.guild_id, "user_id": self.user_id })
+                requests.post(self.callback_url + '/' + reason, json={ "guild_id": self.guild_id, "channel_id": self.channel_id, "user_id": self.user_id })
                 break
             except:
                 time.sleep(delay)
                 delay *= 2
+
+    def __callback_playback_finished(self):
+        self.__callback(self, 'voice_playback_finished');
+
+    def __callback_invalid_session(self):
+        self.__callback(self, 'voice_reconnect');
 
     def __stream(self):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
@@ -265,14 +271,14 @@ class Context:
                     file = None
                     filename = None
                     print('VOICE CONNECTION ' + self.guild_id + ' stream completed')
-                    threading.Thread(target=self.__callback).start()
+                    threading.Thread(target=self.__callback_playback_finished).start()
                 elif not filename and self.url:
                     filename = self.url[len('file://'):]
                     if not os.path.exists(filename):
                         print('VOICE CONNECTION ' + self.guild_id + ' skipping source because local file is not available')
                         filename = None
                         self.url = None
-                        threading.Thread(target=self.__callback).start()
+                        threading.Thread(target=self.__callback_playback_finished).start()
                     else:
                         file = wave.open(filename, 'rb')
                         if file.getframerate() != 48000 or file.getnchannels() != 2 or file.getsampwidth() != 2:
@@ -285,7 +291,7 @@ class Context:
                                 pass
                             filename = None
                             self.url = None
-                            threading.Thread(target=self.__callback).start()
+                            threading.Thread(target=self.__callback_playback_finished).start()
                         else:
                             print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
                 elif filename and self.url and filename != self.url[len('file://'):]:
@@ -445,6 +451,11 @@ class Context:
 
     def __ws_on_close(self, ws, close_code, close_message):
         print('VOICE GATEWAY ' + self.guild_id + ' close ' + (str(close_code) if close_code else '?') + ': ' + (close_message if close_message else 'unknown'))
+        # TODO think more about potential close codes we need to react to
+        if close_code == 4006:
+            with self.lock:
+                self.session_id = None
+            threading.Thread(target=self.__callback_invalid_session).start()
         self.__stop()
     
     def __try_start(self):
@@ -484,11 +495,6 @@ class Context:
             self.ws = None
         print('VOICE GATEWAY ' + self.guild_id + ' connection shut down')
         self.__try_start() # if we closed intentionally, channel id will be null
-        with self.lock:
-            if not self.ws:
-                for file in os.listdir('.'):
-                    if file.endswith('.wav') and self.guild_id in file:
-                        os.remove(file)
 
     def on_server_update(self, endpoint, token):
         with self.lock:
