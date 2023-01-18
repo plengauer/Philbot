@@ -138,6 +138,7 @@ class Context:
     endpoint = None
     token = None
     url = None
+    paused = False
 
     ws = None
     socket = None
@@ -165,6 +166,7 @@ class Context:
                 self.endpoint = state['endpoint']
                 self.token = state['token']
                 self.url = state['url']
+                self.paused = state['paused']
         except:
             pass
         self.__try_start()
@@ -182,7 +184,8 @@ class Context:
                         'session_id': self.session_id,
                         'endpoint': self.endpoint,
                         'token': self.token,
-                        'url': self.url
+                        'url': self.url,
+                        'paused': self.paused
                     }))
             else:
                 try:
@@ -508,8 +511,17 @@ class Context:
     def on_content_update(self, url):
         with self.lock:
             self.url = url
+            self.paused = False
         self.__try_start()
         self.__save()
+
+    def pause(self):
+        with self.lock:
+            self.paused = True
+
+    def resume(self):
+        with self.lock:
+            self.paused = False
 
 contexts_lock = threading.Lock()
 contexts = {}
@@ -570,6 +582,20 @@ def voice_content_lookahead():
             return Response('Age-restricted video', status = 451)
         else:
             return Response('Video not found', status = 404)
+    return 'Success'
+
+@app.route('/voice_pause', methods=['POST'])
+def voice_pause():
+    body = request.json
+    context = get_context(body['guild_id'])
+    context.pause()
+    return 'Success'
+
+@app.route('/voice_resume', methods=['POST'])
+def voice_pause():
+    body = request.json
+    context = get_context(body['guild_id'])
+    context.resume()
     return 'Success'
 
 def main():
