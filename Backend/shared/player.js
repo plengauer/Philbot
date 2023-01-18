@@ -72,9 +72,9 @@ async function play0(guild_id, user_id, voice_channel_name, youtube_link) {
     .then(() => discord.me())
     .then(me => memory.get(`voice_channel:user:${me.id}`))
     .then(connection => connection?.channel_id != voice_channel_id ? discord.connect(guild_id, voice_channel_id) : undefined)
-    .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('Video is unavailable (private)!')) : Promise.reject(error))
-    .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('Video is unavailable (regional copy-right claims or age restriction)!')) : Promise.reject(error))
-    .catch(error => error.message.includes('HTTP') && error.message.includes('404') ? Promise.reject(new Error('Video is unavailable!')) : Promise.reject(error))
+    .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('The video is unavailable (private)!')) : Promise.reject(error))
+    .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('The video is unavailable (regional copy-right claims or age restriction)!')) : Promise.reject(error))
+    .catch(error => error.message.includes('HTTP') && error.message.includes('404') ? Promise.reject(new Error('The video is unavailable!')) : Promise.reject(error))
 }
 
 async function HTTP_VOICE(operation, payload) {
@@ -101,19 +101,27 @@ async function popFromQueue(guild_id) {
   return item;
 }
 
-async function peekFromQueue(guild_id) {
-  let queue = await getQueue(guild_id);
-  if (queue.length == 0) return null;
-  return queue[0];
-}
-
 async function playNext(guild_id, user_id) {
   let next = await popFromQueue(guild_id);
   if (!next) return stop(guild_id).catch(ex => {/* just swallow exception */});
-  let lookahead = await peekFromQueue(guild_id).then(item => item ? resolve_search_string(item).then(results => results[0]) : null).catch(ex => null);
-  return play(guild_id, user_id, null, next)
-    .then(result => (lookahead ? HTTP_VOICE('voice_content_lookahead', { guild_id: guild_id, url: lookahead }).catch(ex => null) : Promise.resolve()).then(() => result))
-    .catch(error => error.message.includes('Video is unavailable') ? playNext(guild_id, user_id) : Promise.reject(error))
+  try {
+    await play(guild_id, user_id, null, next);
+  } catch (error) {
+    if (error.message.includes('video is unavailable')) return playNext(guild_id, user_id);
+    else throw error;
+  }
+
+  const lookahead = 5;
+  let successful_lookaheads = 0;
+  let cursor = 0;
+  while (successful_lookaheads < lookahead) {
+    let lookaheads = (await getQueue(guild_id)).slice(cursor, lookahead - successful_lookaheads).filter(item => !!item);
+    cursor += lookaheads.length;
+    if (lookaheads.length == 0) break;
+    lookaheads = await Promise.all(lookaheads.map(item => resolve_search_string(item).then(results => results[0]).then(link => link ? HTTP_VOICE('voice_content_lookahead', { guild_id: guild_id, url: link }).then(() => link) : null).catch(ex => null));
+    lookaheads = lookaheads.filter(item => !!item);
+    successful_lookaheads += lookaheads.length;
+  }
 }
 
 async function appendToQueue(guild_id, item) {
