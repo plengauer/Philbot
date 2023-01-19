@@ -222,7 +222,7 @@ class Context:
     def __callback_playback_finished(self):
         self.__callback('voice_playback_finished');
 
-    def __callback_invalid_session(self):
+    def __callback_reconnect(self):
         self.__callback('voice_reconnect');
 
     def __stream(self):
@@ -446,16 +446,67 @@ class Context:
 
     def __ws_on_error(self, ws, error):
         print('VOICE GATEWAY ' + self.guild_id + ' error ' + str(error))
-        time.sleep(1) # sleep a bit not to completely block everybody by just-error looping in case something really goes wrong
         # what else to do?
 
     def __ws_on_close(self, ws, close_code, close_message):
         print('VOICE GATEWAY ' + self.guild_id + ' close ' + (str(close_code) if close_code else '?') + ': ' + (close_message if close_message else 'unknown'))
         # TODO think more about potential close codes we need to react to
-        if close_code == 4006:
-            with self.lock:
-                self.session_id = None
-            threading.Thread(target=self.__callback_invalid_session).start()
+        match close_code:
+            case 4001: # invalid opcode
+                # fault must be in the code somewhere
+                # lets wait a bit to avoid busy loops and try again
+                time.sleep(5)
+            case 4002: # failed to decode payload
+                # fault must be in the code somewhere
+                # lets wait a bit to avoid busy loops and try again
+                time.sleep(5)
+            case 4003: # not authenticated
+                # we sent something before identifying, must be race condition
+                time.sleep(5)
+            case 4004: # authentication failed
+                # the token is incorrect
+                # lets reconnect and get a new one
+                with self.lock:
+                    self.token = None
+                threading.Thread(target=self.__callback_reconnect).start()
+            case 4005: # already authenticated
+                # we sent a second identify message, fault, must be in the code
+                # lets wait a bit to avoid busy loops and try again
+                time.sleep(5)
+            case 4006: # session is no longer valid
+                # this can happen when we (only bot users) are alone for a while, then the session is killed
+                # lets reconnect and get a new session id, most likely we will not get a server update (and with it a new session id) until a real user joins, but that is fine, we will continue / complete connection as soon as a real user is here
+                with self.lock:
+                    self.session_id = None
+                threading.Thread(target=self.__callback_reconnect).start()
+            case 4009: # session timeout
+                # lets try get a new one
+                with self.lock:
+                    self.session_id = None
+                threading.Thread(target=self.__callback_reconnect).start()
+            case 4011: # server not found
+                # lets try get a new one
+                with self.lock:
+                    self.endpoint = None
+                threading.Thread(target=self.__callback_reconnect).start()
+            case 4012: # unknown protocol
+                # not entirely sure what this refers to (the ws protocol, the first HTTP messages, the encoded frames), but either way, i guess the fault must lie in the code
+                # lets wait a bit to avoid busy loops and try again
+                time.sleep(5)
+            case 4014: # disconnected (channel was deleted, you were kicked, voice server changed, or the main gateway session was dropped)
+                # thats a tricky one, the doc says not to try reconnecting, and we shouldn't open a new gateway connection, but we should try to reconnect on a discord level EXCEPT if we got kicked out of the channel (not the server)
+                # we wanna do that because in some cases we can recover by globally reconnecting again (voice server changed, session was dropped) and for situations it doesnt make sense (we got kicked from the server, channel was deleted), the global discord reconnect fails anyway
+                # lets just try to reconnect, and IF we got kicked from the channel, then lets hope we get the voice state changed thingy first, so we shut down ourselves actually
+                threading.Thread(target=self.__callback_reconnect).start()
+            case 4015: # voice server crashed
+                # lets just try again, if the voice server restarts, we will get a different error as consequence and do it again
+                pass
+            case 4016: # unknown encryption mode
+                # fault must be in the code somewhere
+                # lets wait a bit to avoid busy loops and try again
+                time.sleep(5)
+            case _: # something else
+                pass
         self.__stop()
     
     def __try_start(self):
