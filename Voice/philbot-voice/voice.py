@@ -15,15 +15,14 @@ import subprocess
 import websocket
 from flask import Flask, request, Response
 import youtube_dl
-from opentelemetry import trace as OpenTelemetry
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-    OTLPSpanExporter,
-)
+import opentelemetry
 from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader, AggregationTemporality
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.sdk.trace import TracerProvider, sampling
-from opentelemetry.sdk.trace.export import (
-    BatchSpanProcessor,
-)
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
 merged = dict()
 for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
@@ -39,20 +38,29 @@ merged.update({
   "service.version": os.environ['SERVICE_VERSION']
 })
 resource = Resource.create(merged)
+
+meter_provider = MeterProvider(metric_readers=[ PeriodicExportingMetricReader(OTLPMetricExporter(
+    endpoint = os.environ['OPENTELEMETRY_METRICS_API_ENDPOINT']
+    headers = { 'Authorization': 'Api-Token ' + os.environ['OPENTELEMETRY_METRICS_API_TOKEN'] },
+    preferred_temporality = { Counter: AggregationTemporality.DELTA })
+) ], resource = resource)
+opentelemetry.metrics.set_meter_provider(meter_provider)
+
 tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource=resource)
 tracer_provider.add_span_processor(
     BatchSpanProcessor(OTLPSpanExporter(
-        endpoint=os.environ['OPENTELEMETRY_TRACES_API_ENDPOINT'],
-        headers={ "Authorization": 'Api-Token ' + os.environ['OPENTELEMETRY_TRACES_API_TOKEN'] },
+        endpoint = os.environ['OPENTELEMETRY_TRACES_API_ENDPOINT'],
+        headers = { 'Authorization': 'Api-Token ' + os.environ['OPENTELEMETRY_TRACES_API_TOKEN'] }
     ))
 )
-OpenTelemetry.set_tracer_provider(tracer_provider)
+opentelemetry.trace.set_tracer_provider(tracer_provider)
 
 UDP_MAX_PAYLOAD = 65507
 HTTP_PORT = int(os.environ.get('HTTP_PORT', str(12345)))
 UDP_PORT_MIN = int(os.environ.get('UDP_PORT_MIN', str(12346)))
 UDP_PORT_MAX = int(os.environ.get('UDP_PORT_MAX', str(65535)))
 
+meter = opentelemetry.metrics.get_meter_provider().get_meter('voice', '1.0.0')
 app = Flask(__name__)
 
 def time_seconds():
@@ -123,6 +131,10 @@ def resolve_url(guild_id, url):
     os.utime(filename)
     return 'file://' + filename
 
+counter_concurrent_connections = meter.create_up_down_counter(name = 'concurrent connections', description = 'Number concurrent open connections')
+counter_concurrent_streams = meter.create_up_down_counter(name = 'concurrent streams', description = 'Number of concurrent streams')
+counter_streams = meter.create_counter(name = 'streams', description = 'Number of streams')
+counter_streaming = meter.create_counter(name = 'streaming', description = 'Amount of time streamed')
 
 class Context:
     lock = threading.Lock()
@@ -266,6 +278,7 @@ class Context:
                         pass
                     file = None
                     filename = None
+                    counter_concurrent_streams.add(-1, { "guild_id": self.guild_id })
                     print('VOICE CONNECTION ' + self.guild_id + ' stream completed')
                     threading.Thread(target=self.__callback_playback_finished).start()
                 elif not filename and self.url:
@@ -290,6 +303,8 @@ class Context:
                             threading.Thread(target=self.__callback_playback_finished).start()
                         else:
                             print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
+                            counter_concurrent_streams.add(1, { "guild_id": self.guild_id })
+                            counter_streams.add(1, { "guild_id": self.guild_id })
                 elif filename and self.url and filename != self.url[len('file://'):]:
                     file.close()
                     try:
@@ -323,11 +338,12 @@ class Context:
                 pass
             # check if we need to heartbeat and do so if necessary
             if last_heartbeat + self.heartbeat_interval // 2 <= time_millis():
+                heartbeat = time_millis()
                 try:
-                    last_heartbeat = time_millis()
-                    self.ws.send(json.dumps({ "op": 3, "d": last_heartbeat }))
+                    self.ws.send(json.dumps({ "op": 3, "d": heartbeat }))
                 except: # TODO limit to socket close exceptions
                     pass
+                last_heartbeat = heartbeat
             # sleep
             new_timestamp = time_millis()
             sleep_time = frame_duration - (new_timestamp - timestamp)
@@ -346,13 +362,15 @@ class Context:
                 os.remove(filename)
             except:
                 pass
+            counter_concurrent_streams.add(-1, { "guild_id": self.guild_id })
         pyogg.opus.opus_encoder_destroy(encoder)
         
         print('VOICE CONNECTION ' + self.guild_id + ' stream closed')
+        counter_streaming.add(sequence * frame_duration, { "guild_id": self.guild_id, "server": self.endpoint, "ip": self.ip, "port": self.port, "mode": self.mode })
 
     def __ws_on_open(self, ws):
-        with self.lock:
-            print('VOICE GATEWAY ' + self.guild_id + ' connection established')
+        print('VOICE GATEWAY ' + self.guild_id + ' connection established')
+        counter_concurrent_connections.add(1, { "guild_id": self.guild_id, "server": self.endpoint })
 
     def __ws_on_message(self, ws, message):
         with self.lock:
@@ -503,6 +521,7 @@ class Context:
                 time.sleep(5)
             case _: # something else
                 pass
+        counter_concurrent_connections.add(-1, { "guild_id": self.guild_id, "server": self.endpoint, "close_code": close_code })
         self.__stop()
     
     def __try_start(self):
@@ -544,15 +563,17 @@ class Context:
         self.__try_start() # if we closed intentionally, channel id will be null
 
     def on_server_update(self, endpoint, token):
+        self.__stop()
         with self.lock:
             self.endpoint = endpoint
             self.token = token
         self.__save()
-        self.__stop()
         self.__try_start()
 
 
     def on_state_update(self, channel_id, user_id, session_id, callback_url):
+        if not self.channel_id:
+            self.__stop()
         with self.lock:
             self.channel_id = channel_id
             self.user_id = user_id
@@ -561,11 +582,8 @@ class Context:
             if not self.channel_id:
                 self.endpoint = None
                 self.token = None
-        if not self.channel_id:
-            self.__stop()
-        else:
-            self.__try_start()
         self.__save()
+        self.__try_start()
 
     def on_content_update(self, url):
         with self.lock:
