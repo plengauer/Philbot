@@ -132,10 +132,10 @@ def resolve_url(guild_id, url):
     os.utime(filename)
     return 'file://' + filename
 
-counter_concurrent_connections = meter.create_up_down_counter(name = 'discord.gateway.voice.connections.concurrent', description = 'Number concurrent open connections', unit="count", value_type=int)
-counter_concurrent_streams = meter.create_up_down_counter(name = 'discord.gateway.voice.streams.concurrent', description = 'Number of concurrent streams', unit="count", value_type=int)
-counter_streams = meter.create_counter(name = 'discord.gateway.voice.streams', description = 'Number of streams', unit="count", value_type=int)
-counter_streaming = meter.create_counter(name = 'discord.gateway.voice.streaming', description = 'Amount of time streamed', unit="milliseconds", value_type=int)
+counter_concurrent_connections = meter.create_up_down_counter(name = 'discord.gateway.voice.connections.concurrent', description = 'Number concurrent open connections', unit="count")
+counter_concurrent_streams = meter.create_up_down_counter(name = 'discord.gateway.voice.streams.concurrent', description = 'Number of concurrent streams', unit="count")
+counter_streams = meter.create_counter(name = 'discord.gateway.voice.streams', description = 'Number of streams', unit="count")
+counter_streaming = meter.create_counter(name = 'discord.gateway.voice.streaming', description = 'Amount of time streamed', unit="milliseconds")
 
 class Context:
     lock = threading.Lock()
