@@ -219,7 +219,7 @@ class Context:
         delay = 1
         while True:            
             with self.lock:
-                if not self.streamer or self.url:
+                if not self.ws:
                     break
             try:
                 requests.post(self.callback_url + '/' + reason, json={ "guild_id": self.guild_id, "channel_id": self.channel_id, "user_id": self.user_id })
@@ -229,10 +229,10 @@ class Context:
                 delay *= 2
 
     def __callback_playback_finished(self):
-        self.__callback('voice_playback_finished');
+        self.__callback('voice_playback_finished')
 
     def __callback_reconnect(self):
-        self.__callback('voice_reconnect');
+        self.__callback('voice_reconnect')
 
     def __stream(self):
         # https://discord.com/developers/docs/topics/voice-connections#encrypting-and-sending-voice
@@ -465,7 +465,6 @@ class Context:
 
     def __ws_on_close(self, ws, close_code, close_message):
         print('VOICE GATEWAY ' + self.guild_id + ' close ' + (str(close_code) if close_code else '?') + ': ' + (close_message if close_message else 'unknown'))
-        # TODO think more about potential close codes we need to react to
         match close_code:
             case 4001: # invalid opcode
                 # fault must be in the code somewhere
