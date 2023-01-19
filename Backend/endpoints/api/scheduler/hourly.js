@@ -57,7 +57,7 @@ async function tryScheduleEvent(guild, event_config) {
   }
     
   if (!event_config.name) {
-    let activities = discord.guild_members_list(guild.id)
+    let activities = await discord.guild_members_list(guild.id)
       .then(members => memory.list(members.map(member => `activities:all:user:${member.user.id}`)))
       .then(entries => entries.map(entry => entry.value))
       .then(activities => activities.flatMap(a => a))
