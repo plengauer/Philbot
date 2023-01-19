@@ -131,8 +131,8 @@ def resolve_url(guild_id, url):
     os.utime(filename)
     return 'file://' + filename
 
-counter_concurrent_connections = meter.create_up_down_counter(name = 'concurrent connections', description = 'Number concurrent open connections')
-counter_concurrent_streams = meter.create_up_down_counter(name = 'concurrent streams', description = 'Number of concurrent streams')
+counter_concurrent_connections = meter.create_up_down_counter(name = 'connections.concurrent', description = 'Number concurrent open connections')
+counter_concurrent_streams = meter.create_up_down_counter(name = 'streams.concurrent', description = 'Number of concurrent streams')
 counter_streams = meter.create_counter(name = 'streams', description = 'Number of streams')
 counter_streaming = meter.create_counter(name = 'streaming', description = 'Amount of time streamed')
 
