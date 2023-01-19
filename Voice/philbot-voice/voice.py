@@ -367,11 +367,17 @@ class Context:
         pyogg.opus.opus_encoder_destroy(encoder)
         
         print('VOICE CONNECTION ' + self.guild_id + ' stream closed')
-        counter_streaming.add(sequence * frame_duration, { "guild_id": self.guild_id, "server": self.endpoint, "ip": self.ip, "port": self.port, "mode": self.mode })
+        counter_streaming.add(sequence * frame_duration, {
+            "guild_id": self.guild_id,
+            "server": self.endpoint if self.endpoint else "",
+            "ip": self.ip if self.ip else "",
+            "port": self.port if self.port else 0,
+            "mode": self.mode if self.mode else ""
+        })
 
     def __ws_on_open(self, ws):
         print('VOICE GATEWAY ' + self.guild_id + ' connection established')
-        counter_concurrent_connections.add(1, { "guild_id": self.guild_id, "server": self.endpoint })
+        counter_concurrent_connections.add(1, { "guild_id": self.guild_id, "server": self.endpoint if self.endpoint else "" })
 
     def __ws_on_message(self, ws, message):
         with self.lock:
@@ -521,7 +527,7 @@ class Context:
                 time.sleep(5)
             case _: # something else
                 pass
-        counter_concurrent_connections.add(-1, { "guild_id": self.guild_id, "server": self.endpoint, "close_code": close_code })
+        counter_concurrent_connections.add(-1, { "guild_id": self.guild_id, "server": self.endpoint if self.endpoint else "", "close_code": close_code if close_code else 0 })
         self.__stop()
     
     def __try_start(self):
