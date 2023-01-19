@@ -517,7 +517,8 @@ class Context:
                 # thats a tricky one, the doc says not to try reconnecting, and we shouldn't open a new gateway connection, but we should try to reconnect on a discord level EXCEPT if we got kicked out of the channel (not the server)
                 # we wanna do that because in some cases we can recover by globally reconnecting again (voice server changed, session was dropped) and for situations it doesnt make sense (we got kicked from the server, channel was deleted), the global discord reconnect fails anyway
                 # lets just try to reconnect, and IF we got kicked from the channel, then lets hope we get the voice state changed thingy first, so we shut down ourselves actually
-                threading.Thread(target=self.__callback_reconnect).start()
+                # threading.Thread(target=self.__callback_reconnect).start()
+                pass # lets NOT reconnect, otherwise stop is not working, gateway connection is closed before the voice state update event is sent!
             case 4015: # voice server crashed
                 # lets just try again, if the voice server restarts, we will get a different error as consequence and do it again
                 pass
