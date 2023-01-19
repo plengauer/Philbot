@@ -39,10 +39,11 @@ merged.update({
 })
 resource = Resource.create(merged)
 
+os.environ['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'] = 'delta'
 meter_provider = MeterProvider(metric_readers = [ PeriodicExportingMetricReader(OTLPMetricExporter(
     endpoint = os.environ['OPENTELEMETRY_METRICS_API_ENDPOINT'],
-    headers = { 'Authorization': 'Api-Token ' + os.environ['OPENTELEMETRY_METRICS_API_TOKEN'] },
-    preferred_temporality = { Counter: AggregationTemporality.DELTA }
+    headers = { 'Authorization': 'Api-Token ' + os.environ['OPENTELEMETRY_METRICS_API_TOKEN'] }
+#    preferred_temporality = { Counter: AggregationTemporality.DELTA }
 )) ], resource = resource)
 opentelemetry.metrics.set_meter_provider(meter_provider)
 
