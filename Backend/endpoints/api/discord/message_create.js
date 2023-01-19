@@ -398,7 +398,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     } else {
       search_string = message;
     }
-    timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 5);
+    let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     return discord.trigger_typing_indicator(channel_id)
       .then(() => search_string === 'next' ? player.playNext(guild_id, user_id) : player.play(guild_id, user_id, voice_channel, search_string))
       .then(() => reactOK(channel_id, event_id))
