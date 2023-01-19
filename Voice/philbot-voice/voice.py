@@ -623,10 +623,12 @@ def voice_content_update():
     except youtube_dl.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
-        elif 'blocked' in str(e) or 'unavailable' in str(e):
+        elif 'blocked' in str(e) or 'copyright' in str(e):
             return Response('Blocked video', status = 451)
         elif 'inappropriate' in str(e) or 'confirm your age' in str(e):
             return Response('Age-restricted video', status = 451)
+        elif 'account' in str(e) and 'terminated' in str(e):
+            return Response('Video not found', status = 404)
         else:
             return Response('Video not found', status = 404)
     return 'Success'
@@ -639,10 +641,12 @@ def voice_content_lookahead():
     except youtube_dl.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
-        elif 'blocked' in str(e) or 'unavailable' in str(e):
+        elif 'blocked' in str(e) or 'copyright' in str(e):
             return Response('Blocked video', status = 451)
         elif 'inappropriate' in str(e) or 'confirm your age' in str(e):
             return Response('Age-restricted video', status = 451)
+        elif 'account' in str(e) and 'terminated' in str(e):
+            return Response('Video not found', status = 404)
         else:
             return Response('Video not found', status = 404)
     return 'Success'
