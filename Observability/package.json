@@ -1,6 +1,6 @@
 {
   "name": "philbot-opentelemetry",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "main": "opentelemetry.js",
@@ -13,6 +13,7 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/semantic-conventions": "^1.8.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.34.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.35.0"
+    "@opentelemetry/auto-instrumentations-node": "^0.35.0",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.35.0"
   }
 }
