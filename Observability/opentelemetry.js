@@ -1,12 +1,15 @@
 const propertiesReader = require('properties-reader');
 const opentelemetry_api = require('@opentelemetry/api');
 const opentelemetry_sdk = require("@opentelemetry/sdk-node");
-const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
+
 const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
-const { BatchSpanProcessor, SpanExporter } = require('@opentelemetry/sdk-trace-base');
+const { MeterProvider, PeriodicExportingMetricReader, AggregationTemporality} = require('@opentelemetry/sdk-metrics');
+const { OTLPMetricExporter } =  require('@opentelemetry/exporter-metrics-otlp-proto');
+const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
 const { AlwaysOnSampler, AlwaysOffSampler } = require("@opentelemetry/core");
+const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
 
 class ShutdownAwareSpanProcessor {
   processor;
@@ -61,7 +64,6 @@ class MultiSpanExporter {
   }
 }
 
-
 async function init() {
   let sdk = create();
   process.on('exit', () => sdk.shutdown());
@@ -85,6 +87,11 @@ function create() {
             headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_TRACES_API_TOKEN },
           }),
     ]))),
+    metricReader: new OTLPMetricExporter({
+      url: process.env.OPENTELEMETRY_METRICS_API_ENDPOINT,
+      headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_METRICS_API_TOKEN },
+      temporalityPreference: AggregationTemporality.DELTA
+    }),
     instrumentations: [getNodeAutoInstrumentations()],
     resource: new Resource({
         [SemanticResourceAttributes.SERVICE_NAME]: name,
