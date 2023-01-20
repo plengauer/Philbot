@@ -1,9 +1,5 @@
 const process = require('process');
-const http = require('http');
-const url = require("url");
-const fs = require("fs");
 const propertiesReader = require('properties-reader');
-
 const opentelemetry = require('@opentelemetry/api');
 const opentelemetry_api = require('@opentelemetry/api');
 const opentelemetry_sdk = require("@opentelemetry/sdk-node");
@@ -51,7 +47,7 @@ class ShutdownAwareSpanProcessor {
 async function opentelemetry_init() {
   let sdk = opentelemetry_create();
   process.on('exit', () => sdk.shutdown());
-  await sdk.start();
+  return sdk.start();
 }
 
 function opentelemetry_create() {
@@ -86,9 +82,16 @@ function opentelemetry_create() {
         [SemanticResourceAttributes.SERVICE_NAME]: name,
         [SemanticResourceAttributes.SERVICE_VERSION]: version,
       }).merge(dtmetadata),
+    autoDetectResources: false // really we do want to detect resources, but ... well, this will await and then instrumentation comes in too late
   });
   return sdk;
 }
+
+opentelemetry_init();
+
+const http = require('http');
+const url = require("url");
+const fs = require("fs");
 
 const endpoint_about = require('./endpoints/api/about.js');
 const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');
@@ -124,7 +127,7 @@ let revision_done = -1;
 let revisions_done = [];
 let operations = [];
 
-opentelemetry_init().then(() => main());
+main();
 
 async function main() {
     let server = http.createServer((request, response) => handleSafely(request, response));
