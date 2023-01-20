@@ -104,6 +104,6 @@ function create() {
   return sdk;
 }
 
-init();
+await init();
 
 module.exports = {};
