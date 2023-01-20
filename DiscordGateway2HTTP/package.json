@@ -3,6 +3,7 @@
   "version": "1.1.15",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "description": "connects to the discord gateway and forwards all events via HTTP(s) to a pre-configured endpoint",
+  "type": "module",
   "dependencies": {
     "philbot-opentelemetry": "^1.0.1",
     "request": "^2.88.2",

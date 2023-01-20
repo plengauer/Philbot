@@ -1,11 +1,12 @@
-require('philbot-opentelemetry');
-const process = require('process');
-const fs = require('fs');
-const { WebSocket } = require('ws');
-const http = require('http');
-const request = require('request');
-const url = require('url');
-const opentelemetry = require('@opentelemetry/api');
+import 'philbot-opentelemetry';
+import process from 'process';
+import fs from 'fs';
+import { WebSocket } from 'ws';
+import http from 'http';
+import request from 'request';
+import url from 'url';
+import opentelemetry from '@opentelemetry/api';
+
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 const meter = opentelemetry.metrics.getMeter('discord.gateway');
 
@@ -17,7 +18,7 @@ connect(restoreState());
 
 async function connect(prev_state = {}) {
     prev_state.server?.closeAllConnections();
-    state = {
+    let state = {
         session_id: prev_state.session_id,
         sequence: prev_state.sequence,
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
