@@ -2,6 +2,7 @@ const url = require('url')
 const process = require('process');
 const permissions = require('./permissions.js');
 const curl = require('./curl.js');
+const { retry } = require('./retry.js');
 
 var callbacks = {};
 
@@ -315,7 +316,7 @@ async function HTTP(endpoint, method, payload = undefined, ttc = undefined) {
 }
 
 async function GATEWAY_HTTP(endpoint, method, guild_id, payload = undefined, ttc = undefined) {
-  let callback_url = callbacks[guild_id];
+  let callback_url = await retry(() => callbacks[guild_id] ?? Promise.reject());
   return curl.request({ secure: false, method: method, hostname: url.parse(callback_url).hostname, port: url.parse(callback_url).port, path: endpoint, body: payload, cache: ttc ?? 10 });
 }
 
