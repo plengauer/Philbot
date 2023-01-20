@@ -104,4 +104,4 @@ function create() {
   return sdk;
 }
 
-init();
+await init();
