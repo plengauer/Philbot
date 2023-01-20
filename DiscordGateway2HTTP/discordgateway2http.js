@@ -52,7 +52,7 @@ function handleMessage(state, message) {
         shard: SHARD_INDEX, 
         code: event.op,
         name: event.t?.toLowerCase().replace(/_/g, ' ') ?? "",
-        guild_id: event.d.guild_id ?? (event.startsWith('GUILD_') ? event.d.id : ""),
+        guild_id: event.d.guild_id ?? (event.t.startsWith('GUILD_') ? event.d.id : ""),
         user_id: event.d.user_id ?? event.d.user?.id ?? event.d.member?.user?.id ?? event.d.author?.id ?? (event.startsWith('USER_') ? event.d.id : ""),
         activities: payload.activities?.map(activity => activity.name).join(',')
     });
