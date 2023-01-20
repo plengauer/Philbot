@@ -3,7 +3,93 @@ const process = require('process');
 const http = require('http');
 const url = require("url");
 const fs = require("fs");
+const propertiesReader = require('properties-reader');
+
 const opentelemetry = require('@opentelemetry/api');
+const opentelemetry_api = require('@opentelemetry/api');
+const opentelemetry_sdk = require("@opentelemetry/sdk-node");
+const { Resource } = require('@opentelemetry/resources');
+const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
+const { PeriodicExportingMetricReader, AggregationTemporality} = require('@opentelemetry/sdk-metrics');
+const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
+const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
+const { AlwaysOnSampler, AlwaysOffSampler } = require("@opentelemetry/core");
+const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
+
+class ShutdownAwareSpanProcessor {
+  processor;
+  open;
+  
+  constructor(processor) {
+    this.processor = processor;
+    this.open = [];
+  }
+  
+  onStart(span) {
+    this.open.push(span);
+    return this.processor.onStart(span);
+  }
+  
+  onEnd(span) {
+    let new_open = this.open.filter(s => s != span);
+    let doEnd = new_open.length < this.open.length;
+    this.open = new_open;
+    return doEnd ? this.processor.onEnd(span) : undefined;
+  }
+  
+  shutdown() {
+    for (let span of this.open) {
+      span.setStatus({ code: opentelemetry_api.SpanStatusCode.ERROR });
+      span.recordException('Aborted (shutdown)');
+      span.end();
+    }
+    this.open = [];
+    return this.processor.shutdown();
+  }
+}
+
+async function opentelemetry_init() {
+  let sdk = opentelemetry_create();
+  process.on('exit', () => sdk.shutdown());
+  await sdk.start();
+}
+
+function opentelemetry_create() {
+  let name = process.env.SERVICE_NAME;
+  let version = process.env.SERVICE_VERSION;
+  let dtmetadata = new Resource({});
+  for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
+    try {
+      dtmetadata.merge(new Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties()));
+    } catch { }
+  }
+  const sdk = new opentelemetry_sdk.NodeSDK({
+    sampler: (name && version) ? new AlwaysOnSampler() : new AlwaysOffSampler(),
+    spanProcessor: new ShutdownAwareSpanProcessor(
+      new BatchSpanProcessor(
+        new OTLPTraceExporter({
+          url: process.env.OPENTELEMETRY_TRACES_API_ENDPOINT,
+          headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_TRACES_API_TOKEN },
+        }),
+      )
+    ),
+    metricReader: new PeriodicExportingMetricReader({
+      exporter: new OTLPMetricExporter({
+        url: process.env.OPENTELEMETRY_METRICS_API_ENDPOINT,
+        headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_METRICS_API_TOKEN },
+        temporalityPreference: AggregationTemporality.DELTA
+      }),
+      exportIntervalMillis: 5000,
+    }),
+    instrumentations: [getNodeAutoInstrumentations()],
+    resource: new Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: name,
+        [SemanticResourceAttributes.SERVICE_VERSION]: version,
+      }).merge(dtmetadata),
+  });
+  return sdk;
+}
 
 const endpoint_about = require('./endpoints/api/about.js');
 const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');
@@ -39,12 +125,16 @@ let revision_done = -1;
 let revisions_done = [];
 let operations = [];
 
-let server = http.createServer((request, response) => handleSafely(request, response));
-server.on('error', error => { console.error(error); shutdown(); });
-server.on('close', () => shutdown())
-server.listen(process.env.PORT ?? 80);
-setInterval(checkTimeout, 1000 * 60);
-console.log('HTTP SERVER ready');
+opentelemetry_init().then(() => main());
+
+async function main() {
+    let server = http.createServer((request, response) => handleSafely(request, response));
+    server.on('error', error => { console.error(error); shutdown(); });
+    server.on('close', () => shutdown())
+    server.listen(process.env.PORT ?? 80);
+    setInterval(() => checkTimeout(server), 1000 * 60);
+    console.log('HTTP SERVER ready');    
+}
 
 function handleSafely(request, response) {
     try {
@@ -207,7 +297,7 @@ async function shutdown() {
     process.exit(0);
 }
 
-async function checkTimeout() {
+async function checkTimeout(server) {
     const timeout = parseInt(process.env.TIMEOUT) ?? 1000 * 60 * 60;
     let timedouts = operations.filter(operation => operation.timestamp < Date.now() - timeout);
     if (timedouts.length == 0) return;
