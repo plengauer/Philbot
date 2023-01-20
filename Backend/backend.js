@@ -1,4 +1,4 @@
-require('philbot-opentelemetry');
+//require('philbot-opentelemetry');
 const process = require('process');
 const http = require('http');
 const url = require("url");
