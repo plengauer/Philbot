@@ -22,7 +22,7 @@ async function connect(prev_state = {}) {
         sequence: prev_state.sequence,
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
     };
-    state.callback_port = process.env.PORT ?? 81;
+    state.callback_port = parseInt(process.env.PORT ?? "81") + SHARD_INDEX;
     state.server = http.createServer((request, response) => handleCallback(state, request, response));
     state.server.on('error', error => { console.error(error); });
     state.server.on('close', () => state.socket?.close());
