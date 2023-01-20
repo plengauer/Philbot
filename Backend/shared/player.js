@@ -60,7 +60,7 @@ async function HTTP_YOUTUBE(endpoint, parameters) {
 async function play0(guild_id, user_id, voice_channel_name, youtube_link) {
   let voice_channel_id = null;
   if (voice_channel_name) {
-    voice_channel_id = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == voice_channel_name));
+    voice_channel_id = (await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == voice_channel_name)))?.id;
     if (!voice_channel_id) throw new Error('I dont know the voice channel ' + voice_channel + '!');
   } else {
     if (user_id) voice_channel_id = (await memory.get(`voice_channel:user:${user_id}`, null))?.channel_id;
@@ -69,9 +69,10 @@ async function play0(guild_id, user_id, voice_channel_name, youtube_link) {
   if (!voice_channel_id) throw new Error('I dont know which voice channel to use!');
   await memory.set(`player:voice_channel:guild:${guild_id}`, voice_channel_id, 60 * 60 * 24);
   return HTTP_VOICE('voice_content_update', { guild_id: guild_id, url: youtube_link })
-    .then(() => discord.me())
-    .then(me => memory.get(`voice_channel:user:${me.id}`))
-    .then(connection => connection?.channel_id != voice_channel_id ? discord.connect(guild_id, voice_channel_id) : undefined)
+    //.then(() => discord.me())
+    //.then(me => memory.get(`voice_channel:user:${me.id}`)) // that wont work, we can be in more than one channel!
+    //.then(connection => connection?.channel_id != voice_channel_id ? discord.connect(guild_id, voice_channel_id) : undefined)
+    .then(() => discord.connect(guild_id, voice_channel_id))
     .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('The video is unavailable (private)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('The video is unavailable (regional copy-right claims or age restriction)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('404') ? Promise.reject(new Error('The video is unavailable!')) : Promise.reject(error))
