@@ -87,13 +87,14 @@ function create() {
             headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_TRACES_API_TOKEN },
           }),
     ]))),
-    /*
-    metricReader: new OTLPMetricExporter({
-      url: process.env.OPENTELEMETRY_METRICS_API_ENDPOINT,
-      headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_METRICS_API_TOKEN },
-      temporalityPreference: AggregationTemporality.DELTA
+    metricReader: new PeriodicExportingMetricReader({
+      exporter: new OTLPMetricExporter({
+        url: process.env.OPENTELEMETRY_METRICS_API_ENDPOINT,
+        headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_METRICS_API_TOKEN },
+        temporalityPreference: AggregationTemporality.DELTA
+      }),
+      exportIntervalMillis: 5000,
     }),
-    */
     instrumentations: [getNodeAutoInstrumentations()],
     resource: new Resource({
         [SemanticResourceAttributes.SERVICE_NAME]: name,
