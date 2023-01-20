@@ -47,7 +47,15 @@ const event_counter = meter.createCounter('discord.gateway.events');
 function handleMessage(state, message) {
     let event = JSON.parse(message);
     console.log('GATEWAY receive op ' + event.op + ' (' + event.s + ')');
-    event_counter.add(1, { code: event.op, name: event.t ?? "" });
+    event_counter.add(1, {
+        gateway: state.resume_gateway_url,
+        shard: SHARD_INDEX, 
+        code: event.op,
+        name: event.t?.toLowerCase().replace(/_/g, ' ') ?? "",
+        guild_id: event.d.guild_id ?? (event.startsWith('GUILD_') ? event.d.id : ""),
+        user_id: event.d.user_id ?? event.d.user?.id ?? event.d.member?.user?.id ?? event.d.author?.id ?? (event.startsWith('USER_') ? event.d.id : ""),
+        activities: payload.activities?.map(activity => activity.name).join(',')
+    });
     switch(event.op) {
         case 0 /* ready | resumed | dispatch */: return handleDispatch(state, event.s, event.t, event.d);
         case 1 /* heartbeat request (heartbeat) */: return handleHeartbeatRequest(state);
