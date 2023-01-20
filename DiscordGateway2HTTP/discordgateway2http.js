@@ -7,6 +7,7 @@ const request = require('request');
 const url = require('url');
 const opentelemetry = require('@opentelemetry/api');
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
+const meter = opentelemetry.metrics.getMeter('discord.gateway');
 
 const SHARD_INDEX = process.env.SHARD_INDEX ? parseInt(process.env.SHARD_INDEX) : 0;
 const SHARD_COUNT = process.env.SHARD_COUNT ? parseInt(process.env.SHARD_COUNT) : 1;
@@ -41,9 +42,12 @@ async function getGateway() {
     }));
 }
 
+const event_counter = meter.createCounter('discord.gateway.events');
+
 function handleMessage(state, message) {
     let event = JSON.parse(message);
     console.log('GATEWAY receive op ' + event.op + ' (' + event.s + ')');
+    event_counter.add(1, { code: event.op, name: event.t ?? "" });
     switch(event.op) {
         case 0 /* ready | resumed | dispatch */: return handleDispatch(state, event.s, event.t, event.d);
         case 1 /* heartbeat request (heartbeat) */: return handleHeartbeatRequest(state);
