@@ -1,15 +1,15 @@
-const propertiesReader = require('properties-reader');
-const opentelemetry_api = require('@opentelemetry/api');
-const opentelemetry_sdk = require("@opentelemetry/sdk-node");
+import propertiesReader from 'properties-reader';
+import opentelemetry_api from '@opentelemetry/api';
+import opentelemetry_sdk from "@opentelemetry/sdk-node";
 
-const { Resource } = require('@opentelemetry/resources');
-const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
-const { PeriodicExportingMetricReader, AggregationTemporality} = require('@opentelemetry/sdk-metrics');
-const { OTLPMetricExporter } =  require('@opentelemetry/exporter-metrics-otlp-proto');
-const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
-const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
-const { AlwaysOnSampler, AlwaysOffSampler } = require("@opentelemetry/core");
-const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { PeriodicExportingMetricReader, AggregationTemporality} from '@opentelemetry/sdk-metrics';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+import { AlwaysOnSampler, AlwaysOffSampler } from "@opentelemetry/core";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 
 class ShutdownAwareSpanProcessor {
   processor;
@@ -73,7 +73,7 @@ async function init() {
 function create() {
   let name = process.env.SERVICE_NAME;
   let version = process.env.SERVICE_VERSION;
-  dtmetadata = new Resource({});
+  let dtmetadata = new Resource({});
   for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
     try {
       dtmetadata.merge(new Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties()));
@@ -105,5 +105,3 @@ function create() {
 }
 
 init();
-
-module.exports = {};
