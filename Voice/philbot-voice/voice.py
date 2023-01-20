@@ -262,6 +262,7 @@ class Context:
         file = None
         timestamp = time_millis()
         last_heartbeat = timestamp
+        last_heartbeat_sequence = sequence
         while True:
             # check if source has changed
             paused = False
@@ -344,6 +345,14 @@ class Context:
                 except: # TODO limit to socket close exceptions
                     pass
                 last_heartbeat = heartbeat
+                counter_streaming.add((sequence - last_heartbeat_sequence) * frame_duration, {
+                    "guild_id": self.guild_id,
+                    "server": self.endpoint if self.endpoint else "",
+                    "ip": self.ip if self.ip else "",
+                    "port": self.port if self.port else 0,
+                    "mode": self.mode if self.mode else ""
+                })
+                last_heartbeat_sequence = sequence
             # sleep
             new_timestamp = time_millis()
             sleep_time = frame_duration - (new_timestamp - timestamp)
@@ -366,13 +375,6 @@ class Context:
         pyogg.opus.opus_encoder_destroy(encoder)
         
         print('VOICE CONNECTION ' + self.guild_id + ' stream closed')
-        counter_streaming.add(sequence * frame_duration, {
-            "guild_id": self.guild_id,
-            "server": self.endpoint if self.endpoint else "",
-            "ip": self.ip if self.ip else "",
-            "port": self.port if self.port else 0,
-            "mode": self.mode if self.mode else ""
-        })
 
     def __ws_on_open(self, ws):
         print('VOICE GATEWAY ' + self.guild_id + ' connection established')
