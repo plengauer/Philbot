@@ -1,4 +1,4 @@
-import 'philbot-opentelemetry';
+import './opentelemetry.js';
 import process from 'process';
 import fs from 'fs';
 import { WebSocket } from 'ws';
