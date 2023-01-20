@@ -4,7 +4,7 @@ const opentelemetry_sdk = require("@opentelemetry/sdk-node");
 
 const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
-const { MeterProvider, PeriodicExportingMetricReader, AggregationTemporality} = require('@opentelemetry/sdk-metrics');
+const { PeriodicExportingMetricReader, AggregationTemporality} = require('@opentelemetry/sdk-metrics');
 const { OTLPMetricExporter } =  require('@opentelemetry/exporter-metrics-otlp-proto');
 const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
@@ -104,6 +104,6 @@ function create() {
   return sdk;
 }
 
-await init();
+init();
 
 module.exports = {};
