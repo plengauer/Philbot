@@ -16,6 +16,7 @@ const permissions = require('../../../shared/permissions.js');
 const raid_protection = require('../../../shared/raid_protection.js');
 const subscriptions = require('../../../shared/subscriptions.js');
 const role_management = require('../../../shared/role_management.js');
+const { respond } = require('../../../shared/discord.js');
 
 async function handle(payload) {
   return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
@@ -391,16 +392,22 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       message = message.split(' ').slice(1).join(' ');
     }
     let search_string = null;
-    let voice_channel = null;
+    let voice_channel_id = null;
     if (message.startsWith('in ')) {
-      voice_channel = message.split(' ')[1];
+      let channel_name = message.split(' ')[1];
+      voice_channel_id = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == channel_name)).then(channel => channel?.id); 
+      if (!voice_channel_id) return respond(channel_id, event_id, 'I cannot find the channel ' + channel_name + '!');
       search_string = message.split(' ').slice(2).join(' ');
     } else {
+      let voice_state = await memory.get(`voice_channel:user:${user_id}`);
+      if (!voice_state || voice_state.guild_id != guild_id) return respond(channel_id, event_id, 'I do not know which channel to use. Either join a voice channel first or tell me explicitly which channel to use!');
+      voice_channel_id = voice_state.channel_id;
       search_string = message;
     }
+
     let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     return discord.trigger_typing_indicator(channel_id)
-      .then(() => search_string === 'next' ? player.playNext(guild_id, user_id) : player.play(guild_id, user_id, voice_channel, search_string))
+      .then(() => search_string === 'next' ? player.playNext(guild_id, voice_channel_id) : player.play(guild_id, voice_channel_id, search_string))
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message))
       .finally(() => clearInterval(timer));

@@ -14,12 +14,12 @@ async function on_voice_server_update(guild_id, endpoint, token) {
   return HTTP_VOICE('voice_server_update', { guild_id: guild_id, endpoint: endpoint, token: token });
 }
 
-async function play(guild_id, user_id, voice_channel, search_string) {
+async function play(guild_id, channel_id, search_string) {
   let links = await resolve_search_string(search_string);
   if (links.length > 1) {
     await prependAllToQueue(guild_id, links.slice(1));
   }
-  return play0(guild_id, user_id, voice_channel, links[0]);
+  return play0(guild_id, channel_id, links[0]);
 }
 
 async function resolve_search_string(search_string) {
@@ -57,22 +57,12 @@ async function HTTP_YOUTUBE(endpoint, parameters) {
     });
 }
 
-async function play0(guild_id, user_id, voice_channel_name, youtube_link) {
-  let voice_channel_id = null;
-  if (voice_channel_name) {
-    voice_channel_id = (await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == voice_channel_name)))?.id;
-    if (!voice_channel_id) throw new Error('I dont know the voice channel ' + voice_channel + '!');
-  } else {
-    if (user_id) voice_channel_id = (await memory.get(`voice_channel:user:${user_id}`, null))?.channel_id;
-    if (!voice_channel_id) voice_channel_id = await memory.get(`player:voice_channel:guild:${guild_id}`, null);
-  }
-  if (!voice_channel_id) throw new Error('I dont know which voice channel to use!');
-  await memory.set(`player:voice_channel:guild:${guild_id}`, voice_channel_id, 60 * 60 * 24);
-  return HTTP_VOICE('voice_content_update', { guild_id: guild_id, url: youtube_link })
-    //.then(() => discord.me())
-    //.then(me => memory.get(`voice_channel:user:${me.id}`)) // that wont work, we can be in more than one channel!
-    //.then(connection => connection?.channel_id != voice_channel_id ? discord.connect(guild_id, voice_channel_id) : undefined)
-    .then(() => discord.connect(guild_id, voice_channel_id))
+async function play0(guild_id, channel_id, youtube_link) {
+  channel_id = channel_id ?? await memory.get(`player:voice_channel:guild:${guild_id}`, undefined);
+  if (!channel_id) throw new Error('I don\'t know which channel to use!');
+  return memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24)
+    .then(() => HTTP_VOICE('voice_content_update', { guild_id: guild_id, url: youtube_link }))
+    .then(() => discord.connect(guild_id, channel_id))
     .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('The video is unavailable (private)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('The video is unavailable (regional copy-right claims or age restriction)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('404') ? Promise.reject(new Error('The video is unavailable!')) : Promise.reject(error))
@@ -102,13 +92,13 @@ async function popFromQueue(guild_id) {
   return item;
 }
 
-async function playNext(guild_id, user_id) {
+async function playNext(guild_id, channel_id) {
   let next = await popFromQueue(guild_id);
   if (!next) return stop(guild_id).catch(ex => {/* just swallow exception */});
   try {
-    await play(guild_id, user_id, null, next);
+    await play(guild_id, channel_id, next);
   } catch (error) {
-    if (error.message.includes('video is unavailable')) return playNext(guild_id, user_id);
+    if (error.message.includes('video is unavailable')) return playNext(guild_id, channel_id);
     else throw error;
   }
 
