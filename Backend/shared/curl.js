@@ -51,6 +51,8 @@ async function request_simple(options) {
   options.headers['accept-encoding'] = 'gzip,identity';
   // content-length is byte-based, not character based, lets end the request explicitly and not do the necessary calculations ...
   // if (options.body) options.headers['content-length'] = options.body.length;
+  // options.headers['host'] = options.hostname; // not necessary right now
+  // options.headers['user-agent'] = "Philbot Backend 1.0.0"; // do we wanna do this?
 
   return retry(() => new Promise((resolve, reject) => {
       let s = options.secure ? 's' : '';
