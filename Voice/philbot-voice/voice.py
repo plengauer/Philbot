@@ -85,6 +85,9 @@ def create_voice_package(sequence, timestamp, ssrc, secret_box, voice_chunk):
     nonce[:12] = header
     return header + secret_box.encrypt(voice_chunk, bytes(nonce)).ciphertext
 
+download_lock = threading.Lock()
+downloads = {}
+
 def download_from_youtube(guild_id, url):
     codec = 'wav'
     filename = url[url.index('v=') + 2:]
@@ -93,21 +96,33 @@ def download_from_youtube(guild_id, url):
     filename = guild_id + '.' + filename
     if os.path.exists(filename + '.' + codec):
         return filename + '.' + codec
-    options = {
-        'quiet': True,
-        'no_warnings': True,
-        'format': 'bestaudio',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': codec, # apparently this makes aac first, opus later
-            'preferredquality': '128' # kbps
-        }],
-        'outtmpl': filename + '.aac',
-        'nooverwrites': False
-    }
-    with youtube_dl.YoutubeDL(options) as ydl:
-        ydl.download([url])
-        return filename + '.' + codec
+    event = None
+    with download_lock:
+        if not downloads.get(filename):
+            downloads[filename] = threading.Event()
+        event = downloads[filename]
+    if event:
+        event.wait()
+        return download_from_youtube(guild_id, url)
+    try:
+        options = {
+            'quiet': True,
+            'no_warnings': True,
+            'format': 'bestaudio',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': codec, # apparently this makes aac first, opus later
+                'preferredquality': '128' # kbps
+            }],
+            'nooverwrites': False
+        }
+        with youtube_dl.YoutubeDL(options) as ydl:
+            ydl.download([url])
+            return filename + '.' + codec
+    finally:
+        with download_lock:
+            downloads[event] = None
+        event.set()
 
 def resolve_url(guild_id, url):
     filename = None    
