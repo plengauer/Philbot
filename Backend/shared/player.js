@@ -5,6 +5,7 @@ const curl = require('./curl.js');
 const identity = require('./identity.js');
 
 async function on_voice_state_update(guild_id, channel_id, session_id) {
+  await memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24)
   let me = await discord.me();
   let public_url = await identity.getPublicURL();
   return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: public_url + '/discord/voice_callback' });
@@ -60,8 +61,7 @@ async function HTTP_YOUTUBE(endpoint, parameters) {
 async function play0(guild_id, channel_id, youtube_link) {
   channel_id = channel_id ?? await memory.get(`player:voice_channel:guild:${guild_id}`, undefined);
   if (!channel_id) throw new Error('I don\'t know which channel to use!');
-  return memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24)
-    .then(() => HTTP_VOICE('voice_content_update', { guild_id: guild_id, url: youtube_link }))
+  return HTTP_VOICE('voice_content_update', { guild_id: guild_id, url: youtube_link })
     .then(() => discord.connect(guild_id, channel_id))
     .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('The video is unavailable (private)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('The video is unavailable (regional copy-right claims or age restriction)!')) : Promise.reject(error))
