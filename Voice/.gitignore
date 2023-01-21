@@ -8,3 +8,4 @@ __pycache__
 *.opus
 *.wav
 *.ogg
+.state.*.json
