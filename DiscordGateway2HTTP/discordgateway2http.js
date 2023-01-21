@@ -254,7 +254,7 @@ async function handleCallback(state, request, response) {
                     response.writeHead(405, 'Method not allowed', { 'content-type': 'text/plain' });
                     response.end();
                 } else {
-                    if (payload.guild_id && (payload.guild_id >> 22) % SHARD_COUNT != SHARD_INDEX) {
+                    if (payload.guild_id && (BitInt(payload.guild_id) >> BigInt(22)) % BigInt(SHARD_COUNT) != BigInt(SHARD_INDEX)) {
                         response.writeHead(422, 'Wrong shard', { 'content-type': 'text/plain' });
                         response.end();
                     } else {
