@@ -50,7 +50,7 @@ uninstall() {
     folder=$name
     rm -rf $folder &&
     sudo rm /etc/systemd/system/philbot_$name.service &&
-    sudo systemcl daemon-reload
+    sudo systemctl daemon-reload
 }
 
 install_backend() {
