@@ -250,9 +250,13 @@ async function handleCallback(state, request, response) {
                 }
             }
             try {
-                switch (url.parse(request.url).pathname) {
-                    case '/voice_state_update':
-                        if (request.method == 'POST') {
+                if (request.method != 'POST') {
+                    response.writeHead(405, 'Method not allowed', { 'content-type': 'text/plain' });
+                    response.end();
+                } else {
+                    if (payload.guild_id && (payload.guild_id >> 22) % SHARD_COUNT != SHARD_INDEX) throw new Error('Wrong shard'); // could we redirect (301)?
+                    switch (url.parse(request.url).pathname) {
+                        case '/voice_state_update':
                             if (payload.channel_id) {
                                 send(state, 4, { guild_id: payload.guild_id, channel_id: payload.channel_id, self_mute: false, self_deaf: false });
                             } else {
@@ -260,17 +264,16 @@ async function handleCallback(state, request, response) {
                             }
                             response.writeHead(200, 'Success', { 'content-type': 'text/plain' });
                             response.end();    
-                        } else {
-                            response.writeHead(405, 'Method not allowed', { 'content-type': 'text/plain' });
+                            break;
+                        default:
+                            response.writeHead(404, 'Not Found', { 'content-type': 'text/plain' });
                             response.end();
-                        }
-                        break;
-                    default:
-                        response.writeHead(404, 'Not Found', { 'content-type': 'text/plain' });
-                        response.end();
+                            break;
+                    }
                 }
             } catch(exception) {
-                response.writeHead(500, 'Internval server error', { 'content-type': 'text/plain' });
+                console.error(exception);
+                response.writeHead(500, 'Internal server error', { 'content-type': 'text/plain' });
                 response.end();
             }
             resolve();
