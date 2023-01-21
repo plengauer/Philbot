@@ -94,6 +94,8 @@ def download_from_youtube(guild_id, url):
     if os.path.exists(filename + '.' + codec):
         return filename + '.' + codec
     options = {
+        'quiet': True,
+        'no_warnings': True,
         'format': 'bestaudio',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
@@ -404,7 +406,7 @@ class Context:
                     # print('VOICE GATEWAY heartbeat acknowledge') # this is quite spammy
                     currentfile = self.url[len('file://'):] if self.url else None
                     for file in os.listdir('.'):
-                        if file.endswith('.wav') and self.guild_id in file and os.path.getmtime(file) + 60 * 60 * 1 < time_seconds() and not currentfile == file:
+                        if (file.endswith('.wav') or file.endswith('.aac') or file.endswith('.part')) and self.guild_id in file and os.path.getmtime(file) + 60 * 60 * 1 < time_seconds() and not currentfile == file:
                             os.remove(file)
                 case 2:
                     print('VOICE GATEWAY ' + self.guild_id + ' received voice ready')
@@ -578,7 +580,6 @@ class Context:
         self.__save()
         self.__try_start()
 
-
     def on_state_update(self, channel_id, user_id, session_id, callback_url):
         if not self.channel_id:
             self.__stop()
@@ -691,7 +692,7 @@ def main():
     for file in os.listdir('.'):
         if file.startswith('.state.') or file.endswith('.json'):
             get_context(file[len('.state.'):len(file) - len('.json')])
-        elif file.endswith('.wav') and os.path.getmtime(file) + 60 * 60 * 24 < time_seconds():
+        elif (file.endswith('.wav') or file.endswith('.aac') or file.endswith('.part')) and os.path.getmtime(file) + 60 * 60 * 24 < time_seconds():
             os.remove(file)
     print('VOICE ready')
     app.run(port=HTTP_PORT, threaded=True)
