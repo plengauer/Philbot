@@ -129,15 +129,15 @@ then
     export SHARD_COUNT="1"
 fi
 
-if [ $command = "reinstall" ]
+if [ $command = "redeploy" ]
 then
-    bash philbot.sh stop ${tiers[@]} &&
-    bash philbot.sh install ${tiers[@]} &&
-    bash philbot.sh start ${tiers[@]}
+    bash $0 stop ${tiers[@]} &&
+    bash $0 install ${tiers[@]} &&
+    bash $0 start ${tiers[@]}
 elif [ $command = "restart" ]
 then
-    bash philbot.sh stop ${tiers[@]} &&
-    bash philbot.sh start ${tiers[@]}
+    bash $0 stop ${tiers[@]} &&
+    bash $0 start ${tiers[@]}
 elif [ $command = "start" ]
 then
     for tier in "${tiers[@]}"
