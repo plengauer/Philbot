@@ -129,6 +129,8 @@ def resolve_url(guild_id, url):
         os.remove('_' + filename)
         file = wave.open(filename, 'rb')
     if file.getsampwidth() != 2:
+        file.close()
+        os.remove(filename)
         raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
     file.close()
     os.utime(filename)
