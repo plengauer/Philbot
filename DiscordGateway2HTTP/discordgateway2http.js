@@ -17,7 +17,7 @@ const STATE_FILE = (process.env.STATE_STORAGE_DIRECTORY ?? './') + '.state.' + S
 connect(restoreState());
 
 async function connect(prev_state = {}) {
-    await new Promise(resolve => prev_state.server?.close(resolve));
+    if (prev_state.server) await new Promise(resolve => prev_state.server.close(resolve));
     let state = {
         session_id: prev_state.session_id,
         sequence: prev_state.sequence,
