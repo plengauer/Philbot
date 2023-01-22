@@ -43,7 +43,8 @@ async function resolve_search_string(search_string) {
     }
     return youtube_links;
   } else {
-    let result = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'rating', maxResults: 1, q: search_string })
+    // alternative orderings are "rating" (but thats a relative number where unimportant videos show up first) or "viewCount"
+    let result = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'relevance', maxResults: 1, q: search_string })
     if (result.length == 0) throw new Error('No video found!');
     return [ 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId ];
   }

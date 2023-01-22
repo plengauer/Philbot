@@ -1,6 +1,6 @@
 {
   "name": "philbot-backend",
-  "version": "1.11.38",
+  "version": "1.11.39",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "jszip": "^3.10.1",
