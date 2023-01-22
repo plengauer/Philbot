@@ -117,6 +117,7 @@ def download_from_youtube(guild_id, url):
                 'preferredcodec': codec, # apparently this makes aac first, opus later
                 'preferredquality': '128' # kbps
             }],
+            'outtmpl': filename + '.aac',
             'nooverwrites': False
         }
         with youtube_dl.YoutubeDL(options) as ydl:
