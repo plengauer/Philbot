@@ -174,10 +174,6 @@ async function user_retrieve(user_id) {
   return HTTP(`/users/${user_id}`, 'GET');
 }
 
-async function voice_track_play(guild_id, voice_channel_id, download_info) {
-  throw new Error('NOT IMPLEMENTED!');
-}
-
 async function scheduledevents_list(guild_id) {
   return HTTP(`/guilds/${guild_id}/scheduled-events?with_user_count=false`, 'GET');
 }
@@ -359,8 +355,6 @@ module.exports = {
   
   users_list,
   user_retrieve,
-  
-  voice_track_play,
   
   scheduledevents_list,
   scheduledevent_create,
