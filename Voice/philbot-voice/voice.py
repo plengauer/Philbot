@@ -110,6 +110,7 @@ def download_from_youtube(guild_id, url):
         options = {
             'quiet': True,
             'no_warnings': True,
+            'geo_bypass': True,
             'format': 'bestaudio',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
