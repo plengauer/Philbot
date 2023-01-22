@@ -260,6 +260,7 @@ async function handleCallback(state, request, response) {
                     } else {
                         switch (url.parse(request.url).pathname) {
                             case '/voice_state_update':
+                                console.log('GATEWAY voice state update ' + (payload.channel_id ?? 'null'));
                                 if (payload.channel_id) {
                                     send(state, 4, { guild_id: payload.guild_id, channel_id: payload.channel_id, self_mute: false, self_deaf: false });
                                 } else {
