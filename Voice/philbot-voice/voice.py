@@ -97,11 +97,13 @@ def download_from_youtube(guild_id, url):
     if os.path.exists(filename + '.' + codec):
         return filename + '.' + codec
     event = None
+    download_in_progress = False
     with download_lock:
+        download_in_progress = downloads.get(filename) and not downloads[filename].is_set()
         if not downloads.get(filename):
             downloads[filename] = threading.Event()
         event = downloads[filename]
-    if event:
+    if download_in_progress:
         event.wait()
         return download_from_youtube(guild_id, url)
     try:
