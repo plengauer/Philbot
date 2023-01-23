@@ -1,3 +1,34 @@
+current_shards() {
+    echo $(ls /etc/systemd/system/philbot_discordgateway2http_*.service | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs)
+}
+
+current_shard_count() {
+    echo $(cat discordgateway2http_*/environment.properties | grep SHARD_COUNT | sed 's/[^0-9]//g' | sed -n '1p') || echo 0
+}
+
+desired_shards() {
+    if [ -z "$SHARDS" ]
+    then
+        export SHARDS="$(current_shards)"
+    fi
+    if [ -z "$SHARDS" ]
+    then
+        export SHARDS="0"
+    fi
+    echo $SHARDS
+}
+
+desired_shard_count() {
+    if [ -z "$SHARD_COUNT" ]
+    then
+        export SHARD_COUNT="$(current_shard_count)"
+    fi
+    if [ -z "$SHARD_COUNT" ]
+    then
+        export SHARD_COUNT="1"
+    fi
+    echo $SHARD_COUNT
+}
 
 start() {
     name=$1
@@ -14,14 +45,14 @@ start_backend() { start backend; }
 stop_backend() { stop backend; }
 
 start_discordgateway2http() {
-    for shard_index in $SHARDS
+    for shard_index in $(current_shards)
     do
         start discordgateway2http_$shard_index || return 1
     done
 }
 
 stop_discordgateway2http() {
-    for shard_index in $SHARDS
+    for shard_index in $(current_shards)
     do
         stop discordgateway2http_$shard_index || return 1
     done
@@ -71,18 +102,18 @@ install_discordgateway2http() {
     curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&
     sudo apt-get -y install nodejs ||
     return 1
-    for shard_index in $SHARDS
+    for shard_index in $(desired_shards)
     do
         install discordgateway2http_$shard_index discordgateway2http node.js &&
         echo SHARD_INDEX=$shard_index >> ./discordgateway2http_$shard_index/environment.properties &&
-        echo SHARD_COUNT=$SHARD_COUNT >> ./discordgateway2http_$shard_index/environment.properties &&
+        echo SHARD_COUNT=$(desired_shard_count) >> ./discordgateway2http_$shard_index/environment.properties &&
         echo STATE_STORAGE_DIRECTORY=$(pwd)/discordgateway2http_$shard_index/ >> ./discordgateway2http_$shard_index/environment.properties ||
         return 1
     done
 }
 
 uninstall_discordgateway2http() {
-    for shard_index in $SHARDS
+    for shard_index in $(current_shards)
     do
         uninstall discordgateway2http_$shard_index || return 1
     done
@@ -113,20 +144,12 @@ tiers=("${@:2}")
 
 if [ -z "$command" ]
 then
-    echo "must specify a command (one of start, stop, install, reinstall, restart)"
+    echo "must specify a command (one of start, stop, install, redeploy, restart)"
     exit 1
 fi
 if [ "0" = "${#tiers[@]}" ]
 then
     tiers=("backend" "discordgateway2http" "voice" "scheduler")
-fi
-if [ -z "$SHARDS" ]
-then
-    export SHARDS="0"
-fi
-if [ -z "$SHARD_COUNT" ]
-then
-    export SHARD_COUNT="1"
 fi
 
 if [ $command = "redeploy" ]
