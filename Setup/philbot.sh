@@ -1,6 +1,5 @@
 current_shards() {
-    # check if this works for multiple files
-    pushd /etc/systemd/system/ && echo $(ls philbot_discordgateway2http_*.service | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs) && popd
+    echo $(ls /etc/systemd/system/philbot_discordgateway2http_*.service | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs)
 }
 
 current_shard_count() {
