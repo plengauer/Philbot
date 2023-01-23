@@ -711,7 +711,7 @@ def voice_resume():
 
 def main():
     for file in os.listdir('.'):
-        if file.startswith('.state.') or file.endswith('.json'):
+        if file.startswith('.state.') and file.endswith('.json'):
             get_context(file[len('.state.'):len(file) - len('.json')])
         elif (file.endswith('.wav') or file.endswith('.aac') or file.endswith('.part')) and os.path.getmtime(file) + 60 * 60 * 24 < time_seconds():
             os.remove(file)
