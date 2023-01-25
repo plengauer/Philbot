@@ -10,7 +10,7 @@ then
     ([ -e node_modules/ ] || npm install $package) &&
     npm update &&
     export SERVICE_VERSION=$(cat node_modules/$package/package.json | jq -r .version) &&
-    exec npm --prefix node_modules/$package start
+    exec npm --prefix node_modules/$package run-script exec-start
 elif [ $technology = "ruby" ]
 then
     gem=$module
