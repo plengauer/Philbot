@@ -1,6 +1,6 @@
 {
   "name": "philbot-backend",
-  "version": "1.11.39",
+  "version": "1.11.40",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "jszip": "^3.10.1",
@@ -17,6 +17,7 @@
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.35.0"
   },
   "scripts": {
-    "start": "node backend.js"
+    "start": "node backend.js",
+    "exec-start": "exec node backend.js"
   }
 }
