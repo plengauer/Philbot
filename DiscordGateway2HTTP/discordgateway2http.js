@@ -2,7 +2,7 @@ import './opentelemetry.js';
 import process from 'process';
 import fs from 'fs';
 import { WebSocket } from 'ws';
-import https from 'https';
+import http from 'http';
 import request from 'request';
 import url from 'url';
 import opentelemetry from '@opentelemetry/api';
