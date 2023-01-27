@@ -4,7 +4,7 @@ const curl = require('./curl.js');
 async function getPublicURL() {
   return new Promise((resolve, reject) => process.env.PUBLIC_URL ? resolve(process.env.PUBLIC_URL) : reject(new Error()))
     .then(url =>
-      curl.request_simple({ secure: false, method: 'GET', hostname: url.substring(url.indexOf('://') + 3), path: '/index.html', timeout: 100, fail_on_timeout: false, cache: 60 })
+      curl.request_simple({ secure: true, method: 'GET', hostname: url.substring(url.indexOf('://') + 3), path: '/index.html', timeout: 100, fail_on_timeout: false, cache: 60 })
         .then(response => response.status == 200 && response.body.includes('<title>Philbot</title>') ? Promise.resolve(url) : Promise.reject(new Error()))
     )
     .catch(error =>
