@@ -93,7 +93,6 @@ const http = require('http');
 const https = require('https');
 const url = require("url");
 const fs = require("fs");
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
 const endpoint_about = require('./endpoints/api/about.js');
 const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');
@@ -133,6 +132,7 @@ let operations = [];
 main();
 
 async function main() {
+    /*
     let redirect_server = http.createServer((request, response) => redirectSafely(request, response));
     redirect_server.on('error', error => { console.error(error); shutdown(); });
     redirect_server.on('close', () => shutdown());
@@ -144,6 +144,8 @@ async function main() {
         cert: fs.readFileSync(process.env.HTTP_CERT_FILE ?? "server.cert"),
     };
     let server = https.createServer(options, (request, response) => handleSafely(request, response));
+    */
+    let server = http.createServer((request, response) => handleSafely(request, response));
     server.on('error', error => { console.error(error); shutdown(); });
     server.on('close', () => shutdown());
     server.listen(4443);
@@ -151,6 +153,7 @@ async function main() {
     console.log('HTTP SERVER ready');
 }
 
+/*
 function redirectSafely(request, response) {
     try {
         identity.getPublicURL()
@@ -170,6 +173,7 @@ function redirectSafely(request, response) {
         response.end();
     }
 }
+*/
 
 function handleSafely(request, response) {
     try {
@@ -328,8 +332,8 @@ async function dispatchAPI(path, params, headers, payload) {
 }
 
 async function dispatchAPIAuthorized(headers, func) {
-    if (!headers['authorization']) return { status: 401, body: 'Unauthorized' };
-    if (headers['authorization'] != process.env.DISCORD_API_TOKEN) return { status: 403, body: 'Forbidden' };
+    if (!headers['x-authorization']) return { status: 401, body: 'Unauthorized' };
+    if (headers['x-authorization'] != process.env.DISCORD_API_TOKEN) return { status: 403, body: 'Forbidden' };
     return func();
 }
 

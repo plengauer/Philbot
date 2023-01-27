@@ -6,7 +6,6 @@ import https from 'https';
 import request from 'request';
 import url from 'url';
 import opentelemetry from '@opentelemetry/api';
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 const meter = opentelemetry.metrics.getMeter('discord.gateway');
@@ -25,11 +24,14 @@ async function connect(prev_state = {}) {
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
     };
     state.callback_port = parseInt(process.env.PORT ?? "444") + SHARD_INDEX;
+    /*
     const options = {
         key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),
         cert: fs.readFileSync(process.env.HTTP_CERT_FILE ?? "server.cert"),
     };
     state.server = https.createServer(options, (request, response) => handleCallback(state, request, response));
+    */
+    state.server = http.createServer((request, response) => handleCallback(state, request, response));
     state.server.on('error', error => { console.error(error); });
     state.server.on('close', () => state.socket?.close());
     state.server.listen(state.callback_port);
@@ -243,13 +245,13 @@ async function handleCallback(state, request, response) {
         let buffer = '';
         request.on('data', data => { buffer += data; });
         request.on('end', () => {
-            if (!request.headers['authorization']) {
+            if (!request.headers['x-authorization']) {
                 response.writeHead(401, 'Unauthorized', { 'content-type': 'text/plain' });
                 response.end();
                 resolve();
                 return;
             }
-            if (request.headers['authorization'] != process.env.DISCORD_API_TOKEN) {
+            if (request.headers['x-authorization'] != process.env.DISCORD_API_TOKEN) {
                 response.writeHead(403, 'Forbidden', { 'content-type': 'text/plain' });
                 response.end();
                 resolve();

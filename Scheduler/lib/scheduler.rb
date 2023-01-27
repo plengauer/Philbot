@@ -59,7 +59,7 @@ File.open(ENV["CONFIG_FILE"]).readlines.map(&:chomp).each do |line|
             tracer.in_span('Scheduler ' + interval, kind: :consumer) do |span|
                 puts 'HTTP POST ' + url
                 begin
-                    Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json', 'authorization' => ENV['DISCORD_API_TOKEN'] })
+                    Net::HTTP.post(URI(url), '{}', { 'content-encoding' => 'identity', 'content-type' => 'application/json', 'x-authorization' => ENV['DISCORD_API_TOKEN'] })
                 rescue
                 end
             end
