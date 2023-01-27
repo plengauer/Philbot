@@ -154,7 +154,7 @@ function redirectSafely(request, response) {
     try {
         identity.getPublicURL()
             .then(url => {
-                response.writeHead(301, 'Moved Permanently', { 'content-type': 'text/plain', 'location': url + url.pathname + (url.query ? '?' + url.query : '') });
+                response.writeHead(301, 'Moved Permanently', { 'content-type': 'text/plain', 'location': url + (url.pathname ?? '/') + (url.query ? '?' + url.query : '') });
                 response.end();
             })
             .catch(() => {
