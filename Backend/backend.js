@@ -145,7 +145,7 @@ async function main() {
     let server = https.createServer((request, response) => handleSafely(request, response));
     server.on('error', error => { console.error(error); shutdown(); });
     server.on('close', () => shutdown());
-    server.listen(443);
+    server.listen(4443);
     setInterval(() => checkTimeout(server), 1000 * 60);
     console.log('HTTP SERVER ready');    
 }
