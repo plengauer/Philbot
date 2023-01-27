@@ -88,6 +88,7 @@ install_backend() {
     curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&
     sudo apt-get -y install nodejs iptables-persistent &&
     sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
+    sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443 &&
     mkdir -p memory &&
     install backend backend node.js &&
     echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
