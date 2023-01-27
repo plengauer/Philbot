@@ -153,9 +153,9 @@ async function main() {
 function redirectSafely(request, response) {
     try {
         identity.getPublicURL()
-            .then(url_string => {
-                let url = url.parse(url_string, true);
-                response.writeHead(301, 'Moved Permanently', { 'content-type': 'text/plain', 'location': 'https://' + url.hostname + (url.pathname ?? '/') + (url.query ? '?' + url.query : '') });
+            .then(my_url_string => {
+                let request_url = url.parse(request.url, true);
+                response.writeHead(301, 'Moved Permanently', { 'content-type': 'text/plain', 'location': my_url_string + (request_url.pathname ?? '/') + (request_url.query ? '?' + request_url.query : '') });
                 response.end();
             })
             .catch(() => {
