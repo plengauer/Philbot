@@ -91,7 +91,7 @@ install_backend() {
     sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443 &&
     mkdir -p memory &&
     install backend backend node.js &&
-    echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
+    echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties
 }
 
 uninstall_backend() {
