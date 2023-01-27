@@ -244,7 +244,7 @@ class Context:
             if delay > 60 * 60:
                 break
             try:
-                requests.post(self.callback_url + '/' + reason, json={ "guild_id": self.guild_id, "channel_id": self.channel_id, "user_id": self.user_id }, verify=False)
+                requests.post(self.callback_url + '/' + reason, json={ "guild_id": self.guild_id, "channel_id": self.channel_id, "user_id": self.user_id }, headers={ 'authorization': os.environ['DISCORD_API_TOKEN'] }, verify=False)
                 break
             except:
                 time.sleep(delay)
@@ -646,6 +646,8 @@ def ping():
 
 @app.route('/voice_state_update', methods=['POST'])
 def voice_state_update():
+    if not request.headers.get('authorization'): return Response('Unauthorized', status=401)
+    if request.headers['authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
     context = get_context(body['guild_id'])
     context.on_state_update(body['channel_id'], body['user_id'], body['session_id'], body['callback_url'])
@@ -653,6 +655,8 @@ def voice_state_update():
 
 @app.route('/voice_server_update', methods=['POST'])
 def voice_server_update():
+    if not request.headers.get('authorization'): return Response('Unauthorized', status=401)
+    if request.headers['authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
     context = get_context(body['guild_id'])
     context.on_server_update(body['endpoint'], body['token'])
@@ -660,6 +664,8 @@ def voice_server_update():
 
 @app.route('/voice_content_update', methods=['POST'])
 def voice_content_update():
+    if not request.headers.get('authorization'): return Response('Unauthorized', status=401)
+    if request.headers['authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
     context = get_context(body['guild_id'])
     try:
@@ -679,6 +685,8 @@ def voice_content_update():
 
 @app.route('/voice_content_lookahead', methods=['POST'])
 def voice_content_lookahead():
+    if not request.headers.get('authorization'): return Response('Unauthorized', status=401)
+    if request.headers['authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
     try:
         resolve_url(body['guild_id'], body['url'])
@@ -697,6 +705,8 @@ def voice_content_lookahead():
 
 @app.route('/voice_pause', methods=['POST'])
 def voice_pause():
+    if not request.headers.get('authorization'): return Response('Unauthorized', status=401)
+    if request.headers['authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
     context = get_context(body['guild_id'])
     context.pause()
@@ -704,6 +714,8 @@ def voice_pause():
 
 @app.route('/voice_resume', methods=['POST'])
 def voice_resume():
+    if not request.headers.get('authorization'): return Response('Unauthorized', status=401)
+    if request.headers['authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
     context = get_context(body['guild_id'])
     context.resume()

@@ -307,23 +307,29 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/server': return endpoint_server.handle();
         case '/http': return endpoint_http.handle();
         case '/memoryexport': return endpoint_memoryexport.handle();
-        case '/scheduler/monthly': return endpoint_scheduler_monthly.handle();
-        case '/scheduler/daily': return endpoint_scheduler_daily.handle();
-        case '/scheduler/hourly': return endpoint_scheduler_hourly.handle();
-        case '/discord/guild_create': return endpoint_discord_guild_create.handle(payload);
-        case '/discord/guild_member_add': return endpoint_discord_guild_member_add.handle(payload);
-        case '/discord/guild_member_update': return endpoint_discord_guild_member_update.handle(payload);
-        case '/discord/guild_scheduled_event_create': return endpoint_discord_guild_scheduled_event_create.handle(payload);
-        case '/discord/message_create': return endpoint_discord_message_create.handle(payload);
-        case '/discord/message_reaction_add': return endpoint_discord_message_reaction_add.handle(payload);
-        case '/discord/message_reaction_remove': return endpoint_discord_message_reaction_remove.handle(payload);
-        case '/discord/presence_update': return endpoint_discord_presence_update.handle(payload);
-        case '/discord/voice_state_update': return endpoint_discord_voice_state_update.handle(payload);
-        case '/discord/voice_server_update': return endpoint_discord_voice_server_update.handle(payload);
-        case '/discord/voice_callback/voice_playback_finished': return endpoint_discord_voice_playback_finished.handle(payload);
-        case '/discord/voice_callback/voice_reconnect': return endpoint_discord_voice_reconnect.handle(payload);
+        case '/scheduler/monthly': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_monthly.handle());
+        case '/scheduler/daily': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_daily.handle());
+        case '/scheduler/hourly': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_hourly.handle());
+        case '/discord/guild_create': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_create.handle(payload));
+        case '/discord/guild_member_add': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_member_add.handle(payload));
+        case '/discord/guild_member_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_member_update.handle(payload));
+        case '/discord/guild_scheduled_event_create': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_scheduled_event_create.handle(payload));
+        case '/discord/message_create': return dispatchAPIAuthorized(headers, () => endpoint_discord_message_create.handle(payload));
+        case '/discord/message_reaction_add': return dispatchAPIAuthorized(headers, () => endpoint_discord_message_reaction_add.handle(payload));
+        case '/discord/message_reaction_remove': return dispatchAPIAuthorized(headers, () => endpoint_discord_message_reaction_remove.handle(payload));
+        case '/discord/presence_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_presence_update.handle(payload));
+        case '/discord/voice_state_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_state_update.handle(payload));
+        case '/discord/voice_server_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_server_update.handle(payload));
+        case '/voice_callback/voice_playback_finished': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_playback_finished.handle(payload));
+        case '/voice_callback/voice_reconnect': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_reconnect.handle(payload));
         default: return { status: 404, body: 'Not found' };
     }
+}
+
+async function dispatchAPIAuthorized(headers, func) {
+    if (!headers['authorization']) return { status: 401, body: 'Unauthorized' };
+    if (headers['authorization'] != process.env.DISCORD_API_TOKEN) return { status: 403, body: 'Forbidden' };
+    return func();
 }
 
 async function shutdown() {

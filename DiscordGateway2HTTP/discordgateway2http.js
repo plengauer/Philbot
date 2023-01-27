@@ -220,7 +220,7 @@ async function HTTP(event, payload, delay = undefined) {
     let body = JSON.stringify(payload);
     let url = 'https://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
     let time = Date.now();
-    return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: body }, (error, response, body) => {
+    return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json', 'authorization': process.env.DISCORD_API_TOKEN }, body: body }, (error, response, body) => {
         if (error) {
             console.log('HTTPS POST ' + url + ' => ' + error);
             return reject(error);
@@ -238,8 +238,26 @@ async function handleCallback(state, request, response) {
         let buffer = '';
         request.on('data', data => { buffer += data; });
         request.on('end', () => {
+            if (!request.headers['authorization']) {
+                response.writeHead(401, 'Unauthorized', { 'content-type': 'text/plain' });
+                response.end();
+                resolve();
+                return;
+            }
+            if (request.headers['authorization'] != process.env.DISCORD_API_TOKEN) {
+                response.writeHead(403, 'Forbidden', { 'content-type': 'text/plain' });
+                response.end();
+                resolve();
+                return;
+            }
+            if (request.method != 'POST') {
+                response.writeHead(405, 'Method not allowed', { 'content-type': 'text/plain' });
+                response.end();
+                resolve();
+                return;
+            }
             let payload = null;
-            if (request.method != 'GET' && buffer.length > 0) {
+            if (request.method == 'POST' && buffer.length > 0) {
                 try {
                     payload = JSON.parse(buffer);
                 } catch {
@@ -250,30 +268,25 @@ async function handleCallback(state, request, response) {
                 }
             }
             try {
-                if (request.method != 'POST') {
-                    response.writeHead(405, 'Method not allowed', { 'content-type': 'text/plain' });
+                if (payload.guild_id && (BigInt(payload.guild_id) >> BigInt(22)) % BigInt(SHARD_COUNT) != BigInt(SHARD_INDEX)) {
+                    response.writeHead(422, 'Wrong shard', { 'content-type': 'text/plain' });
                     response.end();
                 } else {
-                    if (payload.guild_id && (BigInt(payload.guild_id) >> BigInt(22)) % BigInt(SHARD_COUNT) != BigInt(SHARD_INDEX)) {
-                        response.writeHead(422, 'Wrong shard', { 'content-type': 'text/plain' });
-                        response.end();
-                    } else {
-                        switch (url.parse(request.url).pathname) {
-                            case '/voice_state_update':
-                                console.log('GATEWAY voice state update ' + (payload.channel_id ?? 'null'));
-                                if (payload.channel_id) {
-                                    send(state, 4, { guild_id: payload.guild_id, channel_id: payload.channel_id, self_mute: false, self_deaf: false });
-                                } else {
-                                    send(state, 4, { guild_id: payload.guild_id, channel_id: null });
-                                }
-                                response.writeHead(200, 'Success', { 'content-type': 'text/plain' });
-                                response.end();    
-                                break;
-                            default:
-                                response.writeHead(404, 'Not Found', { 'content-type': 'text/plain' });
-                                response.end();
-                                break;
-                        }
+                    switch (url.parse(request.url).pathname) {
+                        case '/voice_state_update':
+                            console.log('GATEWAY voice state update ' + (payload.channel_id ?? 'null'));
+                            if (payload.channel_id) {
+                                send(state, 4, { guild_id: payload.guild_id, channel_id: payload.channel_id, self_mute: false, self_deaf: false });
+                            } else {
+                                send(state, 4, { guild_id: payload.guild_id, channel_id: null });
+                            }
+                            response.writeHead(200, 'Success', { 'content-type': 'text/plain' });
+                            response.end();    
+                            break;
+                        default:
+                            response.writeHead(404, 'Not Found', { 'content-type': 'text/plain' });
+                            response.end();
+                            break;
                     }
                 }
             } catch(exception) {

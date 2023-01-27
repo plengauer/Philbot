@@ -8,7 +8,7 @@ async function on_voice_state_update(guild_id, channel_id, session_id) {
   await memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24)
   let me = await discord.me();
   let public_url = await identity.getPublicURL();
-  return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: public_url + '/discord/voice_callback' });
+  return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: public_url + '/voice_callback' });
 }
 
 async function on_voice_server_update(guild_id, endpoint, token) {
@@ -70,7 +70,7 @@ async function play0(guild_id, channel_id, youtube_link) {
 }
 
 async function HTTP_VOICE(operation, payload) {
-  return curl.request({ secure: false, method: 'POST', hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: `/${operation}`, body: payload, timeout: 1000 * 60 * 60 * 24 });
+  return curl.request({ secure: false, method: 'POST', hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: `/${operation}`, headers: { 'authorization': process.env.DISCORD_API_TOKEN }, body: payload, timeout: 1000 * 60 * 60 * 24 });
 }
 
 async function stop(guild_id) {
