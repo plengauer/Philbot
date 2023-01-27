@@ -147,18 +147,19 @@ async function main() {
     server.on('close', () => shutdown());
     server.listen(4443);
     setInterval(() => checkTimeout(server), 1000 * 60);
-    console.log('HTTP SERVER ready');    
+    console.log('HTTP SERVER ready');
 }
 
 function redirectSafely(request, response) {
     try {
         identity.getPublicURL()
             .then(my_url_string => {
-                let request_url = url.parse(request.url, true);
+                let request_url = url.parse(request.url);
                 response.writeHead(301, 'Moved Permanently', { 'content-type': 'text/plain', 'location': my_url_string + (request_url.pathname ?? '/') + (request_url.query ? '?' + request_url.query : '') });
                 response.end();
             })
-            .catch(() => {
+            .catch(error => {
+                console.error(error);
                 response.writeHead(500, 'Internal Server Error', { 'content-type': 'text/plain' });
                 response.end()
             });
