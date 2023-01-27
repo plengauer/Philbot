@@ -148,7 +148,7 @@ async function main() {
     let server = http.createServer((request, response) => handleSafely(request, response));
     server.on('error', error => { console.error(error); shutdown(); });
     server.on('close', () => shutdown());
-    server.listen(4443);
+    server.listen(process.env.PORT ?? 8080);
     setInterval(() => checkTimeout(server), 1000 * 60);
     console.log('HTTP SERVER ready');
 }
