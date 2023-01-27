@@ -122,7 +122,7 @@ const endpoint_discord_voice_server_update = require('./endpoints/api/discord/vo
 const endpoint_discord_voice_playback_finished = require('./endpoints/api/discord/voice_playback_finished.js');
 const endpoint_discord_voice_reconnect = require('./endpoints/api/discord/voice_reconnect.js');
 const discord = require('./shared/discord.js');
-const discord = require('./shared/identity.js');
+const identity = require('./shared/identity.js');
 
 let revision = 0;
 let revision_done = -1;
@@ -139,8 +139,8 @@ async function main() {
     console.log('HTTP REDIRECT SERVER ready');
 
     const options = {
-        key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),
-        cert: fs.readFileSync(process.env.HTTP_CERT_FILE ?? "server.cert"),
+        key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),
+        cert: fs.readFileSync(process.env.HTTP_CERT_FILE ?? "server.cert"),
     };
     let server = https.createServer((request, response) => handleSafely(request, response));
     server.on('error', error => { console.error(error); shutdown(); });
@@ -152,7 +152,7 @@ async function main() {
 
 function redirectSafely(request, response) {
     try {
-        identity.getPublicURL().
+        identity.getPublicURL()
             .then(url => {
                 response.writeHead(301, 'Moved Permanently', { 'content-type': 'text/plain', 'location': url + url.pathname + (url.query ? '?' + url.query : '') });
                 response.end();
