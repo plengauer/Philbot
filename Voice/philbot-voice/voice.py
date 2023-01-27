@@ -728,6 +728,6 @@ def main():
         elif (file.endswith('.wav') or file.endswith('.aac') or file.endswith('.part')) and os.path.getmtime(file) + 60 * 60 * 24 < time_seconds():
             os.remove(file)
     print('VOICE ready')
-    app.run(port=HTTP_PORT, threaded=True)
+    app.run(port=HTTP_PORT, ssl_context='adhoc', threaded=True)
 
 # https://github.com/ytdl-org/youtube-dl/blob/master/README.md#embedding-youtube-dl

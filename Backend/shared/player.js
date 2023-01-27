@@ -70,7 +70,7 @@ async function play0(guild_id, channel_id, youtube_link) {
 }
 
 async function HTTP_VOICE(operation, payload) {
-  return curl.request({ secure: false, method: 'POST', hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: `/${operation}`, headers: { 'authorization': process.env.DISCORD_API_TOKEN }, body: payload, timeout: 1000 * 60 * 60 * 24 });
+  return curl.request({ secure: true, method: 'POST', hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: `/${operation}`, headers: { 'authorization': process.env.DISCORD_API_TOKEN }, body: payload, timeout: 1000 * 60 * 60 * 24 });
 }
 
 async function stop(guild_id) {
