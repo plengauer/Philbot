@@ -227,12 +227,12 @@ async function HTTP(event, payload, delay = undefined) {
     let body = JSON.stringify(payload);
     let url = 'http://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
     let time = Date.now();
-    return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json', 'authorization': process.env.DISCORD_API_TOKEN }, body: body }, (error, response, body) => {
+    return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json', 'x-authorization': process.env.DISCORD_API_TOKEN }, body: body }, (error, response, body) => {
         if (error) {
-            console.log('HTTPS POST ' + url + ' => ' + error);
+            console.log('HTTP POST ' + url + ' => ' + error);
             return reject(error);
         }
-        console.log('HTTPS POST ' + url + ' => ' + response.statusCode + ' (' + (Date.now() - time) + 'ms)');
+        console.log('HTTP POST ' + url + ' => ' + response.statusCode + ' (' + (Date.now() - time) + 'ms)');
         if (response.statusCode == 503 || response.statusCode == 429) return reject(response.statusCode);
         if (response.headers['content-type'] == 'application/json') return resolve(JSON.parse(response.body));
         return resolve();
