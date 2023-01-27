@@ -90,7 +90,9 @@ install_backend() {
     sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
     mkdir -p memory &&
     install backend backend node.js &&
-    echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties
+    echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
+    echo HTTP_KEY_FILE=$(pwd)/server.key >> ./backend/environment.properties &&
+    echo HTTP_CERT_FILE=$(pwd)/server.cert >> ./backend/environment.properties
 }
 
 uninstall_backend() {
@@ -107,6 +109,8 @@ install_discordgateway2http() {
         install discordgateway2http_$shard_index discordgateway2http node.js &&
         echo SHARD_INDEX=$shard_index >> ./discordgateway2http_$shard_index/environment.properties &&
         echo SHARD_COUNT=$(desired_shard_count) >> ./discordgateway2http_$shard_index/environment.properties &&
+        echo HTTP_KEY_FILE=$(pwd)/server.key >> ./discordgateway2http_$shard_index/environment.properties &&
+        echo HTTP_CERT_FILE=$(pwd)/server.cert >> ./discordgateway2http_$shard_index/environment.properties &&
         echo STATE_STORAGE_DIRECTORY=$(pwd)/discordgateway2http_$shard_index/ >> ./discordgateway2http_$shard_index/environment.properties ||
         return 1
     done
@@ -125,6 +129,8 @@ install_voice() {
     install voice voice python &&
     tar -xf libopus.tar.bz2 -C voice/ &&
     echo LD_LIBRARY_PATH=$(pwd)/voice/lib/ >> ./voice/environment.properties &&
+    echo HTTP_KEY_FILE=$(pwd)/server.key >> ./voice/environment.properties &&
+    echo HTTP_CERT_FILE=$(pwd)/server.cert >> ./voice/environment.properties
     rm libopus.tar.bz2
 }
 

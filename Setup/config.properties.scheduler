@@ -1,4 +1,4 @@
-minutely=http://127.0.0.1:8080/scheduler/minutely
-hourly=http://127.0.0.1:8080/scheduler/hourly
-daily=http://127.0.0.1:8080/scheduler/daily
-monthly=http://127.0.0.1:8080/scheduler/monthly
+minutely=https://127.0.0.1:8080/scheduler/minutely
+hourly=https://127.0.0.1:8080/scheduler/hourly
+daily=https://127.0.0.1:8080/scheduler/daily
+monthly=https://127.0.0.1:8080/scheduler/monthly

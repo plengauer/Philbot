@@ -90,6 +90,7 @@ function opentelemetry_create() {
 opentelemetry_init();
 
 const http = require('http');
+const https = require('https');
 const url = require("url");
 const fs = require("fs");
 
@@ -121,6 +122,7 @@ const endpoint_discord_voice_server_update = require('./endpoints/api/discord/vo
 const endpoint_discord_voice_playback_finished = require('./endpoints/api/discord/voice_playback_finished.js');
 const endpoint_discord_voice_reconnect = require('./endpoints/api/discord/voice_reconnect.js');
 const discord = require('./shared/discord.js');
+const discord = require('./shared/identity.js');
 
 let revision = 0;
 let revision_done = -1;
@@ -130,12 +132,40 @@ let operations = [];
 main();
 
 async function main() {
-    let server = http.createServer((request, response) => handleSafely(request, response));
+    let redirect_server = https.createServer((request, response) => redirectSafely(request, response));
+    redirect_server.on('error', error => { console.error(error); shutdown(); });
+    redirect_server.on('close', () => shutdown());
+    redirect_server.listen(8080);
+    console.log('HTTP REDIRECT SERVER ready');
+
+    const options = {
+        key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),
+        cert: fs.readFileSync(process.env.HTTP_CERT_FILE ?? "server.cert"),
+    };
+    let server = https.createServer((request, response) => handleSafely(request, response));
     server.on('error', error => { console.error(error); shutdown(); });
-    server.on('close', () => shutdown())
-    server.listen(process.env.PORT ?? 80);
+    server.on('close', () => shutdown());
+    server.listen(443);
     setInterval(() => checkTimeout(server), 1000 * 60);
     console.log('HTTP SERVER ready');    
+}
+
+function redirectSafely(request, response) {
+    try {
+        identity.getPublicURL().
+            .then(url => {
+                response.writeHead(301, 'Moved Permanently', { 'content-type': 'text/plain', 'location': url + url.pathname + (url.query ? '?' + url.query : '') });
+                response.end();
+            })
+            .catch(() => {
+                response.writeHead(500, 'Internal Server Error', { 'content-type': 'text/plain' });
+                response.end()
+            });
+    } catch {
+        console.error(`HTTP REDIRECT SERVER handling ${request.url} failed ` + error);
+        response.writeHead(500, 'Internal Server Error', { 'content-type': 'text/plain' });
+        response.end();
+    }
 }
 
 function handleSafely(request, response) {

@@ -186,7 +186,7 @@ async function handleDispatch(state, sequence, event, payload) {
             const span = tracer.startSpan('Discord ' + event.toLowerCase().replace(/_/g, ' '), { kind: opentelemetry.SpanKind.CONSUMER }, opentelemetry.ROOT_CONTEXT);
             span.setAttribute('discord.gateway.url', state.resume_gateway_url);
             span.setAttribute('discord.gateway.sequence', sequence);
-            span.setAttribute('discord.gateway.shard', state.SHARD_INDEX);
+            span.setAttribute('discord.gateway.shard', SHARD_INDEX);
             span.setAttribute('discord.guild.id', payload.guild_id ?? (event.startsWith('GUILD_') ? payload.id : undefined));
             span.setAttribute('discord.channel.id', payload.channel_id ?? (event.startsWith('CHANNEL_') ? payload.id : undefined));
             span.setAttribute('discord.role.id', payload.role_id ?? (event.startsWith('ROLE_') ? payload.id : undefined));
@@ -218,14 +218,14 @@ async function HTTP(event, payload, delay = undefined) {
     if (delay && delay > 1000 * 60 * 15) throw new Error('HTTP RETRIES EXCEEDED')
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
     let body = JSON.stringify(payload);
-    let url = 'http://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
+    let url = 'https://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
     let time = Date.now();
     return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json' }, body: body }, (error, response, body) => {
         if (error) {
-            console.log('HTTP POST ' + url + ' => ' + error);
+            console.log('HTTPS POST ' + url + ' => ' + error);
             return reject(error);
         }
-        console.log('HTTP POST ' + url + ' => ' + response.statusCode + ' (' + (Date.now() - time) + 'ms)');
+        console.log('HTTPS POST ' + url + ' => ' + response.statusCode + ' (' + (Date.now() - time) + 'ms)');
         if (response.statusCode == 503 || response.statusCode == 429) return reject(response.statusCode);
         if (response.headers['content-type'] == 'application/json') return resolve(JSON.parse(response.body));
         return resolve();
