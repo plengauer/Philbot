@@ -2,7 +2,7 @@ import './opentelemetry.js';
 import process from 'process';
 import fs from 'fs';
 import { WebSocket } from 'ws';
-import http from 'http';
+import https from 'https';
 import request from 'request';
 import url from 'url';
 import opentelemetry from '@opentelemetry/api';
@@ -24,8 +24,12 @@ async function connect(prev_state = {}) {
         sequence: prev_state.sequence,
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
     };
-    state.callback_port = parseInt(process.env.PORT ?? "81") + SHARD_INDEX;
-    state.server = http.createServer((request, response) => handleCallback(state, request, response));
+    state.callback_port = parseInt(process.env.PORT ?? "444") + SHARD_INDEX;
+    const options = {
+        key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),
+        cert: fs.readFileSync(process.env.HTTP_CERT_FILE ?? "server.cert"),
+    };
+    state.server = https.createServer(options, (request, response) => handleCallback(state, request, response));
     state.server.on('error', error => { console.error(error); });
     state.server.on('close', () => state.socket?.close());
     state.server.listen(state.callback_port);
