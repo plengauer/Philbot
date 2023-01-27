@@ -142,7 +142,7 @@ async function main() {
         key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),
         cert: fs.readFileSync(process.env.HTTP_CERT_FILE ?? "server.cert"),
     };
-    let server = https.createServer((request, response) => handleSafely(request, response));
+    let server = https.createServer(options, (request, response) => handleSafely(request, response));
     server.on('error', error => { console.error(error); shutdown(); });
     server.on('close', () => shutdown());
     server.listen(4443);
