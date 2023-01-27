@@ -132,7 +132,7 @@ let operations = [];
 main();
 
 async function main() {
-    let redirect_server = https.createServer((request, response) => redirectSafely(request, response));
+    let redirect_server = http.createServer((request, response) => redirectSafely(request, response));
     redirect_server.on('error', error => { console.error(error); shutdown(); });
     redirect_server.on('close', () => shutdown());
     redirect_server.listen(8080);
