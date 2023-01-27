@@ -244,7 +244,7 @@ class Context:
             if delay > 60 * 60:
                 break
             try:
-                requests.post(self.callback_url + '/' + reason, json={ "guild_id": self.guild_id, "channel_id": self.channel_id, "user_id": self.user_id })
+                requests.post(self.callback_url + '/' + reason, json={ "guild_id": self.guild_id, "channel_id": self.channel_id, "user_id": self.user_id }, verify=False)
                 break
             except:
                 time.sleep(delay)
