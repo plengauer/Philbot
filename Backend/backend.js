@@ -93,6 +93,7 @@ const http = require('http');
 const https = require('https');
 const url = require("url");
 const fs = require("fs");
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
 const endpoint_about = require('./endpoints/api/about.js');
 const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');

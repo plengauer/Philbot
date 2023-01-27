@@ -6,6 +6,7 @@ import http from 'http';
 import request from 'request';
 import url from 'url';
 import opentelemetry from '@opentelemetry/api';
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 const meter = opentelemetry.metrics.getMeter('discord.gateway');
