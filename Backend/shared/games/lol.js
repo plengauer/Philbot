@@ -13,7 +13,7 @@ function getConfigHint() {
   return {
     text: 'I cannot determine your summoner name. If you want me to give you hints about your current game, tell me your summoner name and the server you are on.'
       + ' Respond with \'configure League of Legends euw1 NoobSlayerXXX\', filling in your server and your summoner name.'
-      + ' If you have more than one account, separate you can list more than one server + summoner name pairs, separate the pairs with \';\'.'
+      + ' You can list more than one server + summoner name pairs, separate the pairs with \';\'.'
       + ' Valid servers are ' + SERVERS.join(', ') + '.',
     ttl: 60 * 60 * 24 * 7
   };
