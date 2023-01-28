@@ -76,8 +76,8 @@ async function checkAndNotifyForConfig(guild_id, channel_id, config) {
   let items = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', channelId: config.feed, order: 'date', maxResults: 50, publishedAfter: new Date(last_check).toISOString(), publishedBefore: new Date(now - 1000).toISOString(), q: config.filter })
     .then(result => memory.set(last_check_key, now, 60 * 60 * 24 * 7).then(() => result))
     .then(result => result.items)
-    .catch(error = null);
-  if (items == null) {
+    .catch(error => null);
+  if (!items) {
     return discord.post(channel_id, `Subscription for https://www.youtube.com/channel/${config.feed} is broken!`);
   } else if (items.length == 0) {
     return;
