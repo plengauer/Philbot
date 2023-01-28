@@ -36,13 +36,14 @@ async function clear(keys) {
   return Promise.all(keys.map(key => unset(key)));
 }
 
-async function read(key) {
+async function read(key, tries = 3) {
   return new Promise((resolve, reject) => fs.readFile(filename(key), { encoding: 'utf-8' }, (error, content) => error ? reject(error) : resolve(content)))
     .then(content => new Promise((resolve, reject) => {
       try {
         resolve(JSON.parse(content));
       } catch (error) {
-        fs.rename(filename(key), filename(key) + '.damaged', () => reject(error));
+        if (tries > 0) fs.rename(filename(key), filename(key) + '.damaged', () => reject(error));
+        else read(key, tries - 1).then(content => resolve(content)).catch(error => reject(error));
       }
     }))
     .then(entry => entry.ttl && entry.timestamp + entry.ttl * 1000 < Date.now() ? Promise.reject(new Error('expired')) : Promise.resolve(entry));
