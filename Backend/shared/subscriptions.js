@@ -77,7 +77,7 @@ async function checkAndNotifyForConfig(guild_id, channel_id, config) {
     .then(result => memory.set(last_check_key, now, 60 * 60 * 24 * 7).then(() => result))
     .then(result => result.items)
     .catch(error => null);
-  if (!items) {
+  if (items == null) {
     return discord.post(channel_id, `Subscription for https://www.youtube.com/channel/${config.feed} is broken!`);
   } else if (items.length == 0) {
     return;
