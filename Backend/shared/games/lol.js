@@ -6,7 +6,7 @@ const memory = require('../memory.js');
 const SERVERS = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
 
 async function http_get(server, endpoint, ttc = undefined) {
-  return curl.request({ method: 'GET', hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': process.env.RIOT_API_TOKEN }, rate_limit_hint: { strip_digits : true }, cache: ttc });
+  return curl.request({ secure: true, method: 'GET', hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': process.env.RIOT_API_TOKEN }, rate_limit_hint: { strip_digits : true }, cache: ttc });
 }
 
 function getConfigHint() {
