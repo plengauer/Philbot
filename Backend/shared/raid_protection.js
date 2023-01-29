@@ -82,11 +82,11 @@ const GUILD_MEMBER_SUSPECT_TIMEFRAME = 60 * 60 * 24;
 const GUILD_MESSAGE_CREATE_THRESHOLD = 100;
 const GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME = 60 * 60;
 
-async function on_guild_member_added(guild_id, user_id) {
+async function on_guild_member_add(guild_id, user_id) {
   return memory.get(`raid_protection:lockdown:guild:${guild_id}`, false).then(lockdown => lockdown ? kick_and_ban_user(guild_id, user_id) : Promise.resove());
 }
 
-async function on_guild_message_created(guild_id, user_id) {
+async function on_guild_message_create(guild_id, user_id) {
   if (await memory.get(`raid_protection:lockdown:guild:${guild_id}`, false)) {
     return undefined;
   }
@@ -101,4 +101,4 @@ async function on_guild_message_created(guild_id, user_id) {
   return lockdown(guild_id);
 }
 
-module.exports = { lockdown, all_clear, on_guild_member_added, on_guild_message_created }
+module.exports = { lockdown, all_clear, on_guild_member_add, on_guild_message_create }
