@@ -6,7 +6,8 @@ function list() {
       'repeating events',
       'tournament',
       'raid protection',
-      'role management'
+      'role management',
+      'sticky nicknames'
     ];
 }
 

@@ -97,6 +97,10 @@ async function guild_member_role_unassign(guild_id, user_id, role_id) {
   return HTTP(`/guilds/${guild_id}/members/${user_id}/roles/${role_id}`, 'DELETE');
 }
 
+async function guild_member_nick_update(guild_id, user_id, nick) {
+  return HTTP(`/guilds/${guild_id}/members/${user_id}`, 'PATCH', { nick: nick });
+}
+
 async function guild_roles_list(guild_id) {
   return HTTP(`/guilds/${guild_id}/roles`, 'GET');
 }
@@ -339,6 +343,7 @@ module.exports = {
   guild_member_has_role,
   guild_member_role_assign,
   guild_member_role_unassign,
+  guild_member_nick_update,
   
   guild_roles_list,
   guild_role_retrieve,

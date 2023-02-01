@@ -2,6 +2,7 @@ const discord = require('../../../shared/discord.js');
 const features = require('../../../shared/features.js');
 const raid_protection = require('../../../shared/raid_protection.js');
 const role_management = require('../../../shared/role_management.js');
+const sticky_nicknames = require('../../../shared/sticky_nicknames.js');
 
 async function handle(payload) {
   let guild_id = payload.guild_id;
@@ -14,7 +15,8 @@ async function handle(payload) {
         )
       ),
     features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_member_add(guild_id, user_id) : Promise.resolve()),
-    features.isActive(guild_id, "role management").then(active => active ? role_management.on_guild_member_add(guild_id, user.id) : Promise.resolve())
+    features.isActive(guild_id, "role management").then(active => active ? role_management.on_guild_member_add(guild_id, user.id) : Promise.resolve()),
+    features.isActive(guild_id, "sticky nicknames").then(active => active ? sticky_nicknames.on_guild_member_add(guild_id, user.id) : Promise.resolve())
   ]).then(() => undefined);
 }
 
