@@ -15,8 +15,8 @@ async function handle(payload) {
         )
       ),
     features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_member_add(guild_id, user_id) : Promise.resolve()),
-    features.isActive(guild_id, "role management").then(active => active ? role_management.on_guild_member_add(guild_id, user.id) : Promise.resolve()),
-    features.isActive(guild_id, "sticky nicknames").then(active => active ? sticky_nicknames.on_guild_member_add(guild_id, user.id) : Promise.resolve())
+    features.isActive(guild_id, "role management").then(active => active ? role_management.on_guild_member_add(guild_id, user_id) : Promise.resolve()),
+    features.isActive(guild_id, "sticky nicknames").then(active => active ? sticky_nicknames.on_guild_member_add(guild_id, user_id) : Promise.resolve())
   ]).then(() => undefined);
 }
 
