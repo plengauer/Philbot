@@ -1,5 +1,4 @@
 const memory = require('./memory.js');
-const memory = require('./discord.js');
 const discord = require('./discord.js');
 
 async function on_guild_member_update(guild_id, user_id) {
