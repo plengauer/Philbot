@@ -3,6 +3,9 @@ const https = require('https');
 const zlib = require('zlib');
 const retry = require('./retry.js').retry;
 const delay = require('./retry.js').delay;
+const opentelemetry = require('@opentelemetry/api');
+
+const meter = opentelemetry.metrics.getMeter('http.client');
 
 async function request(options) {
   if (!options.path) options.path = '/'; 
@@ -36,6 +39,8 @@ async function request_full(options) {
   return stage_0(options);
 }
 
+const request_counter = meter.createCounter('http.client.requests');
+
 async function request_simple(options) {
   if (!options.hostname) throw new Error('Need hostname');
   if (!options.path) throw new Error('Need path');
@@ -53,6 +58,8 @@ async function request_simple(options) {
   // if (options.body) options.headers['content-length'] = options.body.length;
   // options.headers['host'] = options.hostname; // not necessary right now
   // options.headers['user-agent'] = "Philbot Backend 1.0.0"; // do we wanna do this?
+  
+  let counter_attrs = counter_attributes(options);
 
   return retry(() => new Promise((resolve, reject) => {
       let s = options.secure ? 's' : '';
@@ -70,16 +77,24 @@ async function request_simple(options) {
           receiver.on('end', () => {
             let duration = Date.now() - time;
             console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${response.statusCode} (${duration}ms)`);
+            counter_attrs['http.response.status'] = response.statusCode;
+            counter_attrs['http.response.content-type'] = response.headers['content-type'];
+            counter_attrs['http.response.content-encoding'] = response.headers['content-encoding'];
+            request_counter.add(1, counter_attrs);
             resolve({ status: response.statusCode, headers: response.headers, body: buffer });
           });
         });
       request.on('error', error => {
           console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${error.message}`);
+          counter_attrs['http.response.status'] = 0;
+          request_counter.add(1, counter_attrs);
           reject(error);
         });
       request.on('timeout', () => {
           let duration = Date.now() - time;
           console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => TIMEOUT (${duration}ms)`);
+          counter_attrs['http.response.status'] = 504;
+          request_counter.add(1, counter_attrs);
           if (options.fail_on_timeout == undefined || options.fail_on_timeout) reject(new Error(`HTTP Timeout`));
           else resolve({ status: 504, headers: {}, body: 'Gateway Timeout' });
         });
@@ -246,6 +261,9 @@ function create_rate_limit(max, length, count, fake = false) {
   } 
 }
 
+const cache_hit_counter = meter.createCounter('http.client.cache.hits');
+const cache_miss_counter = meter.createCounter('http.client.cache.misses');
+
 async function request_cached(options, request) {
   // this is a really stupid cache implementation, but its good enough (David Goodenough) for most cases
   // *) due to the different caching durations, the eviction algorithm will prefer requests with high durations, even if lower duration requests occur more often (simply because they have more time racking up hits)
@@ -277,9 +295,14 @@ function lookup(options) {
   // evict all timed out entries
   for (let k of Object.keys(cache).filter(k => cache[k].timestamp + (key == k ? Math.min(options.cache, cache[k].ttl) : cache[k].ttl) * 1000 < Date.now())) delete cache[k];
   // lookup
+  let counter_dimensions = { 'http.flavor': options.secure ? 'https' : 'http', 'http.host': options.hostname, 'http.path': options.path };
   let entry = cache[key];
-  if (!entry) return null;
+  if (!entry) {
+    cache_miss_counter.add(1, counter_attributes(options));
+    return null;
+  }
   entry.hits++;
+  cache_hit_counter.add(1, counter_attributes(options));
   return entry.value;
 }
 
@@ -324,6 +347,16 @@ function cachekey(options) {
   return `${options.hostname}${options.path}`;
 }
 
+
+function counter_attributes(options) {
+  return {
+      'http.flavor': options.secure ? 'https' : 'http',
+      'http.host': options.hostname,
+      'http.path': options.path,
+      'http.method': options.method,
+      'http.request.content-type': options.headers['content-type'],
+  };
+}
 
 
 function ratelimits_summary() {
