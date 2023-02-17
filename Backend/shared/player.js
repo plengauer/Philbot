@@ -1,4 +1,5 @@
 const process = require('process');
+const url = require('url');
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const curl = require('./curl.js');
@@ -62,11 +63,25 @@ async function HTTP_YOUTUBE(endpoint, parameters) {
 async function play0(guild_id, channel_id, youtube_link) {
   channel_id = channel_id ?? await memory.get(`player:voice_channel:guild:${guild_id}`, undefined);
   if (!channel_id) throw new Error('I don\'t know which channel to use!');
-  return HTTP_VOICE('voice_content_update', { guild_id: guild_id, url: youtube_link })
-    .then(() => discord.connect(guild_id, channel_id))
+  return VOICE_CONTENT(guild_id, youtube_link).then(() => discord.connect(guild_id, channel_id));
+}
+
+async function VOICE_CONTENT(guild_id, link, lookahead_only = false, retries = 10, unavailable_links = []) {
+  // HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', relatedToVideoId: 'video' })
+  return HTTP_VOICE(lookahead_only ? 'voice_content_lookahead' : 'voice_content_update', { guild_id: guild_id, url: link })
     .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('The video is unavailable (private)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('The video is unavailable (regional copy-right claims or age restriction)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('404') ? Promise.reject(new Error('The video is unavailable!')) : Promise.reject(error))
+    .catch(error => error.message.includes('video is unavailable') && retries > 0
+      ? HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => result.items[0].snippet.title)
+        .then(title => HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'relevance', maxResults: 50, q: title }))
+        .then(result => result.items.map(item => 'https://www.youtube.com/watch?v=' + item.id.videoId))
+        .then(links => links.filter(backup => backup != link && !unavailable_links.includes(backup)))
+        .then(links => links.length > 0 ? links[0] : null)
+        .then(backup => backup ? VOICE_CONTENT(guild_id, backup, lookahead_only, retries - 1, unavailable_links.concat([ link ])) : Promise.reject(error))
+        .catch(() => Promise.reject(error))
+      : Promise.reject(error)
+    );
 }
 
 async function HTTP_VOICE(operation, payload) {
@@ -110,7 +125,7 @@ async function playNext(guild_id, channel_id) {
     let lookaheads = (await getQueue(guild_id)).slice(cursor, cursor + lookahead - successful_lookaheads).filter(item => !!item);
     cursor += lookaheads.length;
     if (lookaheads.length == 0) break;
-    lookaheads = await Promise.all(lookaheads.map(item => resolve_search_string(item).then(results => results[0]).then(link => link ? HTTP_VOICE('voice_content_lookahead', { guild_id: guild_id, url: link }).then(() => link) : null).catch(ex => null)));
+    lookaheads = await Promise.all(lookaheads.map(item => resolve_search_string(item).then(results => results[0]).then(link => link ? VOICE_CONTENT(guild_id, link, true).then(() => link) : null).catch(ex => null)));
     lookaheads = lookaheads.filter(item => !!item);
     successful_lookaheads += lookaheads.length;
   }
