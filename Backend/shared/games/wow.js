@@ -132,7 +132,7 @@ async function getInformation(config) {
     if (line.includes('+6 week')) index = 6;
     if (line.includes('+7 week')) index = 7;
     if (line.includes('+8 week')) index = 8;
-    if (index < 0 || !line.includes('https://en.wowhead.com/affix=')) continue;
+    if (index < 0 || !line.includes('wowhead.com/affix=')) continue;
     while(affixes.length <= index) affixes.push([]);
     let f = line.indexOf('<a href="') + '<a href="'.length;
     let t = line.indexOf('"', f);
