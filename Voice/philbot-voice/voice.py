@@ -14,7 +14,7 @@ import requests
 import subprocess
 import websocket
 from flask import Flask, request, Response
-import youtube_dl
+import yt_dlp
 import opentelemetry
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.metrics import MeterProvider
@@ -114,13 +114,13 @@ def download_from_youtube(guild_id, url):
             'format': 'bestaudio',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
-                'preferredcodec': codec, # apparently this makes aac first, opus later
+                'preferredcodec': codec,
                 'preferredquality': '128' # kbps
             }],
-            'outtmpl': filename + '.aac',
+            'outtmpl': filename,
             'nooverwrites': False
         }
-        with youtube_dl.YoutubeDL(options) as ydl:
+        with yt_dlp.YoutubeDL(options) as ydl:
             ydl.download([url])
             return filename + '.' + codec
     finally:
@@ -670,7 +670,7 @@ def voice_content_update():
     context = get_context(body['guild_id'])
     try:
         context.on_content_update(resolve_url(body['guild_id'], body['url']))
-    except youtube_dl.utils.DownloadError as e:
+    except yt_dlp.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
         elif 'blocked' in str(e) or 'copyright' in str(e):
@@ -690,7 +690,7 @@ def voice_content_lookahead():
     body = request.json
     try:
         resolve_url(body['guild_id'], body['url'])
-    except youtube_dl.utils.DownloadError as e:
+    except yt_dlp.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
         elif 'blocked' in str(e) or 'copyright' in str(e):
