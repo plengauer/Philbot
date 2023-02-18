@@ -66,19 +66,20 @@ async function play0(guild_id, channel_id, youtube_link) {
   return VOICE_CONTENT(guild_id, youtube_link).then(() => discord.connect(guild_id, channel_id));
 }
 
-async function VOICE_CONTENT(guild_id, link, lookahead_only = false, retries = 3, unavailable_links = []) {
+async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = undefined, retries = 10, unavailable_links = []) {
   // HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', relatedToVideoId: 'video' })
   return HTTP_VOICE(lookahead_only ? 'voice_content_lookahead' : 'voice_content_update', { guild_id: guild_id, url: link })
     .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('The video is unavailable (private)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('The video is unavailable (regional copy-right claims or age restriction)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('404') ? Promise.reject(new Error('The video is unavailable!')) : Promise.reject(error))
     .catch(error => error.message.includes('video is unavailable') && retries > 0
-      ? HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => result.items[0].snippet.title)
-        .then(title => HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'relevance', maxResults: 50, q: title }))
-        .then(result => result.items.map(item => 'https://www.youtube.com/watch?v=' + item.id.videoId))
-        .then(links => links.filter(backup => backup != link && !unavailable_links.includes(backup)))
-        .then(links => links.length > 0 ? links[0] : null)
-        .then(backup => backup ? VOICE_CONTENT(guild_id, backup, lookahead_only, retries - 1, unavailable_links.concat([ link ])) : Promise.reject(error))
+      ? (title ? Promise.resolve(title) : HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => result.items[0].snippet.title))
+        .then(title => HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'relevance', maxResults: 50, q: title })
+          .then(result => result.items.map(item => 'https://www.youtube.com/watch?v=' + item.id.videoId))
+          .then(links => links.filter(backup => backup != link && !unavailable_links.includes(backup)))
+          .then(links => links.length > 0 ? links[0] : null)
+          .then(backup => backup ? VOICE_CONTENT(guild_id, backup, lookahead_only, title, retries - 1, unavailable_links.concat([ link ])) : Promise.reject(error))
+        )
         .catch(() => Promise.reject(error))
       : Promise.reject(error)
     );
