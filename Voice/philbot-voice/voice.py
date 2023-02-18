@@ -673,7 +673,7 @@ def voice_content_update():
     except yt_dlp.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
-        elif 'blocked' in str(e) or 'copyright' in str(e):
+        elif 'blocked' in str(e) or 'copyright' in str(e) or "in your country" in str(e):
             return Response('Blocked video', status = 451)
         elif 'inappropriate' in str(e) or 'confirm your age' in str(e):
             return Response('Age-restricted video', status = 451)
@@ -693,7 +693,7 @@ def voice_content_lookahead():
     except yt_dlp.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
-        elif 'blocked' in str(e) or 'copyright' in str(e):
+        elif 'blocked' in str(e) or 'copyright' in str(e) or "in your country" in str(e):
             return Response('Blocked video', status = 451)
         elif 'inappropriate' in str(e) or 'confirm your age' in str(e):
             return Response('Age-restricted video', status = 451)
