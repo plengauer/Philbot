@@ -66,7 +66,7 @@ async function play0(guild_id, channel_id, youtube_link) {
   return VOICE_CONTENT(guild_id, youtube_link).then(() => discord.connect(guild_id, channel_id));
 }
 
-async function VOICE_CONTENT(guild_id, link, lookahead_only = false, retries = 10, unavailable_links = []) {
+async function VOICE_CONTENT(guild_id, link, lookahead_only = false, retries = 3, unavailable_links = []) {
   // HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', relatedToVideoId: 'video' })
   return HTTP_VOICE(lookahead_only ? 'voice_content_lookahead' : 'voice_content_update', { guild_id: guild_id, url: link })
     .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('The video is unavailable (private)!')) : Promise.reject(error))
