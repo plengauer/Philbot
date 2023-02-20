@@ -9,7 +9,7 @@ async function handle(payload) {
     payload.channel_id ?
       memory.set(`voice_channel:user:${payload.user_id}`, { guild_id: payload.guild_id, channel_id: payload.channel_id }, 60 * 60 * 24) :
       memory.unset(`voice_channel:user:${payload.user_id}`),
-    playGreeting(payload.guild_id, payload.channel_id, payload.user_id),
+    payload.channel_id ? playGreeting(payload.guild_id, payload.channel_id, payload.user_id) : Promise.resolve(),
     payload.channel_id ? checkAndStartEvents(payload.guild_id, payload.channel_id) : Promise.resolve(),
     discord.me().then(me => me.id == payload.user_id ? player.on_voice_state_update(payload.guild_id, payload.channel_id, payload.session_id) : Promise.resolve()),
     features.isActive(payload.guild_id, 'role management').then(active => active ? role_management.on_voice_state_update(payload.guild_id, payload.user_id, payload.channel_id) : Promise.resolve())
