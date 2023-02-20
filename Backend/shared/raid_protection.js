@@ -83,7 +83,7 @@ const GUILD_MESSAGE_CREATE_THRESHOLD = 100;
 const GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME = 60 * 60;
 
 async function on_guild_member_add(guild_id, user_id) {
-  return memory.get(`raid_protection:lockdown:guild:${guild_id}`, false).then(lockdown => lockdown ? kick_and_ban_user(guild_id, user_id) : Promise.resove());
+  return memory.get(`raid_protection:lockdown:guild:${guild_id}`, false).then(lockdown => lockdown ? kick_and_ban_user(guild_id, user_id) : Promise.resolve());
 }
 
 async function on_guild_message_create(guild_id, user_id) {
