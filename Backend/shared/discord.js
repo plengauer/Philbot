@@ -111,21 +111,23 @@ async function guild_role_retrieve(guild_id, role_id) {
     .then(role => new Promise((resolve, reject) => role ? resolve(role) : reject(new Error())));
 }
 
-async function guild_role_create(guild_id, name, permissions = undefined, hoist = false, mentionable = true) {
+async function guild_role_create(guild_id, name, permissions = undefined, hoist = false, mentionable = true, color = undefined) {
   return HTTP(`/guilds/${guild_id}/roles`, 'POST', {
       name: name,
       permissions: permissions,
       hoist: hoist,
-      mentionable: mentionable
+      mentionable: mentionable,
+      color: color
     });
 }
 
-async function guild_role_modify(guild_id, role_id, name, permissions = undefined, hoist = undefined, mentionable = undefined) {
+async function guild_role_modify(guild_id, role_id, name, permissions = undefined, hoist = undefined, mentionable = undefined, color = undefined) {
   return HTTP(`/guilds/${guild_id}/roles/${role_id}`, 'PATCH', {
       name: name,
       permissions: permissions,
       hoist: hoist,
-      mentionable: mentionable
+      mentionable: mentionable,
+      color: undefined
     });
 }
 

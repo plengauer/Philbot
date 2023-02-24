@@ -23,14 +23,7 @@ async function getInformation(details, state, user_id) {
   // estimation about calls 1+1+5+5*(1+1+100) = 517
   if (!process.env.RIOT_API_TOKEN) return null;
 
-  servers = await Promise.all(SERVERS.map(server => memory.get('mute:activity:League of Legends:server:' + server, false).then(muted => muted ? null : server)))
-    .then(servers => servers.filter(server => server))
-  
-  let configs = await discord.user_retrieve(user_id)
-    .then(result => result.username)
-    .then(user_name => memory.get('activity_hint_config:activity:League of Legends:user:' + user_id, servers.map(server => { return { summoner: user_name, server: server }; })));
-  
-  let summoners = await Promise.all(configs.map(config => getSummoner(config.server, config.summoner))).then(summoners => summoners.filter(summoner => !!summoner));
+  let summoners = await resolveAccount(user_id);
   if (summoners.length == 0) return getConfigHint();
   
   let games = await Promise.all(summoners.map(summoner => getActiveGame(summoner.server, summoner.id))).then(games => games.filter(game => !!game));
@@ -165,6 +158,16 @@ function calculateMatchMetricMedian(player, mode, type, getMetric) {
   return median(player.matches.filter(match => match.gameMode == mode && match.gameType == type).map(match => getMetric(match, match.participants.filter(participant => participant.summonerId == player.id)[0])));
 }
 
+async function resolveAccount(user_id) {
+  let servers = await Promise.all(SERVERS.map(server => memory.get('mute:activity:League of Legends:server:' + server, false).then(muted => muted ? null : server)))
+    .then(servers => servers.filter(server => server));
+  
+  return discord.user_retrieve(user_id)
+    .then(result => result.username)
+    .then(user_name => memory.get('activity_hint_config:activity:League of Legends:user:' + user_id, servers.map(server => { return { summoner: user_name, server: server }; })))
+    .then(configs => Promise.all(configs.map(config => getSummoner(config.server, config.summoner))).then(summoners => summoners.filter(summoner => !!summoner)));
+}
+
 async function getSummoner(server, summonerName) {
   return http_get(server, '/lol/summoner/v4/summoners/by-name/' + encodeURIComponent(summonerName), 60 * 60 * 24)
     .then(summoner => {
@@ -284,7 +287,85 @@ function median(values) {
   else return values[half];
 }
 
-module.exports = { getInformation, getSummoner }
+const tiers = [ 'IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER' ];
+const tier_colors = [ 0x504c4c, 0x834a12, 0xa5a5a5, 0xffae00, 0x94b464, 0x70a1b1, 0x9d70b1, 0xa57365, 0x0c3c77 ];
+const queues = [ 'RANKED_SOLO_5x5', 'RANKED_FLEX_SR' ];
+
+async function updateRankedRoles(guild_id, user_id) {
+  let roles_key = 'roles:activity:League of Legends:guild:' + guild_id;
+  let roles = await memory.get(roles_key, null);
+  if (!roles) roles = {};
+  let all_roles = await discord.guild_roles_list(guild_id);
+  for(let queue of queues) {
+    if (!roles[queue]) roles[queue] = {};
+    for (let tier of tiers.reverse()) {
+      if (!roles[queue][tier] || !all_roles.includes(roles[queue][tier])) roles[queue][tier] = await createRole(guild_id, queue, tier);
+    }
+  }
+  await memory.set(roles_key, roles);
+  
+  let summoners = await resolveAccount(user_id);
+  if (summoners.length == 0) return;
+  let member = await discord.guild_member_retrieve(guild_id, user_id);
+  let leagues = await Promise.all(summoners.map(summoner => getLeagues(summoner.server, summoner.id))).then(leagues => leagues.reduce((a1, a2) => a1.concat(a2), []));
+  for (let queue of queues) {
+    for (let tier of tiers) {
+      let role_id = roles[queue][tier];
+      let actual = member.roles.includes(role_id);
+      let expected = leagues.some(league => league.queueType == queue && league.tier == tier);
+      if (!actual && expected) await discord.guild_member_role_assign(guild_id, user_id, role_id);
+      if (actual && !expected) await discord.guild_member_role_unassign(guild_id, user_id, role_id);
+    }
+  }
+}
+
+async function createRole(guild_id, queue, tier) {
+  return discord.guild_role_create(guild_id, createRoleName(queue, tier), '0', true, true, tier_colors[tiers.indexOf(tier)]).then(role => role.id);
+}
+
+function createRoleName(queue, tier) {
+  return 'League of Legends ' + prettifyQueueName(queue) + ' ' + prettify(tier);
+}
+
+function prettifyQueueName(queue) {
+  switch(queue) {
+    case 'RANKED_SOLO_5x5': return 'Solo/Duo';
+    case 'RANKED_FLEX_SR': return 'Flex'
+    default: prettify(queue);
+  }
+}
+
+function prettify(string) {
+  return string.replace(/_/g, ' ')
+    .split(' ')
+    .map(token => token.length > 0 ? token.substring(0, 1).toUpperCase() + token.substring(1).toLowerCase() : token)
+    .join(' ');
+}
+
+async function getLeagues(server, summonerId) {
+  /*
+  [
+    {
+        "leagueId": "9a68a5ce-2dd7-4ddd-934b-57c702f23684",
+        "queueType": "RANKED_SOLO_5x5",
+        "tier": "BRONZE",
+        "rank": "I",
+        "summonerId": "TwizGjjBJI8bVd9WPrv0WN2raDn_AkA8f559glnvse36MRM",
+        "summonerName": "Kagami Doll",
+        "leaguePoints": 18,
+        "wins": 47,
+        "losses": 54,
+        "veteran": false,
+        "inactive": false,
+        "freshBlood": false,
+        "hotStreak": false
+    }
+  ]
+  */
+  return http_get(server, '/lol/league/v4/entries/by-summoner/' + summonerId, 60);
+}
+
+module.exports = { getInformation, getSummoner, updateRankedRoles }
 
 
 

@@ -2,12 +2,14 @@ const memory = require('../../../shared/memory.js');
 const discord = require('../../../shared/discord.js');
 const permissions = require('../../../shared/permissions.js');
 const features = require('../../../shared/features.js');
+const games = require('../../../shared/games/games.js');
 
 async function handle() {
   return Promise.all([
     memory.clean(),
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => verifyPermissions(guild.id)))),
-    sendBirthdayGreetings()
+    sendBirthdayGreetings(),
+    discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => features.isActive(guild.id, "ranked game roles").then(active => active ? updateRankedRoles(guild.id) : Promise.resolve()))))
   ])
   .then(() => undefined)
 }
@@ -63,6 +65,17 @@ async function sendBirthdayGreetings() {
         })
       )
     ).then(results => Promise.all(results));
+}
+
+async function updateRankedRoles(guild_id) {
+  let user_ids = await discord.guild_members_list(guild_id).then(members => members.map(member => member.user.id));
+  let activities = await Promise.all(user_ids.map(user_id => memory.get(`activities:all:user:${user_id}`, [])))
+    .then(activities => Array.from(new Set(activities.reduce((a1, a2) => a1.concat(a2), []))));
+  for (let user_id of user_ids) {
+    for (activity of activities) {
+      await games.updateRankedRoles(activity, guild_id, user_id);
+    }
+  }
 }
 
 module.exports = { handle }

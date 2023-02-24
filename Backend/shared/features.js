@@ -7,7 +7,8 @@ function list() {
       'tournament',
       'raid protection',
       'role management',
-      'sticky nicknames'
+      'sticky nicknames',
+      'ranked game roles'
     ];
 }
 

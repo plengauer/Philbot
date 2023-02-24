@@ -5,6 +5,7 @@ const wow = require('./wow.js');
 const epicgames = require('./epicgames.js');
 const phasmophobia = require('./phasmophobia.js');
 const hitman = require('./hitman.js');
+const apex = require('./apex.js');
 
 async function getActivityEmergencyNotification(name, details, state, user_name) {
   if (name === 'Red Dead Redemption 2') {
@@ -29,6 +30,8 @@ async function getActivityHint(name, details, state, user_id) {
     return phasmophobia.getInformation(name.split(' ').slice(1).join(' '));
   } else if (name.toLowerCase().startsWith('hitman')) {
     return hitman.getInformation(name.split(' ').slice(1).join(' '));
+  } else if (name == 'Apex Legends') {
+    return apex.getInformation();
   } else if (
     name === 'Fortnite' ||
     name === 'Genshin Impact' ||
@@ -45,4 +48,12 @@ async function getActivityHint(name, details, state, user_id) {
   }
 }
 
-module.exports = { getActivityHint, getActivityEmergencyNotification }
+async function updateRankedRoles(name, guild_id, user_id) {
+  if (name === 'League of Legends') {
+    return lol.updateRankedRoles(guild_id, user_id);
+  } else if (name == 'Apex Legends') {
+    return apex.updateRankedRoles(guild_id, user_id);
+  }
+}
+
+module.exports = { getActivityHint, getActivityEmergencyNotification, updateRankedRoles }
