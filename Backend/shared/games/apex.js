@@ -11,13 +11,12 @@ async function getInformation() {
 function getConfigHint() {
   return {
     text: 'I cannot determine your EA Origin name. If you want me to give you hints about your current game, tell me your EA Origin name (even if you play on Steam, I need the Origin name that is linked to your steam account).'
-      + ' Respond with \'configure Apex Legends NoobSlayerXXX\', filling in your EA Origin name.'
-      + ' You can list more one name, separate the, with \';\'.',
+      + ' Respond with \'configure Apex Legends NoobSlayerXXX\', filling in your EA Origin name.',
     ttl: 60 * 60 * 24 * 7
   };
 }
 
-const ranks = [ 'Rookie', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Apex Predetor' ].reverse();
+const ranks = [ 'Rookie', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Apex Predator' ].reverse();
 const rank_colors = [ 0x3a1a00, 0x834a12, 0xa5a5a5, 0xffae00, 0x64b2b4, 0x707fb1, 0x9d70b1, 0xc23435 ].reverse();
 const modes  = [ 'Battle Royal', 'Arena' ];
 
