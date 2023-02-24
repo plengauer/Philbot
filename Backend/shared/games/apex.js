@@ -24,7 +24,7 @@ async function updateRankedRoles(guild_id, user_id) {
   let roles_key = 'roles:activity:Apex Legends:guild:' + guild_id;
   let roles = await memory.get(roles_key, null);
   if (!roles) roles = {};
-  let all_roles = await discord.guild_roles_list(guild_id).then(role => role.id);
+  let all_roles = await discord.guild_roles_list(guild_id).then(roles => roles.map(role => role.id));
   for(let mode of modes) {
     if (!roles[mode]) roles[mode] = {};
     for (let rank of ranks) {
