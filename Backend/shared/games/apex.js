@@ -1,6 +1,8 @@
-const troll = require('./troll.js');
-const curl = require('../curl.js');
+const process = require('process');
 const memory = require('../memory.js');
+const discord = require('../discord.js');
+const curl = require('../curl.js');
+const troll = require('./troll.js');
 
 async function getInformation() {
   return troll.getInformation();
