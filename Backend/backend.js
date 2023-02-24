@@ -77,7 +77,7 @@ function opentelemetry_create() {
       }),
       exportIntervalMillis: 5000,
     }),
-    instrumentations: [getNodeAutoInstrumentations()],
+    instrumentations: [getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }})],
     resource: new Resource({
         [SemanticResourceAttributes.SERVICE_NAME]: name,
         [SemanticResourceAttributes.SERVICE_VERSION]: version,
@@ -122,7 +122,6 @@ const endpoint_discord_voice_server_update = require('./endpoints/api/discord/vo
 const endpoint_discord_voice_playback_finished = require('./endpoints/api/discord/voice_playback_finished.js');
 const endpoint_discord_voice_reconnect = require('./endpoints/api/discord/voice_reconnect.js');
 const discord = require('./shared/discord.js');
-const identity = require('./shared/identity.js');
 
 let revision = 0;
 let revision_done = -1;
