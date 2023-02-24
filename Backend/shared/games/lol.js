@@ -287,8 +287,8 @@ function median(values) {
   else return values[half];
 }
 
-const tiers = [ 'IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER' ];
-const tier_colors = [ 0x504c4c, 0x834a12, 0xa5a5a5, 0xffae00, 0x94b464, 0x70a1b1, 0x9d70b1, 0xa57365, 0x0c3c77 ];
+const tiers = [ 'IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER' ].reverse();
+const tier_colors = [ 0x504c4c, 0x834a12, 0xa5a5a5, 0xffae00, 0x94b464, 0x70a1b1, 0x9d70b1, 0xa57365, 0x0c3c77 ].reverse();
 const queues = [ 'RANKED_SOLO_5x5', 'RANKED_FLEX_SR' ];
 
 async function updateRankedRoles(guild_id, user_id) {
