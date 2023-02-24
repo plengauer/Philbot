@@ -34,6 +34,7 @@ async function updateRankedRoles(guild_id, user_id) {
   let name = await resolveAccount(user_id);
   let member = await discord.guild_member_retrieve(guild_id, user_id);
   let data = http('/bridge', { player: name, platform: 'PC' });
+  if (data.error) return;
   for (let mode of modes) {
     for (let rank of ranks) {
       let role_id = roles[mode][rank];
