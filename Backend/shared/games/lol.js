@@ -298,7 +298,7 @@ async function updateRankedRoles(guild_id, user_id) {
   let all_roles = await discord.guild_roles_list(guild_id).then(role => role.id);
   for(let queue of queues) {
     if (!roles[queue]) roles[queue] = {};
-    for (let tier of tiers.reverse()) {
+    for (let tier of tiers) {
       if (!roles[queue][tier] || !all_roles.includes(roles[queue][tier])) roles[queue][tier] = await createRole(guild_id, queue, tier);
     }
   }
