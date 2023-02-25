@@ -43,7 +43,7 @@ async function read(key, tries = 3) {
         resolve(JSON.parse(content));
       } catch (error) {
         if (tries > 0) fs.rename(filename(key), filename(key) + '.damaged', () => reject(error));
-        else read(key, tries - 1).then(content => resolve(content)).catch(error => reject(error));
+        else new Promise(resolve => setTimeout(resolve, 100)).then(() => read(key, tries - 1).then(content => resolve(content)).catch(error => reject(error)));
       }
     }))
     .then(entry => entry.ttl && entry.timestamp + entry.ttl * 1000 < Date.now() ? Promise.reject(new Error('expired')) : Promise.resolve(entry));
