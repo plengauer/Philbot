@@ -37,13 +37,12 @@ async function link2subscription(link, filter) {
     } else if (link.startsWith('user/')) {
       link = link.substring('user/'.length);
       link = link.includes('/') ? link.substring(0, link.indexOf('/')) : link;
-      let items = await HTTP_YOUTUBE('/channels', { forUsername: link })
-        .then(result => result.items)
-        .catch(error => null);
+      let items = await HTTP_YOUTUBE('/channels', { forUsername: link }).then(result => result.items.map(item => item.id))
+        .catch(error => HTTP_YOUTUBE('/search', { part: 'snippet', type: 'channel', q: link }).then(result => result.items.map(item => item.id.channelId)))
       if (!items) throw new Error(`Cannot find a channel for youtube user ${link}!`);
       if (items.length == 0) throw new Error(`Youtube user ${link} has no channel!`);
-      if (items.length > 1) throw new Error(`Youtube user ${link} has more than one channel!`);
-      return link2subscription(`https://www.youtube.com/channel/${items[0].id}`, filter);
+      // if (items.length > 1) throw new Error(`Youtube user ${link} has more than one channel!`);
+      return link2subscription(`https://www.youtube.com/channel/${items[0]}`, filter);
     } else {
       throw new Error('Link must be to a channel!')
     }
