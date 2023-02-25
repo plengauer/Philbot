@@ -63,7 +63,7 @@ function createRoleName(mode, rank) {
 }
 
 async function http(endpoint, parameters = {}) {
-  return curl.request({ hostname: 'api.mozambiquehe.re', path: endpoint + '&' + Object.keys(parameters).map(key => key + '=' + encodeURIComponent(parameters[key])).join('&'), headers: { 'authorization': process.env.APEX_LEGENDS_API_TOKEN } })
+  return curl.request({ hostname: 'api.mozambiquehe.re', path: endpoint + '?' + Object.keys(parameters).map(key => key + '=' + encodeURIComponent(parameters[key])).join('&'), headers: { 'authorization': process.env.APEX_LEGENDS_API_TOKEN } })
     .catch(error => error.message.includes('HTTP error 404') ? null : Promise.reject(error));
 }
 
