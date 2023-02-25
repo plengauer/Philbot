@@ -36,7 +36,7 @@ async function updateRankedRoles(guild_id, user_id) {
   let name = await resolveAccount(user_id);
   let member = await discord.guild_member_retrieve(guild_id, user_id);
   let data = await http('/bridge', { player: name, platform: 'PC' });
-  if (data.Error || !data.global) return;
+  if (!data || data.Error || !data.global) return;
   for (let mode of modes) {
     for (let rank of ranks) {
       let role_id = roles[mode][rank];
@@ -63,7 +63,8 @@ function createRoleName(mode, rank) {
 }
 
 async function http(endpoint, parameters = {}) {
-  return curl.request({ hostname: 'api.mozambiquehe.re', path: endpoint + Object.keys(parameters).map(key => key + '=' + parameters[key]).join('&'), headers: { 'authorization': process.env.APEX_LEGENDS_API_TOKEN } });
+  return curl.request({ hostname: 'api.mozambiquehe.re', path: endpoint + Object.keys(parameters).map(key => key + '=' + parameters[key]).join('&'), headers: { 'authorization': process.env.APEX_LEGENDS_API_TOKEN } })
+    .catch(error => error.message.includes('HTTP error 404') ? null : Promise.reject(error));
 }
 
 module.exports = { getInformation, updateRankedRoles }
