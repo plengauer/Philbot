@@ -68,11 +68,8 @@ async function sendBirthdayGreetings() {
 }
 
 async function updateRankedRoles(guild_id) {
-  let user_ids = await discord.guild_members_list(guild_id).then(members => members.map(member => member.user.id));
-  let activities = await Promise.all(user_ids.map(user_id => memory.get(`activities:all:user:${user_id}`, [])))
-    .then(activities => Array.from(new Set(activities.reduce((a1, a2) => a1.concat(a2), []))));
-  for (let user_id of user_ids) {
-    for (activity of activities) {
+  for (let user_id of await discord.guild_members_list(guild_id).then(members => members.map(member => member.user.id))) {
+    for (let activity of await memory.get(`activities:all:user:${user_id}`, [])) {
       await games.updateRankedRoles(activity, guild_id, user_id);
     }
   }
