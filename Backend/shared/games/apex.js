@@ -36,12 +36,12 @@ async function updateRankedRoles(guild_id, user_id) {
   let name = await resolveAccount(user_id);
   let member = await discord.guild_member_retrieve(guild_id, user_id);
   let data = http('/bridge', { player: name, platform: 'PC' });
-  if (data.Error) return;
+  if (data.Error || !data.global) return;
   for (let mode of modes) {
     for (let rank of ranks) {
       let role_id = roles[mode][rank];
       let actual = member.roles.includes(role_id);
-      let expected = data.global[mode == 'Battle Royal' ? 'rank' : mode.toLowerCase()].rankName == rank;
+      let expected = data.global[mode == 'Battle Royal' ? 'rank' : mode.toLowerCase()]?.rankName == rank;
       if (!actual && expected) await discord.guild_member_role_assign(guild_id, user_id, role_id);
       if (actual && !expected) await discord.guild_member_role_unassign(guild_id, user_id, role_id);
     }
