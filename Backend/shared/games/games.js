@@ -49,7 +49,7 @@ async function getActivityHint(name, details, state, user_id) {
 }
 
 async function updateRankedRoles(name, guild_id, user_id) {
-  if (name === 'League of Legends') {
+  if (name == 'League of Legends') {
     return lol.updateRankedRoles(guild_id, user_id);
   } else if (name == 'Apex Legends') {
     return apex.updateRankedRoles(guild_id, user_id);
