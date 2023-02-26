@@ -2,6 +2,7 @@ const process = require('process');
 const curl = require('../curl.js');
 const discord = require('../discord.js');
 const memory = require('../memory.js');
+const synchronized = require('../synchronized.js');
 
 const SERVERS = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
 
@@ -292,18 +293,7 @@ const tier_colors = [ 0x504c4c, 0x834a12, 0xa5a5a5, 0xffae00, 0x94b464, 0x70a1b1
 const queues = [ 'RANKED_SOLO_5x5', 'RANKED_FLEX_SR' ];
 
 async function updateRankedRoles(guild_id, user_id) {
-  let roles_key = 'roles:activity:League of Legends:guild:' + guild_id;
-  let roles = await memory.get(roles_key, null);
-  if (!roles) roles = {};
-  let all_roles = await discord.guild_roles_list(guild_id).then(roles => roles.map(role => role.id));
-  for(let queue of queues) {
-    if (!roles[queue]) roles[queue] = {};
-    for (let tier of tiers) {
-      if (!roles[queue][tier] || !all_roles.includes(roles[queue][tier])) roles[queue][tier] = await createRole(guild_id, queue, tier);
-    }
-  }
-  await memory.set(roles_key, roles);
-  
+  let roles = await synchronized.locked('ranked_roles:setup:guild:' + guild_id, () => getRoles(guild_id));
   let summoners = await resolveAccount(user_id);
   if (summoners.length == 0) return;
   let member = await discord.guild_member_retrieve(guild_id, user_id);
@@ -317,6 +307,21 @@ async function updateRankedRoles(guild_id, user_id) {
       if (actual && !expected) await discord.guild_member_role_unassign(guild_id, user_id, role_id);
     }
   }
+}
+
+async function getRoles(guild_id) {
+  let roles_key = 'roles:activity:League of Legends:guild:' + guild_id;
+  let roles = await memory.get(roles_key, null);
+  if (!roles) roles = {};
+  let all_roles = await discord.guild_roles_list(guild_id).then(roles => roles.map(role => role.id));
+  for(let queue of queues) {
+    if (!roles[queue]) roles[queue] = {};
+    for (let tier of tiers) {
+      if (!roles[queue][tier] || !all_roles.includes(roles[queue][tier])) roles[queue][tier] = await createRole(guild_id, queue, tier);
+    }
+  }
+  await memory.set(roles_key, roles);
+  return roles;
 }
 
 async function createRole(guild_id, queue, tier) {

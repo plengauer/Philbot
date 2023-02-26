@@ -194,7 +194,7 @@ async function update_all(guild_id) {
 }
 
 async function execute(guild_id, user_id, event) {
-    return synchronized.locked(guild_id + '/' + user_id, () => 
+    return synchronized.locked('role_management:execute_rule:guild:' + guild_id + ':user:' + user_id, () => 
         memory.get(memorykey(guild_id), [])
     	    .then(rules => Promise.all(rules.map(rule => evaluate(rule.condition, guild_id, user_id, event).then(expected => expected != undefined ? Promise.all(rule.actions.map(action => extract(action, expected, guild_id, user_id))) : []))))
     	    .then(actionss => reduce(actionss.flatMap(actions => actions).filter(action => !!action)))

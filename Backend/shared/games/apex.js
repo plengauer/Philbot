@@ -21,18 +21,7 @@ const rank_colors = [ 0x3a1a00, 0x834a12, 0xa5a5a5, 0xffae00, 0x64b2b4, 0x707fb1
 const modes  = [ 'Battle Royal', 'Arena' ];
 
 async function updateRankedRoles(guild_id, user_id) {
-  let roles_key = 'roles:activity:Apex Legends:guild:' + guild_id;
-  let roles = await memory.get(roles_key, null);
-  if (!roles) roles = {};
-  let all_roles = await discord.guild_roles_list(guild_id).then(roles => roles.map(role => role.id));
-  for(let mode of modes) {
-    if (!roles[mode]) roles[mode] = {};
-    for (let rank of ranks) {
-      if (!roles[mode][rank] || !all_roles.includes(roles[mode][rank])) roles[mode][rank] = await createRole(guild_id, mode, rank);
-    }
-  }
-  await memory.set(roles_key, roles);
-
+  let roles = await synchronized.locked('ranked_roles:setup:guild:' + guild_id, () => getRoles(guild_id));
   let name = await resolveAccount(user_id);
   let member = await discord.guild_member_retrieve(guild_id, user_id);
   let data = await getRanks(name);
@@ -53,6 +42,21 @@ async function resolveAccount(user_id) {
   return discord.user_retrieve(user_id)
     .then(result => result.username)
     .then(user_name => memory.get('activity_hint_config:activity:Apex Legends:user:' + user_id, user_name))
+}
+
+async function getRoles(guild_id) {
+  let roles_key = 'roles:activity:Apex Legends:guild:' + guild_id;
+  let roles = await memory.get(roles_key, null);
+  if (!roles) roles = {};
+  let all_roles = await discord.guild_roles_list(guild_id).then(roles => roles.map(role => role.id));
+  for(let mode of modes) {
+    if (!roles[mode]) roles[mode] = {};
+    for (let rank of ranks) {
+      if (!roles[mode][rank] || !all_roles.includes(roles[mode][rank])) roles[mode][rank] = await createRole(guild_id, mode, rank);
+    }
+  }
+  await memory.set(roles_key, roles);
+  return roles;
 }
 
 async function createRole(guild_id, mode, rank) {
