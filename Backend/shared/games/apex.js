@@ -1,6 +1,7 @@
 const process = require('process');
 const memory = require('../memory.js');
 const discord = require('../discord.js');
+const synchronized = require('../synchronized.js');
 const curl = require('../curl.js');
 const troll = require('./troll.js');
 
