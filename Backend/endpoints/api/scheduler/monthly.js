@@ -56,7 +56,7 @@ async function handle() {
       .then(users => users.map(user => user.id))
       .then(user_ids => Promise.all([
         cleanUsersActivities(user_ids),
-        cleanUsersExcept(user_ids)
+        // cleanUsersExcept(user_ids)
       ]))
   ])
   .then(() => undefined)
