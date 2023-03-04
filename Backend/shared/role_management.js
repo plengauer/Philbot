@@ -9,13 +9,14 @@ async function add_new_rule(guild_id, input) {
     let rule = await parse_rule(input, guild_id);
     return memory.get(memorykey(guild_id), [])
         .then(rules => rules.concat(rule))
-        .then(rules => memory.set(memorykey(guild_id), rules));
+        .then(rules => memory.set(memorykey(guild_id), rules))
+        .then(() => update_all(guild_id));
 }
 
 // this is super inefficient parsing, yolo!
 async function parse_rule(input, guild_id) {
     let split = input.indexOf('=');
-    if (split < 0) throw new Error('A rule must have a ":" to separate the condition from the result!');
+    if (split < 0) throw new Error('A rule must have a "=" to separate the condition from the result!');
     return {
         condition: await parse_condition({ tokens: tokenize(input.substring(0, split)), cursor: 0 }, guild_id, true),
         actions: await parse_actions({ tokens: tokenize(input.substring(split + 1)), cursor: 0 }, guild_id, true)
@@ -298,7 +299,7 @@ async function condition_to_string(condition, guild_id) {
         case 'or': return '(' + (await Promise.all(condition.inners.map(inner => condition_to_string(inner, guild_id)))).join(' or ') + ')';
         case 'not': return 'not ' + await condition_to_string(condition.inner, guild_id);
         case 'role': return discord.mention_role(condition.role_id);
-        case 'reaction': return condition.emoji + ' ' + discord.message_link_create(guild_id, condition.channel_id, condition.message_id);
+        case 'reaction': return 'reaction ' + condition.emoji + ' ' + discord.message_link_create(guild_id, condition.channel_id, condition.message_id);
         case 'connect': return 'connect ' + (condition.channel_id ? (await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == condition.channel_id)))?.name : 'any');
         case 'disconnect': return 'disconnect';
         case 'activity': return 'activity ' + condition.activity;
