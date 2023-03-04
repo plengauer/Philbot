@@ -94,7 +94,8 @@ async function getRanks(player) {
           }
         }
       })
-    );
+    )
+    .catch(error => null);
 }
 
 async function http_algs_api(player) {

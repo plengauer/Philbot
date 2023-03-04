@@ -167,6 +167,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(promise);
   }
   
+  /*
   let tokens = message.split(' ')
   tokens = tokens
     .map(token => token.endsWith('.') || token.endsWith('!') || token.endsWith('?') ? token.substring(0, token.length - 1) : token)
@@ -224,6 +225,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     let promise = discord.respond(channel_id, event_id, `${value} ${unit} are ${converted_value} ${converted_unit} in metric units.`);
     promises.push(promise);
   }
+  */
   
   if (guild_id && !mentioned && user_id == process.env.OWNER_DISCORD_USER_ID && false) { // this is super spammy because there is literally an entry for everything, even for "hello"
     let tokens = message.split(' ');
