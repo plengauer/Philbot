@@ -1,4 +1,5 @@
 const process = require('process');
+const synchronized = require('./synchronized.js');
 const fs = require('fs');
 const discord = require('./discord.js');
 
@@ -37,7 +38,7 @@ async function clear(keys) {
 }
 
 async function read(key, tries = 3) {
-  return new Promise((resolve, reject) => fs.readFile(filename(key), { encoding: 'utf-8' }, (error, content) => error ? reject(error) : resolve(content)))
+  return synchronized.locked(key, () => new Promise((resolve, reject) => fs.readFile(filename(key), { encoding: 'utf-8' }, (error, content) => error ? reject(error) : resolve(content))))
     .then(content => new Promise((resolve, reject) => {
       try {
         resolve(JSON.parse(content));
@@ -50,11 +51,11 @@ async function read(key, tries = 3) {
 }
 
 async function write(entry) {
-  return new Promise((resolve, reject) => fs.writeFile(filename(entry.key), JSON.stringify(entry), { encoding: 'utf-8' }, error => error ? reject(error) : resolve(entry.value)));
+  return synchronized.locked(entry.key, () => new Promise((resolve, reject) => fs.writeFile(filename(entry.key), JSON.stringify(entry), { encoding: 'utf-8' }, error => error ? reject(error) : resolve(entry.value))));
 }
 
 async function remove(key) {
-  return new Promise((resolve, reject) => fs.unlink(filename(key), error => error ? reject(error) : resolve()));
+  return synchronized.locked(key, () => new Promise((resolve, reject) => fs.unlink(filename(key), error => error ? reject(error) : resolve())));
 }
 
 async function ls() {
