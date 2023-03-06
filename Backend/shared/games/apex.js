@@ -34,7 +34,7 @@ const ranked_system = {
 };
 
 async function updateRankedRoles(guild_id, user_id) {
-  return games_util.updateRankedRoles(guild_id, user_id, ranked_system, resolveAccount, getRanks);
+  return games_util.updateRankedRoles(guild_id, user_id, 'Apex Legends', ranked_system, resolveAccount, getRanks);
 }
 
 async function resolveAccount(user_id) {

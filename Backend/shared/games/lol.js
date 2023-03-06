@@ -316,7 +316,7 @@ const ranked_system = {
 }
 
 async function updateRankedRoles(guild_id, user_id) {
-  return games_util.updateRankedRoles(guild_id, user_id, ranked_system, resolveAccount, getLeagues);
+  return games_util.updateRankedRoles(guild_id, user_id, 'League of Legends', ranked_system, resolveAccount, getLeagues);
 }
 
 async function getLeagues(accounts) {
