@@ -3,6 +3,7 @@ const curl = require('../curl.js');
 const discord = require('../discord.js');
 const memory = require('../memory.js');
 const synchronized = require('../synchronized.js');
+const games_util = require('games_util.js');
 
 const SERVERS = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
 
@@ -288,66 +289,38 @@ function median(values) {
   else return values[half];
 }
 
-const tiers = [ 'IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER' ].reverse();
-const tier_colors = [ 0x504c4c, 0x834a12, 0xa5a5a5, 0xffae00, 0x94b464, 0x70a1b1, 0x9d70b1, 0xa57365, 0x0c3c77 ].reverse();
-const queues = [ 'RANKED_SOLO_5x5', 'RANKED_FLEX_SR' ];
+const ranks_traditional = [
+  { name:  'Challenger', color: '0x0c3c77' },
+  { name: 'Grandmaster', color: '0xa57365' },
+  { name:      'Master', color: '0x9d70b1' },
+  { name:     'Diamond', color: '0x70a1b1' },
+  { name:    'Platinum', color: '0x94b464' },
+  { name:        'Gold', color: '0xffae00' },
+  { name:      'Silver', color: '0xa5a5a5' },
+  { name:      'Bronze', color: '0x834a12' },
+  { name:        'Iron', color: '0x504c4c' },
+];
+
+const ranks_hyperroll = [
+  { name:  'Hyper', color: '0xa36000' },
+  { name: 'Purple', color: '0x9d70b1' },
+  { name:   'Blue', color: '0x0c3c77' },
+  { name:  'Green', color: '0x94b464' },
+  { name:   'Grey', color: '0x696969' },
+];
+
+const ranked_system = {
+  'Solo/Duo': ranks_traditional,
+  'Flex': ranks_traditional,
+  'Teamfight Tactics': ranks_traditional,
+  'Hyperroll': ranks_hyperroll,
+}
 
 async function updateRankedRoles(guild_id, user_id) {
-  let roles = await synchronized.locked('ranked_roles:setup:guild:' + guild_id, () => getRoles(guild_id));
-  let summoners = await resolveAccount(user_id);
-  if (summoners.length == 0) return;
-  let member = await discord.guild_member_retrieve(guild_id, user_id);
-  let leagues = await Promise.all(summoners.map(summoner => getLeagues(summoner.server, summoner.id))).then(leagues => leagues.reduce((a1, a2) => a1.concat(a2), []));
-  for (let queue of queues) {
-    for (let tier of tiers) {
-      let role_id = roles[queue][tier];
-      let actual = member.roles.includes(role_id);
-      let expected = leagues.some(league => league.queueType == queue && league.tier == tier);
-      if (!actual && expected) await discord.guild_member_role_assign(guild_id, user_id, role_id);
-      if (actual && !expected) await discord.guild_member_role_unassign(guild_id, user_id, role_id);
-    }
-  }
+  return games_util.updateRankedRoles(guild_id, user_id, ranked_system, resolveAccount, getLeagues);
 }
 
-async function getRoles(guild_id) {
-  let roles_key = 'roles:activity:League of Legends:guild:' + guild_id;
-  let roles = await memory.get(roles_key, null);
-  if (!roles) roles = {};
-  let all_roles = await discord.guild_roles_list(guild_id).then(roles => roles.map(role => role.id));
-  for(let queue of queues) {
-    if (!roles[queue]) roles[queue] = {};
-    for (let tier of tiers) {
-      if (!roles[queue][tier] || !all_roles.includes(roles[queue][tier])) roles[queue][tier] = await createRole(guild_id, queue, tier);
-    }
-  }
-  await memory.set(roles_key, roles);
-  return roles;
-}
-
-async function createRole(guild_id, queue, tier) {
-  return discord.guild_role_create(guild_id, createRoleName(queue, tier), '0', true, true, tier_colors[tiers.indexOf(tier)]).then(role => role.id);
-}
-
-function createRoleName(queue, tier) {
-  return 'League of Legends ' + prettifyQueueName(queue) + ' ' + prettify(tier);
-}
-
-function prettifyQueueName(queue) {
-  switch(queue) {
-    case 'RANKED_SOLO_5x5': return 'Solo/Duo';
-    case 'RANKED_FLEX_SR': return 'Flex'
-    default: prettify(queue);
-  }
-}
-
-function prettify(string) {
-  return string.replace(/_/g, ' ')
-    .split(' ')
-    .map(token => token.length > 0 ? token.substring(0, 1).toUpperCase() + token.substring(1).toLowerCase() : token)
-    .join(' ');
-}
-
-async function getLeagues(server, summonerId) {
+async function getLeagues(accounts) {
   /*
   [
     {
@@ -367,8 +340,32 @@ async function getLeagues(server, summonerId) {
     }
   ]
   */
-  return http_get(server, '/lol/league/v4/entries/by-summoner/' + summonerId, 60);
+  return Promise.all(accounts.map(account => getSummoner(account.server, account.summoner).then(summoner => getLeague(summoner)).then(leagues => leagues.map(league => parseLeague(league)))))
+    .then(leagues => leagues.concat((a1, a2) => a1.concat(a2), []));
 }
+
+async function getLeague(summoner) {
+  return Promise.all([ http_get(summoner.server, '/lol/league/v4/entries/by-summoner/' + summoner.id, 60), http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60) ].catch(() => []))
+    .then(leagues => leagues.concat((a1, a2) => a1.concat(a2), []));
+}
+
+async function parseLeague(league){
+  return {
+    mode: prettifyQueueType(league.queueType),
+    rank: league.tier.substring(0, 1).toUpperCase() + league.tier.substring(1).toLowerCase()
+  };
+}
+
+function prettifyQueueType(queueType) {
+  switch(queueType) {
+    case 'RANKED_SOLO_5x5': return 'Solo/Duo';
+    case 'RANKED_FLEX_SR': return 'Flex';
+    case 'RANKED_TFT': return 'Teamfight Tactics';
+    case 'RANKED_TFT_TURBO': return 'Hyperroll';
+    default: queueType;
+  }
+}
+
 
 module.exports = { getInformation, getSummoner, updateRankedRoles }
 
