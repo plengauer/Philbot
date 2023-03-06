@@ -289,23 +289,23 @@ function median(values) {
 }
 
 const ranks_traditional = [
-  { name:  'Challenger', color: '0x0c3c77' },
-  { name: 'Grandmaster', color: '0xa57365' },
-  { name:      'Master', color: '0x9d70b1' },
-  { name:     'Diamond', color: '0x70a1b1' },
-  { name:    'Platinum', color: '0x94b464' },
-  { name:        'Gold', color: '0xffae00' },
-  { name:      'Silver', color: '0xa5a5a5' },
-  { name:      'Bronze', color: '0x834a12' },
-  { name:        'Iron', color: '0x504c4c' },
+  { name:  'Challenger', color: 0x0c3c77 },
+  { name: 'Grandmaster', color: 0xa57365 },
+  { name:      'Master', color: 0x9d70b1 },
+  { name:     'Diamond', color: 0x70a1b1 },
+  { name:    'Platinum', color: 0x94b464 },
+  { name:        'Gold', color: 0xffae00 },
+  { name:      'Silver', color: 0xa5a5a5 },
+  { name:      'Bronze', color: 0x834a12 },
+  { name:        'Iron', color: 0x504c4c },
 ];
 
 const ranks_hyperroll = [
-  { name:  'Hyper', color: '0xa36000' },
-  { name: 'Purple', color: '0x9d70b1' },
-  { name:   'Blue', color: '0x0c3c77' },
-  { name:  'Green', color: '0x94b464' },
-  { name:   'Grey', color: '0x696969' },
+  { name:  'Hyper', color: 0xa36000 },
+  { name: 'Purple', color: 0x9d70b1 },
+  { name:   'Blue', color: 0x0c3c77 },
+  { name:  'Green', color: 0x94b464 },
+  { name:   'Grey', color: 0x696969 },
 ];
 
 const ranked_system = {
