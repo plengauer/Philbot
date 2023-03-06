@@ -319,7 +319,7 @@ async function updateRankedRoles(guild_id, user_id) {
   return games_util.updateRankedRoles(guild_id, user_id, 'League of Legends', ranked_system, resolveAccount, getLeagues);
 }
 
-async function getLeagues(accounts) {
+async function getLeagues(summoners) {
   /*
   [
     {
@@ -339,13 +339,14 @@ async function getLeagues(accounts) {
     }
   ]
   */
-  return Promise.all(accounts.map(account => getSummoner(account.server, account.summoner).then(summoner => getLeague(summoner)).then(leagues => leagues.map(league => parseLeague(league)))))
-    .then(leagues => leagues.concat((a1, a2) => a1.concat(a2), []));
+  return Promise.all(summoners.map(summoner => getLeague(summoner)))
+    .then(leagues => leagues.reduce((a1, a2) => a1.concat(a2), []))
+    .then(leagues => leagues.map(league => parseLeague(league)));
 }
 
 async function getLeague(summoner) {
-  return Promise.all([ http_get(summoner.server, '/lol/league/v4/entries/by-summoner/' + summoner.id, 60), http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60) ].catch(() => []))
-    .then(leagues => leagues.concat((a1, a2) => a1.concat(a2), []));
+  return Promise.all([ http_get(summoner.server, '/lol/league/v4/entries/by-summoner/' + summoner.id, 60), http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60).catch(() => []) ])
+    .then(leagues => leagues.reduce((a1, a2) => a1.concat(a2), []));
 }
 
 async function parseLeague(league){
