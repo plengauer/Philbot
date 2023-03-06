@@ -2,8 +2,7 @@ const process = require('process');
 const curl = require('../curl.js');
 const discord = require('../discord.js');
 const memory = require('../memory.js');
-const synchronized = require('../synchronized.js');
-const games_util = require('games_util.js');
+const games_util = require('./games_util.js');
 
 const SERVERS = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
 

@@ -1,7 +1,6 @@
 const process = require('process');
 const memory = require('../memory.js');
 const discord = require('../discord.js');
-const synchronized = require('../synchronized.js');
 const curl = require('../curl.js');
 const troll = require('./troll.js');
 const games_util = require('./games_util.js');
@@ -55,7 +54,7 @@ async function getRanks(player) {
     .catch(error => http_tracker(player)
       .then(result => {
         return [
-          { mode: 'Battle Royal', result.data.metadata.rankName.split(' ')[0] },
+          { mode: 'Battle Royal', name: result.data.metadata.rankName.split(' ')[0] },
         ];
       })
     )
