@@ -6,6 +6,7 @@ const epicgames = require('./epicgames.js');
 const phasmophobia = require('./phasmophobia.js');
 const hitman = require('./hitman.js');
 const apex = require('./apex.js');
+const ksp = require('./ksp.js');
 
 async function getActivityEmergencyNotification(name, details, state, user_name) {
   if (name === 'Red Dead Redemption 2') {
@@ -32,6 +33,8 @@ async function getActivityHint(name, details, state, user_id) {
     return hitman.getInformation(name.split(' ').slice(1).join(' '));
   } else if (name == 'Apex Legends') {
     return apex.getInformation();
+  } else if (name == 'Kerbal Space Program' || name == 'Kerbal Space Program 2') {
+    return ksp.getInformation();
   } else if (
     name === 'Fortnite' ||
     name === 'Genshin Impact' ||
@@ -39,8 +42,7 @@ async function getActivityHint(name, details, state, user_id) {
     name === "PLAYERUNKNOWN'S BATTLEGROUNDS" ||
     name === "PUBG: BATTLEGROUNDS" ||
     name === 'Overwatch'||
-    name === 'Overwatch 2'||
-    name === 'Apex Legends'
+    name === 'Overwatch 2'
   ) {
     return troll.getInformation();
   } else {

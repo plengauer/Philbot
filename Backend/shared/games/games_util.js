@@ -1,5 +1,6 @@
 const memory = require('../memory.js');
 const synchronized = require('../synchronized.js');
+const discord = require('../discord.js');
 
 async function updateRankedRoles(guild_id, user_id, activity, system, getUserAccount, getUserRanks) {
   let roles = await synchronized.locked('ranked_roles:setup:guild:' + guild_id, () => getRoles(guild_id, activity, system));
