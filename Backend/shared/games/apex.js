@@ -47,8 +47,8 @@ async function getRanks(player) {
   return http_algs_api(player)
     .then(result => {
       return [
-        { mode: 'Battle Royal', name: result.global.rank.rankName },
-        { mode: 'Arena', name: result.global.arena.rankName }
+        { mode: 'Battle Royal', name: result.global.rank.rankScore > 1 ? result.global.rank.rankName : 'Unranked' },
+        { mode: 'Arena', name: result.global.arena.rankScore > 1 ? result.global.arena.rankName : 'Unranked' }
       ];
     })
     .catch(error => http_tracker(player)
@@ -58,7 +58,8 @@ async function getRanks(player) {
         ];
       })
     )
-    .catch(error => null);
+    .catch(error => [])
+    .then(ranks => ranks.filter(rank => rank.name != 'Unranked'));
 }
 
 async function http_algs_api(player) {
