@@ -7,6 +7,7 @@ const phasmophobia = require('./phasmophobia.js');
 const hitman = require('./hitman.js');
 const apex = require('./apex.js');
 const ksp = require('./ksp.js');
+const fortnite = require('./fortnite.js');
 
 async function getActivityEmergencyNotification(name, details, state, user_name) {
   if (name === 'Red Dead Redemption 2') {
@@ -33,6 +34,8 @@ async function getActivityHint(name, details, state, user_id) {
     return hitman.getInformation(name.split(' ').slice(1).join(' '));
   } else if (name == 'Apex Legends') {
     return apex.getInformation();
+  } else if (name == 'Fortnite') {
+    return fortnite.getInformation();
   } else if (name == 'Kerbal Space Program' || name == 'Kerbal Space Program 2') {
     return ksp.getInformation();
   } else if (
@@ -55,6 +58,8 @@ async function updateRankedRoles(name, guild_id, user_id) {
     return lol.updateRankedRoles(guild_id, user_id);
   } else if (name == 'Apex Legends') {
     return apex.updateRankedRoles(guild_id, user_id);
+  } else if (name == 'Fortnite') {
+    return fortnite.updateRankedRoles(guild_id, user_id);
   }
 }
 

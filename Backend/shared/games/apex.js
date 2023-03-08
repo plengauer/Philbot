@@ -2,6 +2,7 @@ const process = require('process');
 const memory = require('../memory.js');
 const discord = require('../discord.js');
 const curl = require('../curl.js');
+const trackernetwork_gg = require('./trackernetwork_gg.js');
 const troll = require('./troll.js');
 const games_util = require('./games_util.js');
 
@@ -68,7 +69,7 @@ async function http_algs_api(player) {
 }
 
 async function http_tracker(player) {
-  return curl.request({ hostname: 'public-api.tracker.gg', path: '/apex/v1/standard/profile/5/' + encodeURIComponent(player), headers: { 'TRN-Api-Key': process.env.TRACKER_GG_API_TOKEN } });
+  return trackernetwork_gg.get('public-api.tracker.gg', '/apex/v1/standard/profile/5/' + encodeURIComponent(player));
 }
 
 module.exports = { getInformation, updateRankedRoles }
