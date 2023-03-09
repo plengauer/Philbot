@@ -352,7 +352,7 @@ async function getLeague(summoner) {
 async function parseLeague(league){
   return {
     mode: prettifyQueueType(league.queueType),
-    rank: league.tier.substring(0, 1).toUpperCase() + league.tier.substring(1).toLowerCase()
+    name: league.tier.substring(0, 1).toUpperCase() + league.tier.substring(1).toLowerCase()
   };
 }
 
