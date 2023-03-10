@@ -15,7 +15,7 @@ async function getResponse(channel_id, user_id, message) {
     method: 'POST',
     body: {
       "model": "gpt-3.5-turbo",
-      "messages": [{ "role": "system", "content": "You are a Discord bot. You are depressed." }].concat(conversation.slice(-6))
+      "messages": [{ "role": "system", "content": "Your name is Philbot. You are a Discord bot. You are depressed." }].concat(conversation.slice(-6))
     }
   }).then(result => result.choices[0].message);
   conversation.push(response);
