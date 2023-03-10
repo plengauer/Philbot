@@ -9,7 +9,7 @@ async function getPublicURL() {
         .then(result => 'http://' + result.trim())
     )
     .catch(error => curl.request({ secure: false, method: 'GET', hostname: 'icanhazip.com', path: '/', headers: { accept: 'text/plain' }, cache: 60 }).then(result => 'http://' + result.trim()))
-    .catch(error => 'http://127.0.0.1')
+    .catch(error => 'http://127.0.0.1');
 }
 
 module.exports = { getPublicURL }
