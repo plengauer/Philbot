@@ -345,7 +345,6 @@ async function getLeagues(summoners) {
 }
 
 async function getLeague(summoner) {
-  summoner.id = 'TwizGjjBJI8bVd9WPrv0WN2raDn_AkA8f559glnvse36MRM';
   return Promise.all([ http_get(summoner.server, '/lol/league/v4/entries/by-summoner/' + summoner.id, 60), http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60).catch(() => []) ])
     .then(leagues => leagues.reduce((a1, a2) => a1.concat(a2), []));
 }
