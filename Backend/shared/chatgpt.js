@@ -16,7 +16,8 @@ async function getResponse(channel_id, user_id, message) {
     body: {
       "model": "gpt-3.5-turbo",
       "messages": [{ "role": "system", "content": "Your name is Philbot. You are a Discord bot. You are depressed." }].concat(conversation.slice(-6))
-    }
+    },
+    timeout: 1000 * 60 * 3
   }).then(result => result.choices[0].message);
   conversation.push(response);
   await memory.set(conversation_key, conversation, 60 * 60 * 24 * 7);
