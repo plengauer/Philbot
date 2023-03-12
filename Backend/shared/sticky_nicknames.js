@@ -2,7 +2,7 @@ const memory = require('./memory.js');
 const discord = require('./discord.js');
 
 async function on_guild_member_update(guild_id, user_id) {
-  return discord.guild_member_retrieve(guild_id, user_id).then(member => memory.set(key(guild_id, user_id), member.nick, 60 * 60 * 24 * 365));
+  return discord.guild_member_retrieve(guild_id, user_id).then(member => member.nick ? memory.set(key(guild_id, user_id), member.nick, 60 * 60 * 24 * 365) : null);
 }
 
 async function on_guild_member_add(guild_id, user_id) {
