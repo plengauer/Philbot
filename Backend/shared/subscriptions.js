@@ -3,6 +3,9 @@ const memory = require('./memory.js');
 const curl = require('./curl.js');
 const discord = require('./discord.js');
 
+const DAILY_YOUTUBE_API_VOLUME = parseInt(process.env["DAILY_YOUTUBE_API_VOLUME"] ?? "10000");
+const YOUTUBE_QUERY_COST = 100;
+
 async function add(guild_id, channel_id, link, filter) {
   let subscription = await link2subscription(link, filter);
   return memory.get(configkey(guild_id, channel_id), [])
@@ -53,21 +56,35 @@ async function link2subscription(link, filter) {
   }
 }
 
+// DAILY_YOUTUBE_API_VOLUME
+// YOUTUBE_QUERY_COST
+// DAILY_YOUTUBE_API_VOLUME * subscriptions.length
+
 async function tick() {
-  return discord.guilds_list()
-    .then(guilds => Promise.all(guilds.map(guild =>
-      discord.guild_channels_list(guild.id).then(channels =>
-        Promise.all(channels.map(channel => checkAndNotify(guild.id, channel.id)))))
-      )
-    );
+  let now = Date.now();
+  let last_tick = await memory.get('subscriptions:last', now - 1000 * 60 * 60 * 24);
+  await memory.set('subscriptions:last', now, 1000 * 60 * 60 * 24);
+  
+  let subscriptions = [];
+  for (let guild of await discord.guilds_list()) {
+    for (let channel of await discord.guild_channels_list(guild.id)) {
+      for (let config of await memory.get(configkey(guild.id, channel.id), [])) {
+        subscriptions.push({ guild_id: guild.id, channel_id: channel.id, config: config });
+      }
+    }
+  }
+
+  let total_cost = subscriptions.length * YOUTUBE_QUERY_COST;
+  let contingent_per_second = DAILY_YOUTUBE_API_VOLUME * 0.5 / (60 * 60 * 24);
+  let contingent = ((now - last_tick) / 1000) * contingent_per_second;
+  let probability = contingent / total_cost;
+
+  subscriptions = subscriptions.filter(_ => Math.random() < probability);
+
+  return Promise.all(subscriptions.map(subscription => checkAndNotify(subscription.guild_id, subscription.channel_id, subscription.config)));
 }
 
-async function checkAndNotify(guild_id, channel_id) {
-  return memory.get(configkey(guild_id, channel_id), [])
-    .then(configs => Promise.all(configs.map(config => checkAndNotifyForConfig(guild_id, channel_id, config))));
-}
-
-async function checkAndNotifyForConfig(guild_id, channel_id, config) {
+async function checkAndNotify(guild_id, channel_id, config) {
   let last_check_key = `subscriptions:last:guild:${guild_id}:channel:${channel_id}:feed:${config.feed}` + (config.filter ? ':filter:' + memory.mask(config.filter) : '');
   let now = Date.now() - 1000 * 60 * 5; // videos take some time to get fully released, lets give publishers some time to distribute to get reliable query results
   let last_check = await memory.get(last_check_key, undefined);
