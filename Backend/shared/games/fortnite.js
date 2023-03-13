@@ -9,9 +9,9 @@ async function getInformation() {
 }
 
 const ranks = [
-  { name: 'Champion League', color: undefined },
-  { name: 'Contender League', color: undefined },
-  { name: 'Open League', color: undefined },
+  { name: 'Champion League', color: 0x00d8d8 },
+  { name: 'Contender League', color: 0x00d8d8 },
+  { name: 'Open League', color: 0x00d8d8 },
 ];
 
 const ranked_system = {
@@ -31,7 +31,8 @@ async function resolveAccount(user_id) {
 async function getRanks(player) {
   return http_tracker(player)
     .then(response => response.data.stats.p2.currentRank)
-    .then(rank => rank.split(' ').slice(-1).join(' '));
+    .then(rank => rank.split(' ').slice(-1).join(' '))
+    .then(rank => { return [ { mode: 'Battle Royal', name: rank } ]; });
 }
 
 async function http_tracker(player) {
