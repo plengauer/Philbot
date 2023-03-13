@@ -30,8 +30,8 @@ async function resolveAccount(user_id) {
 
 async function getRanks(player) {
   return http_tracker(player)
-    .catch(error => null)
-    .then(result => result ? Promise.reject(new Error('Implement me when API is back up!')) : null);
+    .then(response => response.data.stats.p2.currentRank)
+    .then(rank => rank.split(' ').slice(-1).join(' '));
 }
 
 async function http_tracker(player) {
