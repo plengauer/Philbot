@@ -30,7 +30,7 @@ const ranks = [
 ];
 
 const ranked_system = {
-  'Battle Royal': ranks,
+  'Battle Royale': ranks,
   'Arena': ranks,
 };
 
