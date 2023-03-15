@@ -48,14 +48,14 @@ async function getRanks(player) {
   return http_algs_api(player)
     .then(result => {
       return [
-        { mode: 'Battle Royal', name: result.global.rank.rankScore > 1 ? result.global.rank.rankName : 'Unranked' },
+        { mode: 'Battle Royale', name: result.global.rank.rankScore > 1 ? result.global.rank.rankName : 'Unranked' },
         { mode: 'Arena', name: result.global.arena.rankScore > 1 ? result.global.arena.rankName : 'Unranked' }
       ];
     })
     .catch(error => http_tracker(player)
       .then(result => {
         return [
-          { mode: 'Battle Royal', name: result.data.metadata.rankName.split(' ')[0] },
+          { mode: 'Battle Royale', name: result.data.metadata.rankName.split(' ')[0] },
         ];
       })
     )
