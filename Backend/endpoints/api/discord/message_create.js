@@ -933,9 +933,11 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
         return handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me);
       }
     }
+    let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     return chatgpt.getResponse(channel_id, user_id, message)
       .then(result => result ? result :  `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
-      .then(message => discord.respond(channel_id, event_id, message));
+      .then(message => discord.respond(channel_id, event_id, message))
+      .finally(() => clearInterval(timer));
   }
 }
 
