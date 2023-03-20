@@ -105,7 +105,6 @@ const endpoint_code = require('./endpoints/api/code.js');
 const endpoint_ssh = require('./endpoints/api/ssh.js');
 const endpoint_server = require('./endpoints/api/server.js');
 const endpoint_memoryexport = require('./endpoints/api/memoryexport.js');
-const endpoint_http = require('./endpoints/api/httpstack.js');
 const endpoint_scheduler_monthly = require('./endpoints/api/scheduler/monthly.js');
 const endpoint_scheduler_daily = require('./endpoints/api/scheduler/daily.js');
 const endpoint_scheduler_hourly = require('./endpoints/api/scheduler/hourly.js');
@@ -309,7 +308,6 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/code': return endpoint_code.handle();
         case '/ssh': return endpoint_ssh.handle();
         case '/server': return endpoint_server.handle();
-        case '/http': return endpoint_http.handle();
         case '/memoryexport': return endpoint_memoryexport.handle();
         case '/scheduler/monthly': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_monthly.handle());
         case '/scheduler/daily': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_daily.handle());

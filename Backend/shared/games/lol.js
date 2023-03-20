@@ -6,8 +6,8 @@ const games_util = require('./games_util.js');
 
 const SERVERS = [ 'br1', 'eun1', 'euw1', 'jp1', 'kr', 'la1', 'la2', 'na1', 'oc1', 'ru', 'tr1' ];
 
-async function http_get(server, endpoint, ttc = undefined) {
-  return curl.request({ secure: true, method: 'GET', hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': process.env.RIOT_API_TOKEN }, rate_limit_hint: { strip_digits : true }, cache: ttc });
+async function http_get(server, endpoint, ttc = undefined, key = process.env.RIOT_API_TOKEN) {
+  return curl.request({ secure: true, method: 'GET', hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': key }, rate_limit_hint: { strip_digits : true }, cache: ttc });
 }
 
 function getConfigHint() {
@@ -169,8 +169,8 @@ async function resolveAccount(user_id) {
     .then(configs => Promise.all(configs.map(config => getSummoner(config.server, config.summoner))).then(summoners => summoners.filter(summoner => !!summoner)));
 }
 
-async function getSummoner(server, summonerName) {
-  return http_get(server, '/lol/summoner/v4/summoners/by-name/' + encodeURIComponent(summonerName), 60 * 60 * 24)
+async function getSummoner(server, summonerName, key = undefined) {
+  return http_get(server, '/lol/summoner/v4/summoners/by-name/' + encodeURIComponent(summonerName), 60 * 60 * 24, key)
     .then(summoner => {
       summoner.server = server;
       return summoner;
@@ -345,14 +345,18 @@ async function getLeagues(summoners) {
 }
 
 async function getLeague(summoner) {
-  return Promise.all([ http_get(summoner.server, '/lol/league/v4/entries/by-summoner/' + summoner.id, 60), http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60).catch(() => []) ])
+  return Promise.all([
+      http_get(summoner.server, '/lol/league/v4/entries/by-summoner/' + summoner.id, 60),
+      process.env.RIOT_TFT_API_TOKEN ? getSummoner(summoner.server, summoner.name, process.env.RIOT_TFT_API_TOKEN).then(summoner => http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60, process.env.RIOT_TFT_API_TOKEN)) : Promise.resolve()
+    ])
     .then(leagues => leagues.reduce((a1, a2) => a1.concat(a2), []));
 }
 
 function parseLeague(league){
+  let tier = league.tier ?? league.ratedTier;
   return {
     mode: prettifyQueueType(league.queueType),
-    name: league.tier.substring(0, 1).toUpperCase() + league.tier.substring(1).toLowerCase()
+    name: tier.substring(0, 1).toUpperCase() + tier.substring(1).toLowerCase()
   };
 }
 

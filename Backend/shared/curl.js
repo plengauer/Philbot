@@ -271,6 +271,7 @@ async function request_cached(options, request) {
   // *) calling the same URL with different ttls will make the cache always prefer the smaller ttl. im sure there is something more optimal
   // => good enough
   if (options.cache && !options.method) throw new Error('Caching needs HTTP method explicitly set!');
+  if (options.cache && !options.headers) options.headers = {};
   if (options.cache && options.method == 'GET' && options.body) throw new Error('Cannot cache GET requests with body!'); // https://stackoverflow.com/questions/978061/http-get-with-request-body
   if (options.cache) {
     if (options.method == 'GET') {
@@ -342,7 +343,7 @@ function cachesize() {
 }
 
 function cachekey(options) {
-  return `${options.hostname}${options.path}`;
+  return `${options.hostname}${options.path}{` + Object.keys(options.headers).map(key => key + '=' + options.headers[key]).join(',') + '}';
 }
 
 
@@ -356,25 +357,4 @@ function counter_attributes(options) {
   };
 }
 
-
-function ratelimits_summary() {
-  let entries = [];
-  for (let bucket in rate_limits) {
-    let active = active_counts[bucket];
-    for (let entry of rate_limits[bucket]) {
-      entries.push({ bucket: bucket, max: entry.max, length: entry.length, count: entry.count, active: active, timestamp: entry.timestamp, artificial: entry.fake });
-    }
-  }
-  return entries;
-}
-
-function cache_summary() {
-  let entries = [];
-  for (let key in cache) {
-    let entry = cache[key];
-    entries.push({ key: key, value: entry.value, hits: entry.hits, timestamp: entry.timestamp, ttl: entry.ttl });
-  }
-  return entries;
-}
-
-module.exports = { request, request_full, request_simple, cache_summary, ratelimits_summary }
+module.exports = { request, request_full, request_simple }
