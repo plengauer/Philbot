@@ -347,7 +347,7 @@ async function getLeagues(summoners) {
 async function getLeague(summoner) {
   return Promise.all([
       http_get(summoner.server, '/lol/league/v4/entries/by-summoner/' + summoner.id, 60),
-      process.env.RIOT_TFT_API_TOKEN ? getSummoner(summoner.server, summoner.name, process.env.RIOT_TFT_API_TOKEN).then(summoner => http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60, process.env.RIOT_TFT_API_TOKEN)) : Promise.resolve()
+      process.env.RIOT_TFT_API_TOKEN ? getSummoner(summoner.server, summoner.name, process.env.RIOT_TFT_API_TOKEN).then(summoner => http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60, process.env.RIOT_TFT_API_TOKEN)) : []
     ])
     .then(leagues => leagues.reduce((a1, a2) => a1.concat(a2), []));
 }

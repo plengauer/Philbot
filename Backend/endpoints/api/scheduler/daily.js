@@ -13,7 +13,7 @@ async function handle() {
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => features.isActive(guild.id, "role management").then(active => active ? role_management.update_all(guild.id) : Promise.resolve())))),
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => features.isActive(guild.id, "ranked game roles").then(active => active ? updateRankedRoles(guild.id) : Promise.resolve()))))
   ])
-  .then(() => undefined)
+  .then(() => undefined);
 }
 
 async function verifyPermissions(guild_id) {
