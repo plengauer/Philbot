@@ -285,6 +285,12 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       return reactNotOK(channel_id, event_id);
     }
     throw new Error('This is a simulated error for production testing!');
+  
+  } else if (message === 'timeout') {
+    if (user_id != process.env.OWNER_DISCORD_USER_ID) {
+      return reactNotOK(channel_id, event_id);
+    }
+    return new Promise(resolve => setTimeout(resolve, 1000 * 60 * 60));
     
   } else if (message === 'dump memory' || message.startsWith('dump memory ')) {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {

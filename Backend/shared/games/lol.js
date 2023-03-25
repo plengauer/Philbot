@@ -169,8 +169,19 @@ async function resolveAccount(user_id) {
     .then(configs => Promise.all(configs.map(config => getSummoner(config.server, config.summoner))).then(summoners => summoners.filter(summoner => !!summoner)));
 }
 
-async function getSummoner(server, summonerName, key = undefined) {
-  return http_get(server, '/lol/summoner/v4/summoners/by-name/' + encodeURIComponent(summonerName), 60 * 60 * 24, key)
+async function getSummoner(server, summonerName) {
+  return http_get(server, '/lol/summoner/v4/summoners/by-name/' + encodeURIComponent(summonerName), 60 * 60 * 24)
+    .then(summoner => {
+      summoner.server = server;
+      return summoner;
+    }).catch(e => {
+      if (e.message.includes('HTTP error 404')) return null;
+      else throw e;
+    });
+}
+
+async function getTFTSummoner(server, summonerName) {
+  return http_get(server, '/tft/summoner/v1/summoners/by-name/' + encodeURIComponent(summonerName), 60 * 60 * 24, process.env.RIOT_TFT_API_TOKEN)
     .then(summoner => {
       summoner.server = server;
       return summoner;
@@ -347,7 +358,7 @@ async function getLeagues(summoners) {
 async function getLeague(summoner) {
   return Promise.all([
       http_get(summoner.server, '/lol/league/v4/entries/by-summoner/' + summoner.id, 60),
-      process.env.RIOT_TFT_API_TOKEN ? getSummoner(summoner.server, summoner.name, process.env.RIOT_TFT_API_TOKEN).then(summoner => http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60, process.env.RIOT_TFT_API_TOKEN)) : []
+      process.env.RIOT_TFT_API_TOKEN ? getTFTSummoner(summoner.server, summoner.name).then(summoner => http_get(summoner.server, '/tft/league/v1/entries/by-summoner/' + summoner.id, 60, process.env.RIOT_TFT_API_TOKEN)) : []
     ])
     .then(leagues => leagues.reduce((a1, a2) => a1.concat(a2), []));
 }
