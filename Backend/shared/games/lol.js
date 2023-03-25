@@ -115,7 +115,7 @@ async function getInformation(details, state, user_id) {
   
   let text = '**' + (players[mdp].champion ?? players[mdp].summoner) + '** is your most dangerous enemy' + (accuracy && accuracy > 0.6 ? ' (accuracy ' + Math.floor(accuracy * 100) + '%)' : '') + '.'
     + (premades.length > 0 ? ' Be aware that ' + premades.map(player => player.champion ?? player.summoner).join(' and ') + ' are most likely premade and coordinating.' : '')
-    + (wrongSpell && Math.random() > 0.9 ? ' Also, its **D** for **D**ash and **F** for **F**ucking ' + wrongSpell + '!' : '');
+    + (wrongSpell && Math.random() > 0.99 ? ' Also, its **D** for **D**ash and **F** for **F**ucking ' + wrongSpell + '!' : '');
   return {
     text: text,
     ttl: 60 * 60 * 3,
