@@ -68,6 +68,7 @@ async function parse_condition_element(parser, guild_id) {
         case 'disconnect': return parse_trigger_disconnect(parser);
         case 'reaction': return parse_trigger_reaction(parser, guild_id);
         case 'activity': return parse_trigger_activity(parser, guild_id);
+        case 'message': return parse_trigger_message(parser, guild_id);
         case 'not': return { type: parser_next(parser), inner: await parse_condition_element(parser, guild_id) };
         default: 
             if (parser.tokens[parser.cursor].startsWith('<') || parser.tokens[parser.cursor].startsWith('@')) return parse_trigger_role(parser, guild_id);
@@ -138,6 +139,11 @@ async function parse_trigger_activity(parser, guild_id) {
     return { type: 'activity', activity: parser_next(parser) };
 }
 
+async function parse_trigger_message(parser, guild_id) {
+    if (parser_next(parser) != 'message') throw new Error('Expected "message"');
+    return { type: 'message', message: parser_next(parser) };
+}
+
 async function parse_trigger_disconnect(parser) {
     if (parser_next(parser) != 'disconnect') throw new Error('Expected "disconnect"');
     return { type: 'disconnect' };
@@ -182,6 +188,10 @@ async function on_presence_update(guild_id, user_id, activity) {
     return on_event(guild_id, user_id, { type: 'activity', activity: activity });
 }
 
+async function on_message_create(guild_id, user_id, message) {
+    return on_event(guild_id, user_id, { type: 'message', message: message });
+}
+
 async function on_event(guild_id, user_id, event = undefined) {
     let me = await discord.me();
     if (me.id == user_id) return;
@@ -213,6 +223,7 @@ async function evaluate(condition, guild_id, user_id, event) {
         case 'connect': return (event && event.type == 'connect' && (!condition.channel_id || condition.channel_id == event.channel_id)) ? true : undefined;
         case 'disconnect': return (event && event.type == 'disconnect') ? true : undefined;
         case 'activity': return (event && event.type == 'activity' && event.activity == condition.activity) ? true : undefined;
+        case 'message': return (event && event.type == 'message' && event.message == condition.message) ? true : undefined;
         default: throw new Error('Unknown condition type: ' + condition.type + '!');
     }
 }
@@ -303,6 +314,7 @@ async function condition_to_string(condition, guild_id) {
         case 'connect': return 'connect ' + (condition.channel_id ? (await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == condition.channel_id)))?.name : 'any');
         case 'disconnect': return 'disconnect';
         case 'activity': return 'activity ' + condition.activity;
+        case 'message': return 'message ' + condition.message;
         default: throw new Error('Unknown condition type: ' + condition.type + '!');
     }
 }
@@ -314,6 +326,7 @@ module.exports = {
     on_guild_member_roles_update,
     on_presence_update,
     on_voice_state_update,
+    on_message_create,
     update_all,
     clean, to_string
 }
