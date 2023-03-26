@@ -63,6 +63,10 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
 
 async function handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned) {
   let promises = [];
+
+  if(guild_id && await features.isActive(guild_id, 'role management')) {
+    promises.push(role_management.on_message_create(guild_id, user_id, message));
+  }
   
   if (guild_id && message.includes('@') && message.split('').some((char, index) => char == '@' && (index == 0 || message.charAt(index-1) != '<'))) {
     let promise = discord.guild_members_list(guild_id)
