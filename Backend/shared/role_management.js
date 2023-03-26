@@ -318,8 +318,8 @@ async function condition_to_string(condition, guild_id) {
         case 'reaction': return 'reaction ' + condition.emoji + ' ' + discord.message_link_create(guild_id, condition.channel_id, condition.message_id);
         case 'connect': return 'connect ' + (condition.channel_id ? (await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == condition.channel_id)))?.name : 'any');
         case 'disconnect': return 'disconnect';
-        case 'activity': return 'activity ' + condition.activity;
-        case 'message': return 'message ' + condition.message;
+        case 'activity': return 'activity "' + condition.activity + '"';
+        case 'message': return 'message "' + condition.message + '"';
         default: throw new Error('Unknown condition type: ' + condition.type + '!');
     }
 }
