@@ -24,12 +24,17 @@ async function parse_rule(input, guild_id) {
 }
 
 function tokenize(input) {
-    const lookaheads = [ '<', '(', ')', ',' ];
+    const lookaheads = [ '<', '(', ')', ',', '"' ];
     let tokens = [];
+    let tokenizingString = false;
     let start = 0;
     for (let cursor = 0; cursor < input.length; cursor++) {
-        if (input.charAt(cursor) == ' ' || lookaheads.some(lookahead => input.charAt(cursor) == lookahead)) {
+        if ((!tokenizingString && (input.charAt(cursor) == ' ' || lookaheads.some(lookahead => input.charAt(cursor) == lookahead))) || (tokenizingString && input.charAt(cursor) == '"')) {
             tokens.push(input.substring(start, cursor));
+            if (input.charAt(cursor) == '"') {
+                cursor++;
+                tokenizingString = !tokenizingString;
+            }
             start = cursor;
         }
     }
