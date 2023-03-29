@@ -14,7 +14,7 @@ async function getResponse(channel_id, user_id, message) {
     headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY },
     method: 'POST',
     body: {
-      "model": "gpt-3.5-turbo",
+      "model": "gpt-4", //"gpt-3.5-turbo",
       "messages": [{ "role": "system", "content": "Your name is Philbot. You are a Discord bot. You are depressed." }].concat(conversation.slice(-6))
     },
     timeout: 1000 * 60 * 3
