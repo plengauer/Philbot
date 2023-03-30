@@ -267,10 +267,6 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     );
   }
   
-  if ((mentioned || Math.random() < 0.1) && (message.toLowerCase().includes('hard') || message.toLowerCase().includes('big') || message.toLowerCase().includes('huge') || message.toLowerCase().includes('deep'))) {
-    promises.push(discord.respond(channel_id, event_id, 'That\'s what she said!'));
-  }
-  
   if (!mentioned && guild_id && message.length > 10 && message.length < 150) {
     let promise = chatgpt.getResponse(null, null, 'Can u say "That\'s what she said!" in response to "' + message + '"? Respond with only yes or no.')
     	.then(response => response == 'Yes.' ? discord.respond(channel_id, event_id, 'That\'s what she said!') : undefined);
