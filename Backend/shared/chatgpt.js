@@ -5,8 +5,8 @@ const curl = require('./curl.js');
 async function getResponse(channel_id, user_id, message) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!process.env.OPENAI_API_KEY) return null;
-  const conversation_key = `conversation:channel:${channel_id}:user:${user_id}`;
-  let conversation = await memory.get(conversation_key, []);
+  const conversation_key = channel_id && user_id ? `conversation:channel:${channel_id}:user:${user_id}` : null;
+  let conversation = conversation_key ? await memory.get(conversation_key, []) : [];
   conversation.push({ role: 'user', content: message });
   let response = await curl.request({
     hostname: 'api.openai.com',
@@ -20,8 +20,8 @@ async function getResponse(channel_id, user_id, message) {
     timeout: 1000 * 60 * 3
   }).then(result => result.choices[0].message);
   conversation.push(response);
-  await memory.set(conversation_key, conversation, 60 * 60 * 24 * 7);
+  if (conversation_key) await memory.set(conversation_key, conversation, 60 * 60 * 24 * 7);
   return response.content;
 }
 
-module.exports = { getResponse }
+module.exports = { getResponse, getIsolatedResponse }
