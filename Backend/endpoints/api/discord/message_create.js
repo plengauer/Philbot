@@ -267,7 +267,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     );
   }
   
-  if (!mentioned && guild_id && message.length > 10 && message.length < 150) {
+  if (false && !mentioned && guild_id && message.length > 10 && message.length < 150) {
     let promise = chatgpt.getResponse(null, null, 'Can u say "That\'s what she said!" in response to "' + message + '"? Respond with only yes or no.')
         .then(response => response.toLowerCase())
         .then(response => response.endsWith('.') ? response.substring(0, response.length - 1) : response)
