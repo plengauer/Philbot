@@ -24,4 +24,4 @@ async function getResponse(channel_id, user_id, message) {
   return response.content;
 }
 
-module.exports = { getResponse, getIsolatedResponse }
+module.exports = { getResponse }
