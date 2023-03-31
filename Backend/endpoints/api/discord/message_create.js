@@ -171,81 +171,13 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(promise);
   }
   
-  /*
-  let tokens = message.split(' ')
-  tokens = tokens
-    .map(token => token.endsWith('.') || token.endsWith('!') || token.endsWith('?') ? token.substring(0, token.length - 1) : token)
-    .filter(token => token.length > 0);
-  for (let i = 0; i < tokens.length; i++) {
-    let value = parseFloat(tokens[i]);
-    if (isNaN(value)) continue;
-    let context = tokens.slice(i + 1, i + 3).map(token => token.toLowerCase());
-    let converted_value = NaN;
-    let converted_unit = 'metric';
-    if ((context.includes('degrees') && context.includes('f')) || context.includes('fahrenheit')) {
-      if (context.includes('c') || context.includes('celsius')) continue;
-      unit = 'fahrenheit';
-      converted_value = (value - 32) * 5/9;
-      converted_unit = 'c';
-    } else if (context.includes('foot') || context.includes('feet') || context.includes('ft')) {
-      unit = 'feet';
-      converted_value = value * 0.3048 * 100;
-      converted_unit = 'cm';
-    } else if (context.includes('inch') || context.includes('inches') || context[0] == 'in') {
-      unit = 'inches';
-      converted_value = value * 0.0254 * 100;
-      converted_unit = 'cm';
-    } else if (context.includes('yard') || context.includes('yards') || context.includes('yd') || context.includes('yds')) {
-      unit = 'yards';
-      converted_value = value * 0.9144;
-      converted_unit = 'm';
-    } else if (context.includes('mile') || context.includes('miles') || context.includes('mi')) {
-      unit = 'miles';
-      converted_value = value * 1609.344 / 1000;
-      converted_unit = 'km';
-    } else if (context.includes('pound') || context.includes('pounds') || context.includes('lb') || context.includes('lbs')) {
-      unit = 'pounds';
-      converted_value = value * 453.59237 / 1000;
-      converted_unit = 'kg';
-    } else if (context.includes('ounce') || context.includes('ounces') || context.includes('oz')) {
-      unit = 'ounces';
-      converted_value = value * 28.349523125;
-      converted_unit = 'g';
-    } else if (context.includes('stone') || context.includes('stones') || context.includes('st')) {
-      unit = 'stones';
-      converted_value = value * 6.35029318;
-      converted_unit = 'kg';
-    } else if (context.includes('gallon') || context.includes('gallons') || context.includes('gal') || context.includes('gals')) {
-      unit = 'gallons';
-      converted_value = value * 3.785411784;
-      converted_unit = 'l';
-    } else if (context.includes('pint') || context.includes('pints') || context.includes('pt')) {
-      unit = 'pints';
-      converted_value = value * 473.176473 / 1000;
-      converted_unit = 'l';
-    } else {
-      continue;
-    }
-    let promise = discord.respond(channel_id, event_id, `${value} ${unit} are ${converted_value} ${converted_unit} in metric units.`);
+  if (guild_id && !mentioned && message.length > 10 && message.length < 150) {
+    let promise = chatgpt.getResponse(null, null, `Is "${message}" a proper sentence and, assuming people enjoy innuendo jokes, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`, "gpt-3.5-turbo")
+      .then(response => response ?? '')
+      .then(response => response.toLowerCase())
+      .then(response => response.endsWith('.') ? response.substring(0, response.length - 1) : response)
+    	.then(response => (response == 'yes') ? discord.respond(channel_id, event_id, 'That\'s what she said!') : undefined);
     promises.push(promise);
-  }
-  */
-  
-  if (guild_id && !mentioned && user_id == process.env.OWNER_DISCORD_USER_ID && false) { // this is super spammy because there is literally an entry for everything, even for "hello"
-    let tokens = message.split(' ');
-    let needles = [];
-    for (let i = 0; i < tokens.length; i++) {
-      for (let j = i + 1; j <= Math.min(i + 5, tokens.length); j++) {
-        needles.push(tokens.slice(i, j).join(' '));
-      }
-    }
-    promises.push(Promise.all(needles.map(needle => urban_dictionary.lookup(needle)))
-        .then(results => results.filter(result => !!result))
-        .then(results => Promise.all(results.map(result => memory.get(`mute:auto:urban_dictionary:guild:${guild_id}:channel:${channel_id}:term:${result.word}`, false).then(muted => muted ? null : result))))
-        .then(results => results.filter(result => !!result))
-        .then(results => Promise.all(results.map(result => memory.set(`mute:auto:urban_dictionary:guild:${guild_id}:channel:${channel_id}:term:${result.word}`, true, 60 * 60 * 24 * 31).then(() => result))))
-        .then(results => Promise.all(results.map(result => discord.respond(channel_id, event_id, `${result.word}: ${result.definition}`))))
-      );
   }
   
   if (guild_id && !mentioned) {
@@ -265,14 +197,6 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
           .map(value => discord.respond(channel_id, event_id, value))
         ))
     );
-  }
-  
-  if (false && !mentioned && guild_id && message.length > 10 && message.length < 150) {
-    let promise = chatgpt.getResponse(null, null, 'Can u say "That\'s what she said!" in response to "' + message + '"? Respond with only yes or no.')
-        .then(response => response.toLowerCase())
-        .then(response => response.endsWith('.') ? response.substring(0, response.length - 1) : response)
-    	.then(response => response == 'yes' ? discord.respond(channel_id, event_id, 'That\'s what she said!') : undefined);
-    promises.push(promise);
   }
   
   return Promise.all(promises);

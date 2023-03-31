@@ -2,10 +2,10 @@ const process = require('process');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
 
-async function getResponse(channel_id, user_id, message) {
+async function getResponse(channel_id, user_id, message, model = "gpt-4") {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!process.env.OPENAI_API_KEY) return null;
-  const conversation_key = channel_id && user_id ? `conversation:channel:${channel_id}:user:${user_id}` : null;
+  const conversation_key = (channel_id && user_id) ? `conversation:channel:${channel_id}:user:${user_id}` : null;
   let conversation = conversation_key ? await memory.get(conversation_key, []) : [];
   conversation.push({ role: 'user', content: message });
   let response = await curl.request({
@@ -14,7 +14,7 @@ async function getResponse(channel_id, user_id, message) {
     headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY },
     method: 'POST',
     body: {
-      "model": "gpt-4", //"gpt-3.5-turbo",
+      "model": model,
       "messages": [{ "role": "system", "content": "Your name is Philbot. You are a Discord bot. You are depressed." }].concat(conversation.slice(-6))
     },
     timeout: 1000 * 60 * 3
