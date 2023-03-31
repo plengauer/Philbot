@@ -234,8 +234,8 @@ async function request_rate_limited_v2(options, request) {
       let next = response.headers['retry-after'] ? parseInt(response.headers['retry-after']) : 1;
       rate_limits[options.hostname].filter(rl => rl.count + active_counts[options.hostname] >= rl.max).forEach(rl => rl.next = next);
       rate_limits[options.hostname + cpath].filter(rl => rl.count + active_counts[options.hostname + cpath] >= rl.max).forEach(rl => rl.next = next);
-      console.error(`HTTP rate limit hit (${options.hostname}): ` + rate_limits[options.hostname].map(rl => `${rl.count}/${rl.max} (${rl.length},${rl.next})`).join(',')); 
-      console.error(`HTTP rate limit hit (${options.hostname}${cpath}): ` + rate_limits[options.hostname + cpath].map(rl => `${rl.count}/${rl.max} (${rl.length},${rl.next})`).join(',')); 
+      console.error(`HTTP rate limit hit (${options.hostname}): ` + rate_limits[options.hostname].map(rl => `${rl.count}/${rl.max} (${rl.length},${rl.next})`).join(','));
+      console.error(`HTTP rate limit hit (${options.hostname}${cpath}): ` + rate_limits[options.hostname + cpath].map(rl => `${rl.count}/${rl.max} (${rl.length},${rl.next})`).join(','));
       continue;
     }
     
