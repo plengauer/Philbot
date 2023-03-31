@@ -57,7 +57,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
           .catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) :
         Promise.resolve(),
       handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
-        guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_create(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
+      guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_create(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
     ]).then(results => results[0]);
 }
 
