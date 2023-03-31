@@ -343,7 +343,7 @@ function cachesize() {
 }
 
 function cachekey(options) {
-  return `${options.hostname}${options.path}{` + Object.keys(options.headers).sort().map(key => key + '=' + options.headers[key]).join(',') + '}';
+  return `${options.hostname}${options.path}`;
 }
 
 
