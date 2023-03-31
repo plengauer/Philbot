@@ -176,7 +176,10 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
       .then(response => response ?? '')
       .then(response => response.toLowerCase())
       .then(response => response.endsWith('.') ? response.substring(0, response.length - 1) : response)
-      .then(response => (response == 'yes') ? discord.dms(process.env.OWNER_DISCORD_USER_ID, `"${message}" => "That's what she said!"`).then(() => 'no') : response)
+      .then(response => {
+        console.log(`DEBUG INNUENDO "${message}" => ${response}`)
+        return 'no';
+      })
     	.then(response => (response == 'yes') ? discord.respond(channel_id, event_id, 'That\'s what she said!') : undefined);
     promises.push(promise);
   }
