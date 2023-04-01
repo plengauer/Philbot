@@ -153,10 +153,10 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(promise);
   }
   
-  if ((mentioned || Math.random() < 0.3) && message.toLowerCase().includes('joke') && (message.toLowerCase().includes('wow') || message.toLowerCase().includes('world of warcraft'))) {
+  if ((mentioned || Math.random() < 0.1) && message.toLowerCase().includes('joke') && (message.toLowerCase().includes('wow') || message.toLowerCase().includes('world of warcraft'))) {
     let promise = wow.getJoke().then(result => discord.respond(channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result));
     promises.push(promise);
-  } else if ((mentioned || Math.random() < 0.3) && message.toLowerCase().includes('joke')) {
+  } else if ((mentioned || Math.random() < 0.1) && message.toLowerCase().includes('joke')) {
     let promise = curl.request({ hostname: 'icanhazdadjoke.com', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result));
     promises.push(promise);
   }
@@ -171,14 +171,14 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(promise);
   }
   
-  if (guild_id && !mentioned && message.length > 10 && message.length < 150) {
-    let promise = chatgpt.getResponse(null, null, `Is "${message}" a proper sentence and, assuming people enjoy innuendo jokes, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
+  if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
+    let promise = chatgpt.getResponse(null, null, `Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo jokes, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
       .then(response => response ?? '')
       .then(response => response.toLowerCase())
       .then(response => response.endsWith('.') ? response.substring(0, response.length - 1) : response)
       .then(response => {
         console.log(`DEBUG INNUENDO v2 "${message}" => ${response}`)
-        return 'no';
+        return response;
       })
     	.then(response => (response == 'yes') ? discord.respond(channel_id, event_id, 'That\'s what she said!') : undefined);
     promises.push(promise);
