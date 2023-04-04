@@ -171,7 +171,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(promise);
   }
   
-  if (!mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.canGetResponse()) {
+  if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.canGetResponse()) {
     let promise = chatgpt.getResponse(null, null, `Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo jokes, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
       .then(response => response ?? '')
       .then(response => response.toLowerCase())
