@@ -21,6 +21,10 @@ function getConfigHint() {
 }
 
 async function getInformation(details, state, user_id) {
+  return Promise.any(getInformationClassic(details, state, user_id), getInformationTFT(details, state, user_id));
+}
+
+async function getInformationClassic(details, state, user_id) {
   // estimation about calls 1+1+5+5*(1+1+100) = 517
   if (!process.env.RIOT_API_TOKEN) return null;
 
@@ -297,6 +301,15 @@ function median(values) {
   let half = Math.floor(values.length / 2);
   if (values.length % 2 == 0) return (values[half-1] + values[half]) / 2;
   else return values[half];
+}
+
+async function getInformationTFT(details, state, user_id) {
+  if (!process.env.RIOT_TFT_API_TOKEN) return null;
+
+  let summoners = await resolveAccount(user_id).then(summoners => Promise.all(summoners.map(summoner => getTFTSummoner(summoner.server, summoner.name))));
+  if (summoners.length == 0) return getConfigHint();
+  
+  return null; // TODO
 }
 
 const ranks_traditional = [
