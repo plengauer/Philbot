@@ -35,7 +35,7 @@ async function getResponse(channel_id, user_id, message, model = "gpt-4") {
       method: 'POST',
       body: {
         "model": model,
-        "messages": [{ "role": "system", "content": "My name is Philbot. I am a Discord bot. I am depressed." }].concat(conversation.slice(-6))
+        "messages": [{ "role": "system", "content": "My name is Philbot. I am a Discord bot. I am depressed." }].concat(conversation.slice(-2 * 2))
       },
       timeout: 1000 * 60 * 3
     });
