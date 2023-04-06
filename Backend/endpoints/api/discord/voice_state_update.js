@@ -12,7 +12,8 @@ async function handle(payload) {
     payload.channel_id ? playGreeting(payload.guild_id, payload.channel_id, payload.user_id) : Promise.resolve(),
     payload.channel_id ? checkAndStartEvents(payload.guild_id, payload.channel_id) : Promise.resolve(),
     discord.me().then(me => me.id == payload.user_id ? player.on_voice_state_update(payload.guild_id, payload.channel_id, payload.session_id) : Promise.resolve()),
-    features.isActive(payload.guild_id, 'role management').then(active => active ? role_management.on_voice_state_update(payload.guild_id, payload.user_id, payload.channel_id) : Promise.resolve())
+    features.isActive(payload.guild_id, 'role management').then(active => active ? role_management.on_voice_state_update(payload.guild_id, payload.user_id, payload.channel_id) : Promise.resolve()),
+    payload.channel_id ? guessActivities(payload.guild_id, payload.channel_id, payload.user_id) : Promise.resolve()
   ]).then(() => undefined);
 }
 
@@ -40,6 +41,37 @@ async function playGreeting(guild_id, channel_id, user_id) {
   } else {
     return Promise.resolve();
   }
+}
+
+async function guessActivities(guild_id, channel_id, user_id) {
+  if ((await memory.get(`activities:current:user:${user_id}`, [])).length > 0) return;
+  let user_ids = [];
+  let all_activities = [];
+  for (let user_id of await discord.guild_members_list(guild_id).then(members => members.map(member => member.user.id))) {
+    let voice_state = await memory.get(`voice_channel:user:${user_id}`, null);
+    if (!voice_state) continue;
+    if (voice_state.guild_id != guild_id || voice_state.channel_id != channel_id) continue;
+    let activities = await memory.get(`activities:current:user:${user_id}`, []);
+    if (activities.length == 0) continue;
+    all_activities = all_activities.concat(activities);
+  }
+  let guessed = [];
+  for (let activity of Array.from(new Set(all_activities))) {
+    if (all_activities.filter(a => a == activity).length > all_activities.length / 2) guessed.push(activity);
+  }
+  if (guessed.length == 0) return;
+  return Promise.all(
+    memory.get(`activities:recent:user:${user_id}`, []).then(global_activities => 
+      guessed.some(activity => !global_activities.includes(activity)) ?
+        memory.set(`activities:recent:user:${user_id}`, global_activities.concat(guessed.filter(activity => !global_activities.includes(activity))), 60 * 60 * 24 * 31) :
+        Promise.resolve()
+    ),
+    memory.get(`activities:all:user:${user_id}`, []).then(global_activities => 
+      guessed.some(activity => !global_activities.includes(activity)) ?
+        memory.set(`activities:all:user:${user_id}`, global_activities.concat(guessed.filter(activity => !global_activities.includes(activity))), 60 * 60 * 24 * 31) :
+        Promise.resolve()
+    )
+  );
 }
 
 module.exports = { handle }
