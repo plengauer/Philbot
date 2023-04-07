@@ -21,7 +21,7 @@ function getConfigHint() {
 }
 
 async function getInformation(details, state, user_id) {
-  return Promise.any(getInformationClassic(details, state, user_id), getInformationTFT(details, state, user_id));
+  return Promise.any([ getInformationClassic(details, state, user_id), getInformationTFT(details, state, user_id) ]);
 }
 
 async function getInformationClassic(details, state, user_id) {
