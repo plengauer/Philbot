@@ -172,15 +172,15 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   }
   
   if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.canGetResponse()) {
-    let promise = chatgpt.getResponse(null, null, `Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo jokes, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
+    let promise = chatgpt.getResponse(null, null, `Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
       .then(response => response ?? '')
       .then(response => response.toLowerCase())
       .then(response => response.endsWith('.') ? response.substring(0, response.length - 1) : response)
       .then(response => {
-        console.log(`DEBUG INNUENDO v3 "${message}" => ${response}`)
+        console.log(`DEBUG INNUENDO v4 "${message}" => ${response}`)
         return response;
       })
-    	.then(response => (response == 'yes') ? discord.respond(channel_id, event_id, 'That\'s what she said!') : undefined);
+    	.then(response => (response == 'yes') ? discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`) : undefined);
     promises.push(promise);
   }
   
