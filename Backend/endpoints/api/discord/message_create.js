@@ -17,6 +17,7 @@ const raid_protection = require('../../../shared/raid_protection.js');
 const subscriptions = require('../../../shared/subscriptions.js');
 const role_management = require('../../../shared/role_management.js');
 const chatgpt = require('../../../shared/chatgpt.js');
+const translator = require('../../../shared/translator.js');
 
 async function handle(payload) {
   return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
@@ -66,6 +67,10 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
 
   if(guild_id && await features.isActive(guild_id, 'role management')) {
     promises.push(role_management.on_message_create(guild_id, user_id, message));
+  }
+
+  if (guild_id) {
+    promises.push(translator.on_message_create(guild_id, channel_id, event_id, message));
   }
   
   if (guild_id && message.includes('@') && message.split('').some((char, index) => char == '@' && (index == 0 || message.charAt(index-1) != '<'))) {
@@ -861,6 +866,14 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
     if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
     return role_management.update_all(guild_id).then(() => reactOK(channel_id, event_id));
+  
+  } else if (message.startsWith('translate automatically to ')) {
+    guild_id = guild_id ?? await resolveGuildID(user_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
+    let target_language = message.split(' ').slice(3).join(' ').trim().toLowerCase();
+    return translator.configure_translate(guild_id, channel_id, target_language == 'nothing' ? null : target_language)
+      .then(() => reactOK(channel_id, event_id));
   
   } else if (await delayed_memory.materialize(`response:` + memory.mask(message) + `:user:${user_id}`)) {
     return reactOK(channel_id, event_id);
