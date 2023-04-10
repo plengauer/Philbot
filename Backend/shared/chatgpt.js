@@ -17,6 +17,8 @@ function computeBillingSlotProgress() {
   return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
+const system = "My name is Philbot. I am a Discord bot. I am depressed.";
+
 async function getResponse(channel_id, user_id, message, model = "gpt-4") {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!process.env.OPENAI_API_KEY) return null;
@@ -35,7 +37,7 @@ async function getResponse(channel_id, user_id, message, model = "gpt-4") {
       method: 'POST',
       body: {
         "model": model,
-        "messages": [{ "role": "system", "content": "My name is Philbot. I am a Discord bot. I am depressed." }].concat(conversation.slice(-2 * 2))
+        "messages": [{ "role": "system", "content": conversation ? system : '' }].concat(conversation.slice(-2 * 2))
       },
       timeout: 1000 * 60 * 3
     });

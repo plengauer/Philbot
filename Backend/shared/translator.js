@@ -10,8 +10,10 @@ async function configure_translate(guild_id, channel_id, language) {
 async function on_message_create(guild_id, channel_id, message_id, content) {
   let target_language = await memory.get(memorykey(guild_id, channel_id), null);
   if (!target_language) return;
+  if (!chatgpt.canGetResponse()) return;
   let backup = 'NULL';
-  let translation = await chatgpt.getResponse(null, null, `Translate "${content}" to ${target_language}. If the text is already in that language, respond with only "${backup}".`, "gpt-3.5-turbo");
+  let prompt = `Translate "${content}" to ${target_language}. Respond only with the translation. If the text is already in that language or untranslatable, respond with only "${backup}"`;
+  let translation = await chatgpt.getResponse(null, null, prompt);
   if (translation == backup || translation.startsWith(backup) || translation == `"${backup}"` || translation.startsWith(`"${backup}"`)) return;
   target_language = target_language.substring(0, 1).toUpperCase() + target_language.substring(1).toLowerCase();
   return discord.respond(channel_id, message_id, `${target_language}: ${translation}`);
