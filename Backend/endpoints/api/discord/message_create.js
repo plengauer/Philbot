@@ -69,7 +69,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(role_management.on_message_create(guild_id, user_id, message));
   }
 
-  if (guild_id) {
+  if (guild_id && !mentioned) {
     promises.push(translator.on_message_create(guild_id, channel_id, event_id, message));
   }
   
