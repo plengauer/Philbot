@@ -846,14 +846,14 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
   } else if (message == 'automatic roles list' || message == 'automatic roles list rules') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set roles');
     if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
     return role_management.to_string(guild_id).then(string => discord.respond(channel_id, event_id, string));
 
   } else if (message.startsWith('automatic roles create rule ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set roles');
     if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
     message = message.split(' ').slice(4).join(' ');
     return role_management.add_new_rule(guild_id, message)
@@ -863,14 +863,14 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
   } else if (message == 'automatic roles update') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set roles');
     if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
     return role_management.update_all(guild_id).then(() => reactOK(channel_id, event_id));
   
   } else if (message.startsWith('translate automatically to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set role');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'enable auto translation');
     let target_language = message.split(' ').slice(3).join(' ').trim().toLowerCase();
     return translator.configure_translate(guild_id, channel_id, target_language == 'nothing' ? null : target_language)
       .then(() => reactOK(channel_id, event_id));
