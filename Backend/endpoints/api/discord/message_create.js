@@ -181,11 +181,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
       .then(response => response ?? '')
       .then(response => response.toLowerCase())
       .then(response => response.endsWith('.') ? response.substring(0, response.length - 1) : response)
-      .then(response => {
-        console.log(`DEBUG INNUENDO v4 "${message}" => ${response}`)
-        return response;
-      })
-    	.then(response => (response == 'yes') ? discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`) : undefined);
+      .then(response => (response == 'yes') ? discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`) : undefined);
     promises.push(promise);
   }
   

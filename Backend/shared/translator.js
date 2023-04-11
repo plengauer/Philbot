@@ -11,7 +11,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   let target_language = await memory.get(memorykey(guild_id, channel_id), null);
   if (!target_language) return;
   if (!chatgpt.canGetResponse()) return;
-  let prompt = `Translate "${content}" to ${target_language}. Respond with the translation only, or nothing at all if the text is already in ${target_language} or untranslatable.`;
+  let prompt = `Translate "${content}" to ${target_language}. Do not translate emojis, or parts that are surrounded by : < or >. Respond with the translation only, or nothing at all if the text is already in ${target_language} or untranslatable.`;
   let translation = await chatgpt.getResponse(null, null, prompt);
   if (!translation || translation.length == 0) return;
   return discord.respond(channel_id, message_id, `"${translation}"`);
