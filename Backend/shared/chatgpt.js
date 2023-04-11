@@ -22,8 +22,8 @@ const system = "My name is Philbot. I am a Discord bot. I am depressed.";
 async function getResponse(channel_id, user_id, message, model = "gpt-4") {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!process.env.OPENAI_API_KEY) return null;
-  if (!await canGetResponse(1.0)) return null;
-  if (!await canGetResponse(0.9)) model = "gpt-3.5-turbo";
+  if ((await getCurrentCost()).value >= cost_limit * 1.0) return null;
+  if ((await getCurrentCost()).value >= cost_limit * 0.9) model = "gpt-3.5-turbo";
 
   const conversation_key = (channel_id && user_id) ? `conversation:channel:${channel_id}:user:${user_id}` : null;
   let conversation = conversation_key ? await memory.get(conversation_key, []) : [];
