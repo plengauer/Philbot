@@ -11,10 +11,11 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   let target_language = await memory.get(memorykey(guild_id, channel_id), null);
   if (!target_language) return;
   if (!chatgpt.canGetResponse()) return;
-  let prompt = `Translate "${content}" to ${target_language}. Do not translate emojis, or parts that are surrounded by : < or >. Respond with the translation only, or nothing at all if the text is already in ${target_language} or untranslatable.`;
-  let translation = await chatgpt.getResponse(null, null, prompt);
+  let source_language = await chatgpt.getResponse(null, null, `What language is "${content}"? Respond with the language only.`);
+  if (!source_language || source_language.toLowerCase().trim() == target_language.toLowerCase().trim()) return;
+  let translation = await chatgpt.getResponse(null, null, `Translate "${content}" to ${target_language}. Do not translate emojis, or parts that are surrounded by : < or >. Respond with the translation only, or nothing at all if the text is already in ${target_language} or untranslatable.`);
   if (!translation || translation.length == 0 || translation.trim() == content.trim()) return;
-  return discord.respond(channel_id, message_id, `"${translation}"`);
+  return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`);
 }
 
 function memorykey(guild_id, channel_id) {
