@@ -10,7 +10,7 @@ async function configure_translate(guild_id, channel_id, language) {
 async function on_message_create(guild_id, channel_id, message_id, content) {
   let target_language = await memory.get(memorykey(guild_id, channel_id), null);
   if (!target_language) return;
-  if (!chatgpt.canGetResponse()) return;
+  if (!await chatgpt.canGetResponse()) return;
   
   if (true) {
     let is_target_language = await chatgpt.getResponse(null, null, `Is "${content}" ${target_language}? Respond only with yes or no.`, "gpt-3.5-turbo");
