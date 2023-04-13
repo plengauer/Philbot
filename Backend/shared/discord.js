@@ -207,8 +207,8 @@ async function message_retrieve(channel_id, message_id) {
   return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'GET'); 
 }
 
-async function respond(channel_id, event_id, content, tts = false) {
-  return post(channel_id, content, tts, event_id);
+async function respond(channel_id, event_id, content, tts = false, notify = true) {
+  return post(channel_id, content, tts, event_id, notify);
 }
 
 async function dms(user_id, content) {
@@ -229,22 +229,23 @@ async function trigger_typing_indicator(channel_id) {
   return HTTP(`/channels/${channel_id}/typing`, 'POST');
 }
 
-async function post(channel_id, content, tts = false, referenced_message_id = undefined) {
+async function post(channel_id, content, tts = false, referenced_message_id = undefined, notify = true) {
   let limit = 2000;
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
-    await post_paged(channel_id, content.substring(0, index).trim(), tts, referenced_message_id);
+    await post_paged(channel_id, content.substring(0, index).trim(), tts, referenced_message_id, notify);
     content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
   }
-  return post_paged(channel_id, content, tts, referenced_message_id);
+  return post_paged(channel_id, content, tts, referenced_message_id, notify);
 }
 
-async function post_paged(channel_id, content, tts, referenced_message_id) {
+async function post_paged(channel_id, content, tts, referenced_message_id, notify) {
   return HTTP(`/channels/${channel_id}/messages`, 'POST', {
       content: content,
       tts: tts,
       message_reference: referenced_message_id ? { message_id: referenced_message_id } : undefined,
-      flags: (content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0
+      flags: ((content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0)
+        | (notify ? 0 : (1 << 12 /* SUPPRESS_NOTIFICATIONS */))
     });
 }
 

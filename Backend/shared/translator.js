@@ -40,7 +40,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   if (!translation || translation.length == 0) return;
   if (translation.trim() == content.trim()) throw new Error();
   
-  return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`);
+  return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`, false, false);
 }
 
 function memorykey(guild_id, channel_id) {
