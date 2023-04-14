@@ -8,6 +8,7 @@ async function configure_translate(guild_id, channel_id, language) {
 }
 
 async function on_message_create(guild_id, channel_id, message_id, content) {
+  if (content.trim() == 0) return;
   let target_language = await memory.get(memorykey(guild_id, channel_id), null);
   if (!target_language) return;
   if (!await chatgpt.canGetResponse()) return;
