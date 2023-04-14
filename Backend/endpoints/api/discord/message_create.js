@@ -872,6 +872,15 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     return translator.configure_translate(guild_id, channel_id, target_language == 'nothing' ? null : target_language)
       .then(() => reactOK(channel_id, event_id));
   
+  } else if (message.startsWith('translate to ')) {
+    message = message.split(' ').slice(2).join(' ');
+    let split = message.indexOf(':');
+    if (!split || split < 0) return reactNotOK(channel_id, event_id);
+    let language = message.substring(0, split).trim();
+    let text = message.substring(split + 1).trim();
+    return chatgpt.getResponse(null, null, `Translate "${text}" to ${language}.`)
+      .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id));
+  
   } else if (await delayed_memory.materialize(`response:` + memory.mask(message) + `:user:${user_id}`)) {
     return reactOK(channel_id, event_id);
 
