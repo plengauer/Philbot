@@ -1,8 +1,14 @@
 const process = require('process');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
+const opentelemetry = require('@opentelemetry/api');
 
 const cost_limit = parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
+
+const meter = opentelemetry.metrics.getMeter('openai');
+const cost_absolute_counter = meter.createHistogram('openai.cost.absolute');
+const cost_relative_counter = meter.createHistogram('openai.cost.relative');
+const cost_progress_counter = meter.createHistogram('openai.cost.progress');
 
 async function canGetResponse(threshold = 0.8) {
   return (await getCurrentCost()).value / cost_limit * threshold < computeBillingSlotProgress();
@@ -50,6 +56,10 @@ async function getResponse(channel_id, user_id, message, model = "gpt-4") {
   cost.value += computeCost(model, response.usage.prompt_tokens, response.usage.completion_tokens);
   cost.timestamp = Date.now();
   await memory.set(costkey(), cost);
+
+  cost_absolute_counter.record(cost.value, {});
+  cost_relative_counter.record(cost.value / cost_limit, {});
+  cost_progress_counter.record(cost.value / (cost_limit * computeBillingSlotProgress()), {});
 
   return output.content;
 }

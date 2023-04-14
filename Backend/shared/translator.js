@@ -1,6 +1,10 @@
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const chatgpt = require('./chatgpt.js');
+const opentelemetry = require('@opentelemetry/api');
+
+const meter = opentelemetry.metrics.getMeter('translator');
+const translations_counter = meter.createCounter('translations');
 
 async function configure_translate(guild_id, channel_id, language) {
   let key = memorykey(guild_id, channel_id);
@@ -42,6 +46,8 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   if (!translation || translation.length == 0) return;
   if (translation.trim() == content.trim()) throw new Error();
   
+  translations_counter.add(1, { 'language.target': target_language, 'language.source': source_language });
+
   return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`, false, false);
 }
 
