@@ -46,7 +46,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   if (!translation || translation.length == 0) return;
   if (translation.trim() == content.trim()) throw new Error();
   
-  translations_counter.add(1, { 'language.target': target_language, 'language.source': source_language });
+  translations_counter.add(1, { 'language.target': target_language.substring(0, 1).toUpperCase() + target_language.substring(1).toLowerCase(), 'language.source': source_language });
 
   return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`, false, false);
 }
