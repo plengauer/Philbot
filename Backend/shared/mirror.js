@@ -83,7 +83,7 @@ async function forward_message(guild_id, channel_id, user_id, content, attachmen
     content = content.replace(content.substring(start, end), '@' + mentioned_role);
   }
 
-  return discord.post(mirror_info.channel_ids[channel_id], `**${author}**: ${content}` + (attachments ? ('\n**Attachments:**: ' + attachments.map(attachment => attachment.url).join(', ')) : ''), undefined, true);
+  return discord.post(mirror_info.channel_ids[channel_id], `**${author}**: ${content}` + ((attachments && attachments.length > 0) ? ('\n**Attachments:**: ' + attachments.map(attachment => attachment.url).join(', ')) : ''), undefined, true);
 }
 
 function member2string(member) {
