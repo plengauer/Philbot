@@ -48,7 +48,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   
   translations_counter.add(1, { 'language.target': target_language.substring(0, 1).toUpperCase() + target_language.substring(1).toLowerCase(), 'language.source': source_language });
 
-  return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`, false, false);
+  return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`, false);
 }
 
 function memorykey(guild_id, channel_id) {

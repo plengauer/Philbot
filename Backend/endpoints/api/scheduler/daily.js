@@ -4,6 +4,7 @@ const permissions = require('../../../shared/permissions.js');
 const features = require('../../../shared/features.js');
 const role_management = require('../../../shared/role_management.js');
 const games = require('../../../shared/games/games.js');
+const mirror = require('../../../shared/mirror.js');
 
 async function handle() {
   return Promise.all([
@@ -11,7 +12,8 @@ async function handle() {
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => verifyPermissions(guild.id)))),
     sendBirthdayGreetings(),
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => features.isActive(guild.id, "role management").then(active => active ? role_management.update_all(guild.id) : Promise.resolve())))),
-    discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => features.isActive(guild.id, "ranked game roles").then(active => active ? updateRankedRoles(guild.id) : Promise.resolve()))))
+    discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => features.isActive(guild.id, "ranked game roles").then(active => active ? updateRankedRoles(guild.id) : Promise.resolve())))),
+    mirror.clean(),
   ])
   .then(() => undefined);
 }

@@ -46,6 +46,14 @@ async function guild_retrieve(guild_id) {
   return HTTP(`/guilds/${guild_id}`, 'GET');
 }
 
+async function guild_create(name) {
+  return HTTP(`/guilds`, 'POST', { name: name });
+}
+
+async function guild_destroy(guild_id) {
+  return HTTP(`/guilds/${guild_id}`, 'DELETE');
+}
+
 async function guilds_list() {
   return HTTP(`/users/@me/guilds`, 'GET');
 }
@@ -131,6 +139,10 @@ async function guild_role_modify(guild_id, role_id, name, permissions = undefine
     });
 }
 
+async function guild_role_delete(guild_id, role_id) {
+  return HTTP(`/guilds/${guild_id}/roles/${role_id}`, 'DELETE');
+}
+
 async function guild_channels_list(guild_id) {
   return HTTP(`/guilds/${guild_id}/channels`, 'GET');
 }
@@ -141,6 +153,14 @@ async function guild_channel_create(guild_id, name, category, type) {
       parent_id: category,
       type: type,
     });
+}
+
+async function guild_channel_delete(guild_id, channel_id) {
+  return HTTP(`/channels/${channel_id}`, 'DELETE');
+}
+
+async function guild_channel_rename(guild_id, channel_id, name) {
+  return HTTP(`/channels/${channel_id}`, 'PATCH', { name: name });
 }
 
 async function guild_channel_permission_overwrite(channel_id, role_id, allow, deny) {
@@ -199,6 +219,10 @@ async function scheduledevent_modify(guild_id, event_id, event) {
   return HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}`, 'PATCH', event); 
 }
 
+async function invite_create(channel_id) {
+  return HTTP(`/channels/${channel_id}/invites`, 'POST', { max_age: 0, max_uses: 1 });
+}
+
 async function invite_delete(invite_code)  {
   return HTTP(`/invites/${invite_code}`, 'DELETE');
 }
@@ -207,8 +231,8 @@ async function message_retrieve(channel_id, message_id) {
   return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'GET'); 
 }
 
-async function respond(channel_id, event_id, content, tts = false, notify = true) {
-  return post(channel_id, content, tts, event_id, notify);
+async function respond(channel_id, event_id, content, notify = true) {
+  return post(channel_id, content, event_id, notify);
 }
 
 async function dms(user_id, content) {
@@ -229,23 +253,23 @@ async function trigger_typing_indicator(channel_id) {
   return HTTP(`/channels/${channel_id}/typing`, 'POST');
 }
 
-async function post(channel_id, content, tts = false, referenced_message_id = undefined, notify = true) {
+async function post(channel_id, content, referenced_message_id = undefined, notify = true, attachments = []) {
   let limit = 2000;
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
-    await post_paged(channel_id, content.substring(0, index).trim(), tts, referenced_message_id, notify);
+    await post_paged(channel_id, content.substring(0, index).trim(), referenced_message_id, notify, []);
     content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
   }
-  return post_paged(channel_id, content, tts, referenced_message_id, notify);
+  return post_paged(channel_id, content, referenced_message_id, notify, attachments);
 }
 
-async function post_paged(channel_id, content, tts, referenced_message_id, notify) {
+async function post_paged(channel_id, content, referenced_message_id, notify, attachments) {
   return HTTP(`/channels/${channel_id}/messages`, 'POST', {
       content: content,
-      tts: tts,
       message_reference: referenced_message_id ? { message_id: referenced_message_id } : undefined,
       flags: ((content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0)
-        | (notify ? 0 : (1 << 12 /* SUPPRESS_NOTIFICATIONS */))
+        | (notify ? 0 : (1 << 12 /* SUPPRESS_NOTIFICATIONS */)),
+      // TODO attachments
     });
 }
 
@@ -338,6 +362,8 @@ module.exports = {
 
   guilds_list,
   guild_retrieve,
+  guild_create,
+  guild_destroy,
   
   guild_members_list,
   guild_member_retrieve,
@@ -352,9 +378,12 @@ module.exports = {
   guild_role_retrieve,
   guild_role_create,
   guild_role_modify,
+  guild_role_delete,
   
   guild_channels_list,
   guild_channel_create,
+  guild_channel_delete,
+  guild_channel_rename,
   guild_channel_permission_overwrite,
 
   guild_invites_list,
@@ -368,6 +397,7 @@ module.exports = {
   scheduledevent_create,
   scheduledevent_modify,
 
+  invite_create,
   invite_delete,
   
   message_retrieve,

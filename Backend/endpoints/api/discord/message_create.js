@@ -18,13 +18,16 @@ const subscriptions = require('../../../shared/subscriptions.js');
 const role_management = require('../../../shared/role_management.js');
 const chatgpt = require('../../../shared/chatgpt.js');
 const translator = require('../../../shared/translator.js');
+const mirror = require('../../../shared/mirror.js');
 
 async function handle(payload) {
-  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id)
+  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id, payload.attachments)
     .then(() => undefined);
 }
 
-async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id) {
+async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, attachments) {
+  await mirror.on_message_create(guild_id, channel_id, user_id, message, attachments);
+
   message = message.trim();
   
   let mentioned = false;
@@ -59,7 +62,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
         Promise.resolve(),
       handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
       guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_create(guild_id, user_id) : Promise.resolve()) : Promise.resolve()
-    ]).then(results => results[0]);
+    ]);
 }
 
 async function handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned) {
@@ -880,6 +883,13 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let text = message.substring(split + 1).trim();
     return chatgpt.getResponse(null, null, `Translate "${text}" to ${language}.`)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id));
+  
+  } else if (message == 'mirror' || message.startsWith('mirror to ')) {
+    guild_id = guild_id ?? await resolveGuildID(user_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'mirror server');
+    let mirror_guild_id = message.includes(' ') ? message.split(' ').slice(2).join(' ') : undefined;
+    return mirror.configure_mirror(guild_id, user_id, mirror_guild_id).then(() => reactOK(channel_id, event_id));
   
   } else if (await delayed_memory.materialize(`response:` + memory.mask(message) + `:user:${user_id}`)) {
     return reactOK(channel_id, event_id);
