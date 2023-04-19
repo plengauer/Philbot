@@ -60,7 +60,7 @@ async function guessActivities(guild_id, channel_id, user_id) {
     if (all_activities.filter(a => a == activity).length > all_activities.length / 2) guessed.push(activity);
   }
   if (guessed.length == 0) return;
-  return Promise.all(
+  return Promise.all([
     memory.get(`activities:recent:user:${user_id}`, []).then(global_activities => 
       guessed.some(activity => !global_activities.includes(activity)) ?
         memory.set(`activities:recent:user:${user_id}`, global_activities.concat(guessed.filter(activity => !global_activities.includes(activity))), 60 * 60 * 24 * 31) :
@@ -71,7 +71,7 @@ async function guessActivities(guild_id, channel_id, user_id) {
         memory.set(`activities:all:user:${user_id}`, global_activities.concat(guessed.filter(activity => !global_activities.includes(activity))), 60 * 60 * 24 * 31) :
         Promise.resolve()
     )
-  );
+  ]);
 }
 
 module.exports = { handle }
