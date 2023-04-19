@@ -70,7 +70,7 @@ async function forward_message(guild_id, channel_id, user_id, content, attachmen
   let author = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member));
   while (content.includes('<@&')) {
     let start = content.indexOf('<@&');
-    let end = content.indexOf('>', start);
+    let end = content.indexOf('>', start) + 1;
     let mentioned_role_id = discord.parse_role(content.substring(start, end));
     let mentioned_role = await discord.guild_role_retrieve(guild_id, mentioned_role_id).then(role => role.name);
     content = content.replace(content.substring(start, end), '@' + mentioned_role);
