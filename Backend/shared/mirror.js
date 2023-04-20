@@ -83,7 +83,7 @@ async function forward_message(guild_id, channel_id, user_id, content, attachmen
     content = content.replace(content.substring(start, end), '@' + mentioned_member);
   }
 
-  return discord.post(mirror_info.channel_ids[channel_id], `**${author}**: ${content}` + ((attachments && attachments.length > 0) ? ('\n**Attachments:**: ' + attachments.map(attachment => attachment.url).join(', ')) : ''), undefined, true);
+  return discord.post(mirror_info.channel_ids[channel_id], `**${author}**: ${content}` + ((attachments && attachments.length > 0) ? ('\n**Attachments:**: ' + attachments.map(attachment => attachment.url).join(', ')) : ''));
 }
 
 function member2string(member) {
@@ -130,8 +130,7 @@ async function clean() {
   }
 }
 
-//TODO proactive changes in channel updates? (never delete, but mark as deleted maybe, update channel names)
+//TODO special section for channels about server members joining and leaving. voice state changes in the servers, about role changes and name changes
 //TODO reactions?
-//TODO voice states?
 
 module.exports = { configure_mirror, on_message_create, clean }
