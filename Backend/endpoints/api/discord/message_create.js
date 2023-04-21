@@ -889,6 +889,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'mirror server');
     let mirror_guild_id = message.includes(' ') ? message.split(' ').slice(2).join(' ') : undefined;
+    if (mirror_guild_id && !await features.isActive(mirror_guild_id, 'mirror')) return respondNeedsFeatureActive(channel_id, event_id, 'mirror', 'mirror');
     return mirror.configure_mirror(guild_id, user_id, mirror_guild_id).then(() => reactOK(channel_id, event_id));
   
   } else if (await delayed_memory.materialize(`response:` + memory.mask(message) + `:user:${user_id}`)) {

@@ -8,7 +8,8 @@ function list() {
       'raid protection',
       'role management',
       'sticky nicknames',
-      'ranked game roles'
+      'ranked game roles',
+      'mirror'
     ];
 }
 
