@@ -45,7 +45,7 @@ async function getResponse(channel_id, user_id, message, model = "gpt-4") {
         "model": model,
         "messages": [{ "role": "system", "content": conversation ? system : '' }].concat(conversation.slice(-2 * 2))
       },
-      timeout: 1000 * 60 * 3
+      timeout: 1000 * 60 * 15
     });
   let output = response.choices[0].message;
 
