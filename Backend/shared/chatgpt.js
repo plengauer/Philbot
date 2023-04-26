@@ -55,7 +55,7 @@ async function getResponse(history_token, system, message, model = DEFAULT_MODEL
     });
   let output = response.choices[0].message;
   
-  output = sanitizeResponse(output);
+  output.content = sanitizeResponse(output.content);
 
   conversation.push(output);
   if (conversation_key) await memory.set(conversation_key, conversation, 60 * 60 * 24 * 7);
