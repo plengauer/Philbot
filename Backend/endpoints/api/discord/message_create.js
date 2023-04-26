@@ -875,8 +875,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     return translator.configure_translate(guild_id, channel_id, target_language == 'nothing' ? null : target_language)
       .then(() => reactOK(channel_id, event_id));
   
-  } else if (message.startsWith('translate to ')) {
-    message = message.split(' ').slice(2).join(' ');
+  } else if (message.startsWith('translate to ') || message.startsWith('translate that to ') || message.startsWith('translate this to ')) {
+    message = message.substring(message.indexOf('to') + 2).trim();
     let split = message.indexOf(':');
     if (!split || split < 0) return reactNotOK(channel_id, event_id);
     let language = message.substring(0, split).trim();
