@@ -49,6 +49,8 @@ async function getResponse(channel_id, user_id, message, model = "gpt-4") {
       timeout: 1000 * 60 * 15
     });
   let output = response.choices[0].message;
+  
+  output = sanitizeResponse(output);
 
   conversation.push(output);
   if (conversation_key) await memory.set(conversation_key, conversation, 60 * 60 * 24 * 7);
@@ -65,6 +67,30 @@ async function getResponse(channel_id, user_id, message, model = "gpt-4") {
   cost_progress_counter.record(cost.value / (cost_limit * computeBillingSlotProgress()), attributes);
 
   return output.content;
+}
+
+function sanitizeResponse(response) {
+  response = strip(response, 'as an AI model');
+  response = strip(response, 'as an AI language model');
+  return response;
+}
+
+function strip(haystack, needle) {
+  {
+    let myneedle = needle.substring(0, 1).toUpperCase() + needle.substring(1) + ', ';
+    while (haystack.includes(myneedle)) {
+      let index = haystack.indexOf(myneedle);
+      haystack = haystack.substring(0, index) + haystack.substring(index + myneedle.length, index + myneedle.length + 1).toUpperCase() + haystack.substring(index + myneedle.length + 1);
+    }
+  }
+  {
+    let myneedle = ', ' + needle + ', ';
+    while (haystack.includes(myneedle)) {
+      let index = haystack.indexOf(myneedle);
+      haystack = haystack.substring(0, index) + haystack.substring(index + myneedle.length);
+    }
+  }
+  return haystack;
 }
 
 async function getCurrentCost() {
