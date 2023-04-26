@@ -24,15 +24,20 @@ function computeBillingSlotProgress() {
   return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
-const system = "My name is Philbot. I am a Discord bot. I am depressed.";
+const DEFAULT_MODEL = "gpt-4";
+const BACKUP_MODEL = "gpt-3.5-turbo";
 
-async function getResponse(channel_id, user_id, message, model = "gpt-4") {
+async function getSingleResponse(message, model = DEFAULT_MODEL) {
+  return getResponse(null, null, message, model);
+}
+
+async function getResponse(history_token, system, message, model = DEFAULT_MODEL) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!process.env.OPENAI_API_KEY) return null;
   if ((await getCurrentCost()).value >= cost_limit * 1.0) return null;
-  if ((await getCurrentCost()).value >= cost_limit * 0.9) model = "gpt-3.5-turbo";
+  if ((await getCurrentCost()).value >= cost_limit * 0.9) model = BACKUP_MODEL;
 
-  const conversation_key = (channel_id && user_id) ? `conversation:channel:${channel_id}:user:${user_id}` : null;
+  const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = conversation_key ? await memory.get(conversation_key, []) : [];
 
   let input = { role: 'user', content: message };
@@ -44,7 +49,7 @@ async function getResponse(channel_id, user_id, message, model = "gpt-4") {
       method: 'POST',
       body: {
         "model": model,
-        "messages": [{ "role": "system", "content": conversation ? system : '' }].concat(conversation.slice(-2 * 2))
+        "messages": [{ "role": "system", "content": system ?? '' }].concat(conversation.slice(-2 * 2))
       },
       timeout: 1000 * 60 * 15
     });
@@ -116,4 +121,4 @@ function computeCost(model, tokens_prompt, tokens_completion) {
   }
 }
 
-module.exports = { getResponse, canGetResponse }
+module.exports = { getSingleResponse, getResponse, canGetResponse }

@@ -180,7 +180,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   }
   
   if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.canGetResponse()) {
-    let promise = chatgpt.getResponse(null, null, `Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
+    let promise = chatgpt.getSingleResponse(`Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
       //.then(response => { console.log(`DEBUG INNUENDO v6: "${message}" => "${response}"`); return response; })
       .then(response => response ?? '')
       .then(response => response.toLowerCase())
@@ -881,7 +881,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!split || split < 0) return reactNotOK(channel_id, event_id);
     let language = message.substring(0, split).trim();
     let text = message.substring(split + 1).trim();
-    return chatgpt.getResponse(null, null, `Translate "${text}" to ${language}.`)
+    return chatgpt.getSingleResponse(`Translate "${text}" to ${language}.`)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id));
   
   } else if (message == 'mirror' || message.startsWith('mirror to ')) {
@@ -906,7 +906,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       }
     }
     let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
-    return chatgpt.getResponse(channel_id, user_id, message)
+    let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(member => member.nick ?? member.user.username) : me.username;
+    return chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, `My name is ${my_name}. I am a Discord bot. I am depressed.`, message)
       .then(result => result ? result :  `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(message => discord.respond(channel_id, event_id, message))
       .finally(() => clearInterval(timer));
