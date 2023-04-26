@@ -14,7 +14,7 @@ async function handle(payload) {
     discord.me().then(me => me.id == payload.user_id ? player.on_voice_state_update(payload.guild_id, payload.channel_id, payload.session_id) : Promise.resolve()),
     features.isActive(payload.guild_id, 'role management').then(active => active ? role_management.on_voice_state_update(payload.guild_id, payload.user_id, payload.channel_id) : Promise.resolve()),
     payload.channel_id ? guessActivities(payload.guild_id, payload.channel_id, payload.user_id) : Promise.resolve(),
-    features.isActive(guild_id, 'player').then(active => active ? checkAndPlayShip(payload.guild_id, payload.channel_id, payload.user_id) : Promise.resolve()),
+    features.isActive(payload.guild_id, 'player').then(active => active ? checkAndPlayShip(payload.guild_id, payload.channel_id, payload.user_id) : Promise.resolve()),
   ]).then(() => undefined);
 }
 
