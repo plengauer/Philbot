@@ -44,6 +44,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   let translation = await chatgpt.getResponse(null, null, `Translate "${content}" to ${target_language}. Do not translate emojis, or parts that are surrounded by : < or >. Respond with the translation only, or nothing if it is untranslatable.`);
   //console.log(`DEBUG TRANSLATOR v2 #3 "${content}" => "${translation}"`);
   if (!translation || translation.length == 0) return;
+  if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1);
   if (simplify(translation) == simplify(content)) throw new Error();
   
   translations_counter.add(1, { 'language.target': target_language.substring(0, 1).toUpperCase() + target_language.substring(1).toLowerCase(), 'language.source': source_language });
