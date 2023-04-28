@@ -161,20 +161,20 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(promise);
   }
   
-  if ((mentioned || Math.random() < 0.1) && message.toLowerCase().includes('joke') && (message.toLowerCase().includes('wow') || message.toLowerCase().includes('world of warcraft'))) {
+  if (Math.random() < 0.1 && !mentioned && message.toLowerCase().includes('joke') && (message.toLowerCase().includes('wow') || message.toLowerCase().includes('world of warcraft'))) {
     let promise = wow.getJoke().then(result => discord.respond(channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result));
     promises.push(promise);
-  } else if ((mentioned || Math.random() < 0.1) && message.toLowerCase().includes('joke')) {
+  } else if (!mentioned && Math.random() < 0.1 && message.toLowerCase().includes('joke')) {
     let promise = curl.request({ hostname: 'icanhazdadjoke.com', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result));
     promises.push(promise);
   }
   
-  if ((mentioned || Math.random() < 0.5) && message.toLowerCase().includes('chuck norris')) {
+  if (Math.random() < 0.5 && !mentioned && message.toLowerCase().includes('chuck norris')) {
     let promise = curl.request({ hostname: 'api.chucknorris.io', path: '/jokes/random', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, result));
     promises.push(promise);
   }
   
-  if ((mentioned || Math.random() < 0.5) && message.toLowerCase().includes('ron swanson')) {
+  if (Math.random() < 0.5 && !mentioned && message.toLowerCase().includes('ron swanson')) {
     let promise = curl.request({ hostname: 'ron-swanson-quotes.herokuapp.com', path: '/v2/quotes' }).then(result => discord.respond(channel_id, event_id, result[0]));
     promises.push(promise);
   }
