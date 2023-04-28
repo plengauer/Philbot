@@ -66,7 +66,7 @@ async function getResponse(history_token, system, message, model = DEFAULT_MODEL
   await memory.set(costkey(), cost);
 
   const attributes = { model: response.model };
-  cost_counter.add(cost, attributes);
+  cost_counter.add(cost.value, attributes);
   cost_absolute_counter.record(cost.value, attributes);
   cost_relative_counter.record(cost.value / cost_limit, attributes);
   cost_progress_counter.record(cost.value / (cost_limit * computeBillingSlotProgress()), attributes);
