@@ -101,7 +101,7 @@ function strip(haystack, needle) {
 async function getCurrentCost() {
   let backup = { value: 0, timestamp: Date.now() };
   let cost = await memory.get(costkey(), backup);
-  return new Date(cost.timestamp).getUTCMonth() != new Date().getUTCMonth() ? backup : cost;
+  return (new Date(cost.timestamp).getUTCFullYear() == new Date().getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == new Date().getUTCMonth()) ? cost : backup;
 }
 
 function costkey() {
