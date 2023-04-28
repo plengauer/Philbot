@@ -89,7 +89,7 @@ async function checkAndPlayShip(guild_id, channel_id, user_id) {
   let other_user_id = user_ids_in_voice_channel[0];
   let shipped = await memory.get(`ship:user:${user_id}:user:${other_user_id}`, false) || await memory.get(`ship:user:${other_user_id}:user:${user_id}`, false);
   if (!shipped) return;
-  const music = [ 'Marvin Gaye Lets get it on', 'Joe Cocker You can leave your hat on', 'George Michael Careless Whisper' /*, 'Foreigner I dont know what love is' */ ];
+  const music = [ 'Marvin Gaye Lets get it on' /*, 'Joe Cocker You can leave your hat on' */, 'George Michael Careless Whisper' /*, 'Foreigner I dont know what love is' */ ];
   return Promise.all([
     player.play(guild_id, channel_id, music[Math.floor(Math.random() * music.length)]),
     discord.try_dms(user_id, 'Congratulations, you have been shipped with ' + discord.mention_user(other_user_id) + ' by one of your fellow server members!'),
