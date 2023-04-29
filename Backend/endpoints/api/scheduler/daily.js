@@ -50,7 +50,7 @@ async function verifyPermissions(guild_id) {
     return Promise.all(manage_roles_members.map(manage_roles_member => discord.try_dms(manage_roles_member.user.id, `Hi ${manage_roles_member.nick ?? manage_roles_member.user.username}, I'm **missing** some crucial **permissions** for ${guild.name} to do my work properly. Please grant me the following additional permissions (via Server Settings -> Roles -> ${my_role.name} -> Permissions): ` + missing.map(p => `**${p}**`).join(', ') + '.')));
   } else if (unnecessary.length > 0) {
     // in theory that shouldnt be an else if, but lets not be too annoying
-    return Promise.all(manage_roles_members.filter(manage_roles_member => Math.random() > 0.99).map(manage_roles_member => discord.try_dms(manage_roles_member.user.id, `Hi ${manage_roles_member.nick ?? manage_roles_member.user.username}, your privacy and security is important to me. I have some **permissions** for ${guild.name} that I **do not need**. Feel free to drop the following permissions for me (via Server Settings -> Roles -> ${my_role.name} -> Permissions): ` + unnecessary.map(p => `**${p}**`).join(', ') + '.')));
+    return Promise.all(manage_roles_members.filter(manage_roles_member => Math.random() < 0.01).map(manage_roles_member => discord.try_dms(manage_roles_member.user.id, `Hi ${manage_roles_member.nick ?? manage_roles_member.user.username}, your privacy and security is important to me. I have some **permissions** for ${guild.name} that I **do not need**. Feel free to drop the following permissions for me (via Server Settings -> Roles -> ${my_role.name} -> Permissions): ` + unnecessary.map(p => `**${p}**`).join(', ') + '.')));
   }
 }
 
