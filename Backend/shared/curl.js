@@ -3,6 +3,7 @@ const https = require('https');
 const zlib = require('zlib');
 const retry = require('./retry.js').retry;
 const delay = require('./retry.js').delay;
+const synchronized = require('./synchronized.js').locked;
 const opentelemetry = require('@opentelemetry/api');
 
 const meter = opentelemetry.metrics.getMeter('http.client');
@@ -273,17 +274,21 @@ async function request_cached(options, request) {
   if (options.cache && !options.method) throw new Error('Caching needs HTTP method explicitly set!');
   if (options.cache && !options.headers) options.headers = {};
   if (options.cache && options.method == 'GET' && options.body) throw new Error('Cannot cache GET requests with body!'); // https://stackoverflow.com/questions/978061/http-get-with-request-body
-  if (options.cache) {
-    if (options.method == 'GET') {
-      let cached = lookup(options);
-      if (cached) return cached;    
-    } else {
-      invalidate(options);
+  return synchronized(cachekey(options), () => {
+    if (options.cache) {
+      if (options.method == 'GET') {
+        let cached = lookup(options);
+        if (cached) return cached;    
+      } else {
+        invalidate(options);
+      }
     }
-  }
-  let response = await request(options)
-  if (options.cache && options.method == 'GET') remember(options, response);
-  return response;
+    return request(options)
+      .then(response => {
+        if (options.cache && options.method == 'GET') remember(options, response);
+        return response;    
+      });
+  });
 }
 
 const CACHE_SIZE = process.env.HTTP_CACHE_SIZE ? parseInt(process.env.HTTP_CACHE_SIZE) : (1024 * 1024 * 10);
