@@ -60,16 +60,18 @@ async function getResponse(history_token, system, message, model = DEFAULT_MODEL
   conversation.push(output);
   if (conversation_key) await memory.set(conversation_key, conversation, 60 * 60 * 24 * 7);
 
-  let cost = await getCurrentCost()
-  cost.value += computeCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens);
-  cost.timestamp = Date.now();
-  await memory.set(costkey(), cost);
+  let cost = computeCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens);
+
+  let total_cost = await getCurrentCost()
+  total_cost.value += cost;
+  total_cost.timestamp = Date.now();
+  await memory.set(costkey(), total_cost);
 
   const attributes = { model: response.model };
-  cost_counter.add(cost.value, attributes);
-  cost_absolute_counter.record(cost.value, attributes);
-  cost_relative_counter.record(cost.value / cost_limit, attributes);
-  cost_progress_counter.record(cost.value / (cost_limit * computeBillingSlotProgress()), attributes);
+  cost_counter.add(cost, attributes);
+  cost_absolute_counter.record(total_cost.value, attributes);
+  cost_relative_counter.record(total_cost.value / cost_limit, attributes);
+  cost_progress_counter.record(total_cost.value / (cost_limit * computeBillingSlotProgress()), attributes);
 
   return output.content;
 }
