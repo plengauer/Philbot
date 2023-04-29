@@ -274,7 +274,7 @@ async function request_cached(options, request) {
   if (options.cache && !options.method) throw new Error('Caching needs HTTP method explicitly set!');
   if (options.cache && !options.headers) options.headers = {};
   if (options.cache && options.method == 'GET' && options.body) throw new Error('Cannot cache GET requests with body!'); // https://stackoverflow.com/questions/978061/http-get-with-request-body
-  return synchronized(cachekey(options), () => {
+  return synchronized(cachekey(options), async function() {
     if (options.cache) {
       if (options.method == 'GET') {
         let cached = lookup(options);
