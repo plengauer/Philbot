@@ -32,6 +32,8 @@ async function configure_mirror(guild_id, user_id, input_mirror_guild_id = undef
       await discord.guild_role_delete(mirror_info.guild_id, role.id).catch(() => {});
     }
     for (let channel of await discord.guild_channels_list(guild_id).then(channels => channels.sort((a, b) => a.position - b.position))) {
+      if (channel.type == 5 || channel.type == 10 || channel.type == 15) channel.type = 0;
+      if (channel.type == 13) channel.type = 2;
       let mirrored_channel = await discord.guild_channel_create(mirror_info.guild_id, channel.name, channel.parent_id ? mirror_info.channel_ids[channel.parent_id] : undefined, channel.type);
       mirror_info.channel_ids[channel.id] = mirrored_channel.id;
     }
