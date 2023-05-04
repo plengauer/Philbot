@@ -77,8 +77,10 @@ async function getResponse(history_token, system, message, model = DEFAULT_MODEL
 }
 
 function sanitizeResponse(response) {
+  response = strip(response, 'as an AI');
   response = strip(response, 'as an AI model');
   response = strip(response, 'as an AI language model');
+  response = strip(response, 'as a language model AI');
   return response;
 }
 
