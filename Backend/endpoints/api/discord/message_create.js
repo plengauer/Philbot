@@ -907,7 +907,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     }
     let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(member => member.nick ?? member.user.username) : me.username;
-    return chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, `My name is ${my_name}. I am a Discord bot. I am depressed.`, message)
+    return chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, `My name is ${my_name}. I am a Discord bot. I am depressed.`, message, guild_id ? "gpt-3.5-turbo" : undefined)
       .then(result => result ? result :  `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(message => discord.respond(channel_id, event_id, message))
       .finally(() => clearInterval(timer));

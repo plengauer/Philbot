@@ -27,13 +27,14 @@ function computeBillingSlotProgress() {
 const DEFAULT_MODEL = "gpt-4";
 const BACKUP_MODEL = "gpt-3.5-turbo";
 
-async function getSingleResponse(message, model = DEFAULT_MODEL) {
+async function getSingleResponse(message, model = undefined) {
   return getResponse(null, null, message, model);
 }
 
-async function getResponse(history_token, system, message, model = DEFAULT_MODEL) {
+async function getResponse(history_token, system, message, model = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!process.env.OPENAI_API_KEY) return null;
+  if (!model) model = DEFAULT_MODEL;
   if ((await getCurrentCost()).value >= cost_limit * 1.0) return null;
   if ((await getCurrentCost()).value >= cost_limit * 0.9) model = BACKUP_MODEL;
 
@@ -49,7 +50,7 @@ async function getResponse(history_token, system, message, model = DEFAULT_MODEL
       method: 'POST',
       body: {
         "model": model,
-        "messages": [{ "role": "system", "content": system ?? '' }].concat(conversation.slice(-2 * 2))
+        "messages": [{ "role": "system", "content": system ?? '' }].concat(conversation.slice(-(2 * 2 + 1)))
       },
       timeout: 1000 * 60 * 15
     });
