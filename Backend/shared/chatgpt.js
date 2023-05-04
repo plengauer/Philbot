@@ -100,6 +100,13 @@ function strip(haystack, needle) {
       haystack = haystack.substring(0, index) + haystack.substring(index + myneedle.length);
     }
   }
+  {
+    let myneedle = ', but ' + needle + ', ';
+    while (haystack.includes(myneedle)) {
+      let index = haystack.indexOf(myneedle);
+      haystack = haystack.substring(0, index) + haystack.substring(index + myneedle.length);
+    }
+  }
   return haystack;
 }
 
