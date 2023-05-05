@@ -82,6 +82,10 @@ function sanitizeResponse(response) {
   response = strip(response, 'as an AI model');
   response = strip(response, 'as an AI language model');
   response = strip(response, 'as a language model AI');
+  response = strip(response, 'as a responsible AI');
+  response = strip(response, 'as a responsible AI model');
+  response = strip(response, 'as a responsible AI language model');
+  response = strip(response, 'as a responsible language model AI');
   return response;
 }
 
