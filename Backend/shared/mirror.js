@@ -69,7 +69,7 @@ async function forward_message(guild_id, channel_id, user_id, content, attachmen
     await memory.set(memorykey(guild_id), mirror_info);
   }
 
-  let author = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member));
+  let author = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member)).catch(() => '<UnknownUser>');
   while (content.includes('<@&')) {
     let start = content.indexOf('<@&');
     let end = content.indexOf('>', start) + 1;
