@@ -81,7 +81,7 @@ async function forward_message(guild_id, channel_id, user_id, content, attachmen
     let start = content.indexOf('<@');
     let end = content.indexOf('>', start) + 1;
     let mentioned_user_id = discord.parse_mention(content.substring(start, end));
-    let mentioned_member = await discord.guild_member_retrieve(guild_id, mentioned_user_id).then(member => member2string(member));
+    let mentioned_member = await discord.guild_member_retrieve(guild_id, mentioned_user_id).then(member => member2string(member)).catch(() => '<UnknownUser>');
     content = content.replace(content.substring(start, end), '@' + mentioned_member);
   }
 
