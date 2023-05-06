@@ -11,6 +11,7 @@ async function retry(func, should_retry_on_error = e => true) {
     } catch (error) {
       if (!should_retry_on_error(error)) throw error;
       if (wait > 1000 * 60 * 30) throw error;
+      if (error.stack?.startsWith('TypeError')) throw error;
       console.error("Retry due to: " + error);
       await delay(wait);
       wait *= 2;
