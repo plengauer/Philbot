@@ -13,7 +13,7 @@ async function configure_translate(guild_id, channel_id, language) {
 
 async function on_message_create(guild_id, channel_id, message_id, content) {
   if (content.trim() == 0) return;
-  let target_language = await memory.get(memorykey(guild_id, channel_id), null);
+  let target_language = await memory.get(memorykey(guild_id, channel_id), await memory.get(memorykey(guild_id, '*'), null));
   if (!target_language) return;
   if (!await chatgpt.canGetResponse()) return;
   
@@ -35,7 +35,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
     if (target_language_percentage > 0.9) return;
   }
   
-  let source_language = await chatgpt.getSingleResponse(`What language is the text "${content}"?. Respond only with the language. Ignore typos.`);
+  let source_language = await chatgpt.getSingleResponse(`What language is the text "${content}"? Respond only with the language. Ignore typos.`);
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);
   if (!source_language) return;
   if (source_language.endsWith('.') || source_language.split(',').some(language => language.split(' ').filter(token => token.length > 0).length > 3)) throw new Error();
