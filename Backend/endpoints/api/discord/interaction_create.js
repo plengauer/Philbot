@@ -11,6 +11,7 @@ async function handle(payload) {
     case 'player.pause': return player.pause(guild_id).then(() => discord.interact(payload.id, payload.token));
     case 'player.stop': return player.stop(guild_id).then(() => discord.interact(payload.id, payload.token));
     case 'player.next': return player.playNext(guild_id, undefined).then(() => discord.interact(payload.id, payload.token));
+    default: throw new Error('Unknown interaction: ' + payload.data.custom_id);
   }
 }
 

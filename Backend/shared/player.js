@@ -64,7 +64,10 @@ async function HTTP_YOUTUBE(endpoint, parameters) {
 async function play0(guild_id, channel_id, youtube_link) {
   channel_id = channel_id ?? await memory.get(`player:voice_channel:guild:${guild_id}`, undefined);
   if (!channel_id) throw new Error('I don\'t know which channel to use!');
-  return VOICE_CONTENT(guild_id, youtube_link).then(() => discord.connect(guild_id, channel_id));
+  return VOICE_CONTENT(guild_id, youtube_link)
+    .then(() => discord.connect(guild_id, channel_id))
+    .then(() => resolveTitle(youtube_link))
+    .then(title => updateInteractions(guild_id, title));
 }
 
 async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = undefined, retries = 10, unavailable_links = []) {
@@ -74,7 +77,7 @@ async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = und
     .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('The video is unavailable (regional copy-right claims or age restriction)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('404') ? Promise.reject(new Error('The video is unavailable!')) : Promise.reject(error))
     .catch(error => error.message.includes('video is unavailable') && retries > 0
-      ? (title ? Promise.resolve(title) : HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => result.items[0].snippet.title))
+      ? (title ? Promise.resolve(title) : resolveTitle(link))
         .then(title => HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'relevance', maxResults: 50, q: title })
           .then(result => result.items.map(item => 'https://www.youtube.com/watch?v=' + item.id.videoId))
           .then(links => links.filter(backup => backup != link && !unavailable_links.includes(backup)))
@@ -88,6 +91,10 @@ async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = und
 
 async function HTTP_VOICE(operation, payload) {
   return curl.request({ secure: false, method: 'POST', hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: `/${operation}`, headers: { 'x-authorization': process.env.DISCORD_API_TOKEN }, body: payload, timeout: 1000 * 60 * 60 * 24 });
+}
+
+async function resolveTitle(link) {
+  return HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => result.items[0].snippet.title);
 }
 
 async function stop(guild_id) {
@@ -187,6 +194,12 @@ async function openInteraction(guild_id, channel_id) {
 async function closeInteractions(guild_id) {
   let interaction_info = await memory.consume(interactionkey(guild_id), {});
   return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {})));
+}
+
+async function updateInteractions(guild_id, title) {
+  let text = title ? `Playing **${title}**` : '';
+  let interaction_info = await memory.get(interactionkey(guild_id), {});
+  return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_update(channel_id, interaction_info[channel_id], text)));
 }
 
 function interactionkey(guild_id) {

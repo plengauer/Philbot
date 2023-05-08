@@ -231,6 +231,10 @@ async function message_retrieve(channel_id, message_id) {
   return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'GET'); 
 }
 
+async function message_update(channel_id, message_id, content) {
+  return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'PATCH', { content: content }); 
+}
+
 async function message_delete(channel_id, message_id) {
   return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'DELETE'); 
 }
@@ -409,6 +413,7 @@ module.exports = {
   invite_delete,
   
   message_retrieve,
+  message_update,
   message_delete,
 
   trigger_typing_indicator,
