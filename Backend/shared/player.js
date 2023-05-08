@@ -67,7 +67,8 @@ async function play0(guild_id, channel_id, youtube_link) {
   return VOICE_CONTENT(guild_id, youtube_link)
     .then(() => discord.connect(guild_id, channel_id))
     .then(() => resolveTitle(youtube_link))
-    .then(title => updateInteractions(guild_id, title));
+    .then(title => memory.set(`player:title:guild:${guild_id}`, title, 60 * 60 * 24))
+    .then(() => updateInteractions(guild_id));
 }
 
 async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = undefined, retries = 10, unavailable_links = []) {
@@ -98,15 +99,21 @@ async function resolveTitle(link) {
 }
 
 async function stop(guild_id) {
-  return discord.disconnect(guild_id);
+  return discord.disconnect(guild_id)
+    .then(() => memory.unset(`player:title:guild:${guild_id}`))
+    .then(() => memory.unset(`player:paused:guild:${guild_id}`));
 }
 
 async function pause(guild_id) {
-  return HTTP_VOICE('voice_pause', { guild_id: guild_id });
+  return HTTP_VOICE('voice_pause', { guild_id: guild_id })
+    .then(() => memory.set(`player:paused:guild:${guild_id}`, true, 60 * 60 * 24))
+    .then(() => updateInteractions(guild_id));
 }
 
 async function resume(guild_id) {
-  return HTTP_VOICE('voice_resume', { guild_id: guild_id });
+  return HTTP_VOICE('voice_resume', { guild_id: guild_id })
+    .then(() => memory.set(`player:paused:guild:${guild_id}`, false, 60 * 60 * 24))
+    .then(() => updateInteractions(guild_id));
 }
 
 async function popFromQueue(guild_id) {
@@ -174,22 +181,22 @@ async function setQueue(guild_id, queue) {
 
 async function openInteraction(guild_id, channel_id) {
   if (!guild_id) throw new Error();
-  let interaction_message = await discord.post(channel_id, '', undefined /*TODO*/, false, [
-    {
-      type: 1,
-      components: [
-        { type: 2, style: 1, label: 'Play', custom_id: 'player.play.modal' },
-        { type: 2, style: 1, label: 'Resume', custom_id: 'player.resume' },
-        { type: 2, style: 3, label: 'Pause', custom_id: 'player.pause' },
-        { type: 2, style: 1, label: 'Next', custom_id: 'player.next' },
-        { type: 2, style: 4, label: 'Stop', custom_id: 'player.stop' }
-      ]
-    },
-  ]);
+  let interaction_message = await discord.post(channel_id, '', undefined , false, [{ type: 1, components: await createInteractionComponents() }]);
   let interaction_info = await memory.get(interactionkey(guild_id), {});
   if (interaction_info[channel_id]) await discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {});
   interaction_info[channel_id] = interaction_message.id;
   return memory.set(interactionkey(guild_id), interaction_info);
+}
+
+async function createInteractionComponents(guild_id) {
+  let paused = await memory.get(`player:paused:guild:${guild_id}`, false);
+  return [
+    { type: 2, style: 1, label: 'Play', custom_id: 'player.play.modal', disabled: false },
+    { type: 2, style: 1, label: 'Resume', custom_id: 'player.resume', disabled: !paused },
+    { type: 2, style: 3, label: 'Pause', custom_id: 'player.pause', disabled: paused },
+    { type: 2, style: 1, label: 'Next', custom_id: 'player.next', disabled: (await getQueue(guild_id)).length == 0 },
+    { type: 2, style: 4, label: 'Stop', custom_id: 'player.stop', disabled: false }
+  ];
 }
 
 async function onInteraction(guild_id, channel_id, interaction_id, interaction_token, data) {
@@ -228,10 +235,12 @@ async function closeInteractions(guild_id) {
   return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {})));
 }
 
-async function updateInteractions(guild_id, title) {
+async function updateInteractions(guild_id) {
+  let title = await memory.get(`player:title:guild:${guild_id}`, null);
   let text = title ? `Playing **${title}**` : '';
   let interaction_info = await memory.get(interactionkey(guild_id), {});
-  return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_update(channel_id, interaction_info[channel_id], text)));
+  let components = [{ type: 1, components: await createInteractionComponents(guild_id) }];
+  return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_update(channel_id, interaction_info[channel_id], text, components)));
 }
 
 function interactionkey(guild_id) {
