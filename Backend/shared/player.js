@@ -6,7 +6,8 @@ const curl = require('./curl.js');
 const identity = require('./identity.js');
 
 async function on_voice_state_update(guild_id, channel_id, session_id) {
-  if (channel_id) await memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24)
+  if (channel_id) await memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24);
+  else await closeInteractions(guild_id);
   let me = await discord.me();
   //let public_url = await identity.getPublicURL();
   return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: 'http://127.0.0.1:8080/voice_callback' });
@@ -164,4 +165,32 @@ async function setQueue(guild_id, queue) {
   return memory.set(`music_queue:guild:${guild_id}`, queue, 60 * 60 * 12);
 }
 
-module.exports = { on_voice_state_update, on_voice_server_update, play, stop, pause, resume, playNext, appendToQueue, shuffleQueue, clearQueue, getQueue }
+async function openInteraction(guild_id, channel_id) {
+  if (!guild_id) throw new Error();
+  let interaction_message = await discord.post(channel_id, '', undefined /*TODO*/, false, [
+    {
+      type: 1,
+      components: [
+        { type: 2, style: 1, label: 'Play', custom_id: 'player.resume' },
+        { type: 2, style: 3, label: 'Pause', custom_id: 'player.pause' },
+        { type: 2, style: 1, label: 'Next', custom_id: 'player.next' },
+        { type: 2, style: 4, label: 'Stop', custom_id: 'player.stop' }
+      ]
+    }
+  ]);
+  let interaction_info = await memory.get(interactionkey(guild_id), {});
+  if (interaction_info[channel_id]) await discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {});
+  interaction_info[channel_id] = interaction_message.id;
+  return memory.set(interactionkey(guild_id), interaction_info);
+}
+
+async function closeInteractions(guild_id) {
+  let interaction_info = await memory.consume(interactionkey(guild_id), {});
+  return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {})));
+}
+
+function interactionkey(guild_id) {
+  return `player:interactions:guild:${guild_id}`;
+}
+
+module.exports = { on_voice_state_update, on_voice_server_update, play, stop, pause, resume, playNext, appendToQueue, shuffleQueue, clearQueue, getQueue, openInteraction }

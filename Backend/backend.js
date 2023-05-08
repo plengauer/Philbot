@@ -112,6 +112,7 @@ const endpoint_discord_guild_create = require('./endpoints/api/discord/guild_cre
 const endpoint_discord_guild_member_add = require('./endpoints/api/discord/guild_member_add.js');
 const endpoint_discord_guild_member_update = require('./endpoints/api/discord/guild_member_update.js');
 const endpoint_discord_guild_scheduled_event_create = require('./endpoints/api/discord/guild_scheduled_event_create.js');
+const endpoint_discord_interaction_create = require('./endpoints/api/discord/interaction_create.js');
 const endpoint_discord_message_create = require('./endpoints/api/discord/message_create.js');
 const endpoint_discord_message_reaction_add = require('./endpoints/api/discord/message_reaction_add.js');
 const endpoint_discord_message_reaction_remove = require('./endpoints/api/discord/message_reaction_remove.js');
@@ -316,6 +317,7 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/discord/guild_member_add': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_member_add.handle(payload));
         case '/discord/guild_member_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_member_update.handle(payload));
         case '/discord/guild_scheduled_event_create': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_scheduled_event_create.handle(payload));
+        case '/discord/interaction_create': return dispatchAPIAuthorized(headers, () => endpoint_discord_interaction_create.handle(payload));
         case '/discord/message_create': return dispatchAPIAuthorized(headers, () => endpoint_discord_message_create.handle(payload));
         case '/discord/message_reaction_add': return dispatchAPIAuthorized(headers, () => endpoint_discord_message_reaction_add.handle(payload));
         case '/discord/message_reaction_remove': return dispatchAPIAuthorized(headers, () => endpoint_discord_message_reaction_remove.handle(payload));

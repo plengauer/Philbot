@@ -214,6 +214,16 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
 async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me) {
   if (message.length == 0) {
     return Promise.resolve();
+  
+  } else if (message === 'debug') {
+    return discord.post(channel_id, '', undefined, true, [
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 1, label: 'DEBUG', custom_id: 'interaction.debug.ping' },
+        ]
+      }
+    ]);
     
   } else if (message === 'ping') {
     return discord.respond(channel_id, event_id, 'pong');
@@ -357,6 +367,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     return discord.trigger_typing_indicator(channel_id)
       .then(() => search_string === 'next' ? player.playNext(guild_id, voice_channel_id) : player.play(guild_id, voice_channel_id, search_string))
+      .then(() => player.openInteraction(guild_id, channel_id))
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message))
       .finally(() => clearInterval(timer));

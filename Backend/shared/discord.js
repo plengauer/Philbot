@@ -231,6 +231,10 @@ async function message_retrieve(channel_id, message_id) {
   return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'GET'); 
 }
 
+async function message_delete(channel_id, message_id) {
+  return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'DELETE'); 
+}
+
 async function respond(channel_id, event_id, content, notify = true) {
   return post(channel_id, content, event_id, notify);
 }
@@ -253,23 +257,23 @@ async function trigger_typing_indicator(channel_id) {
   return HTTP(`/channels/${channel_id}/typing`, 'POST');
 }
 
-async function post(channel_id, content, referenced_message_id = undefined, notify = true, attachments = []) {
+async function post(channel_id, content, referenced_message_id = undefined, notify = true, components = []) {
   let limit = 2000;
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
     await post_paged(channel_id, content.substring(0, index).trim(), referenced_message_id, notify, []);
     content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
   }
-  return post_paged(channel_id, content, referenced_message_id, notify, attachments);
+  return post_paged(channel_id, content, referenced_message_id, notify, components);
 }
 
-async function post_paged(channel_id, content, referenced_message_id, notify, attachments) {
+async function post_paged(channel_id, content, referenced_message_id, notify, components) {
   return HTTP(`/channels/${channel_id}/messages`, 'POST', {
       content: content,
       message_reference: referenced_message_id ? { message_id: referenced_message_id } : undefined,
       flags: ((content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0)
         | (notify ? 0 : (1 << 12 /* SUPPRESS_NOTIFICATIONS */)),
-      // TODO attachments
+      components: components
     });
 }
 
@@ -307,6 +311,10 @@ async function reactions_list_paged(channel_id, message_id, emoji, limit, after 
 async function reaction_create(channel_id, message_id, emoji) {
   let encoded_emoji = encodeURIComponent(emoji);
   return HTTP(`/channels/${channel_id}/messages/${message_id}/reactions/${encoded_emoji}/@me`, 'PUT');
+}
+
+async function interact(interaction_id, interaction_token, response = { type: 6 }) {
+  return HTTP(`/interactions/${interaction_id}/${interaction_token}/callback`, 'POST', response);
 }
 
 async function connect(guild_id, channel_id) {
@@ -401,6 +409,7 @@ module.exports = {
   invite_delete,
   
   message_retrieve,
+  message_delete,
 
   trigger_typing_indicator,
   post,
@@ -411,6 +420,8 @@ module.exports = {
   reactions_list,
   reaction_create,
   react: async function(channel_id, message_id, emoji) { return reaction_create(channel_id, message_id, emoji); }, // backwards compatibility
+
+  interact,
 
   connect,
   disconnect,
