@@ -5,7 +5,7 @@ const player = require('../../../shared/player.js');
 async function handle(payload) {
   let guild_id = payload.guild_id ?? await resolveGuildID(payload.member.user.id);
   if (payload.data.custom_id == 'interaction.debug.ping') return discord.interact(payload.id, payload.token);
-  else if (payload.data.custom_id.startsWith('player.')) return player.onInteraction(guild_id, payload.channel_id, payload.id, payload.token, payload.data);
+  else if (payload.data.custom_id.startsWith('player.')) return player.onInteraction(guild_id, payload.channel_id, payload.id, payload.token, payload.data).then(() => undefined);
   else throw new Error('Unknown interaction: ' + payload.data.custom_id);
 }
 
