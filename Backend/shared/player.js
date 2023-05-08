@@ -178,17 +178,49 @@ async function openInteraction(guild_id, channel_id) {
     {
       type: 1,
       components: [
-        { type: 2, style: 1, label: 'Play', custom_id: 'player.resume' },
+        { type: 2, style: 1, label: 'Play', custom_id: 'player.play.modal' },
+        { type: 2, style: 1, label: 'Resume', custom_id: 'player.resume' },
         { type: 2, style: 3, label: 'Pause', custom_id: 'player.pause' },
         { type: 2, style: 1, label: 'Next', custom_id: 'player.next' },
         { type: 2, style: 4, label: 'Stop', custom_id: 'player.stop' }
       ]
-    }
+    },
   ]);
   let interaction_info = await memory.get(interactionkey(guild_id), {});
   if (interaction_info[channel_id]) await discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {});
   interaction_info[channel_id] = interaction_message.id;
   return memory.set(interactionkey(guild_id), interaction_info);
+}
+
+async function onInteraction(guild_id, channel_id, interaction_id, interaction_token, data) {
+  switch(data.custom_id) {
+    case 'player.resume': return resume(guild_id).then(() => discord.interact(interaction_id, interaction_token));
+    case 'player.pause': return pause(guild_id).then(() => discord.interact(interaction_id, interaction_token));
+    case 'player.stop': return stop(guild_id).then(() => discord.interact(interaction_id, interaction_token));
+    case 'player.next': return discord.interact(interaction_id, interaction_token).then(() => playNext(guild_id, undefined));
+    case 'player.play.modal': return discord.interact(interaction_id, interaction_token, {
+      type: 9,
+      data: {
+        "title": "Play",
+        "custom_id": "player.play",
+        "components": [{
+          "type": 1,
+          "components": [{
+            "type": 4,
+            "custom_id": "player.query",
+            "label": "Link or Search Query",
+            "style": 1,
+            "min_length": 5,
+            "max_length": 4000,
+            "placeholder": "Rick Astley - Never Gonna Give You Up",
+            "required": true
+          }]
+        }]
+      }
+    });
+    case 'player.play': return discord.interact(interaction_id, interaction_token).then(() => play(guild_id, undefined, data.components[0].components[0].value));
+    default: throw new Error('Unknown interaction: ' + data.custom_id);
+  }
 }
 
 async function closeInteractions(guild_id) {
@@ -206,4 +238,4 @@ function interactionkey(guild_id) {
   return `player:interactions:guild:${guild_id}`;
 }
 
-module.exports = { on_voice_state_update, on_voice_server_update, play, stop, pause, resume, playNext, appendToQueue, shuffleQueue, clearQueue, getQueue, openInteraction }
+module.exports = { on_voice_state_update, on_voice_server_update, play, stop, pause, resume, playNext, appendToQueue, shuffleQueue, clearQueue, getQueue, openInteraction, onInteraction }

@@ -4,15 +4,9 @@ const player = require('../../../shared/player.js');
 
 async function handle(payload) {
   let guild_id = payload.guild_id ?? await resolveGuildID(payload.member.user.id);
-  let channel_id = payload.channel_id;
-  switch(payload.data.custom_id) {
-    case 'interaction.debug.ping': return discord.interact(payload.id, payload.token);
-    case 'player.resume': return player.resume(guild_id).then(() => discord.interact(payload.id, payload.token));
-    case 'player.pause': return player.pause(guild_id).then(() => discord.interact(payload.id, payload.token));
-    case 'player.stop': return player.stop(guild_id).then(() => discord.interact(payload.id, payload.token));
-    case 'player.next': return discord.interact(payload.id, payload.token).then(() => player.playNext(guild_id, undefined));
-    default: throw new Error('Unknown interaction: ' + payload.data.custom_id);
-  }
+  if (payload.data.custom_id == 'interaction.debug.ping') return discord.interact(payload.id, payload.token);
+  else if (payload.data.custom_id.startsWith('player.')) return player.onInteraction(guild_id, payload.channel_id, payload.id, payload.token, payload.data);
+  else throw new Error('Unknown interaction: ' + payload.data.custom_id);
 }
 
 async function resolveGuildID(user_id) {
