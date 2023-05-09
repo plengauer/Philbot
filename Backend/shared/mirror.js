@@ -56,13 +56,13 @@ async function configure_mirror(guild_id, user_id, input_mirror_guild_id = undef
   }
 }
 
-async function on_message_create(guild_id, channel_id, user_id, content, attachments) {
+async function on_message_create(guild_id, channel_id, user_id, content, attachments, components) {
   let mirrors = await memory.get(memorykey(guild_id), []);
-  return Promise.all(mirrors.map(mirror_info => forward_message(guild_id, channel_id, user_id, content, attachments, mirror_info)))
+  return Promise.all(mirrors.map(mirror_info => forward_message(guild_id, channel_id, user_id, content, attachments, components, mirror_info)))
     .finally(() => memory.set(memorykey(guild_id), mirrors));
 }
 
-async function forward_message(guild_id, channel_id, user_id, content, attachments, mirror_info) {
+async function forward_message(guild_id, channel_id, user_id, content, attachments, components, mirror_info) {
   if (!mirror_info.channel_ids[channel_id]) {
     let original = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == channel_id));
     let mirrored_channel = await discord.guild_channel_create(mirror_info.guild_id, original.name, original.parent_id ? mirror_info.channel_ids[original.parent_id] : undefined, original.type);
@@ -84,8 +84,19 @@ async function forward_message(guild_id, channel_id, user_id, content, attachmen
     let mentioned_member = await discord.guild_member_retrieve(guild_id, mentioned_user_id).then(member => member2string(member)).catch(() => '<UnknownUser>');
     content = content.replace(content.substring(start, end), '@' + mentioned_member);
   }
+  disarm_components(components);
 
-  return discord.post(mirror_info.channel_ids[channel_id], `**${author}**: ${content}` + ((attachments && attachments.length > 0) ? ('\n**Attachments:**: ' + attachments.map(attachment => attachment.url).join(', ')) : ''));
+  return discord.post(mirror_info.channel_ids[channel_id], `**${author}**: ${content}` + ((attachments && attachments.length > 0) ? ('\n**Attachments:**: ' + attachments.map(attachment => attachment.url).join(', ')) : ''), undefined, true, components);
+}
+
+function disarm_components(components) {
+  for (let component of components) {
+    if (component.type == 1) {
+      disarm_components(component.components);
+    } else if (component.custom_id) {
+      component.custom_id = 'interaction.noop';
+    }
+  }
 }
 
 function member2string(member) {
