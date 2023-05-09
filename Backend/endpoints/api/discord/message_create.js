@@ -371,7 +371,10 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message))
       .finally(() => clearInterval(timer));
-      
+
+  } else if (message === "player") {
+    return player.openInteraction(guild_id, channel_id).then(() => reactOK(channel_id, event_id));
+
   } else if (message === "stop") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
