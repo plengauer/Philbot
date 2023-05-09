@@ -190,20 +190,22 @@ async function openInteraction(guild_id, channel_id) {
 }
 
 async function createInteractionComponents(guild_id) {
+  let paused = await memory.get(`player:paused:guild:${guild_id}`, false);
+  let hasNext = (await getQueue(guild_id)).length >= 0;
   if (true) {
     return [
       { type: 2, style: 2, label: '', emoji: { name: '🎵' }, custom_id: 'player.play.modal', disabled: false },
       { type: 2, style: 2, label: '', emoji: { name: '⏯️' }, custom_id: 'player.toggle', disabled: false },
-      { type: 2, style: 2, label: '', emoji: { name: '⏩' }, custom_id: 'player.next', disabled: (await getQueue(guild_id)).length == 0 },
+      { type: 2, style: 2, label: '', emoji: { name: '⏩' }, custom_id: 'player.next', disabled: !hasNext },
+      { type: 2, style: 2, label: '', emoji: { name: '🔀' }, custom_id: 'player.shuffle', disabled: !hasNext },
       { type: 2, style: 2, label: '', emoji: { name: '⏹️' }, custom_id: 'player.stop', disabled: false }
     ];
   } else {
-    let paused = await memory.get(`player:paused:guild:${guild_id}`, false);
     return [
       { type: 2, style: 1, label: 'Play', custom_id: 'player.play.modal', disabled: false },
       { type: 2, style: 2, label: 'Resume', custom_id: 'player.resume', disabled: !paused },
       { type: 2, style: 2, label: 'Pause', custom_id: 'player.pause', disabled: paused },
-      { type: 2, style: 1, label: 'Next', custom_id: 'player.next', disabled: (await getQueue(guild_id)).length == 0 },
+      { type: 2, style: 1, label: 'Next', custom_id: 'player.next', disabled: !hasNext },
       { type: 2, style: 3, label: 'Stop', custom_id: 'player.stop', disabled: false }
     ];
   }
@@ -216,6 +218,7 @@ async function onInteraction(guild_id, channel_id, interaction_id, interaction_t
     case 'player.stop': return stop(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.toggle': return memory.get(`player:paused:guild:${guild_id}`, false).then(paused => paused ? resume(guild_id) : pause(guild_id)).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.next': return discord.interact(interaction_id, interaction_token).then(() => playNext(guild_id, undefined));
+    case 'player.shuffle': return shuffleQueue(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.play.modal': return discord.interact(interaction_id, interaction_token, {
       type: 9,
       data: {
