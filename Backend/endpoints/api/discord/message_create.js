@@ -26,7 +26,7 @@ async function handle(payload) {
 }
 
 async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, attachments) {
-  await mirror.on_message_create(guild_id, channel_id, user_id, message, attachments);
+  await mirror.on_message_create(guild_id, channel_id, user_id, message, attachments).catch(() => {});
 
   message = message.trim();
   
