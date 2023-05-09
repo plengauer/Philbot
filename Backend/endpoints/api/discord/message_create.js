@@ -373,7 +373,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       .finally(() => clearInterval(timer));
 
   } else if (message === "player") {
-    return player.openInteraction(guild_id, channel_id).then(() => reactOK(channel_id, event_id));
+    return player.openInteraction(guild_id ?? await resolveGuildID(user_id), channel_id).then(() => reactOK(channel_id, event_id));
 
   } else if (message === "stop") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
