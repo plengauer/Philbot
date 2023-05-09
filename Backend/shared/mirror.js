@@ -58,7 +58,8 @@ async function configure_mirror(guild_id, user_id, input_mirror_guild_id = undef
 
 async function on_message_create(guild_id, channel_id, user_id, content, attachments) {
   let mirrors = await memory.get(memorykey(guild_id), []);
-  return Promise.all(mirrors.map(mirror_info => forward_message(guild_id, channel_id, user_id, content, attachments, mirror_info)));
+  return Promise.all(mirrors.map(mirror_info => forward_message(guild_id, channel_id, user_id, content, attachments, mirror_info)))
+    .finally(() => memory.set(memorykey(guild_id), mirrors));
 }
 
 async function forward_message(guild_id, channel_id, user_id, content, attachments, mirror_info) {
@@ -66,7 +67,6 @@ async function forward_message(guild_id, channel_id, user_id, content, attachmen
     let original = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == channel_id));
     let mirrored_channel = await discord.guild_channel_create(mirror_info.guild_id, original.name, original.parent_id ? mirror_info.channel_ids[original.parent_id] : undefined, original.type);
     mirror_info.channel_ids[channel_id] = mirrored_channel.id;
-    await memory.set(memorykey(guild_id), mirror_info);
   }
 
   let author = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member)).catch(() => '<UnknownUser>');
