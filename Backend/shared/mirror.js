@@ -58,7 +58,7 @@ async function configure_mirror(guild_id, user_id, input_mirror_guild_id = undef
 
 async function on_message_create(guild_id, channel_id, user_id, content, attachments, embeds, components) {
   let mirrors = await memory.get(memorykey(guild_id), []);
-  return Promise.all(mirrors.map(mirror_info => forward_message(guild_id, channel_id, user_id, content, attachments, components, mirror_info)))
+  return Promise.all(mirrors.map(mirror_info => forward_message(guild_id, channel_id, user_id, content, attachments, embeds, components, mirror_info)))
     .finally(() => memory.set(memorykey(guild_id), mirrors));
 }
 
