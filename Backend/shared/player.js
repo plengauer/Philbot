@@ -181,7 +181,7 @@ async function setQueue(guild_id, queue) {
 
 async function openInteraction(guild_id, channel_id) {
   if (!guild_id) throw new Error();
-  let interaction_message = await discord.post(channel_id, 'Initializing ...', undefined, false, []);
+  let interaction_message = await discord.post(channel_id, 'Initializing ...', undefined, false);
   let interaction_info = await memory.get(interactionkey(guild_id), {});
   if (interaction_info[channel_id]) await discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {});
   interaction_info[channel_id] = interaction_message.id;
@@ -254,7 +254,7 @@ async function updateInteractions(guild_id) {
   let text = title ? `Playing **${title}**` : '';
   let interaction_info = await memory.get(interactionkey(guild_id), {});
   let components = [{ type: 1, components: await createInteractionComponents(guild_id) }];
-  return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_update(channel_id, interaction_info[channel_id], text, components)));
+  return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_update(channel_id, interaction_info[channel_id], text, [], components)));
 }
 
 function interactionkey(guild_id) {
