@@ -21,12 +21,12 @@ const translator = require('../../../shared/translator.js');
 const mirror = require('../../../shared/mirror.js');
 
 async function handle(payload) {
-  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id, payload.attachments, payload.components)
+  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id, payload.attachments, payload.embeds, payload.components)
     .then(() => undefined);
 }
 
-async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, attachments, components) {
-  await mirror.on_message_create(guild_id, channel_id, user_id, message, attachments, components);
+async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, attachments, embeds, components) {
+  await mirror.on_message_create(guild_id, channel_id, user_id, message, attachments, embeds, components);
 
   message = message.trim();
   

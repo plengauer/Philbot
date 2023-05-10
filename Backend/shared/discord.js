@@ -231,8 +231,8 @@ async function message_retrieve(channel_id, message_id) {
   return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'GET'); 
 }
 
-async function message_update(channel_id, message_id, content, components = []) {
-  return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'PATCH', { content: content, components: components }); 
+async function message_update(channel_id, message_id, content, embeds = [], components = []) {
+  return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'PATCH', { content: content, embeds: embeds, components: components }); 
 }
 
 async function message_delete(channel_id, message_id) {
@@ -264,23 +264,24 @@ async function trigger_typing_indicator(channel_id) {
   return HTTP(`/channels/${channel_id}/typing`, 'POST');
 }
 
-async function post(channel_id, content, referenced_message_id = undefined, notify = true, components = []) {
+async function post(channel_id, content, referenced_message_id = undefined, notify = true, embeds = [], components = []) {
   let limit = 2000;
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
-    await post_paged(channel_id, content.substring(0, index).trim(), referenced_message_id, notify, []);
+    await post_paged(channel_id, content.substring(0, index).trim(), referenced_message_id, notify, [], []);
     content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
   }
-  return post_paged(channel_id, content, referenced_message_id, notify, components);
+  return post_paged(channel_id, content, referenced_message_id, notify, embeds, components);
 }
 
-async function post_paged(channel_id, content, referenced_message_id, notify, components) {
+async function post_paged(channel_id, content, referenced_message_id, notify, embeds, components) {
   return HTTP(`/channels/${channel_id}/messages`, 'POST', {
       content: content,
       message_reference: referenced_message_id ? { message_id: referenced_message_id } : undefined,
-      flags: ((content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0)
+      flags: (embeds.length == 0 && ((content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1)) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0)
         | (notify ? 0 : (1 << 12 /* SUPPRESS_NOTIFICATIONS */)),
-      components: components
+      embeds: embeds,
+      components: components,
     });
 }
 
