@@ -244,8 +244,11 @@ async function respond(channel_id, event_id, content, notify = true) {
 }
 
 async function dms(user_id, content) {
-  return HTTP(`/users/@me/channels`, 'POST', { recipient_id: user_id })
-    .then(dm_channel => post(dm_channel.id, content));
+  return dms_channel_retrieve(user_id).then(dm_channel => post(dm_channel.id, content));
+}
+
+async function dms_channel_retrieve(user_id) {
+  return HTTP(`/users/@me/channels`, 'POST', { recipient_id: user_id });
 }
 
 async function try_dms(user_id, content) {
@@ -421,6 +424,7 @@ module.exports = {
   respond,
   dms,
   try_dms,
+  dms_channel_retrieve,
   
   reactions_list,
   reaction_create,

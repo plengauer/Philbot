@@ -38,7 +38,7 @@ async function playGreeting(guild_id, channel_id, user_id) {
   if (await canPlay && await birthday_track && await birthday && (await birthday).month == now.getUTCMonth() + 1 && (await birthday).day == now.getUTCDate()) {
     return player.play(guild_id, channel_id, await birthday_track);
   } else if (await canPlay && await intro_track) {
-    return player.play(guild_id, channel_id, await intro_track);
+    return player.play(guild_id, channel_id, await intro_track).then(() => discord.dms_channel_retrieve(user_id)).then(channel => player.openInteraction(guild_id, channel.id));
   } else {
     return Promise.resolve();
   }
