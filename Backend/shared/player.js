@@ -186,32 +186,13 @@ async function openInteraction(guild_id, channel_id) {
   if (interaction_info[channel_id]) await discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {});
   interaction_info[channel_id] = interaction_message.id;
   await memory.set(interactionkey(guild_id), interaction_info);
+  await memory.set(interactionreversekey(interaction_message.id), guild_id);
   return updateInteractions(guild_id);
 }
 
-async function createInteractionComponents(guild_id) {
-  let paused = await memory.get(`player:paused:guild:${guild_id}`, false);
-  let hasNext = (await getQueue(guild_id)).length >= 0;
-  if (true) {
-    return [
-      { type: 2, style: 2, label: '', emoji: { name: '🎵' }, custom_id: 'player.play.modal', disabled: false },
-      { type: 2, style: 2, label: '', emoji: { name: '⏯️' }, custom_id: 'player.toggle', disabled: false },
-      { type: 2, style: 2, label: '', emoji: { name: '⏩' }, custom_id: 'player.next', disabled: !hasNext },
-      { type: 2, style: 2, label: '', emoji: { name: '🔀' }, custom_id: 'player.shuffle', disabled: !hasNext },
-      { type: 2, style: 2, label: '', emoji: { name: '⏹️' }, custom_id: 'player.stop', disabled: false }
-    ];
-  } else {
-    return [
-      { type: 2, style: 1, label: 'Play', custom_id: 'player.play.modal', disabled: false },
-      { type: 2, style: 2, label: 'Resume', custom_id: 'player.resume', disabled: !paused },
-      { type: 2, style: 2, label: 'Pause', custom_id: 'player.pause', disabled: paused },
-      { type: 2, style: 1, label: 'Next', custom_id: 'player.next', disabled: !hasNext },
-      { type: 2, style: 3, label: 'Stop', custom_id: 'player.stop', disabled: false }
-    ];
-  }
-}
-
-async function onInteraction(guild_id, channel_id, interaction_id, interaction_token, data) {
+async function onInteraction(guild_id, channel_id, message_id, interaction_id, interaction_token, data) {
+  guild_id = guild_id ?? await memory.get(interactionreversekey(message_id), null);
+  if (!guild_id) throw new Error();
   switch(data.custom_id) {
     case 'player.resume': return resume(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.pause': return pause(guild_id).then(() => discord.interact(interaction_id, interaction_token));
@@ -246,7 +227,7 @@ async function onInteraction(guild_id, channel_id, interaction_id, interaction_t
 
 async function closeInteractions(guild_id) {
   let interaction_info = await memory.consume(interactionkey(guild_id), {});
-  return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {})));
+  return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_delete(channel_id, interaction_info[channel_id]).catch(() => {}).then(() => memory.unset(interactionreversekey(interaction_info[channel_id])))));
 }
 
 async function updateInteractions(guild_id) {
@@ -257,8 +238,34 @@ async function updateInteractions(guild_id) {
   return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_update(channel_id, interaction_info[channel_id], text, [], components)));
 }
 
+async function createInteractionComponents(guild_id) {
+  let paused = await memory.get(`player:paused:guild:${guild_id}`, false);
+  let hasNext = (await getQueue(guild_id)).length >= 0;
+  if (true) {
+    return [
+      { type: 2, style: 2, label: '', emoji: { name: '🎵' }, custom_id: 'player.play.modal', disabled: false },
+      { type: 2, style: 2, label: '', emoji: { name: '⏯️' }, custom_id: 'player.toggle', disabled: false },
+      { type: 2, style: 2, label: '', emoji: { name: '⏩' }, custom_id: 'player.next', disabled: !hasNext },
+      { type: 2, style: 2, label: '', emoji: { name: '🔀' }, custom_id: 'player.shuffle', disabled: !hasNext },
+      { type: 2, style: 2, label: '', emoji: { name: '⏹️' }, custom_id: 'player.stop', disabled: false }
+    ];
+  } else {
+    return [
+      { type: 2, style: 1, label: 'Play', custom_id: 'player.play.modal', disabled: false },
+      { type: 2, style: 2, label: 'Resume', custom_id: 'player.resume', disabled: !paused },
+      { type: 2, style: 2, label: 'Pause', custom_id: 'player.pause', disabled: paused },
+      { type: 2, style: 1, label: 'Next', custom_id: 'player.next', disabled: !hasNext },
+      { type: 2, style: 3, label: 'Stop', custom_id: 'player.stop', disabled: false }
+    ];
+  }
+}
+
 function interactionkey(guild_id) {
   return `player:interactions:guild:${guild_id}`;
+}
+
+function interactionreversekey(message_id) {
+  return `player:interaction:message:${message_id}`;
 }
 
 module.exports = { on_voice_state_update, on_voice_server_update, play, stop, pause, resume, playNext, appendToQueue, shuffleQueue, clearQueue, getQueue, openInteraction, onInteraction }
