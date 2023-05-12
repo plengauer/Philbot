@@ -56,13 +56,13 @@ async function configure_mirror(guild_id, user_id, input_mirror_guild_id = undef
   }
 }
 
-async function on_message_create(guild_id, channel_id, user_id, content, attachments, embeds, components) {
+async function on_message_create(guild_id, channel_id, user_id, message_id, content, referenced_message_id, attachments, embeds, components) {
   let mirrors = await memory.get(memorykey(guild_id), []);
-  return Promise.all(mirrors.map(mirror_info => forward_message(guild_id, channel_id, user_id, content, attachments, embeds, components, mirror_info)))
+  return Promise.all(mirrors.map(mirror_info => forward_message(guild_id, channel_id, user_id, message_id, content, referenced_message_id, attachments, embeds, components, mirror_info)))
     .finally(() => memory.set(memorykey(guild_id), mirrors));
 }
 
-async function forward_message(guild_id, channel_id, user_id, content, attachments, embeds, components, mirror_info) {
+async function forward_message(guild_id, channel_id, user_id, message_id, content, referenced_message_id, attachments, embeds, components, mirror_info) {
   if (!mirror_info.channel_ids[channel_id]) {
     let original = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == channel_id));
     let mirrored_channel = await discord.guild_channel_create(mirror_info.guild_id, original.name, original.parent_id ? mirror_info.channel_ids[original.parent_id] : undefined, original.type);
@@ -86,7 +86,9 @@ async function forward_message(guild_id, channel_id, user_id, content, attachmen
   }
   disarm_components(components);
 
-  return discord.post(mirror_info.channel_ids[channel_id], `**${author}**: ${content}` + ((attachments && attachments.length > 0) ? ('\n**Attachments:**: ' + attachments.map(attachment => attachment.url).join(', ')) : ''), undefined, true, embeds, components);
+  let referenced_message_id_mirror = referenced_message_id ? await memory.get(`mirror:message:${referenced_message_id}`) : undefined;
+  let message = await discord.post(mirror_info.channel_ids[channel_id], `**${author}**: ${content}` + ((attachments && attachments.length > 0) ? ('\n**Attachments:**: ' + attachments.map(attachment => attachment.url).join(', ')) : ''), referenced_message_id_mirror, true, embeds, components);
+  await memory.set(`mirror:message:${message_id}`, message.id, 60 * 60 * 24 * 3);
 }
 
 function disarm_components(components) {
