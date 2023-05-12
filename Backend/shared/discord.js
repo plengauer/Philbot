@@ -359,7 +359,7 @@ async function HTTP(endpoint, method, payload = undefined, ttc = undefined) {
 }
 
 async function GATEWAY_HTTP(endpoint, method, guild_id, payload = undefined, ttc = undefined) {
-  let callback_url = await retry(() => callbacks[guild_id] ?? Promise.reject());
+  let callback_url = await retry(() => callbacks[guild_id] ?? Promise.reject('No callback gateway known'));
   return curl.request({ secure: false, method: method, hostname: url.parse(callback_url).hostname, port: url.parse(callback_url).port, path: endpoint, headers: { 'x-authorization': process.env.DISCORD_API_TOKEN }, body: payload, cache: ttc ?? 10 });
 }
 
