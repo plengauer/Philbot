@@ -932,7 +932,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       for (let role of mentioned_roles) {
         let members_with_role = await discord.guild_members_list(guild_id, role.id).then(members => members.map(member => member.user.id));
         mentioned_members = members_with_role.concat(members_with_role);
-        system_message += ` The name of <@&${role.id}> is ${role.name}` + (members_with_role.length > 0 ? ', members are ' + members_with_role.map(user_id => discord.mention(user_id)).join(', ') : '') + '.';
+        system_message += ` The name of <@&${role.id}> is ${role.name}` + (members_with_role.length > 0 ? ', members are ' + members_with_role.map(user_id => discord.mention_user(user_id)).join(', ') : '') + '.';
       }
       mentioned_members = await Promise.all(Array.from(new Set(mentioned_members)).map(user_id => discord.guild_member_retrieve(guild_id, user_id)));
       for (let member of mentioned_members) {
