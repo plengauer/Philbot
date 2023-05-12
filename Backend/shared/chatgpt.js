@@ -87,6 +87,7 @@ function sanitizeResponse(response) {
   response = strip(response, 'as a responsible AI language model');
   response = strip(response, 'as a responsible language model AI');
   response = strip(response, 'based on your previous message');
+  response = strip(response, 'based on what you\'ve shared earlier');
   response = strip(response, 'based on the information available in previous messages');
   response = strip(response, 'based on the information you provided earlier');
   response = strip(response, 'based on information available in previous messages');
