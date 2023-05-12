@@ -64,10 +64,11 @@ async function HTTP_YOUTUBE(endpoint, parameters) {
 async function play0(guild_id, channel_id, youtube_link) {
   channel_id = channel_id ?? await memory.get(`player:voice_channel:guild:${guild_id}`, undefined);
   if (!channel_id) throw new Error('I don\'t know which channel to use!');
-  return VOICE_CONTENT(guild_id, youtube_link)
-  .then(() => discord.connect(guild_id, channel_id))
-  .then(() => resolveTitle(youtube_link).then(title => memory.set(`player:title:guild:${guild_id}`, title, 60 * 60 * 24)))
-  .then(() => updateInteractions(guild_id));
+  return Promise.all([
+    HTTP_VOICE('voice_is_connected', { guild_id: guild_id, channel_id: channel_id }).catch(() => false).then(connected => connected == 'true' ? Promise.resolve() : discord.connect(guild_id, channel_id)),
+    VOICE_CONTENT(guild_id, youtube_link),
+    resolveTitle(youtube_link).then(title => memory.set(`player:title:guild:${guild_id}`, title, 60 * 60 * 24)).then(() => updateInteractions(guild_id))
+  ]);
 }
 
 async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = undefined, retries = 10, unavailable_links = []) {

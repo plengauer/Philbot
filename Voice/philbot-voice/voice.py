@@ -629,6 +629,10 @@ class Context:
     def resume(self):
         with self.lock:
             self.paused = False
+    
+    def is_connected(self):
+        with self.lock:
+            return self.ws is not None and self.listener is not None and self.streamer is not None
 
 contexts_lock = threading.Lock()
 contexts = {}
@@ -720,6 +724,14 @@ def voice_resume():
     context = get_context(body['guild_id'])
     context.resume()
     return 'Success'
+
+@app.route('/voice_is_connected', methods=['POST'])
+def voice_is_connected():
+    if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
+    if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
+    body = request.json
+    context = get_context(body['guild_id'])
+    return 'true' if context and context.is_connected() else 'false'
 
 def main():
     for file in os.listdir('.'):
