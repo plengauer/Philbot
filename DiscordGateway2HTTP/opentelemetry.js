@@ -76,7 +76,7 @@ function create() {
       }),
       exportIntervalMillis: 5000,
     }),
-    instrumentations: [getNodeAutoInstrumentations()],
+    instrumentations: [getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }})],
     resource: new Resource({
         [SemanticResourceAttributes.SERVICE_NAME]: name,
         [SemanticResourceAttributes.SERVICE_VERSION]: version,
