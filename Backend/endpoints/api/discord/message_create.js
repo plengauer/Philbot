@@ -937,7 +937,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       mentioned_members = await Promise.all(Array.from(new Set(mentioned_members)).map(user_id => discord.guild_member_retrieve(guild_id, user_id)));
       for (let member of mentioned_members) {
         let activities = await memory.get(`activities:all:user:${member.user.id}`, []);
-        system_message += ` <@${member.user.id}> name is ${member.nick ?? member.user.username}` + (activities.length > 0 ? ', they play ' + activities.join(', ') : '') + '.';
+        system_message += ` <@${member.user.id}> name is ${member.nick ?? member.user.username}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
       }
     }
     let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
