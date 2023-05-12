@@ -920,9 +920,28 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       }
     }
     await discord.trigger_typing_indicator(channel_id);
-    let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(member => member.nick ?? member.user.username) : me.username;
-    return chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, `My name is ${my_name}. I am a Discord bot. I am depressed.`, message, guild_id ? "gpt-3.5-turbo" : undefined)
+    let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(member => member.nick ?? member.user.username) : user_name;
+    let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
+    let mentioned_members = mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention));
+    let mentioned_roles = mentioned_entities.filter(mention => mention.startsWith('<@&')).map(mention => discord.parse_role(mention));
+    mentioned_members.push(user_id);
+    let system_message = `My name is ${my_name}. I am a Discord bot. Your name is ${your_name}.`;
+    if (guild_id) {
+      mentioned_roles = await Promise.all(Array.from(new Set(mentioned_roles)).map(role_id => discord.guild_role_retrieve(guild_id, role_id)));
+      for (let role of mentioned_roles) {
+        let members_with_role = await discord.guild_members_list(guild_id, role.id).then(member => member.user.id);
+        mentioned_members = members_with_role.concat(members_with_role);
+        system_message += ` <@&${role.id}> name is ${role.name}` + (members_with_role.length > 0 ? ', members are ' + members_with_role.map(user_id => discord.mention(user_id)).join(', ') : '') + '.';
+      }
+      mentioned_members = await Promise.all(Array.from(new Set(mentioned_members)).map(user_id => discord.guild_member_retrieve(guild_id, user_id)));
+      for (let member of mentioned_members) {
+        let activities = await memory.get(`activities:all:user:${member.user.id}`, []);
+        system_message += ` <@${member.user.id}> name is ${member.nick ?? member.user.username}` + (activities.length > 0 ? ', they play ' + activities.join(', ') : '') + '.';
+      }
+    }
+    let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
+    return chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, guild_id ? "gpt-3.5-turbo" : undefined)
       .then(result => result ? result :  `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(message => discord.respond(channel_id, event_id, message))
       .finally(() => clearInterval(timer));

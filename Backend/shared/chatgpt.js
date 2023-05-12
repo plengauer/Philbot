@@ -41,7 +41,7 @@ async function getResponse(history_token, system, message, model = undefined) {
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = conversation_key ? await memory.get(conversation_key, []) : [];
 
-  let input = { role: 'user', content: message };
+  let input = { role: 'user', content: message.trim() };
   conversation.push(input);
   let response = await curl.request({
       hostname: 'api.openai.com',
@@ -50,7 +50,7 @@ async function getResponse(history_token, system, message, model = undefined) {
       method: 'POST',
       body: {
         "model": model,
-        "messages": [{ "role": "system", "content": system ?? '' }].concat(conversation.slice(-(2 * 2 + 1)))
+        "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation.slice(-(2 * 2 + 1)))
       },
       timeout: 1000 * 60 * 15
     });
@@ -63,7 +63,7 @@ async function getResponse(history_token, system, message, model = undefined) {
 
   let cost = computeCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens);
 
-  let total_cost = await getCurrentCost()
+  let total_cost = await getCurrentCost();
   total_cost.value += cost;
   total_cost.timestamp = Date.now();
   await memory.set(costkey(), total_cost);
