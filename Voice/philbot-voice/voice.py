@@ -485,6 +485,9 @@ class Context:
                 case 13:
                     print('VOICE GATEWAY ' + self.guild_id + ' client disconnect')
                     # nothing else to do ...
+                case 18:
+                    print('VOICE GATEWAY ' + self.guild_id + ' client connect')
+                    # nothing else to do ...
                 case _:
                     print('VOICE GATEWAY ' + self.guild_id + ' unknown opcode')
                     print(json.dumps(payload))
