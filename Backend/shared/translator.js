@@ -24,7 +24,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
     is_target_language = is_target_language.toLowerCase().trim();
     if (is_target_language.endsWith('.')) is_target_language = is_target_language.substring(0, is_target_language.length - 1);
     if (is_target_language == 'yes') return;
-    if (is_target_language != 'no') throw new Error();
+    if (is_target_language != 'no') throw new Error('Language check is not a bool: ' + is_target_language);
   } else {
     let target_language_percentage = await chatgpt.getSingleResponse(`What percentage of "${content}" is ${target_language}? Respond only with the percentage.`); // gpt-3.5-turbo will not respond only with a percentage
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${target_language_percentage}`);
@@ -38,14 +38,14 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   let source_language = await chatgpt.getSingleResponse(`What language is the text "${content}"? Respond only with the language. Ignore typos.`);
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);
   if (!source_language) return;
-  if (source_language.endsWith('.') || source_language.split(',').some(language => language.split(' ').filter(token => token.length > 0).length > 3)) throw new Error();
+  if (source_language.endsWith('.') || source_language.split(',').some(language => language.split(' ').filter(token => token.length > 0).length > 3)) throw new Error('Invalid language: ' + language);
   if (source_language.toLowerCase().split(',').every(language => [target_language.toLowerCase().trim(), 'internet slang', 'mention', 'mentions', 'discord mention', 'discord mentions', 'emoji', 'emojis', 'emoticon', 'emoticons'].includes(language))) return;
   
   let translation = await chatgpt.getSingleResponse(`Translate "${content}" to ${target_language}. Do not translate emojis, or parts that are surrounded by : < or >. Respond with the translation only, or nothing if it is untranslatable.`);
   //console.log(`DEBUG TRANSLATOR v2 #3 "${content}" => "${translation}"`);
   if (!translation || translation.length == 0) return;
   if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1);
-  if (simplify(translation) == simplify(content)) throw new Error();
+  if (simplify(translation) == simplify(content)) throw new Error('Translation is equal to the source!');
   
   translations_counter.add(1, { 'language.target': target_language.substring(0, 1).toUpperCase() + target_language.substring(1).toLowerCase(), 'language.source': source_language });
 
