@@ -24,8 +24,7 @@ function computeBillingSlotProgress() {
   return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
-const DEFAULT_MODEL = "gpt-4";
-const BACKUP_MODEL = "gpt-3.5-turbo";
+const LANGUAGE_MODELS = ["ada", "babbage", "curie", "davinci", "gpt-3.5-turbo", "gpt-4"];
 
 async function getSingleResponse(message, model = undefined) {
   return getResponse(null, null, message, model);
@@ -34,9 +33,10 @@ async function getSingleResponse(message, model = undefined) {
 async function getResponse(history_token, system, message, model = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!process.env.OPENAI_API_KEY) return null;
-  if (!model) model = DEFAULT_MODEL;
+  if (!model) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 1];
+  if ((await getCurrentCost()).value >= cost_limit * 0.8) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 1];
+  if ((await getCurrentCost()).value >= cost_limit * 0.9) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 2];
   if ((await getCurrentCost()).value >= cost_limit * 1.0) return null;
-  if ((await getCurrentCost()).value >= cost_limit * 0.9) model = BACKUP_MODEL;
 
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = conversation_key ? await memory.get(conversation_key, []) : [];
@@ -132,6 +132,14 @@ function costkey() {
 
 function computeCost(model, tokens_prompt, tokens_completion) {
   switch (model) {
+    case "ada":
+      return (tokens_prompt + tokens_completion) / 1000 * 0.0004;
+    case "babbage":
+      return (tokens_prompt + tokens_completion) / 1000 * 0.0005;
+    case "curie":
+      return (tokens_prompt + tokens_completion) / 1000 * 0.002;
+    case "davinci":
+      return (tokens_prompt + tokens_completion) / 1000 * 0.02;
     case "gpt-3.5-turbo":
       return (tokens_prompt + tokens_completion) / 1000 * 0.002;
     case "gpt-4":
