@@ -941,7 +941,15 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       }
     }
     let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
-    return chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, guild_id ? "gpt-3.5-turbo" : undefined)
+    let models = chatgpt.getLanguageModels();
+    let model_index = models.length - 1;
+    const safety = guild_id ? 0.5 : 0.2;
+    let threshold = safety;
+    while (!await chatgpt.canGetResponse(1 - threshold) && model_index >= 0) {
+      model_index--;
+      threshold = threshold * safety;
+    }
+    return chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, models[model_index])
       .then(result => result ? result :  `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(message => discord.respond(channel_id, event_id, message))
       .finally(() => clearInterval(timer));

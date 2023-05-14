@@ -11,20 +11,11 @@ const cost_absolute_counter = meter.createHistogram('openai.cost.slotted.absolut
 const cost_relative_counter = meter.createHistogram('openai.cost.slotted.relative');
 const cost_progress_counter = meter.createHistogram('openai.cost.slotted.progress');
 
-async function canGetResponse(threshold = 0.8) {
-  return (await getCurrentCost()).value / cost_limit * threshold < computeBillingSlotProgress();
-}
-
-function computeBillingSlotProgress() {
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const totalDaysInMonth = endOfMonth.getDate() - startOfMonth.getDate() + 1;
-  const millisSinceStartOfMonth = now.getTime() - startOfMonth.getTime();
-  return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
-}
-
 const LANGUAGE_MODELS = ["ada", "babbage", "curie", "davinci", "gpt-3.5-turbo", "gpt-4"];
+
+function getLanguageModels() {
+  return LANGUAGE_MODELS;
+}
 
 async function getSingleResponse(message, model = undefined) {
   return getResponse(null, null, message, model);
@@ -34,11 +25,6 @@ async function getResponse(history_token, system, message, model = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!process.env.OPENAI_API_KEY) return null;
   if (!model) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 1];
-  if ((await getCurrentCost()).value >= cost_limit * 0.8) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 2];
-  if ((await getCurrentCost()).value >= cost_limit * 0.9) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 3];
-  if ((await getCurrentCost()).value >= cost_limit * 0.95) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 4];
-  if ((await getCurrentCost()).value >= cost_limit * 0.98) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 5];
-  if ((await getCurrentCost()).value >= cost_limit * 0.99) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 6];
   if ((await getCurrentCost()).value >= cost_limit * 1.0) return null;
 
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
@@ -154,4 +140,17 @@ function computeCost(model, tokens_prompt, tokens_completion) {
   }
 }
 
-module.exports = { getSingleResponse, getResponse, canGetResponse }
+async function canGetResponse(threshold = 0.8) {
+  return (await getCurrentCost()).value / cost_limit * threshold < computeBillingSlotProgress();
+}
+
+function computeBillingSlotProgress() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const totalDaysInMonth = endOfMonth.getDate() - startOfMonth.getDate() + 1;
+  const millisSinceStartOfMonth = now.getTime() - startOfMonth.getTime();
+  return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
+}
+
+module.exports = { getLanguageModels, getSingleResponse, getResponse, canGetResponse }
