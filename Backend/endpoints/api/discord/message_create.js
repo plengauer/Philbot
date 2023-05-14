@@ -16,7 +16,7 @@ const permissions = require('../../../shared/permissions.js');
 const raid_protection = require('../../../shared/raid_protection.js');
 const subscriptions = require('../../../shared/subscriptions.js');
 const role_management = require('../../../shared/role_management.js');
-const chatgpt = require('../../../shared/chatgpt.js');
+const chatgpt = require('../../../shared/openai.js');
 const translator = require('../../../shared/translator.js');
 const mirror = require('../../../shared/mirror.js');
 

@@ -1,6 +1,6 @@
 const memory = require('./memory.js');
 const discord = require('./discord.js');
-const chatgpt = require('./chatgpt.js');
+const chatgpt = require('./openai.js');
 const opentelemetry = require('@opentelemetry/api');
 
 const meter = opentelemetry.metrics.getMeter('translator');
