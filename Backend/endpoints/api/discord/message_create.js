@@ -216,14 +216,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     return Promise.resolve();
   
   } else if (message === 'debug') {
-    return discord.post(channel_id, '', undefined, true, [
-      {
-        type: 1,
-        components: [
-          { type: 2, style: 1, label: 'DEBUG', custom_id: 'interaction.debug.ping' },
-        ]
-      }
-    ]);
+    return reactOK(channel_id, event_id);
     
   } else if (message === 'ping') {
     return discord.respond(channel_id, event_id, 'pong');

@@ -3,6 +3,7 @@ const process = require('process');
 const permissions = require('./permissions.js');
 const curl = require('./curl.js');
 const { retry } = require('./retry.js');
+let FormData = require('form-data');
 
 var callbacks = {};
 
@@ -268,21 +269,36 @@ async function post(channel_id, content, referenced_message_id = undefined, noti
   let limit = 2000;
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
-    await post_paged(channel_id, content.substring(0, index).trim(), referenced_message_id, notify, [], []);
+    await post_paged(channel_id, content.substring(0, index).trim(), referenced_message_id, notify, [], [], []);
     content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
   }
-  return post_paged(channel_id, content, referenced_message_id, notify, embeds, components);
+  return post_paged(channel_id, content, referenced_message_id, notify, [], embeds, components);
 }
 
-async function post_paged(channel_id, content, referenced_message_id, notify, embeds, components) {
-  return HTTP(`/channels/${channel_id}/messages`, 'POST', {
-      content: content,
-      message_reference: referenced_message_id ? { message_id: referenced_message_id } : undefined,
-      flags: (embeds.length == 0 && ((content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1)) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0)
-        | (notify ? 0 : (1 << 12 /* SUPPRESS_NOTIFICATIONS */)),
-      embeds: embeds,
-      components: components,
-    });
+async function post_paged(channel_id, content, referenced_message_id, notify, attachments, embeds, components) {
+  let endpoint = `/channels/${channel_id}/messages`;
+  let method = 'POST';
+  let body = {
+    content: content,
+    message_reference: referenced_message_id ? { message_id: referenced_message_id } : undefined,
+    flags: (embeds.length == 0 && ((content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1)) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0)
+      | (notify ? 0 : (1 << 12 /* SUPPRESS_NOTIFICATIONS */)),
+    embeds: embeds,
+    components: components,
+  };
+  if (attachments.length > 0) {
+    //TODO add files property to body
+    let formdata = new FormData();
+    form.append('payload_json', JSON.stringify(payload));
+    for (let attachment of attachments) {
+      form.append('file', attachment);
+    }
+    let headers = formdata.getHeaders();
+    headers['authorization'] = `Bot ${process.env.DISCORD_API_TOKEN}`;
+    return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: headers });
+  } else {
+    return HTTP(endpoint, method, body);
+  }
 }
 
 function getSplitIndex(string, limit) {
