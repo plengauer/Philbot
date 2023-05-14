@@ -34,8 +34,11 @@ async function getResponse(history_token, system, message, model = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!process.env.OPENAI_API_KEY) return null;
   if (!model) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 1];
-  if ((await getCurrentCost()).value >= cost_limit * 0.8) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 1];
-  if ((await getCurrentCost()).value >= cost_limit * 0.9) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 2];
+  if ((await getCurrentCost()).value >= cost_limit * 0.8) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 2];
+  if ((await getCurrentCost()).value >= cost_limit * 0.9) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 3];
+  if ((await getCurrentCost()).value >= cost_limit * 0.95) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 4];
+  if ((await getCurrentCost()).value >= cost_limit * 0.98) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 5];
+  if ((await getCurrentCost()).value >= cost_limit * 0.99) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 6];
   if ((await getCurrentCost()).value >= cost_limit * 1.0) return null;
 
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
