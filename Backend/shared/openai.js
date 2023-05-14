@@ -32,12 +32,25 @@ async function getResponse(history_token, system, message, model = undefined) {
 
   let input = { role: 'user', content: message.trim() };
   conversation.push(input);
-  let response = await HTTP('/v1/chat/completions', {
-    "model": model,
-    "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation.slice(-(2 * 2 + 1)))
-  });
-  let output = response.choices[0].message;
-  
+
+  let output = null;
+  let response = null;
+  if (model.startsWith('gpt-')) {
+    response = await HTTP('/v1/chat/completions' , {
+      "model": model,
+      "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation.slice(-(2 * 2 + 1)))
+    });
+  } else {
+    response = await HTTP('/v1/completions' , {
+      "model": model,
+      "prompt": input.content
+    });
+    for (let index = 0; index < response.choices.length; index++) {
+      response.choices[index] = { message: { role: 'assistent', content: response.choices[index].text }};
+    }
+  }
+
+  output = response.choices[0].message;
   output.content = sanitizeResponse(output.content);
 
   conversation.push(output);
