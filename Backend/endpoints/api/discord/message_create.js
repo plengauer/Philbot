@@ -898,6 +898,11 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     return chatgpt.getSingleResponse(`Translate "${text}" to ${language}.`)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id));
   
+  } else if (message.startsWith('draw ')) {
+    message = message.split(' ').slice(1).join(' ');
+    return chatgpt.getImageResponse(message)
+      .then(url => url ? discord.respond(channel_id, event_id, url) : reactNotOK(channel_id, event_id));
+
   } else if (message == 'mirror' || message.startsWith('mirror to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);

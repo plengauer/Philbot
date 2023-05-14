@@ -32,17 +32,10 @@ async function getResponse(history_token, system, message, model = undefined) {
 
   let input = { role: 'user', content: message.trim() };
   conversation.push(input);
-  let response = await curl.request({
-      hostname: 'api.openai.com',
-      path: '/v1/chat/completions',
-      headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY },
-      method: 'POST',
-      body: {
-        "model": model,
-        "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation.slice(-(2 * 2 + 1)))
-      },
-      timeout: 1000 * 60 * 15
-    });
+  let response = await HTTP('/v1/chat/completions', {
+    "model": model,
+    "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation.slice(-(2 * 2 + 1)))
+  });
   let output = response.choices[0].message;
   
   output.content = sanitizeResponse(output.content);
@@ -50,18 +43,8 @@ async function getResponse(history_token, system, message, model = undefined) {
   conversation.push(output);
   if (conversation_key) await memory.set(conversation_key, conversation, 60 * 60 * 24 * 7);
 
-  let cost = computeCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens);
-
-  let total_cost = await getCurrentCost();
-  total_cost.value += cost;
-  total_cost.timestamp = Date.now();
-  await memory.set(costkey(), total_cost);
-
-  const attributes = { model: response.model };
-  cost_counter.add(cost, attributes);
-  cost_absolute_counter.record(total_cost.value, attributes);
-  cost_relative_counter.record(total_cost.value / cost_limit, attributes);
-  cost_progress_counter.record(total_cost.value / (cost_limit * computeBillingSlotProgress()), attributes);
+  let cost = computeTextCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens);
+  await bill(cost, response.model);
 
   return output.content;
 }
@@ -109,17 +92,7 @@ function strip(haystack, needle) {
   return haystack;
 }
 
-async function getCurrentCost() {
-  let backup = { value: 0, timestamp: Date.now() };
-  let cost = await memory.get(costkey(), backup);
-  return (new Date(cost.timestamp).getUTCFullYear() == new Date().getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == new Date().getUTCMonth()) ? cost : backup;
-}
-
-function costkey() {
-  return 'openai:cost';
-}
-
-function computeCost(model, tokens_prompt, tokens_completion) {
+function computeTextCost(model, tokens_prompt, tokens_completion) {
   switch (model) {
     case "ada":
       return (tokens_prompt + tokens_completion) / 1000 * 0.0004;
@@ -140,6 +113,68 @@ function computeCost(model, tokens_prompt, tokens_completion) {
   }
 }
 
+const IMAGE_SIZES = ["256x256", "512x512", "1024x1024"];
+
+async function getImageSizes() {
+  return IMAGE_SIZES;
+}
+
+async function getImageResponse(message, size = undefined) {
+  if (!process.env.OPENAI_API_KEY) return null;
+  if ((await getCurrentCost()).value >= cost_limit * 1.0) return null;
+  if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
+  let url = await HTTP('/v1/images/generations', {
+      prompt: message,
+      size: size,
+    })
+    .then(response => response.data[0].url)
+    .catch(error => JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
+  await bill(getImageCost(size), 'dall-e');
+  return url;
+}
+
+function getImageCost(size) {
+  switch(size) {
+    case   "256x256": return 0.016;
+    case   "512x512": return 0.018;
+    case "1024x1024": return 0.020;
+  }
+}
+
+async function HTTP(endpoint, body) {
+  return await curl.request({
+    hostname: 'api.openai.com',
+    path: endpoint,
+    headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY },
+    method: 'POST',
+    body: body,
+    timeout: 1000 * 60 * 15
+  });
+}
+
+async function bill(cost, model) {
+  let total_cost = await getCurrentCost();
+  total_cost.value += cost;
+  total_cost.timestamp = Date.now();
+  await memory.set(costkey(), total_cost);
+
+  const attributes = { 'openai.model': model };
+  cost_counter.add(cost, attributes);
+  cost_absolute_counter.record(total_cost.value, attributes);
+  cost_relative_counter.record(total_cost.value / cost_limit, attributes);
+  cost_progress_counter.record(total_cost.value / (cost_limit * computeBillingSlotProgress()), attributes);
+}
+
+async function getCurrentCost() {
+  let backup = { value: 0, timestamp: Date.now() };
+  let cost = await memory.get(costkey(), backup);
+  return (new Date(cost.timestamp).getUTCFullYear() == new Date().getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == new Date().getUTCMonth()) ? cost : backup;
+}
+
+function costkey() {
+  return 'openai:cost';
+}
+
 async function canGetResponse(threshold = 0.8) {
   return (await getCurrentCost()).value / cost_limit * threshold < computeBillingSlotProgress();
 }
@@ -153,4 +188,4 @@ function computeBillingSlotProgress() {
   return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
-module.exports = { getLanguageModels, getSingleResponse, getResponse, canGetResponse }
+module.exports = { getLanguageModels, getSingleResponse, getResponse, getImageSizes, getImageResponse, canGetResponse }
