@@ -291,13 +291,13 @@ async function post_paged(channel_id, content, referenced_message_id, notify, em
     let formdata = new FormData();
     for (let index = 0; index < attachments.length; index++) {
       let attachment = attachments[index];
-      formdata.append(`file[${index}]`, attachment.content, attachment.filename);
+      formdata.append(`file[${index}]`, attachment.content, { contentType: attachment.contentType, filename: attachment.filename });
       payload.attachments.push({ id: index, filename: attachment.filename, description: attachment.description });
     }
-    formdata.append('payload_json', JSON.stringify(payload));
+    formdata.append('payload_json', JSON.stringify(payload), { contentType: 'application/json' });
     let headers = formdata.getHeaders();
     headers['authorization'] = `Bot ${process.env.DISCORD_API_TOKEN}`;
-    return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: headers });
+    return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: formdata, headers: headers });
   } else {
     return HTTP(endpoint, method, payload);
   }

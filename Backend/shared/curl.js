@@ -16,14 +16,16 @@ async function request(options) {
   }
   if (options.body) {
     options.headers = options.headers ?? {};
-    if (typeof options.body == 'object') {
-      options.body = JSON.stringify(options.body);
-      options.headers['content-type'] = 'application/json';
-    } else if (typeof options.body == 'string' && !options.headers['content-type']) {
-      options.headers['content-type'] = 'text/plain';
-    } else {
-      options.body = '' + options.body;
-      options.headers['content-type'] = 'text/plain';
+    if (!options.headers['content-type']) {
+      if (typeof options.body == 'object') {
+        options.body = JSON.stringify(options.body);
+        options.headers['content-type'] = 'application/json';
+      } else if (typeof options.body == 'string' && !options.headers['content-type']) {
+        options.headers['content-type'] = 'text/plain';
+      } else {
+        options.body = '' + options.body;
+        options.headers['content-type'] = 'text/plain';
+      }
     }
   }
   let response = await request_full(options);
@@ -46,7 +48,7 @@ async function request_simple(options) {
   if (!options.hostname) throw new Error('Need hostname');
   if (!options.path) throw new Error('Need path');
   if (!options.path.startsWith('/')) throw new Error('Path must start with a "/"');
-  if (options.body && typeof options.body != 'string') throw new Error('Body must be string');
+  if (options.body && typeof options.body != 'string' && !options.body.pipe) throw new Error('Body must be string or pipeable');
   if (options.body && !options.headers['content-type']) throw new Error('Body must have content-type header');
   if (options.headers && options.headers['authorization'] && options.secure != undefined && !options.secure) throw new Error('Authorization header requires https');
 
@@ -100,7 +102,11 @@ async function request_simple(options) {
           else resolve({ status: 504, headers: {}, body: 'Gateway Timeout' });
         });
       if (options.body) {
-        request.write(options.body);
+        if (options.body.pipe) {
+          options.body.pipe(request);
+        } else {
+          request.write(options.body);
+        }
       }
       request.end();
     }));
