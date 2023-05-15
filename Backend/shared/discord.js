@@ -265,20 +265,20 @@ async function trigger_typing_indicator(channel_id) {
   return HTTP(`/channels/${channel_id}/typing`, 'POST');
 }
 
-async function post(channel_id, content, referenced_message_id = undefined, notify = true, embeds = [], components = []) {
+async function post(channel_id, content, referenced_message_id = undefined, notify = true, embeds = [], components = [], attachments = []) {
   let limit = 2000;
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
     await post_paged(channel_id, content.substring(0, index).trim(), referenced_message_id, notify, [], [], []);
     content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
   }
-  return post_paged(channel_id, content, referenced_message_id, notify, [], embeds, components);
+  return post_paged(channel_id, content, referenced_message_id, notify, embeds, components, attachments);
 }
 
-async function post_paged(channel_id, content, referenced_message_id, notify, attachments, embeds, components) {
+async function post_paged(channel_id, content, referenced_message_id, notify, embeds, components, attachments) {
   let endpoint = `/channels/${channel_id}/messages`;
   let method = 'POST';
-  let body = {
+  let payload = {
     content: content,
     message_reference: referenced_message_id ? { message_id: referenced_message_id } : undefined,
     flags: (embeds.length == 0 && ((content.includes('https://discord.com/') || ((content.match(/http:\/\//g) ?? []).length + (content.match(/https:\/\//g) ?? []).length) > 1)) ? 1 << 2 /* SUPPRESS_EMBEDS */ : 0)
@@ -287,17 +287,18 @@ async function post_paged(channel_id, content, referenced_message_id, notify, at
     components: components,
   };
   if (attachments.length > 0) {
-    //TODO add files property to body
+    payload.attachments = [];
     let formdata = new FormData();
-    form.append('payload_json', JSON.stringify(payload));
-    for (let attachment of attachments) {
-      form.append('file', attachment);
+    for (let index = 0; index < attachments.length; index++) {
+      form.append(`file[${index}]`, attachment.content, attachment.filename);
+      payload.attachments.push({ id: index, filename: attachment.filename, description: attachment.description });
     }
+    form.append('payload_json', JSON.stringify(payload));
     let headers = formdata.getHeaders();
     headers['authorization'] = `Bot ${process.env.DISCORD_API_TOKEN}`;
     return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: headers });
   } else {
-    return HTTP(endpoint, method, body);
+    return HTTP(endpoint, method, payload);
   }
 }
 

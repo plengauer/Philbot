@@ -1,5 +1,6 @@
 const process = require('process');
 const fs = require('fs');
+const url = require('url');
 const curl = require('../../../shared/curl.js');
 const memory = require('../../../shared/memory.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
@@ -893,8 +894,16 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
   
   } else if (message.startsWith('draw ')) {
     message = message.split(' ').slice(1).join(' ');
+    await discord.trigger_typing_indicator(channel_id);
+    let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     return chatgpt.getImageResponse(message)
-      .then(url => url ? discord.respond(channel_id, event_id, url) : reactNotOK(channel_id, event_id));
+      .then(url => url ? url : Promise.reject('I couldn\'t draw the picture!'))
+      .then(uri => Promise.resolve(url.parse(uri))
+        .then(url => curl.request({ hostname: url.hostname, path: url.pathname + url.search }))
+        .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
+        .catch(() => discord.respond(channel_id, event_id, uri)
+      )
+      .finally(() => clearInterval(timer));
 
   } else if (message == 'mirror' || message.startsWith('mirror to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
