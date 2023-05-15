@@ -1,8 +1,9 @@
 {
   "name": "philbot-backend",
-  "version": "2.30.2",
+  "version": "2.30.3",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
+    "form-data": "^4.0.0",
     "jszip": "^3.10.1",
     "epic-free-games": "^3.1.1",
     "properties-reader": "^2.2.0",
