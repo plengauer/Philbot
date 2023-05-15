@@ -901,6 +901,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       .then(uri => Promise.resolve(url.parse(uri))
         .then(url => curl.request({ hostname: url.hostname, path: url.pathname + url.search }))
         .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
+        .catch(error => {console.log(error.stack); throw error;})
         .catch(() => discord.respond(channel_id, event_id, uri))
       )
       .finally(() => clearInterval(timer));
