@@ -44,7 +44,7 @@ async function onOpenAIInteraction(guild_id, channel_id, message_id, interaction
     case 'openai.request':
       let model = data.components[0].components.find(component.custom_id == 'openai.model').value;
       let prompt = data.components[0].components.find(component.custom_id == 'openai.prompt').value;
-      return discord.interact(interaction_id, interaction_token).
+      return discord.interact(interaction_id, interaction_token)
         .then(() => chatgpt.getSingleResponse(prompt, model))
         .then(response => discord.post(channel_id, `**OpenAI**\nPrompt: ${prompt}\nModel: ${model}\nResponse: ${response}`));
     default: throw new Error('Unknown interaction: ' + data.custom_id);
