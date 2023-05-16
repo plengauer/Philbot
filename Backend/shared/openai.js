@@ -138,9 +138,10 @@ async function getImageResponse(message, size = undefined) {
   if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
   let url = await HTTP('/v1/images/generations', {
       prompt: message,
+      response_format: 'b64_json'
       size: size,
     })
-    .then(response => response.data[0].url)
+    .then(response => new Buffer(response.data[0].b64_json, 'base64'))
     .catch(error => JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
   await bill(getImageCost(size), 'dall-e');
   return url;
