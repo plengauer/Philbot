@@ -280,7 +280,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     //if (value.includes(',')) value = value.split(',');
     return memory.set(key, value, 60 * 60 * 24 * 7 * 52).then(() => reactOK(channel_id, event_id));
     
-  } else if (message == "AI")) {
+  } else if (message == "AI") {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
       return reactNotOK(channel_id, event_id);
     }
