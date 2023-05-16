@@ -292,7 +292,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     }
     message = message.split(' ').slice(1).join(' ');
     let model = message.split(' ')[0]
-    let prompt = message.split(' ').slice(1);
+    let prompt = message.split(' ').slice(1).join(' ');
     if (!chatgpt.getLanguageModels().includes(model)) return discord.respond(channel_id, event_id, `Unknown model '${model}', supported models are ` + chatgpt.getLanguageModels().join(', ') + '.');
     return handleLongResponse(channel_id, () => chatgpt.getSingleResponse(prompt, model).then(response => response ? discord.respond(channel_id, event_id, response) : reactNotOK(channel_id, event_id)));
     
