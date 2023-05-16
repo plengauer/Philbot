@@ -27,7 +27,12 @@ async function onOpenAIInteraction(guild_id, channel_id, message_id, interaction
               "min_values": 1,
               "max_values": 1,
               "options": chatgpt.getLanguageModels().map(model => { return { label: model, value: model }; })
-            },{
+            }
+          ]
+        },{
+          "type": 1,
+          "components": [
+            {
               "type": 4,
               "custom_id": "openai.prompt",
               "label": "Prompt",
