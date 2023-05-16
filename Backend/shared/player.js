@@ -94,7 +94,7 @@ async function HTTP_VOICE(operation, payload) {
 }
 
 async function resolveTitle(link) {
-  return HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => {console.log(result); return result;}).then(result => result.items[0].snippet.title);
+  return HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => result.items[0].snippet.title);
 }
 
 async function stop(guild_id) {
