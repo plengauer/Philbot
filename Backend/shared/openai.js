@@ -142,7 +142,7 @@ async function getImageResponse(message, size = undefined) {
       size: size
     })
     .then(response => new Buffer(response.data[0].b64_json, 'base64'))
-    .catch(error => JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
+    .catch(error => Promise.reject(new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message)));
   await bill(getImageCost(size), 'dall-e');
   return url;
 }
