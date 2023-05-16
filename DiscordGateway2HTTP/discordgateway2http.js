@@ -65,12 +65,12 @@ function handleMessage(state, message) {
         activities: event.d?.activities?.map(activity => activity.name).join(',')
     });
     switch(event.op) {
-        case 0 /* ready | resumed | dispatch */: return handleDispatch(state, event.s, event.t, event.d);
-        case 1 /* heartbeat request (heartbeat) */: return handleHeartbeatRequest(state);
-        case 7 /* reconnect */: return handleReconnect(state);
-        case 9 /* invalid session id */: return handleInvalidSession(state)
-        case 10 /* hello */: return handleHello(state, event.d);
-        case 11 /* heartbeat ack */: return handleHeartbeatACK(state);
+        case 0 /* ready | resumed | dispatch */: return handleDispatch(state, event.s, event.t, event.d).catch(error => console.log(error));
+        case 1 /* heartbeat request (heartbeat) */: return handleHeartbeatRequest(state).catch(error => console.log(error));
+        case 7 /* reconnect */: return handleReconnect(state).catch(error => console.log(error));
+        case 9 /* invalid session id */: return handleInvalidSession(state).catch(error => console.log(error));
+        case 10 /* hello */: return handleHello(state, event.d).catch(error => console.log(error));
+        case 11 /* heartbeat ack */: return handleHeartbeatACK(state).catch(error => console.log(error));
         default: console.error('unknown event opcode: ' + event.op);
     }
 }
