@@ -10,7 +10,7 @@ async function handle(payload) {
   else throw new Error('Unknown interaction: ' + payload.data.custom_id);
 }
 
-async function onOpenAIInteraction(guild_id, channel_id, message_id, interaction_id, interaction_token, interaction_data) {
+async function onOpenAIInteraction(guild_id, channel_id, message_id, interaction_id, interaction_token, data) {
   switch(data.custom_id) {
     case 'openai.modal': return discord.interact(interaction_id, interaction_token, {
       type: 9,
