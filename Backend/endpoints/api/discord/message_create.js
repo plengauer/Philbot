@@ -280,6 +280,12 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     //if (value.includes(',')) value = value.split(',');
     return memory.set(key, value, 60 * 60 * 24 * 7 * 52).then(() => reactOK(channel_id, event_id));
     
+  } else if (message == "AI")) {
+    if (user_id != process.env.OWNER_DISCORD_USER_ID) {
+      return reactNotOK(channel_id, event_id);
+    }
+    return discord.post(channel_id, '', event_id, true, [], [{ type: 1, components: [{ type: 2, style: 2, label: 'Prompt', custom_id: 'openai.modal' }]}]);
+    
   } else if (message == 'help') {
     let notification_role_name;
     if (guild_id) {
