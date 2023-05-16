@@ -285,6 +285,16 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       return reactNotOK(channel_id, event_id);
     }
     return discord.post(channel_id, '', event_id, true, [], [{ type: 1, components: [{ type: 2, style: 2, label: 'Prompt', custom_id: 'openai.modal' }]}]);
+
+  } else if (message.startsWith("AI ")) {
+    if (user_id != process.env.OWNER_DISCORD_USER_ID) {
+      return reactNotOK(channel_id, event_id);
+    }
+    message = message.split(' ').slice(1).join(' ');
+    let model = message.split(' ')[0]
+    let prompt = message.split(' ').slice(1);
+    if (!chatgpt.getLanguageModels().includes(model)) return discord.respond(channel_id, event_id, `Unknown model '${model}', supported models are ` + chatgpt.getLanguageModels.join(', ') + '.');
+    return handleLongResponse(channel_id, () => chatgpt.getSingleResponse(prompt, model).then(response => response ? discord.respond(channel_id, event_id, response) : reactNotOK(channel_id, event_id)));
     
   } else if (message == 'help') {
     let notification_role_name;
