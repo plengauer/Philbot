@@ -889,17 +889,16 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!split || split < 0) return reactNotOK(channel_id, event_id);
     let language = message.substring(0, split).trim();
     let text = message.substring(split + 1).trim();
-    return chatgpt.getSingleResponse(`Translate "${text}" to ${language}.`)
-      .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id));
+    return handleLongResponse(channel_id, () => chatgpt.getSingleResponse(`Translate "${text}" to ${language}.`)
+      .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
+    );
   
   } else if (message.startsWith('draw ')) {
     message = message.split(' ').slice(1).join(' ');
-    await discord.trigger_typing_indicator(channel_id);
-    let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
-    return chatgpt.getImageResponse(message)
+    return handleLongResponse(channel_id, () => chatgpt.getImageResponse(message)
       .then(image => image ? image : Promise.reject('I couldn\'t draw the picture!'))
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
-      .finally(() => clearInterval(timer));
+    );
 
   } else if (message == 'mirror' || message.startsWith('mirror to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -943,7 +942,6 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
         system_message += ` The name of <@${member.user.id}> is ${member.nick ?? member.user.username}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
       }
     }
-    let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     let models = chatgpt.getLanguageModels();
     let model_index = models.length - 1;
     const safety = guild_id ? 0.5 : 0.2;
@@ -952,11 +950,18 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       model_index--;
       threshold = threshold * safety;
     }
-    return chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, models[model_index])
+    return handleLongResponse(channel_id, () => chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, models[model_index])
       .then(result => result ? result :  `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(message => discord.respond(channel_id, event_id, message))
-      .finally(() => clearInterval(timer));
+    );
   }
+}
+
+async function handleLongResponse(channel_id, func) {
+  let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
+  return discord.trigger_typing_indicator(channel_id)
+    .then(() => func())
+    .finally(() => clearInterval(timer));
 }
 
 async function reactOK(channel_id, event_id) {
