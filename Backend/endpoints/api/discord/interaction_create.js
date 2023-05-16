@@ -48,6 +48,7 @@ async function onOpenAIInteraction(guild_id, channel_id, message_id, interaction
         .then(() => chatgpt.getSingleResponse(prompt, model))
         .then(response => discord.post(channel_id, `**OpenAI**\nPrompt: ${prompt}\nModel: ${model}\nResponse: ${response}`));
     default: throw new Error('Unknown interaction: ' + data.custom_id);
+  }
 }
 
 module.exports = { handle }
