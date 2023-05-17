@@ -15,6 +15,7 @@ const cost_progress_counter = meter.createHistogram('openai.cost.slotted.progres
 
 const LANGUAGE_COMPLETION_MODELS = ["text-ada-001", "text-babbage-001", "text-curie-001", "text-davinci-001", "text-davinci-002", "text-davinci-003"];
 const LANGUAGE_CHAT_MODELS = ["gpt-3.5-turbo", "gpt-4"];
+const LANGUAGE_MODEL_MAPPING = { "ada": "text-ada-001", "babbage": "text-babbage-001", "curie": "text-curie-001", "davinci": "text-davinci-001", "gpt-3": "text-davinci-003", "gpt-3.5": "gpt-3.5-turbo" };
 
 function getLanguageModels() {
   return LANGUAGE_COMPLETION_MODELS.concat(LANGUAGE_CHAT_MODELS);
@@ -22,6 +23,7 @@ function getLanguageModels() {
 
 async function createCompletion(prompt, model = undefined) {
   if (!model) return LANGUAGE_COMPLETION_MODELS[LANGUAGE_COMPLETION_MODELS.length - 1];
+  model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   if (!token) return null;
   if (!await canCreate()) return null;
   
@@ -44,6 +46,7 @@ async function createResponse(history_token, system, message, model = undefined)
 async function createResponse0(history_token, system, message, model = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!model) model = LANGUAGE_CHAT_MODELS[LANGUAGE_CHAT_MODELS.length - 1];
+  model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   if (!token) return null;
   if (!await canCreate()) return null;
 
