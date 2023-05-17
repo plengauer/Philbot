@@ -22,7 +22,7 @@ function getLanguageModels() {
 }
 
 async function createCompletion(prompt, model = undefined) {
-  if (!model) return LANGUAGE_COMPLETION_MODELS[LANGUAGE_COMPLETION_MODELS.length - 1];
+  model = model ?? LANGUAGE_COMPLETION_MODELS[LANGUAGE_COMPLETION_MODELS.length - 1];
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   if (!token) return null;
   if (!await canCreate()) return null;
@@ -44,7 +44,7 @@ async function createResponse(history_token, system, message, model = undefined)
 
 async function createResponse0(history_token, system, message, model = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
-  if (!model) model = LANGUAGE_CHAT_MODELS[LANGUAGE_CHAT_MODELS.length - 1];
+  model = model ?? LANGUAGE_CHAT_MODELS[LANGUAGE_CHAT_MODELS.length - 1];
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   if (!token) return null;
   if (!await canCreate()) return null;
@@ -194,7 +194,7 @@ async function HTTP(endpoint, body) {
 }
 
 async function bill(cost, model) {
-  await synchronized.locked('openai.billing', () => bill0(cost, model));
+  let total_cost = await synchronized.locked('openai.billing', () => bill0(cost, model));
   const attributes = { 'openai.model': model };
   cost_counter.add(cost, attributes);
   cost_absolute_counter.record(total_cost.value, attributes);
@@ -207,6 +207,7 @@ async function bill0(cost, model) {
   total_cost.value += cost;
   total_cost.timestamp = Date.now();
   await memory.set(costkey(), total_cost);
+  return total_cost;
 }
 
 async function getCurrentCost() {
