@@ -190,8 +190,8 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.shouldCreate()) {
     let promise = chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or nothing at all.\nText: "${message}"\nExtraction: `)
       //.then(response => { console.log(`DEBUG PAINTING v1: "${message}" => "${response}"`); return response; })
-      .then(response => response ?? '')
-      .then(extraction => (extraction == 'nothing at all' || extraction == 'no' || extraction == '') ? undefined : chatgpt.createImage(extraction))
+      .then(extraction => extraction.trim())
+      .then(extraction => extraction.length > 25 ? chatgpt.createImage(extraction) : undefined)
       .then(file => file ? discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]) : undefined);
     promises.push(promise);
   }

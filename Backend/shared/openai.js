@@ -58,8 +58,9 @@ async function createResponse0(history_token, system, message, model = undefined
   let output = null;
   if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
     let completion = await createCompletion(`Complete the conversation.` + (system ? `\nassistent: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistent: ', model);
+    completion = completion.trim();
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
-    output = { role: 'assistent', content: completion };
+    output = { role: 'assistent', content: completion.trim() };
   } else {
     let response = await HTTP('/v1/chat/completions' , { "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation) });
     output = response.choices[0].message;

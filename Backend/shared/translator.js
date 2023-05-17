@@ -37,6 +37,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   let source_language = await chatgpt.createCompletion(`Question: What language is the text "${content}"? Respond only with the language. Ignore typos.\nAnswer: `, model);
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);
   if (!source_language) return;
+  source_language = source_language.trim();
   if (source_language.endsWith('.') || source_language.split(',').some(language => language.split(' ').filter(token => token.length > 0).length > 3)) throw new Error('Invalid language: ' + language);
   if (source_language.toLowerCase().split(',').every(language => [target_language.toLowerCase().trim(), 'internet slang', 'mention', 'mentions', 'discord mention', 'discord mentions', 'emoji', 'emojis', 'emoticon', 'emoticons'].includes(language))) return;
   
@@ -51,7 +52,9 @@ async function translate(target_language, source, model = undefined) {
   let translation = await chatgpt.createCompletion(`Translate the text to ${target_language}. Do not translate emojis, or parts that are surrounded by : < or >. \nText: "${source}"\nTranslation: `, model);
   //console.log(`DEBUG TRANSLATOR v2 #3 "${source}" => "${translation}"`);
   if (!translation || translation.length == 0) return;
+  translation = translation.trim();
   if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1);
+  translation = translation.trim();
   if (simplify(translation) == simplify(source)) throw new Error('Translation is equal to the source!');
   return translation;
 }
