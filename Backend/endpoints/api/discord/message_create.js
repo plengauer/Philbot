@@ -180,8 +180,8 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(promise);
   }
   
-  if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.canGetResponse()) {
-    let promise = chatgpt.getSingleResponse(`Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
+  if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.shouldCreate()) {
+    let promise = chatgpt.createResponse(null, null, `Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
       //.then(response => { console.log(`DEBUG INNUENDO v6: "${message}" => "${response}"`); return response; })
       .then(response => response ?? '')
       .then(response => response.toLowerCase())
@@ -279,22 +279,6 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     else if (value.startsWith("json:")) value = JSON.parse(value.substring("json:".length));
     //if (value.includes(',')) value = value.split(',');
     return memory.set(key, value, 60 * 60 * 24 * 7 * 52).then(() => reactOK(channel_id, event_id));
-    
-  } else if (message == "AI") {
-    if (user_id != process.env.OWNER_DISCORD_USER_ID) {
-      return reactNotOK(channel_id, event_id);
-    }
-    return discord.post(channel_id, '', event_id, true, [], [{ type: 1, components: [{ type: 2, style: 2, label: 'Prompt', custom_id: 'openai.modal' }]}]);
-
-  } else if (message.startsWith("AI ")) {
-    if (user_id != process.env.OWNER_DISCORD_USER_ID) {
-      return reactNotOK(channel_id, event_id);
-    }
-    message = message.split(' ').slice(1).join(' ');
-    let model = message.split(' ')[0]
-    let prompt = message.split(' ').slice(1).join(' ');
-    if (!chatgpt.getLanguageModels().includes(model)) return discord.respond(channel_id, event_id, `Unknown model '${model}', supported models are ` + chatgpt.getLanguageModels().join(', ') + '.');
-    return handleLongResponse(channel_id, () => chatgpt.getSingleResponse(prompt, model).then(response => response ? discord.respond(channel_id, event_id, response) : reactNotOK(channel_id, event_id)));
     
   } else if (message == 'help') {
     let notification_role_name;
@@ -905,13 +889,13 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!split || split < 0) return reactNotOK(channel_id, event_id);
     let language = message.substring(0, split).trim();
     let text = message.substring(split + 1).trim();
-    return handleLongResponse(channel_id, () => chatgpt.getSingleResponse(`Translate "${text}" to ${language}.`)
+    return handleLongResponse(channel_id, () => chatgpt.createCompletion(`Translate a text to ${language}.\nText: "${text}"\nTranslation: `)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
     );
   
   } else if (message.startsWith('draw ')) {
     message = message.split(' ').slice(1).join(' ');
-    return handleLongResponse(channel_id, () => chatgpt.getImageResponse(message)
+    return handleLongResponse(channel_id, () => chatgpt.createImage(message)
       .then(image => image ? image : Promise.reject('I couldn\'t draw the picture!'))
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
       .catch(error => discord.post(channel_id, event_id, error.message))
@@ -959,15 +943,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
         system_message += ` The name of <@${member.user.id}> is ${member.nick ?? member.user.username}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
       }
     }
-    let models = chatgpt.getLanguageModels();
-    let model_index = models.length - 1;
-    const safety = guild_id ? 0.5 : 0.2;
-    let threshold = safety;
-    while (!await chatgpt.canGetResponse(1 - threshold) && model_index >= 0) {
-      model_index--;
-      threshold = threshold * safety;
-    }
-    return handleLongResponse(channel_id, () => chatgpt.getResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, models[model_index])
+    let model = await chatgpt.getDynamicModel(chatgpt.getLanguageModels(), guild_id ? 0.5 : 0.2);
+    return handleLongResponse(channel_id, () => chatgpt.createResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, model)
       .then(result => result ? result :  `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(message => discord.respond(channel_id, event_id, message))
     );

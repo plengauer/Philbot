@@ -1,8 +1,10 @@
 const process = require('process');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
+const synchronized = require('./synchronized.js');
 const opentelemetry = require('@opentelemetry/api');
 
+const token = process.env.OPENAI_API_KEY;
 const cost_limit = parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
 
 const meter = opentelemetry.metrics.getMeter('openai');
@@ -11,53 +13,60 @@ const cost_absolute_counter = meter.createHistogram('openai.cost.slotted.absolut
 const cost_relative_counter = meter.createHistogram('openai.cost.slotted.relative');
 const cost_progress_counter = meter.createHistogram('openai.cost.slotted.progress');
 
-const LANGUAGE_MODELS = ["ada", "babbage", "curie", "davinci", "gpt-3.5-turbo", "gpt-4"];
+const LANGUAGE_COMPLETION_MODELS = ["ada", "babbage", "curie", "davinci", "text-davinci-001", "text-davinci-002", "text-davinci-003"];
+const LANGUAGE_CHAT_MODELS = ["gpt-3.5-turbo", "gpt-4"];
 
 function getLanguageModels() {
-  return LANGUAGE_MODELS;
+  return LANGUAGE_COMPLETION_MODELS.concat(LANGUAGE_CHAT_MODELS);
 }
 
-async function getSingleResponse(message, model = undefined) {
-  return getResponse(null, null, message, model);
+async function createCompletion(prompt, model = undefined) {
+  if (!model) return LANGUAGE_COMPLETION_MODELS[LANGUAGE_COMPLETION_MODELS.length - 1];
+  if (!token) return null;
+  if (!await canCreate()) return null;
+  
+  if (LANGUAGE_CHAT_MODELS.includes(model)) {
+    return createResponse(null, null, `Complete the text "${prompt}". Answer with the completion only.`, model);
+  }
+  
+  let response = await HTTP('/v1/completions' , { "model": model, "prompt": prompt });
+  let completion = response.choices[index].text;
+  await bill(computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
+  return completion;
 }
 
-async function getResponse(history_token, system, message, model = undefined) {
+async function createResponse(history_token, system, message, model = undefined) {
+  let func = () => createResponse0(history_token, system, message, model);
+  if (history_token) func = () => synchronized.locked(`chatgpt:${history_token}`, func);
+  return func();
+}
+
+async function createResponse0(history_token, system, message, model = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
-  if (!process.env.OPENAI_API_KEY) return null;
-  if (!model) model = LANGUAGE_MODELS[LANGUAGE_MODELS.length - 1];
-  if ((await getCurrentCost()).value >= cost_limit * 1.0) return null;
+  if (!model) model = LANGUAGE_CHAT_MODELS[LANGUAGE_CHAT_MODELS.length - 1];
+  if (!token) return null;
+  if (!await canCreate()) return null;
 
+  const horizon = 2;
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
-  let conversation = conversation_key ? await memory.get(conversation_key, []) : [];
-
+  let conversation = (conversation_key ? await memory.get(conversation_key, []) : []).slice(-(2 * horizon + 1));
   let input = { role: 'user', content: message.trim() };
   conversation.push(input);
-
+  
   let output = null;
-  let response = null;
-  if (model.startsWith('gpt-')) {
-    response = await HTTP('/v1/chat/completions' , {
-      "model": model,
-      "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation.slice(-(2 * 2 + 1)))
-    });
+  if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
+    let completion = await createCompletion(`Complete the conversation.` + (system ? `\nassistent: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistent: ', model);
+    if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
+    output = { role: 'assistent', content: completion };
   } else {
-    response = await HTTP('/v1/completions' , {
-      "model": model,
-      "prompt": input.content
-    });
-    for (let index = 0; index < response.choices.length; index++) {
-      response.choices[index] = { message: { role: 'assistent', content: response.choices[index].text }};
-    }
+    let response = await HTTP('/v1/chat/completions' , { "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation) });
+    output = response.choices[0].message;
+    await bill(computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
   }
-
-  output = response.choices[0].message;
   output.content = sanitizeResponse(output.content);
 
   conversation.push(output);
   if (conversation_key) await memory.set(conversation_key, conversation, 60 * 60 * 24 * 7);
-
-  let cost = computeTextCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens);
-  await bill(cost, response.model);
 
   return output.content;
 }
@@ -105,7 +114,7 @@ function strip(haystack, needle) {
   return haystack;
 }
 
-function computeTextCost(model, tokens_prompt, tokens_completion) {
+function computeLanguageCost(model, tokens_prompt, tokens_completion) {
   switch (model) {
     case "ada":
       return (tokens_prompt + tokens_completion) / 1000 * 0.0004;
@@ -114,6 +123,9 @@ function computeTextCost(model, tokens_prompt, tokens_completion) {
     case "curie":
       return (tokens_prompt + tokens_completion) / 1000 * 0.002;
     case "davinci":
+    case "text-davinci-001":
+    case "text-davinci-002":
+    case "text-davinci-003":
       return (tokens_prompt + tokens_completion) / 1000 * 0.02;
     case "gpt-3.5-turbo":
       return (tokens_prompt + tokens_completion) / 1000 * 0.002;
@@ -132,19 +144,18 @@ async function getImageSizes() {
   return IMAGE_SIZES;
 }
 
-async function getImageResponse(message, size = undefined) {
-  if (!process.env.OPENAI_API_KEY) return null;
-  if ((await getCurrentCost()).value >= cost_limit * 1.0) return null;
+async function createImage(message, size = undefined) {
   if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
-  let url = await HTTP('/v1/images/generations', {
-      prompt: message,
-      response_format: 'b64_json',
-      size: size
-    })
-    .then(response => new Buffer(response.data[0].b64_json, 'base64'))
-    .catch(error => Promise.reject(new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message)));
-  await bill(getImageCost(size), 'dall-e');
-  return url;
+  if (!token) return null;
+  if (!await canCreate()) return null;
+  try {
+    let response = await HTTP('/v1/images/generations', { prompt: message, response_format: 'b64_json', size: size });
+    let image = new Buffer(response.data[0].b64_json, 'base64');
+    await bill(getImageCost(size), 'dall-e');
+    return image;
+  } catch (error) {
+    throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
+  }
 }
 
 function getImageCost(size) {
@@ -159,7 +170,7 @@ async function HTTP(endpoint, body) {
   return await curl.request({
     hostname: 'api.openai.com',
     path: endpoint,
-    headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY },
+    headers: { 'Authorization': 'Bearer ' + token },
     method: 'POST',
     body: body,
     timeout: 1000 * 60 * 15
@@ -167,16 +178,19 @@ async function HTTP(endpoint, body) {
 }
 
 async function bill(cost, model) {
-  let total_cost = await getCurrentCost();
-  total_cost.value += cost;
-  total_cost.timestamp = Date.now();
-  await memory.set(costkey(), total_cost);
-
+  await synchronized.locked('openai.billing', () => bill0(cost, model));
   const attributes = { 'openai.model': model };
   cost_counter.add(cost, attributes);
   cost_absolute_counter.record(total_cost.value, attributes);
   cost_relative_counter.record(total_cost.value / cost_limit, attributes);
   cost_progress_counter.record(total_cost.value / (cost_limit * computeBillingSlotProgress()), attributes);
+}
+
+async function bill0(cost, model) {
+  let total_cost = await getCurrentCost();
+  total_cost.value += cost;
+  total_cost.timestamp = Date.now();
+  await memory.set(costkey(), total_cost);
 }
 
 async function getCurrentCost() {
@@ -189,7 +203,11 @@ function costkey() {
   return 'openai:cost';
 }
 
-async function canGetResponse(threshold = 0.8) {
+async function canCreate() {
+  return (await getCurrentCost()).value >= cost_limit * 1.0;
+}
+
+async function shouldCreate(threshold = 0.8) {
   return (await getCurrentCost()).value / cost_limit * threshold < computeBillingSlotProgress();
 }
 
@@ -202,4 +220,14 @@ function computeBillingSlotProgress() {
   return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
-module.exports = { getLanguageModels, getSingleResponse, getResponse, getImageSizes, getImageResponse, canGetResponse }
+async function getDynamicModel(models, safety) {
+  let model_index = models.length - 1;
+  let threshold = safety;
+  while (!await shouldCreate(1 - threshold) && model_index >= 0) {
+    model_index--;
+    threshold = threshold * safety;
+  }
+  return models[model_index];
+}
+
+module.exports = { getLanguageModels, createCompletion, createResponse, getImageSizes, createImage, canCreate, shouldCreate, getDynamicModel }
