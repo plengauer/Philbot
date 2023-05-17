@@ -291,7 +291,7 @@ async function post_paged(channel_id, content, referenced_message_id, notify, em
     formdata.append('payload_json', JSON.stringify(payload), { contentType: 'application/json' });
     for (let index = 0; index < attachments.length; index++) {
       let attachment = attachments[index];
-      formdata.append(`file[${index}]`, attachment.content, { contentType: attachment.contentType, filename: attachment.filename });
+      formdata.append(`file[${index}]`, attachment.content, { contentType: attachment.content_type, filename: attachment.filename });
     }
     let headers = formdata.getHeaders();
     headers['authorization'] = `Bot ${process.env.DISCORD_API_TOKEN}`;

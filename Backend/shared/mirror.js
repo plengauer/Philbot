@@ -1,6 +1,6 @@
 const memory = require('./memory.js');
 const discord = require('./discord.js');
-//const permissions = require('./permissions.js');
+const curl = require('./curl.js');
 
 function memorykey(guild_id) {
   return `mirrors:guild:${guild_id}`;
@@ -63,12 +63,14 @@ async function on_message_create(guild_id, channel_id, user_id, message_id, cont
 }
 
 async function forward_message(guild_id, channel_id, user_id, message_id, content, referenced_message_id, attachments, embeds, components, mirror_info) {
+  // resolving the channel / making sure the channel exists
   if (!mirror_info.channel_ids[channel_id]) {
     let original = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == channel_id));
     let mirrored_channel = await discord.guild_channel_create(mirror_info.guild_id, original.name, original.parent_id ? mirror_info.channel_ids[original.parent_id] : undefined, original.type);
     mirror_info.channel_ids[channel_id] = mirrored_channel.id;
   }
 
+  // build the content
   let author = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member)).catch(() => '<UnknownUser>');
   while (content.includes('<@&')) {
     let start = content.indexOf('<@&');
@@ -84,10 +86,32 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
     let mentioned_member = await discord.guild_member_retrieve(guild_id, mentioned_user_id).then(member => member2string(member)).catch(() => '<UnknownUser>');
     content = content.replace(content.substring(start, end), '@' + mentioned_member);
   }
-  disarm_components(components);
+  content = `**${author}**: ${content}`;
 
+  // resolve a referenced message
   let referenced_message_id_mirror = referenced_message_id ? await memory.get(`mirror:message:${referenced_message_id}`) : undefined;
-  let message = await discord.post(mirror_info.channel_ids[channel_id], `**${author}**: ${content}` + ((attachments && attachments.length > 0) ? ('\n**Attachments:**: ' + attachments.map(attachment => attachment.url).join(', ')) : ''), referenced_message_id_mirror, true, embeds, components);
+  
+  // build the embeds
+  // nothing to do, just reuse them
+  
+  // build components
+  disarm_components(components); // disarm and reuse
+  
+  // build attachments
+  let attachment_mirrors = [];
+  for (let index = 0; index < attachments.length; index++) {
+    let attachment = attachments[index];
+    try {
+      if (attachment.size > 1024 * 1024 * 25) throw new Error('maybe too big');
+      let url = url.parse(attachment.url);
+      let file = new Buffer(await curl.request({ hostname: url.hostname, path: url.path + url.search }));
+      attachment_mirrors.push({ filename: attachment.filename, content_type: attachment.content_type, content: file });
+    } catch {
+      content += '\n**Attachment ' + index + '**: ' + attachment.url;
+    }
+  }
+
+  let message = await discord.post(mirror_info.channel_ids[channel_id], content, referenced_message_id_mirror, true, embeds, components, attachment_mirrors);
   await memory.set(`mirror:message:${message_id}`, message.id, 60 * 60 * 24 * 3);
 }
 

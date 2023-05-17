@@ -75,8 +75,8 @@ async function request_simple(options) {
           } else {
             receiver = response;
           }
-          let buffer = '';
-          receiver.on('data', chunk => { buffer += chunk; });
+          let chunks = [];
+          receiver.on('data', chunk => { chunks.push(chunk); });
           receiver.on('end', () => {
             let duration = Date.now() - time;
             console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${response.statusCode} (${duration}ms)`);
@@ -84,7 +84,7 @@ async function request_simple(options) {
             counter_attrs['http.response.content-type'] = response.headers['content-type'];
             counter_attrs['http.response.content-encoding'] = response.headers['content-encoding'];
             request_counter.add(1, counter_attrs);
-            resolve({ status: response.statusCode, headers: response.headers, body: buffer });
+            resolve({ status: response.statusCode, headers: response.headers, body: chunks.map(chunk => '' + chunk).join('') });
           });
         });
       request.on('error', error => {
