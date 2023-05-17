@@ -32,7 +32,7 @@ async function createCompletion(prompt, model = undefined) {
   }
   
   let response = await HTTP('/v1/completions' , { "model": model, "prompt": prompt });
-  let completion = response.choices[index].text;
+  let completion = response.choices[0].text;
   await bill(computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
   return completion;
 }
