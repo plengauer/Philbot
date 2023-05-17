@@ -182,7 +182,7 @@ function getImageCost(size) {
 }
 
 async function HTTP(endpoint, body) {
-  return await curl.request({
+  let result = await curl.request({
     hostname: 'api.openai.com',
     path: endpoint,
     headers: { 'Authorization': 'Bearer ' + token },
@@ -190,6 +190,8 @@ async function HTTP(endpoint, body) {
     body: body,
     timeout: 1000 * 60 * 15
   });
+  //console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + JSON.stringify(result));
+  return result;
 }
 
 async function bill(cost, model) {
