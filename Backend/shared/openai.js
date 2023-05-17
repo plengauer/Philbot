@@ -144,6 +144,17 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
   }
 }
 
+async function createBoolean(question, model) {
+  if (!token) return null;
+  if (!await canCreate()) return null;
+  let response = await createCompletion(`Answer the question only with yes or no.\nQuestion: ${question}\nAnswer:`, model);
+  response = response.toLowerCase();
+  const match = s.match(/^([a-z]+)/);
+  response = match ? match[0] : response;
+  if (response != 'yes' && response != 'no') throw new Error('Response is not a bool!');
+  return response == 'yes'; 
+}
+
 const IMAGE_SIZES = ["256x256", "512x512", "1024x1024"];
 
 async function getImageSizes() {
@@ -237,4 +248,4 @@ async function getDynamicModel(models, safety) {
   return models[model_index];
 }
 
-module.exports = { getLanguageModels, createCompletion, createResponse, getImageSizes, createImage, canCreate, shouldCreate, getDynamicModel }
+module.exports = { getLanguageModels, createCompletion, createResponse, createBoolean, getImageSizes, createImage, canCreate, shouldCreate, getDynamicModel }

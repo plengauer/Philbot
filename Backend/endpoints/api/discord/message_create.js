@@ -181,7 +181,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   }
   
   if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.shouldCreate()) {
-    let promise = chatgpt.createResponse(null, null, `Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`, 'gpt-4')
+    let promise = chatgpt.createBoolean(`Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it?`, 'gpt-4')
       //.then(response => { console.log(`DEBUG INNUENDO v6: "${message}" => "${response}"`); return response; })
       .then(response => response ?? '')
       .then(response => response.toLowerCase())
