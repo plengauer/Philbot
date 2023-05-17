@@ -233,6 +233,7 @@ async function getDynamicModel(models, safety) {
     model_index--;
     threshold = threshold * safety;
   }
+  // TODO should we upgrade again if model above is cheaper?
   return models[model_index];
 }
 

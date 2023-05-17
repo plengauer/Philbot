@@ -181,12 +181,21 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   }
   
   if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.shouldCreate()) {
-    let promise = chatgpt.createResponse(null, null, `Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`)
+    let promise = chatgpt.createResponse(null, null, `Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it? Respond with only yes or no.`, 'gpt-4')
       //.then(response => { console.log(`DEBUG INNUENDO v6: "${message}" => "${response}"`); return response; })
       .then(response => response ?? '')
       .then(response => response.toLowerCase())
       .then(response => response.endsWith('.') ? response.substring(0, response.length - 1) : response)
       .then(response => (response == 'yes') ? discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`) : undefined);
+    promises.push(promise);
+  }
+  
+  if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150 && await chatgpt.shouldCreate()) {
+    let promise = chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or nothing at all.\nText: "${message}"\nExtraction: `)
+      //.then(response => { console.log(`DEBUG PAINTING v1: "${message}" => "${response}"`); return response; })
+      .then(response => response ?? '')
+      .then(extraction => (extraction == 'nothing at all' || extraction == 'no' || extraction == '') ? undefined : chatgpt.createImage(extraction))
+      .then(file => file ? discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]) : undefined);
     promises.push(promise);
   }
   
