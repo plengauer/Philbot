@@ -140,7 +140,7 @@ async function clean() {
     for (let mirror of mirrors.value) {
       let members = await discord.guild_members_list(mirror.guild_id);
       if (members.length == 1 && members.every(member => member.user.id == me.id)) await guild_ids_to_destroy.push(mirror.guild_id);
-      else if (!await guilds.some(guild => guild.id == mirror.source_guild_id)) {
+      else if (!guilds.some(guild => guild.id == mirror.source_guild_id)) {
         for (let channel of await discord.guild_channels_list(mirror.guild_id)) {
           await discord.post(channel.id, 'I do not have access to the server any longer. Either the server was deleted or I was kicked.').catch(() => {});
         }
