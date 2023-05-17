@@ -13,7 +13,7 @@ const cost_absolute_counter = meter.createHistogram('openai.cost.slotted.absolut
 const cost_relative_counter = meter.createHistogram('openai.cost.slotted.relative');
 const cost_progress_counter = meter.createHistogram('openai.cost.slotted.progress');
 
-const LANGUAGE_COMPLETION_MODELS = ["ada", "babbage", "curie", "davinci", "text-davinci-001", "text-davinci-002", "text-davinci-003"];
+const LANGUAGE_COMPLETION_MODELS = ["text-ada-001", "text-babbage-001", "text-curie-001", "text-davinci-001", "text-davinci-002", "text-davinci-003"];
 const LANGUAGE_CHAT_MODELS = ["gpt-3.5-turbo", "gpt-4"];
 
 function getLanguageModels() {
@@ -117,10 +117,13 @@ function strip(haystack, needle) {
 function computeLanguageCost(model, tokens_prompt, tokens_completion) {
   switch (model) {
     case "ada":
+    case "text-ada-001":
       return (tokens_prompt + tokens_completion) / 1000 * 0.0004;
     case "babbage":
+    case "text-babbage-001":
       return (tokens_prompt + tokens_completion) / 1000 * 0.0005;
     case "curie":
+    case "text-curie-001":
       return (tokens_prompt + tokens_completion) / 1000 * 0.002;
     case "davinci":
     case "text-davinci-001":
