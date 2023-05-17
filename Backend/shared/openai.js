@@ -220,7 +220,7 @@ function costkey() {
 }
 
 async function canCreate() {
-  return (await getCurrentCost()).value >= cost_limit * 1.0;
+  return (await getCurrentCost()).value < cost_limit * 1.0;
 }
 
 async function shouldCreate(threshold = 0.8) {
