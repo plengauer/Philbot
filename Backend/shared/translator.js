@@ -21,10 +21,6 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
     let is_target_language = await chatgpt.createBoolean(`Is the text "${content}" ${target_language}?`, 'gpt-3.5-turbo');
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${is_target_language}`);
     if (!is_target_language) return;
-    is_target_language = is_target_language.toLowerCase().trim();
-    if (is_target_language.endsWith('.')) is_target_language = is_target_language.substring(0, is_target_language.length - 1);
-    if (is_target_language == 'yes') return;
-    if (is_target_language != 'no') throw new Error('Language check is not a bool: ' + is_target_language);
   } else {
     let target_language_percentage = await chatgpt.createResponse(`What percentage of "${content}" is ${target_language}? Respond only with the percentage.`, 'gpt-4');
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${target_language_percentage}`);
