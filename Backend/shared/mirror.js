@@ -138,8 +138,12 @@ async function clean() {
   for (let mirrors of await memory.list().then(entries => entries.filter(entry => entry.key.startsWith('mirrors:guild:')))) {
     let guild_ids_to_destroy = [];
     for (let mirror of mirrors.value) {
+      if (await discord.guild_retrieve(mirror.guild_id).then(() => false).catch(() => true)) {
+        guild_ids_to_destroy.push(mirror.guild_id);
+        continue;
+      }
       let members = await discord.guild_members_list(mirror.guild_id);
-      if (members.length == 1 && members.every(member => member.user.id == me.id)) await guild_ids_to_destroy.push(mirror.guild_id);
+      if (members.length == 1 && members.every(member => member.user.id == me.id)) guild_ids_to_destroy.push(mirror.guild_id);
       else if (!guilds.some(guild => guild.id == mirror.source_guild_id)) {
         for (let channel of await discord.guild_channels_list(mirror.guild_id)) {
           await discord.post(channel.id, 'I do not have access to the server any longer. Either the server was deleted or I was kicked.').catch(() => {});
@@ -166,7 +170,8 @@ async function clean() {
       }
     }
     await Promise.all(guild_ids_to_destroy.map(guild_id => discord.guild_destroy(guild_id))).catch(() => {});
-    await memory.set(mirrors.key, mirrors.value.filter(mirror => !guild_ids_to_destroy.includes(mirror.guild_id)));
+    mirrors.value = mirrors.value.filter(mirror => !guild_ids_to_destroy.includes(mirror.guild_id));
+    await (mirrors.value.length > 0 ? memory.set(mirrors.key, mirrors.value) : memory.unset(mirrors.key));
   }
 }
 
