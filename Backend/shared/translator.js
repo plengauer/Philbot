@@ -17,10 +17,11 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   if (!target_language) return;
   if (!await chatgpt.canCreate()) return;
 
-  let model = await chatgpt.getDynamicModel(chatgpt.getLanguageModels(), 2/3);
+  let model = undefined; //await chatgpt.getDynamicModel(chatgpt.getLanguageModels(), 0.2);
+  let model_fast = undefined; //chatgpt.getLanguageModels()[Math.max(0, chatgpt.getLanguageModels().indexOf(model) - 1)];
   
-  if (getLanguageModels().indexOf(model) < getLanguageModels().indexOf('gpt-4')) {
-    let is_target_language = await chatgpt.createCompletion(`Question: Is the text "${content}" ${target_language}, answer only yes or no?\nAnswer: `, model);
+  if (!model_fast || getLanguageModels().indexOf(model_fast) < getLanguageModels().indexOf('gpt-4')) {
+    let is_target_language = await chatgpt.createCompletion(`Question: Is the text "${content}" ${target_language}, answer only yes or no?\nAnswer: `, model_fast);
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${is_target_language}`);
     if (!is_target_language) return;
     is_target_language = is_target_language.toLowerCase().trim();
@@ -28,7 +29,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
     if (is_target_language == 'yes') return;
     if (is_target_language != 'no') throw new Error('Language check is not a bool: ' + is_target_language);
   } else {
-    let target_language_percentage = await chatgpt.createResponse(`What percentage of "${content}" is ${target_language}? Respond only with the percentage.`, model);
+    let target_language_percentage = await chatgpt.createResponse(`What percentage of "${content}" is ${target_language}? Respond only with the percentage.`, model_fast);
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${target_language_percentage}`);
     if (!target_language_percentage) return;
     if (!target_language_percentage.endsWith('%')) throw new Error();
