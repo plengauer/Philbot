@@ -38,9 +38,8 @@ async function createCompletion(prompt, model = undefined) {
 }
 
 async function createResponse(history_token, system, message, model = undefined) {
-  let func = () => createResponse0(history_token, system, message, model);
-  if (history_token) func = () => synchronized.locked(`chatgpt:${history_token}`, func);
-  return func();
+  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(history_token, system, message, model));
+  else createResponse0(history_token, system, message, model);
 }
 
 async function createResponse0(history_token, system, message, model = undefined) {
