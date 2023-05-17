@@ -904,7 +904,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     return handleLongResponse(channel_id, () => chatgpt.createImage(message)
       .then(image => image ? image : Promise.reject('I couldn\'t draw the picture!'))
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
-      .catch(error => discord.post(channel_id, event_id, error.message))
+      .catch(error => discord.respond(channel_id, event_id, error.message))
     );
 
   } else if (message == 'mirror' || message.startsWith('mirror to ')) {
