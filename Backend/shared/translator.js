@@ -20,7 +20,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   if (true) {
     let is_target_language = await chatgpt.createBoolean(`Is the text "${content}" ${target_language}?`, 'gpt-3.5-turbo');
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${is_target_language}`);
-    if (!is_target_language) return;
+    if (is_target_language) return;
   } else {
     let target_language_percentage = await chatgpt.createResponse(`What percentage of "${content}" is ${target_language}? Respond only with the percentage.`, 'gpt-4');
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${target_language_percentage}`);
