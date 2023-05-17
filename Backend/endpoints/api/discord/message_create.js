@@ -895,7 +895,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!split || split < 0) return reactNotOK(channel_id, event_id);
     let language = message.substring(0, split).trim();
     let text = message.substring(split + 1).trim();
-    return handleLongResponse(channel_id, () => chatgpt.createCompletion(`Translate a text to ${language}.\nText: "${text}"\nTranslation: `)
+    return handleLongResponse(channel_id, () => translator.translate(language, text)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
     );
   

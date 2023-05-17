@@ -17,12 +17,15 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   if (!target_language) return;
   if (!await chatgpt.canCreate()) return;
 
-  if (true) {
-    let is_target_language = await chatgpt.createBoolean(`Is the text "${content}" ${target_language}?`, 'gpt-3.5-turbo');
+  let model_fast = 'gpt-3';
+  let model = undefined;
+
+  if (chatgpt.getLanguageModels().indexOf(model_fast) < chatgpt.getLanguageModels().indexOf('gpt-4')) {
+    let is_target_language = await chatgpt.createBoolean(`Is the text "${content}" ${target_language}?`, model_fast);
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${is_target_language}`);
     if (is_target_language) return;
   } else {
-    let target_language_percentage = await chatgpt.createResponse(`What percentage of "${content}" is ${target_language}? Respond only with the percentage.`, 'gpt-4');
+    let target_language_percentage = await chatgpt.createResponse(`What percentage of "${content}" is ${target_language}? Respond only with the percentage.`, model_fast);
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${target_language_percentage}`);
     if (!target_language_percentage) return;
     if (!target_language_percentage.endsWith('%')) throw new Error();
@@ -31,21 +34,26 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
     if (target_language_percentage > 0.9) return;
   }
   
-  let source_language = await chatgpt.createCompletion(`Question: What language is the text "${content}"? Respond only with the language. Ignore typos.\nAnswer: `, 'gpt-4');
+  let source_language = await chatgpt.createCompletion(`Question: What language is the text "${content}"? Respond only with the language. Ignore typos.\nAnswer: `, model);
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);
   if (!source_language) return;
   if (source_language.endsWith('.') || source_language.split(',').some(language => language.split(' ').filter(token => token.length > 0).length > 3)) throw new Error('Invalid language: ' + language);
   if (source_language.toLowerCase().split(',').every(language => [target_language.toLowerCase().trim(), 'internet slang', 'mention', 'mentions', 'discord mention', 'discord mentions', 'emoji', 'emojis', 'emoticon', 'emoticons'].includes(language))) return;
   
-  let translation = await chatgpt.createCompletion(`Translate the  text to ${target_language}. Do not translate emojis, or parts that are surrounded by : < or >. \nText: "${content}"\nTranslation: `, 'gpt-4');
-  //console.log(`DEBUG TRANSLATOR v2 #3 "${content}" => "${translation}"`);
-  if (!translation || translation.length == 0) return;
-  if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1);
-  if (simplify(translation) == simplify(content)) throw new Error('Translation is equal to the source!');
+  let translation = await translate(target_language, content, model)
   
   translations_counter.add(1, { 'language.target': target_language.substring(0, 1).toUpperCase() + target_language.substring(1).toLowerCase(), 'language.source': source_language });
 
   return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`, false);
+}
+
+async function translate(target_language, source, model = undefined) {
+  let translation = await chatgpt.createCompletion(`Translate the text to ${target_language}. Do not translate emojis, or parts that are surrounded by : < or >. \nText: "${source}"\nTranslation: `, model);
+  //console.log(`DEBUG TRANSLATOR v2 #3 "${source}" => "${translation}"`);
+  if (!translation || translation.length == 0) return;
+  if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1);
+  if (simplify(translation) == simplify(source)) throw new Error('Translation is equal to the source!');
+  return translation;
 }
 
 function simplify(input) {
@@ -61,4 +69,4 @@ function memorykey(guild_id, channel_id) {
   return `translator:target_language:guild:${guild_id}:channel:${channel_id}`;
 }
 
-module.exports = { configure_translate, on_message_create }
+module.exports = { configure_translate, on_message_create, translate }
