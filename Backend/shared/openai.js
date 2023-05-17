@@ -148,7 +148,7 @@ async function createBoolean(question, model) {
   if (!await canCreate()) return null;
   let response = await createCompletion(`Answer the question only with yes or no.\nQuestion: ${question}\nAnswer:`, model);
   response = response.toLowerCase();
-  const match = s.match(/^([a-z]+)/);
+  const match = response.match(/^([a-z]+)/);
   response = match ? match[0] : response;
   if (response != 'yes' && response != 'no') throw new Error('Response is not a bool!');
   return response == 'yes'; 
