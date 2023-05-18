@@ -264,4 +264,4 @@ async function getDynamicModel(models, safety = DEFAULT_DYNAMIC_MODEL_SAFETY) {
   return models[model_index];
 }
 
-module.exports = { getLanguageModels, createCompletion, createResponse, createBoolean, getImageSizes, createImage, canCreate, shouldCreate, getDynamicModel }
+module.exports = { getLanguageModels, createCompletion, createResponse, createBoolean, getImageSizes, createImage, canCreate, shouldCreate, getDynamicModel, getDefaultDynamicModelSafety  }
