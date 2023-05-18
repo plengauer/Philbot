@@ -231,11 +231,11 @@ function costkey() {
 }
 
 async function canCreate() {
-  return (await getCurrentCost()).value < cost_limit * 1.0;
+  return (await computeCostProgress()) < 1;
 }
 
 async function shouldCreate(threshold = 0.8) {
-  return computeCostProgress() / computeBillingSlotProgress() < threshold;
+  return (await computeCostProgress()) / computeBillingSlotProgress() < threshold;
 }
 
 async function computeCostProgress() {
