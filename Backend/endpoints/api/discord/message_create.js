@@ -182,7 +182,8 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   
   if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
     let promise = chatgpt.getDynamicModel(chatgpt.getLanguageModels())
-      .then(model => chatgpt.createBoolean(`Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it?`, model))
+      .then(model => (model && chatgpt.getLanguageModels().indexOf(model) >= chatgpt.getLanguageModels().indexOf('gpt-3.5-turbo')) ? model : null)
+      .then(model => model ? chatgpt.createBoolean(`Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it?`, model) : false)
       //.then(response => { console.log(`DEBUG INNUENDO v6: "${message}" => "${response}"`); return response; })
       .then(isFunny => isFunny ? discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`) : undefined);
     promises.push(promise);
@@ -190,9 +191,9 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   
   if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
     let promise = chatgpt.getDynamicModel(chatgpt.getLanguageModels())
-      .then(model => chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or nothing at all.\nText: "${message}"\nExtraction: `, model))
+      .then(model => model ? chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or nothing at all.\nText: "${message}"\nExtraction: `, model) : null)
       //.then(response => { console.log(`DEBUG PAINTING v1: "${message}" => "${response}"`); return response; })
-      .then(extraction => extraction && extraction.length > 25 ? chatgpt.createImage(extraction) : undefined)
+      .then(extraction => extraction && extraction.length > 25 ? chatgpt.getDynamicModel(chatgpt.getImageSizes()).then(size => size ? chatgpt.createImage(extraction, size) : null) : null)
       .then(file => file ? discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]) : undefined);
     promises.push(promise);
   }
@@ -896,16 +897,18 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!split || split < 0) return reactNotOK(channel_id, event_id);
     let language = message.substring(0, split).trim();
     let text = message.substring(split + 1).trim();
-    return handleLongResponse(channel_id, () => translator.translate(language, text)
+    return handleLongResponse(channel_id, () => chatgpt.getDynamicModel(chatgpt.getLanguageModels())
+      .then(model => model ? translator.translate(language, text) : null)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
     );
   
   } else if (message.startsWith('draw ')) {
     message = message.split(' ').slice(1).join(' ');
-    return handleLongResponse(channel_id, () => chatgpt.createImage(message)
-      .then(image => image ? image : Promise.reject('I couldn\'t draw the picture!'))
+    return handleLongResponse(channel_id, () => chatgpt.getDynamicModel(chatgpt.getImageSizes())
+      .then(size => size ? chatgpt.createImage(message, size) : null)
+      .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
-      .catch(error => discord.respond(channel_id, event_id, error.message))
+      .catch(error => error ? discord.respond(channel_id, event_id, error.message) : discord.reactNotOK(channel_id, event_id))
     );
 
   } else if (message == 'mirror' || message.startsWith('mirror to ')) {
@@ -937,6 +940,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
 
 async function createAIResponse(guild_id, channel_id, user_id, user_name, message) {
   let model = await chatgpt.getDynamicModel(chatgpt.getLanguageModels(), chatgpt.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
+  if (!model) return null;
   let system_message = await createAIContext(guild_id, user_id, user_name, message, model);
   return chatgpt.createResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, model);
 }
