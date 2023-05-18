@@ -32,7 +32,7 @@ async function createCompletion(prompt, model = undefined) {
   }
   
   let response = await HTTP('/v1/completions' , { "model": model, "prompt": prompt });
-  let completion = response.choices[0].text;
+  let completion = response.choices[0].text.trim();
   await bill(computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
   return completion;
 }
@@ -145,7 +145,7 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
 }
 
 async function createBoolean(question, model) {
-  let response = await createCompletion(`Answer the question only with yes or no.\nQuestion: ${question}\nAnswer:`, model);
+  let response = await createResponse(`${question} Respond only with yes or no!`, model);
   if (!response) return null;
   response = response.trim().toLowerCase();
   const match = response.match(/^([a-z]+)/);
