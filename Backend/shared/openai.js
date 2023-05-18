@@ -23,7 +23,7 @@ function getLanguageModels() {
 }
 
 async function createCompletion(prompt, model = undefined) {
-  model = model ?? LANGUAGE_COMPLETION_MODELS[LANGUAGE_COMPLETION_MODELS.length - 1];
+  model = model ?? getLanguageModels().slice(-1);
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   if (!token) return null;
   if (!await canCreate()) return null;
@@ -45,7 +45,7 @@ async function createResponse(history_token, system, message, model = undefined)
 
 async function createResponse0(history_token, system, message, model = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
-  model = model ?? LANGUAGE_CHAT_MODELS[LANGUAGE_CHAT_MODELS.length - 1];
+  model = model ?? getLanguageModels().slice(-1);
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   if (!token) return null;
   if (!await canCreate()) return null;
@@ -146,7 +146,7 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
 }
 
 async function createBoolean(question, model = undefined) {
-  model = model ?? getLanguageModels()[getLanguageModels().length - 1];
+  model = model ?? getLanguageModels().slice(-1);
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   let response = null;
   if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
