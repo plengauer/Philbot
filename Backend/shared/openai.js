@@ -174,7 +174,7 @@ async function createImage(message, size = undefined) {
   if (!await canCreate()) return null;
   try {
     let response = await HTTP('/v1/images/generations', { prompt: message, response_format: 'b64_json', size: size });
-    let image = new Buffer(response.data[0].b64_json, 'base64');
+    let image = Buffer.from(response.data[0].b64_json, 'base64');
     await bill(getImageCost(size), 'dall-e');
     return image;
   } catch (error) {
@@ -260,7 +260,7 @@ function getDefaultDynamicModelSafety() {
 async function getDynamicModel(models, safety = DEFAULT_DYNAMIC_MODEL_SAFETY) {
   let model_index = models.length - 1;
   let threshold = safety;
-  while (!await shouldCreate(1 - threshold) && model_index >= 0) {
+  while (!await shouldCreate(1 - threshold) && model_index > 0) {
     model_index--;
     threshold = threshold * safety;
   }
