@@ -63,7 +63,7 @@ async function createResponse0(history_token, system, message, model = undefined
     output = { role: 'assistent', content: completion.trim() };
   } else {
     let response = await HTTP('/v1/chat/completions' , { "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation) });
-    output = response.choices[0].message.trim();
+    output = response.choices[0].message;
     await bill(computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
   }
   output.content = sanitizeResponse(output.content);
@@ -89,7 +89,7 @@ function sanitizeResponse(response) {
   response = strip(response, 'based on the information you provided earlier');
   response = strip(response, 'based on information available in previous messages');
   response = strip(response, 'based on information you provided earlier');
-  return response;
+  return response.trim();
 }
 
 function strip(haystack, needle) {
