@@ -191,7 +191,7 @@ async function HTTP(endpoint, body) {
     body: body,
     timeout: 1000 * 60 * 15
   });
-  console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + (endpoint == '/v1/images/generations' ? '###' : JSON.stringify(result)));
+  //console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + (endpoint == '/v1/images/generations' ? '###' : JSON.stringify(result)));
   return result;
 }
 
