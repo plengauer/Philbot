@@ -144,8 +144,15 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
   }
 }
 
-async function createBoolean(question, model) {
-  let response = await createResponse(null, null, `${question} Respond only with yes or no!`, model);
+async function createBoolean(question, model = undefined) {
+  model = model ?? getLanguageModels()[getLanguageModels().length - 1];
+  model = LANGUAGE_MODEL_MAPPING[model] ?? model;
+  let response = null;
+  if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
+    response = await createCompletion(`Respond the question only with yes or no.\nQuestion: ${question}\nRespond:`, model);
+  } else {
+    response = await createResponse(null, null, `${question} Respond only with yes or no!`, model);
+  }
   if (!response) return null;
   response = response.trim().toLowerCase();
   const match = response.match(/^([a-z]+)/);
