@@ -57,10 +57,10 @@ async function createResponse0(history_token, system, message, model = undefined
   
   let output = null;
   if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
-    let completion = await createCompletion(`Complete the conversation.` + (system ? `\nassistent: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistent: ', model);
+    let completion = await createCompletion(`Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', model);
     completion = completion.trim();
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
-    output = { role: 'assistent', content: completion.trim() };
+    output = { role: 'assistant', content: completion.trim() };
   } else {
     let response = await HTTP('/v1/chat/completions' , { "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation) });
     output = response.choices[0].message;
@@ -145,7 +145,7 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
 }
 
 async function createBoolean(question, model) {
-  let response = await createResponse(`${question} Respond only with yes or no!`, model);
+  let response = await createResponse(null, null, `${question} Respond only with yes or no!`, model);
   if (!response) return null;
   response = response.trim().toLowerCase();
   const match = response.match(/^([a-z]+)/);
