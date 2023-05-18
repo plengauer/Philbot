@@ -151,7 +151,7 @@ async function createBoolean(question, model) {
   const match = response.match(/^([a-z]+)/);
   response = match ? match[0] : response;
   if (response != 'yes' && response != 'no') throw new Error('Response is not a bool! (' + response + ')');
-  return response == 'yes'; 
+  return response == 'yes';
 }
 
 const IMAGE_SIZES = ["256x256", "512x512", "1024x1024"];
@@ -191,7 +191,7 @@ async function HTTP(endpoint, body) {
     body: body,
     timeout: 1000 * 60 * 15
   });
-  //console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + JSON.stringify(result));
+  console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + JSON.stringify(result));
   return result;
 }
 
@@ -227,7 +227,7 @@ async function canCreate() {
 }
 
 async function shouldCreate(threshold = 0.8) {
-  return (await getCurrentCost()).value / cost_limit * threshold < computeBillingSlotProgress();
+  return (await getCurrentCost()).value / cost_limit < computeBillingSlotProgress() * threshold;
 }
 
 function computeBillingSlotProgress() {
