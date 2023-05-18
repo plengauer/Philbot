@@ -908,7 +908,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       .then(size => size ? chatgpt.createImage(message, size) : null)
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
-      .catch(error => error ? discord.respond(channel_id, event_id, error.message) : discord.reactNotOK(channel_id, event_id))
+      .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
     );
 
   } else if (message == 'mirror' || message.startsWith('mirror to ')) {
