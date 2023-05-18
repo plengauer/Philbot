@@ -15,7 +15,7 @@ const cost_progress_counter = meter.createHistogram('openai.cost.slotted.progres
 
 const LANGUAGE_COMPLETION_MODELS = ["text-ada-001", "text-babbage-001", "text-curie-001", "text-davinci-001", "text-davinci-002", "text-davinci-003"];
 const LANGUAGE_CHAT_MODELS = ["gpt-3.5-turbo", "gpt-4"];
-const LANGUAGE_MODEL_MAPPING = { "ada": "text-ada-001", "babbage": "text-babbage-001", "curie": "text-curie-001", "davinci": "text-davinci-001", "gpt-3": "text-davinci-003", "gpt-3.5": "gpt-3.5-turbo" };
+const LANGUAGE_MODEL_MAPPING = { "ada": "text-ada-001", "babbage": "text-babbage-001", "curie": "text-curie-001", "davinci": "text-davinci-001", "gpt-1" : "text-davinci-001", "gpt-2" : "text-davinci-002", "gpt-3": "text-davinci-003", "gpt-3.5": "gpt-3.5-turbo" };
 
 function getLanguageModels() {
   return LANGUAGE_COMPLETION_MODELS.concat(LANGUAGE_CHAT_MODELS);
@@ -63,7 +63,7 @@ async function createResponse0(history_token, system, message, model = undefined
     output = { role: 'assistent', content: completion.trim() };
   } else {
     let response = await HTTP('/v1/chat/completions' , { "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation) });
-    output = response.choices[0].message;
+    output = response.choices[0].message.trim();
     await bill(computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
   }
   output.content = sanitizeResponse(output.content);
@@ -140,7 +140,7 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-4-32k":
       return tokens_prompt / 1000 * 0.06 + tokens_completion / 1000 * 0.12;
     default:
-      throw new Error();
+      throw new Error("Unknown model: " + model);
   }
 }
 
@@ -191,7 +191,7 @@ async function HTTP(endpoint, body) {
     body: body,
     timeout: 1000 * 60 * 15
   });
-  console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + JSON.stringify(result));
+  console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + (endpoint == '/v1/images/generations' ? '###' : JSON.stringify(result)));
   return result;
 }
 
