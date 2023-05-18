@@ -6,6 +6,7 @@ const opentelemetry = require('@opentelemetry/api');
 
 const token = process.env.OPENAI_API_KEY;
 const cost_limit = parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
+const debug = process.env.OPENAI_DEBUG == 'true'
 
 const meter = opentelemetry.metrics.getMeter('openai');
 const cost_counter = meter.createCounter('openai.cost');
@@ -149,7 +150,7 @@ async function createBoolean(question, model = undefined) {
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   let response = null;
   if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
-    response = await createCompletion(`Respond the question only with yes or no.\nQuestion: ${question}\nRespond:`, model);
+    response = await createCompletion(`Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, model);
   } else {
     response = await createResponse(null, null, `${question} Respond only with yes or no!`, model);
   }
@@ -198,7 +199,7 @@ async function HTTP(endpoint, body) {
     body: body,
     timeout: 1000 * 60 * 15
   });
-  //console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + (endpoint == '/v1/images/generations' ? '###' : JSON.stringify(result)));
+  if (debug) console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + (endpoint == '/v1/images/generations' ? '###' : JSON.stringify(result)));
   return result;
 }
 

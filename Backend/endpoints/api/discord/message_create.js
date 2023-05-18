@@ -927,33 +927,67 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
         return handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me);
       }
     }
-    await discord.trigger_typing_indicator(channel_id);
-    let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(member => member.nick ?? member.user.username) : me.username;
-    let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(member => member.nick ?? member.user.username) : user_name;
-    let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
-    let mentioned_members = mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention));
-    let mentioned_roles = mentioned_entities.filter(mention => mention.startsWith('<@&')).map(mention => discord.parse_role(mention));
-    mentioned_members.push(user_id);
-    let system_message = `My name is ${my_name}. I am a Discord bot. Your name is ${your_name}.`;
-    if (guild_id) {
-      mentioned_roles = await Promise.all(Array.from(new Set(mentioned_roles)).map(role_id => discord.guild_role_retrieve(guild_id, role_id)));
-      for (let role of mentioned_roles) {
-        let members_with_role = await discord.guild_members_list(guild_id, role.id).then(members => members.map(member => member.user.id));
-        mentioned_members = members_with_role.concat(members_with_role);
-        system_message += ` The name of <@&${role.id}> is ${role.name}` + (members_with_role.length > 0 ? ', members are ' + members_with_role.map(user_id => discord.mention_user(user_id)).join(', ') : '') + '.';
-      }
-      mentioned_members = await Promise.all(Array.from(new Set(mentioned_members)).map(user_id => discord.guild_member_retrieve(guild_id, user_id)));
-      for (let member of mentioned_members) {
-        let activities = await memory.get(`activities:all:user:${member.user.id}`, []);
-        system_message += ` The name of <@${member.user.id}> is ${member.nick ?? member.user.username}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
-      }
-    }
-    let model = await chatgpt.getDynamicModel(chatgpt.getLanguageModels(), guild_id ? 0.5 : 0.2);
-    return handleLongResponse(channel_id, () => chatgpt.createResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, model)
-      .then(result => result ? result :  `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
-      .then(message => discord.respond(channel_id, event_id, message))
-    );
+    return handleLongResponse(channel_id, () => createAIResponse(guild_id, channel_id, user_id, user_name, message))
+      .then(response => response ?? `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
+      .then(response => discord.respond(channel_id, event_id, response));
   }
+}
+
+async function createAIResponse(guild_id, channel_id, user_id, user_name, message) {
+  let model = await chatgpt.getDynamicModel(chatgpt.getLanguageModels(), guild_id ? 0.5 : 0.2);
+  let system_message = await createAIContext(guild_id, user_id, user_name, message, model);
+  return chatgpt.createResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, model);
+}
+
+async function createAIContext(guild_id, user_id, user_name, message, model) {
+  // basic identity information
+  let me = await discord.me();
+  let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(member => member.nick ?? member.user.username) : me.username;
+  let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(member => member.nick ?? member.user.username) : user_name;
+  let system_message = `My name is ${my_name}. I am a Discord bot. Your name is ${your_name}.`;
+
+  // information about others
+  let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
+  let mentioned_members = mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention));
+  let mentioned_roles = mentioned_entities.filter(mention => mention.startsWith('<@&')).map(mention => discord.parse_role(mention));
+  mentioned_members.push(user_id);
+  if (guild_id) {
+    mentioned_roles = await Promise.all(Array.from(new Set(mentioned_roles)).map(role_id => discord.guild_role_retrieve(guild_id, role_id)));
+    for (let role of mentioned_roles) {
+      let members_with_role = await discord.guild_members_list(guild_id, role.id).then(members => members.map(member => member.user.id));
+      mentioned_members = members_with_role.concat(members_with_role);
+      system_message += ` The name of <@&${role.id}> is ${role.name}` + (members_with_role.length > 0 ? ', members are ' + members_with_role.map(user_id => discord.mention_user(user_id)).join(', ') : '') + '.';
+    }
+    mentioned_members = await Promise.all(Array.from(new Set(mentioned_members)).map(user_id => discord.guild_member_retrieve(guild_id, user_id)));
+    for (let member of mentioned_members) {
+      let activities = await memory.get(`activities:all:user:${member.user.id}`, []);
+      system_message += ` The name of <@${member.user.id}> is ${member.nick ?? member.user.username}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
+    }
+  }
+
+  // complex information about how myself
+  const help_prompts = [
+    `Is "${message}" a question in the context of Discord?`,
+    `Assuming I am a Discord bot, is "${message}" a question about me?`,
+    `Assuming I am a Discord bot, is "${message}" a question about my capabilities?`,
+    `Assuming I am a Discord bot, is "${message}" a question how to interact with me?`
+  ];
+  let url = await identity.getPublicURL();
+  let about_me = ('' + fs.readFileSync('./help.txt'))
+      .replace(/\$\{about_instruction\}/g, 'Use \'${name} about\'')
+      .replace(/\$\{name\}/g, `@${my_name}`)
+      .replace(/\$\{notification_role\}/g, 'unknown');
+    + ('\n' + fs.readFileSync('./about.txt'))
+      .replace(/\$\{name\}/g, `@${my_name}`)
+      .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
+      .replace(/\$\{link_code\}/g, url + '/code')
+      .replace(/\$\{link_discord_add\}/g, url + '/deploy')
+      .replace(/\$\{link_monitoring\}/g, url + '/monitoring');
+  if (help_prompts.reduce((p1, p2) => p1.length + p2.length, 0) > about_me.length || (await Promise.all(help_prompts.map(prompt => chatgpt.createBoolean(prompt, model)))).some(r => r)) {
+    system_message += about_me;
+  }
+
+  return system_message;
 }
 
 async function handleLongResponse(channel_id, func) {

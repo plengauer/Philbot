@@ -17,7 +17,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   if (!target_language) return;
   if (!await chatgpt.canCreate()) return;
 
-  let model_fast = 'gpt-3';
+  let model_fast = 'gpt-3.5';
   let model = undefined;
 
   if (chatgpt.getLanguageModels().indexOf(model_fast) < chatgpt.getLanguageModels().indexOf('gpt-4')) {
