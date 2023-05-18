@@ -235,7 +235,11 @@ async function canCreate() {
 }
 
 async function shouldCreate(threshold = 0.8) {
-  return (await getCurrentCost()).value / cost_limit < computeBillingSlotProgress() * threshold;
+  return computeCostProgress() / computeBillingSlotProgress() < threshold;
+}
+
+async function computeCostProgress() {
+   return (await getCurrentCost()).value / cost_limit;
 }
 
 function computeBillingSlotProgress() {
