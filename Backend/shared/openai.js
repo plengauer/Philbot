@@ -247,7 +247,13 @@ function computeBillingSlotProgress() {
   return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
-async function getDynamicModel(models, safety) {
+const DEFAULT_DYNAMIC_MODEL_SAFETY = 0.5;
+
+function getDefaultDynamicModelSafety() {
+  return DEFAULT_DYNAMIC_MODEL_SAFETY;
+}
+
+async function getDynamicModel(models, safety = DEFAULT_DYNAMIC_MODEL_SAFETY) {
   let model_index = models.length - 1;
   let threshold = safety;
   while (!await shouldCreate(1 - threshold) && model_index >= 0) {
