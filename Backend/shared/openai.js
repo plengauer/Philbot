@@ -9,11 +9,11 @@ const cost_limit = parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
 const debug = process.env.OPENAI_DEBUG == 'true'
 
 const meter = opentelemetry.metrics.getMeter('openai');
+meter.createObservableGauge('openai.cost.slotted.absolute').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost.value)));
+meter.createObservableGauge('openai.cost.slotted.relative').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost.value / cost_limit)));
+meter.createObservableGauge('openai.cost.slotted.progress').addCallback(async (result) => getCurrentCost().then(cost => result.observe((cost.value / cost_limit) / computeBillingSlotProgress())));
 const request_counter = meter.createCounter('openai.requests');
 const cost_counter = meter.createCounter('openai.cost');
-const cost_absolute_counter = meter.createHistogram('openai.cost.slotted.absolute');
-const cost_relative_counter = meter.createHistogram('openai.cost.slotted.relative');
-const cost_progress_counter = meter.createHistogram('openai.cost.slotted.progress');
 
 const LANGUAGE_COMPLETION_MODELS = ["text-ada-001", "text-babbage-001", "text-curie-001", "text-davinci-001", "text-davinci-002", "text-davinci-003"];
 const LANGUAGE_CHAT_MODELS = ["gpt-3.5-turbo", "gpt-4"];
@@ -205,13 +205,10 @@ async function HTTP(endpoint, body) {
 }
 
 async function bill(cost, model) {
-  let total_cost = await synchronized.locked('openai.billing', () => bill0(cost, model));
+  await synchronized.locked('openai.billing', () => bill0(cost, model));
   const attributes = { 'openai.model': model };
   request_counter.add(1, attributes);
   cost_counter.add(cost, attributes);
-  cost_absolute_counter.record(total_cost.value, attributes);
-  cost_relative_counter.record(total_cost.value / cost_limit, attributes);
-  cost_progress_counter.record((total_cost.value / cost_limit) / computeBillingSlotProgress(), attributes);
 }
 
 async function bill0(cost, model) {
