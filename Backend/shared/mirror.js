@@ -113,7 +113,7 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
   }
 
   let message = await discord.post(mirror_info.channel_ids[channel_id], content, referenced_message_id_mirror, true, embeds, components, attachment_mirrors);
-  await memory.set(`mirror:message:${message_id}`, message.id, 60 * 60 * 24 * 3);
+  await memory.set(`mirror:message:${message_id}`, message.id, 60 * 60 * 24 * 7);
 }
 
 function disarm_components(components) {
@@ -130,6 +130,20 @@ function member2string(member) {
   let string = `${member.user.username}#${member.user.discriminator}`;
   if (member.nick) string = `${member.nick} (${string})`;
   return string;
+}
+
+async function on_reaction_add(guild_id, channel_id, user_id, message_id, emoji) {
+  let mirrors = await memory.get(memorykey(guild_id), []);
+  return Promise.all(mirrors.map(mirror_info => forward_reaction(guild_id, channel_id, user_id, message_id, emoji, mirror_info)));
+}
+
+async function forward_reaction(guild_id, channel_id, user_id, message_id, emoji, mirror_info) {
+  if (!mirror_info.channel_ids[channel_id]) return; // channel doesnt exist, that can happen when we start mirroring and first event we get is an reaction
+  let referenced_message_id_mirror = message_id ? await memory.get(`mirror:message:${message_id}`) : undefined;
+  if (!referenced_message_id_mirror) return; // message already aged out
+  let reactor = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member)).catch(() => '<UnknownUser>')
+  let content = reactor + ': + (emoji.name ? (emoji.require_colons ? ':' + emoji.name + ':' : emoji.name) : '<UnknownEmoji>');
+  return discord.post(mirror_info.channel_ids[channel_id], content, referenced_message_id_mirror);
 }
 
 async function clean() {
@@ -178,4 +192,4 @@ async function clean() {
 //TODO special section for channels about server members joining and leaving. voice state changes in the servers, about role changes and name changes
 //TODO reactions?
 
-module.exports = { configure_mirror, on_message_create, clean }
+module.exports = { configure_mirror, on_message_create, on_reaction_add, clean }
