@@ -9,6 +9,7 @@ const cost_limit = parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
 const debug = process.env.OPENAI_DEBUG == 'true'
 
 const meter = opentelemetry.metrics.getMeter('openai');
+const request_counter = meter.createCounter('openai.requests');
 const cost_counter = meter.createCounter('openai.cost');
 const cost_absolute_counter = meter.createHistogram('openai.cost.slotted.absolute');
 const cost_relative_counter = meter.createHistogram('openai.cost.slotted.relative');
@@ -206,6 +207,7 @@ async function HTTP(endpoint, body) {
 async function bill(cost, model) {
   let total_cost = await synchronized.locked('openai.billing', () => bill0(cost, model));
   const attributes = { 'openai.model': model };
+  request_counter.add(1, attributes);
   cost_counter.add(cost, attributes);
   cost_absolute_counter.record(total_cost.value, attributes);
   cost_relative_counter.record(total_cost.value / cost_limit, attributes);
