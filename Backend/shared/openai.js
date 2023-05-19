@@ -211,7 +211,7 @@ async function bill(cost, model) {
   cost_counter.add(cost, attributes);
   cost_absolute_counter.record(total_cost.value, attributes);
   cost_relative_counter.record(total_cost.value / cost_limit, attributes);
-  cost_progress_counter.record((total_cost.value / cost_limit) / computeBillingSlotProgress()), attributes);
+  cost_progress_counter.record((total_cost.value / cost_limit) / computeBillingSlotProgress(), attributes);
 }
 
 async function bill0(cost, model) {
