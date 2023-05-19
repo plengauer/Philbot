@@ -4,6 +4,7 @@ const delayed_memory = require('../../../shared/delayed_memory.js');
 const games = require('../../../shared/games/games.js');
 const features = require('../../../shared/features.js');
 const role_management = require('../../../shared/role_management.js');
+const synchronized = require('../../../shared/synchronized.js');
 
 const mute_ttl = 60 * 60 * 24 * 7 * 4;
 const mute_auto_ttl = 60 * 60 * 2;
@@ -72,16 +73,15 @@ async function handle0(guild_id, user_id, activities) {
 }
 
 async function sendHints(guild_id, user_id, activities) {
-  return Promise.all(activities.map(activity => sendHint(guild_id, user_id, activity)));
-}
-
-async function sendHint(guild_id, user_id, activity) {
   let role = await memory.get(`notification:role:guild:${guild_id}`, null);
   if (role) {
     let member = await discord.guild_member_retrieve(guild_id, user_id);
     if (member && !member.roles.some(role_id => role_id === role)) return Promise.resolve();
   }
+  return synchronized.locked('presence_update:hint:guild:' + guild_id, () => Promise.all(activities.map(activity => sendHint(guild_id, user_id, activity))));
+}
 
+async function sendHint(user_id, activity) {
   let hint = await games.getActivityHint(activity.name, activity.details, activity.state, user_id);
   if (!hint) {
     return Promise.resolve();
