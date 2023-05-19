@@ -142,7 +142,7 @@ async function forward_reaction(guild_id, channel_id, user_id, message_id, emoji
   let referenced_message_id_mirror = message_id ? await memory.get(`mirror:message:${message_id}`) : undefined;
   if (!referenced_message_id_mirror) return; // message already aged out
   let reactor = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member)).catch(() => '<UnknownUser>')
-  let content = reactor + ':' + (emoji.name ? (emoji.require_colons ? ':' + emoji.name + ':' : emoji.name) : '<UnknownEmoji>');
+  let content = reactor + ': ' + (emoji.name ? (emoji.require_colons ? ':' + emoji.name + ':' : emoji.name) : '<UnknownEmoji>');
   return discord.post(mirror_info.channel_ids[channel_id], content, referenced_message_id_mirror);
 }
 
