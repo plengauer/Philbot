@@ -30,7 +30,7 @@ async function createCompletion(prompt, model = undefined) {
   if (!await canCreate()) return null;
   
   if (LANGUAGE_CHAT_MODELS.includes(model)) {
-    return createResponse(null, null, `Complete the text "${prompt}". Answer with the completion only.`, model);
+    return createResponse(null, null, `Complete the following text, respond with the completion only:\n${prompt}`, model);
   }
   
   let response = await HTTP('/v1/completions' , { "model": model, "prompt": prompt });
@@ -60,7 +60,6 @@ async function createResponse0(history_token, system, message, model = undefined
   let output = null;
   if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
     let completion = await createCompletion(`Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', model);
-    completion = completion.trim();
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
   } else {
@@ -264,7 +263,7 @@ async function getDynamicModel(models, safety = DEFAULT_DYNAMIC_MODEL_SAFETY) {
     threshold = threshold * safety;
   }
   // TODO should we upgrade again if model above is cheaper?
-  return models[model_index];
+  return process.env.OPENAI_DYNAMIC_MODEL_OVERRIDE ?? models[model_index];
 }
 
 module.exports = { getLanguageModels, createCompletion, createResponse, createBoolean, getImageSizes, createImage, canCreate, shouldCreate, getDynamicModel, getDefaultDynamicModelSafety  }

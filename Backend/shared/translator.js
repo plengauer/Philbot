@@ -11,13 +11,21 @@ async function configure_translate(guild_id, channel_id, language) {
   return language ? memory.set(key, language) : memory.unset(key);
 }
 
+const NONE_LANGUAGES = [
+  'internet slang',
+  'mention',
+  'discord mention',
+  'emoji',
+  'emoticon',
+];
+
 async function on_message_create(guild_id, channel_id, message_id, content) {
   if (content.trim() == 0) return;
   let target_language = await memory.get(memorykey(guild_id, channel_id), await memory.get(memorykey(guild_id, '*'), null));
   if (!target_language) return;
   if (!await chatgpt.canCreate()) return;
 
-  let model = 'gpt-4' ?? await chatgpt.getDynamicModel(chatgpt.getLanguageModels());
+  let model = await chatgpt.getDynamicModel(chatgpt.getLanguageModels());
   let model_fast = chatgpt.getLanguageModels()[Math.max(0, chatgpt.getLanguageModels().indexOf(model)-1)];
 
   if (chatgpt.getLanguageModels().indexOf(model_fast) < chatgpt.getLanguageModels().indexOf('gpt-4')) {
@@ -34,14 +42,19 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
     if (target_language_percentage > 0.9) return;
   }
   
-  let source_language = await chatgpt.createCompletion(`Question: What language is the text "${content}"? Respond only with the language. Ignore typos.\nAnswer: `, model);
+  // gpt-3.5-turbo seems really bad at answering with exactly only the language, worse then older generation models!
+  let source_language = await chatgpt.createCompletion(
+    `Determine the language of the text, ignoring typos.\nText: ${content}\nLanguage: `,
+    model != 'gpt-3.5-turbo' ? model : getLanguageModels()[chatgpt.getLanguageModels().indexOf('gpt-3.5-turbo') - 1]
+  );
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);
   if (!source_language) return;
   if (source_language.endsWith('.')) source_language = source_language.substring(0, source_language.length - 1);
   if (source_language.split(',').some(language => language.split(' ').filter(token => token.length > 0).length > 3)) throw new Error('Invalid language: ' + source_language);
-  if (source_language.toLowerCase().split(',').every(language => [target_language.toLowerCase().trim(), 'internet slang', 'mention', 'mentions', 'discord mention', 'discord mentions', 'emoji', 'emojis', 'emoticon', 'emoticons'].includes(language))) return;
+  if (source_language.toLowerCase().split(',').every(language => language == target_language.toLowerCase().trim() || NONE_LANGUAGES.some(none_language => language.includes(none_language)))) return;
   
   let translation = await translate(target_language, content, model)
+  if (!translation) return;
   
   translations_counter.add(1, { 'language.target': target_language.substring(0, 1).toUpperCase() + target_language.substring(1).toLowerCase(), 'language.source': source_language });
 
@@ -49,10 +62,17 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
 }
 
 async function translate(target_language, source, model = undefined) {
-  let translation = await chatgpt.createCompletion(`Translate the text to ${target_language}. Do not translate emojis, or parts that are surrounded by : < or >. \nText: "${source}"\nTranslation: `, model);
+  const dummy_token = 'NULL';
+  let prompt = `Translate the text to ${target_language}. `
+    + `Do not translate emojis, hyperlinks, discord mentions, or any parts that are surrounded by : < or >. `
+    + `Translate the text as ${dummy_token} if it is untranslatable or unnecessary to translate.\n`
+    + `Text: "${source}"\n`
+    + `Translation: `;
+  let translation = await chatgpt.createCompletion(prompt, model);
   //console.log(`DEBUG TRANSLATOR v2 #3 "${source}" => "${translation}"`);
   if (!translation || translation.length == 0) return;
   if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1).trim();
+  if (translation == dummy_token) return;
   if (simplify(translation) == simplify(source)) throw new Error('Translation is equal to the source!');
   return translation;
 }
