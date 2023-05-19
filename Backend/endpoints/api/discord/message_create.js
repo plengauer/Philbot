@@ -898,7 +898,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let language = message.substring(0, split).trim();
     let text = message.substring(split + 1).trim();
     return handleLongResponse(channel_id, () => chatgpt.getDynamicModel(chatgpt.getLanguageModels())
-      .then(model => model ? translator.translate(language, text) : null)
+      .then(model => model ? translator.translate(language, text, model) : null)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
     );
   
