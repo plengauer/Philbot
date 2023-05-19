@@ -17,8 +17,9 @@ from flask import Flask, request, Response
 import yt_dlp
 import opentelemetry
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.metrics import MeterProvider, Observation
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader, AggregationTemporality
+from opentelemetry import metrics
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.sdk.trace import TracerProvider, sampling
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -640,13 +641,13 @@ def get_context(guild_id):
             context = contexts[guild_id] = Context(guild_id)
         return context
 
-def get_connection_count():
-        with contexts_lock:
-            count = 0
-            for context in contexts.values():
-                if context.is_connected():
-                    count++
-            return metrics.Observation(count)
+def get_connection_count(options):
+    count = 0
+    with contexts_lock:
+        for context in contexts.values():
+            if context.is_connected():
+                count = count + 1
+    yield metrics.Observation(count)
 
 meter.create_observable_gauge('discord.gateway.voice.connections.concurrent', [get_connection_count])
 
@@ -749,4 +750,3 @@ def main():
     # app.run(port=HTTP_PORT, ssl_context='adhoc', threaded=True)
     app.run(port=HTTP_PORT, threaded=True)
 
-# https://github.com/ytdl-org/youtube-dl/blob/master/README.md#embedding-youtube-dl
