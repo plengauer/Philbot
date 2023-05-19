@@ -78,7 +78,7 @@ async function sendHints(guild_id, user_id, activities) {
     let member = await discord.guild_member_retrieve(guild_id, user_id);
     if (member && !member.roles.some(role_id => role_id === role)) return Promise.resolve();
   }
-  return synchronized.locked('presence_update:hint:guild:' + guild_id, () => Promise.all(activities.map(activity => sendHint(guild_id, user_id, activity))));
+  return synchronized.locked('presence_update:hint:guild:' + guild_id, () => Promise.all(activities.map(activity => sendHint(user_id, activity))));
 }
 
 async function sendHint(user_id, activity) {
