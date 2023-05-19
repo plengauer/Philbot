@@ -17,7 +17,7 @@ from flask import Flask, request, Response
 import yt_dlp
 import opentelemetry
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics import MeterProvider, Observation
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader, AggregationTemporality
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.sdk.trace import TracerProvider, sampling
@@ -155,8 +155,6 @@ def resolve_url(guild_id, url):
     os.utime(filename)
     return 'file://' + filename
 
-counter_concurrent_connections = meter.create_up_down_counter(name = 'discord.gateway.voice.connections.concurrent', description = 'Number concurrent open connections', unit="count")
-counter_concurrent_streams = meter.create_up_down_counter(name = 'discord.gateway.voice.streams.concurrent', description = 'Number of concurrent streams', unit="count")
 counter_streams = meter.create_counter(name = 'discord.gateway.voice.streams', description = 'Number of streams', unit="count")
 counter_streaming = meter.create_counter(name = 'discord.gateway.voice.streaming', description = 'Amount of time streamed', unit="milliseconds")
 
@@ -302,7 +300,6 @@ class Context:
                         pass
                     file = None
                     filename = None
-                    counter_concurrent_streams.add(-1, { "guild_id": self.guild_id })
                     print('VOICE CONNECTION ' + self.guild_id + ' stream completed')
                     threading.Thread(target=self.__callback_playback_finished).start()
                 elif not filename and self.url:
@@ -327,7 +324,6 @@ class Context:
                             threading.Thread(target=self.__callback_playback_finished).start()
                         else:
                             print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
-                            counter_concurrent_streams.add(1, { "guild_id": self.guild_id })
                             counter_streams.add(1, { "guild_id": self.guild_id })
                 elif filename and self.url and filename != self.url[len('file://'):]:
                     file.close()
@@ -394,14 +390,12 @@ class Context:
                 os.remove(filename)
             except:
                 pass
-            counter_concurrent_streams.add(-1, { "guild_id": self.guild_id })
         pyogg.opus.opus_encoder_destroy(encoder)
         
         print('VOICE CONNECTION ' + self.guild_id + ' stream closed')
 
     def __ws_on_open(self, ws):
         print('VOICE GATEWAY ' + self.guild_id + ' connection established')
-        counter_concurrent_connections.add(1, { "guild_id": self.guild_id, "server": self.endpoint if self.endpoint else "" })
 
     def __ws_on_message(self, ws, message):
         with self.lock:
@@ -555,7 +549,6 @@ class Context:
                 time.sleep(5)
             case _: # something else
                 pass
-        counter_concurrent_connections.add(-1, { "guild_id": self.guild_id, "server": self.endpoint if self.endpoint else "", "close_code": close_code if close_code else 0 })
         self.__stop()
     
     def __try_start(self):
@@ -646,6 +639,16 @@ def get_context(guild_id):
         if not context:
             context = contexts[guild_id] = Context(guild_id)
         return context
+
+def get_connection_count():
+        with contexts_lock:
+            count = 0
+            for context in contexts.values():
+                if context.is_connected():
+                    count++
+            return metrics.Observation(count)
+
+meter.create_observable_gauge('discord.gateway.voice.connections.concurrent', [get_connection_count])
 
 @app.route('/ping', methods=['GET'])
 def ping():
