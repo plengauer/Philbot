@@ -37,7 +37,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   let source_language = await chatgpt.createCompletion(`Question: What language is the text "${content}"? Respond only with the language. Ignore typos.\nAnswer: `, model);
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);
   if (!source_language) return;
-  if (source_language.endsWith('.')) source_language = source_language.substring(source_language.length - 1);
+  if (source_language.endsWith('.')) source_language = source_language.substring(0, source_language.length - 1);
   if (source_language.split(',').some(language => language.split(' ').filter(token => token.length > 0).length > 3)) throw new Error('Invalid language: ' + source_language);
   if (source_language.toLowerCase().split(',').every(language => [target_language.toLowerCase().trim(), 'internet slang', 'mention', 'mentions', 'discord mention', 'discord mentions', 'emoji', 'emojis', 'emoticon', 'emoticons'].includes(language))) return;
   
