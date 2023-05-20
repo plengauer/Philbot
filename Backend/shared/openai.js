@@ -23,28 +23,28 @@ function getLanguageModels() {
   return LANGUAGE_COMPLETION_MODELS.concat(LANGUAGE_CHAT_MODELS);
 }
 
-async function createCompletion(prompt, model = undefined) {
+async function createCompletion(prompt, model = undefined, temperature = undefined) {
   model = model ?? getLanguageModels().slice(-1);
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   if (!token) return null;
   if (!await canCreate()) return null;
   
   if (LANGUAGE_CHAT_MODELS.includes(model)) {
-    return createResponse(null, null, `Complete the following text, respond with the completion only:\n${prompt}`, model);
+    return createResponse(null, null, `Complete the following text, respond with the completion only:\n${prompt}`, model, temperature);
   }
   
-  let response = await HTTP('/v1/completions' , { "model": model, "prompt": prompt });
+  let response = await HTTP('/v1/completions' , { "model": model, "prompt": prompt, temperature: temperature });
   let completion = response.choices[0].text.trim();
   await bill(computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
   return completion;
 }
 
-async function createResponse(history_token, system, message, model = undefined) {
-  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(history_token, system, message, model));
-  else return createResponse0(history_token, system, message, model);
+async function createResponse(history_token, system, message, model = undefined, temperature = undefined) {
+  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(history_token, system, message, model, temperature));
+  else return createResponse0(history_token, system, message, model, temperature);
 }
 
-async function createResponse0(history_token, system, message, model = undefined) {
+async function createResponse0(history_token, system, message, model = undefined, temperature = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   model = model ?? getLanguageModels().slice(-1);
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
@@ -59,11 +59,11 @@ async function createResponse0(history_token, system, message, model = undefined
   
   let output = null;
   if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
-    let completion = await createCompletion(`Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', model);
+    let completion = await createCompletion(`Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', model, temperature);
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
   } else {
-    let response = await HTTP('/v1/chat/completions' , { "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation) });
+    let response = await HTTP('/v1/chat/completions' , { "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature });
     output = response.choices[0].message;
     await bill(computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
   }
@@ -145,14 +145,14 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
   }
 }
 
-async function createBoolean(question, model = undefined) {
+async function createBoolean(question, model = undefined, temperature = undefined) {
   model = model ?? getLanguageModels().slice(-1);
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
   let response = null;
   if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
-    response = await createCompletion(`Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, model);
+    response = await createCompletion(`Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, model, temperature);
   } else {
-    response = await createResponse(null, null, `${question} Respond only with yes or no!`, model);
+    response = await createResponse(null, null, `${question} Respond only with yes or no!`, model, temperature);
   }
   if (!response) return null;
   response = response.trim().toLowerCase();
