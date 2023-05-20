@@ -180,7 +180,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(promise);
   }
   
-  if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
+  if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
     let promise = chatgpt.getDynamicModel(chatgpt.getLanguageModels())
       .then(model => (model && chatgpt.getLanguageModels().indexOf(model) >= chatgpt.getLanguageModels().indexOf('gpt-4')) ? model : null)
       .then(model => model ? chatgpt.createBoolean(`Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it?`, model) : false)
@@ -189,7 +189,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     promises.push(promise);
   }
   
-  if (Math.random() < 0.1 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
+  if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
     let promise = chatgpt.getDynamicModel(chatgpt.getLanguageModels())
       .then(model => model ? chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or nothing at all.\nText: "${message}"\nExtraction: `, model) : null)
       //.then(response => { console.log(`DEBUG PAINTING v1: "${message}" => "${response}"`); return response; })
