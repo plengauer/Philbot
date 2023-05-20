@@ -45,7 +45,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   // gpt-3.5-turbo seems really bad at answering with exactly only the language, worse then older generation completion models!
   let source_language = await chatgpt.createCompletion(
     `Determine the language of the text, ignoring typos.\nText: ${content}\nLanguage: `,
-    model != 'gpt-3.5-turbo' ? model : getLanguageModels()[chatgpt.getLanguageModels().indexOf('gpt-3.5-turbo') - 1],
+    model != 'gpt-3.5-turbo' ? model : chatgpt.getLanguageModels()[chatgpt.getLanguageModels().indexOf('gpt-3.5-turbo') - 1],
     0
   );
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);
@@ -74,7 +74,7 @@ async function translate(target_language, source, model = undefined) {
   if (!translation || translation.length == 0) return;
   if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1).trim();
   if (translation == dummy_token) return;
-  if (simplify(translation) == simplify(source)) throw new Error('Translation is equal to the source!');
+  if (simplify(translation) == simplify(source)) return; // this can happen when something is valid in both language
   return translation;
 }
 
