@@ -42,7 +42,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
     if (target_language_percentage > 0.9) return;
   }
   
-  // gpt-3.5-turbo seems really bad at answering with exactly only the language, worse then older generation models!
+  // gpt-3.5-turbo seems really bad at answering with exactly only the language, worse then older generation completion models!
   let source_language = await chatgpt.createCompletion(
     `Determine the language of the text, ignoring typos.\nText: ${content}\nLanguage: `,
     model != 'gpt-3.5-turbo' ? model : getLanguageModels()[chatgpt.getLanguageModels().indexOf('gpt-3.5-turbo') - 1]
