@@ -20,7 +20,7 @@ const NONE_LANGUAGES = [
 ];
 
 async function on_message_create(guild_id, channel_id, message_id, content) {
-  if (content.trim() == 0) return;
+  if (content.trim() == '') return;
   let target_language = await memory.get(memorykey(guild_id, channel_id), await memory.get(memorykey(guild_id, '*'), null));
   if (!target_language) return;
   if (!await chatgpt.canCreate()) return;
