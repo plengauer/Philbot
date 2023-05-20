@@ -83,14 +83,14 @@ async function tryScheduleEvent(guild, event_config) {
     event_config.name = bag[Math.floor(Math.random() * bag.length)];
     // override
     for (let channel of await discord.guild_channels_list(guild.id)) {
-      if (channel.name === event_config.name) {
+      if (channel.name == event_config.name && (channel.type == 2 || channel.type == 13)) {
         event_config.channel_id = channel.id;
         break;
       }
     }
   } else if (!event_config.channel_id) {
     for (let channel of await discord.guild_channels_list(guild.id)) {
-      if (channel.name === event_config.name) {
+      if (channel.name == event_config.name && (channel.type == 2 || channel.type == 13)) {
         event_config.channel_id = channel.id;
         break;
       }
