@@ -262,7 +262,6 @@ async function getDynamicModel(models, safety = DEFAULT_DYNAMIC_MODEL_SAFETY) {
     model_index--;
     threshold = threshold * safety;
   }
-  // TODO should we upgrade again if model above is cheaper?
   return process.env.OPENAI_DYNAMIC_MODEL_OVERRIDE ?? models[model_index];
 }
 
