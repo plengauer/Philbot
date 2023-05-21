@@ -84,7 +84,7 @@ async function request_simple(options) {
             counter_attrs['http.response.content-type'] = response.headers['content-type'];
             counter_attrs['http.response.content-encoding'] = response.headers['content-encoding'];
             request_counter.add(1, counter_attrs);
-            resolve({ status: response.statusCode, headers: response.headers, body: chunks.map(chunk => '' + chunk).join('') });
+            resolve({ status: response.statusCode, headers: response.headers, body: headers['accept-ranges'] ? Buffer.concat(chunks) : chunks.map(chunk => '' + chunk).join('') });
           });
         });
       request.on('error', error => {
