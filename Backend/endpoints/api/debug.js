@@ -4,6 +4,7 @@ const translator = require('../../shared/translator.js');
 const discord = require('../../shared/discord.js');
 
 async function handle() {
+  return;
   // just for debugging
   const guild_id = '977181350509555752';
   const channel_id = '1105496810560167966';

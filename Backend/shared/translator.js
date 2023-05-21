@@ -27,8 +27,9 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
 
   let model = process.env.TRANSLATOR_MODEL_OVERRIDE ?? await chatgpt.getDynamicModel(chatgpt.getLanguageModels());
   let model_fast = chatgpt.getLanguageModels()[Math.max(0, chatgpt.getLanguageModels().indexOf(model)-1)];
+  if (!chatgpt.compareLanguageModelByCost(model_fast, model)) model_fast = model;
 
-  if (chatgpt.getLanguageModels().indexOf(model_fast) < chatgpt.getLanguageModels().indexOf('gpt-4')) {
+  if (chatgpt.compareLanguageModelByPower(model_fast, 'gpt-4')) {
     let is_target_language = await chatgpt.createBoolean(`Is the text "${content}" ${target_language}?`, model_fast, 0);
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${is_target_language}`);
     if (is_target_language) return;

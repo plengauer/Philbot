@@ -23,6 +23,15 @@ function getLanguageModels() {
   return LANGUAGE_COMPLETION_MODELS.concat(LANGUAGE_CHAT_MODELS);
 }
 
+function compareLanguageModelByCost(cheap_model, expensive_model) {
+  return computeLanguageCost(cheap_model, 1, 1) < computeLanguageCost(expensive_model, 1, 1);
+}
+
+function compareLanguageModelByPower(bad_model, good_model) {
+  let models = getLanguageModels();
+  return models.indexOf(bad_model) < models.indexOf(good_model);
+}
+
 async function createCompletion(prompt, model = undefined, temperature = undefined) {
   model = model ?? getLanguageModels().slice(-1);
   model = LANGUAGE_MODEL_MAPPING[model] ?? model;
@@ -265,4 +274,4 @@ async function getDynamicModel(models, safety = DEFAULT_DYNAMIC_MODEL_SAFETY) {
   return process.env.OPENAI_DYNAMIC_MODEL_OVERRIDE ?? models[model_index];
 }
 
-module.exports = { getLanguageModels, createCompletion, createResponse, createBoolean, getImageSizes, createImage, canCreate, shouldCreate, getDynamicModel, getDefaultDynamicModelSafety  }
+module.exports = { getLanguageModels, compareLanguageModelByCost, compareLanguageModelByPower, createCompletion, createResponse, createBoolean, getImageSizes, createImage, canCreate, shouldCreate, getDynamicModel, getDefaultDynamicModelSafety  }
