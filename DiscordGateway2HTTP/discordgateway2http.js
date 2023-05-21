@@ -149,10 +149,12 @@ async function handleReady(state, payload) {
     state.resume_gateway_url = payload.resume_gateway_url;
     saveState(state);
     console.log('GATEWAY ready (session_id ' + state.session_id + ', resume_gateway_url ' + state.resume_gateway_url + ')');
+    return sendPresenceUpdate(state, 'online');
 }
 
-async function handleResumed() {
+async function handleResumed(state) {
     console.log('GATEWAY resumed');
+    return sendPresenceUpdate(state, 'online');
 }
 
 async function handleHeartbeatRequest(state) {
@@ -186,7 +188,7 @@ async function handleDispatch(state, sequence, event, payload) {
     }
     switch(event) {
         case 'READY': return handleReady(state, payload);
-        case 'RESUMED': return handleResumed();
+        case 'RESUMED': return handleResumed(state);
         default:
             let guild_id = payload.guild_id ?? (event.startsWith('GUILD_') ? payload.id : undefined);
             if (guild_id) payload.callback = { guild_id: guild_id, url: 'http://127.0.0.1:' + state.callback_port }
@@ -217,7 +219,24 @@ async function dispatch(state, event, payload) {
         return;
     }
     console.log('GATEWAY dispatch ' + event.toLowerCase());
-    return HTTP(event, payload);
+    try {
+        await HTTP(event, payload);
+        if (state.backend_unavailable) {
+            state.backend_unavailable = false;
+            await sendPresenceUpdate(state, 'online');
+        }
+    } catch (error) {
+        if (!state.backend_unavailable) {
+            state.backend_unavailable = true;
+            await sendPresenceUpdate(state, 'invisible');
+        }
+        throw error;
+    }
+}
+
+async function sendPresenceUpdate(state, status) {
+    console.log('GATEWAY presence update (status ' + status + ')');
+    return send(state, 3, { status: status, activities: [], afk: false, since: null });
 }
 
 async function HTTP(event, payload, delay = undefined) {
