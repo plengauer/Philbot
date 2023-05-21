@@ -973,12 +973,7 @@ async function createAIContext(guild_id, user_id, user_name, message, model) {
   }
 
   // complex information about how myself
-  const help_prompts = [
-    `Is "${message}" a question in the context of Discord?`,
-    `Assuming I am a Discord bot, is "${message}" a question about me?`,
-    `Assuming I am a Discord bot, is "${message}" a question about my capabilities?`,
-    `Assuming I am a Discord bot, is "${message}" a question how to interact with me?`
-  ];
+  const help_prompt = `Assuming I am a Discord bot called ${my_name}, is "${message}" a question about me, my capabilities, or how to interact with me?`;
   let url = await identity.getPublicURL();
   let about_me = ('' + fs.readFileSync('./help.txt'))
       .replace(/\$\{about_instruction\}/g, 'Use \'${name} about\'')
@@ -990,7 +985,7 @@ async function createAIContext(guild_id, user_id, user_name, message, model) {
       .replace(/\$\{link_code\}/g, url + '/code')
       .replace(/\$\{link_discord_add\}/g, url + '/deploy')
       .replace(/\$\{link_monitoring\}/g, url + '/monitoring');
-  if (help_prompts.reduce((p1, p2) => p1.length + p2.length, 0) > about_me.length || (await Promise.all(help_prompts.map(prompt => chatgpt.createBoolean(prompt, model)))).some(r => r)) {
+  if (help_prompt.length > about_me.length || await chatgpt.createBoolean(prompt, model)) {
     system_message += about_me;
   }
 
