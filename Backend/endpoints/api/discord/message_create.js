@@ -973,7 +973,7 @@ async function createAIContext(guild_id, user_id, user_name, message, model) {
   }
 
   // complex information about how myself
-  const help_prompt = `Assuming I am a Discord bot called ${my_name}, is "${message}" a question about me, my capabilities, how to interact with me, or a general question in the context of Discord?`;
+  const help_prompt = `Assuming I am a Discord bot called ${my_name}, is "${message}" a question about me, my capabilities, or how to interact with me?`;
   let url = await identity.getPublicURL();
   let about_me = ('' + fs.readFileSync('./help.txt'))
       .replace(/\$\{about_instruction\}/g, 'Use \'${name} about\'')
