@@ -985,7 +985,7 @@ async function createAIContext(guild_id, user_id, user_name, message, model) {
       .replace(/\$\{link_code\}/g, url + '/code')
       .replace(/\$\{link_discord_add\}/g, url + '/deploy')
       .replace(/\$\{link_monitoring\}/g, url + '/monitoring');
-  if (help_prompt.length > about_me.length || await chatgpt.createBoolean(prompt, model)) {
+  if (help_prompt.length > about_me.length || await chatgpt.createBoolean(help_prompt, model)) {
     system_message += about_me;
   }
 
