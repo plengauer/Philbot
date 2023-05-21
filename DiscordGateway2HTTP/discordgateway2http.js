@@ -217,8 +217,7 @@ async function dispatch(state, event, payload) {
         return;
     }
     console.log('GATEWAY dispatch ' + event.toLowerCase());
-    return HTTP(event, payload)
-        .then(result => result ? handleReply(state, result) : Promise.resolve());
+    return HTTP(event, payload);
 }
 
 async function HTTP(event, payload, delay = undefined) {
@@ -234,7 +233,6 @@ async function HTTP(event, payload, delay = undefined) {
         }
         console.log('HTTP POST ' + url + ' => ' + response.statusCode + ' (' + (Date.now() - time) + 'ms)');
         if (response.statusCode == 503 || response.statusCode == 429) return reject(response.statusCode);
-        if (response.headers['content-type'] == 'application/json') return resolve(JSON.parse(response.body));
         return resolve();
     })).catch(() => HTTP(event, payload, delay ? delay * 2 : 1000));
 }
