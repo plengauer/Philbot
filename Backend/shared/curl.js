@@ -108,6 +108,7 @@ async function request_simple(options) {
       if (options.body) {
         if (options.body.pipe) {
           options.body.pipe(request);
+          return;
         } else {
           request.write(options.body);
         }
