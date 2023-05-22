@@ -75,17 +75,21 @@ async function request_simple(options) {
           } else {
             receiver = response;
           }
-          let chunks = [];
-          receiver.on('data', chunk => { chunks.push(chunk); });
-          receiver.on('end', () => {
-            let duration = Date.now() - time;
-            console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${response.statusCode} (${duration}ms)`);
-            counter_attrs['http.response.status'] = response.statusCode;
-            counter_attrs['http.response.content-type'] = response.headers['content-type'];
-            counter_attrs['http.response.content-encoding'] = response.headers['content-encoding'];
-            request_counter.add(1, counter_attrs);
-            resolve({ status: response.statusCode, headers: response.headers, body: response.headers['accept-ranges'] ? Buffer.concat(chunks) : chunks.map(chunk => '' + chunk).join('') });
-          });
+          let result = { status: response.statusCode, headers: response.headers };
+          let duration = Date.now() - time;
+          console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${response.statusCode} (${duration}ms)`);
+          counter_attrs['http.response.status'] = response.statusCode;
+          counter_attrs['http.response.content-type'] = response.headers['content-type'];
+          counter_attrs['http.response.content-encoding'] = response.headers['content-encoding'];
+          request_counter.add(1, counter_attrs);
+          if (options.stream) {
+            result.body = response;
+            resolve(result);
+          } else {
+            result.body = '';
+            receiver.on('data', chunk => result.body += ('' + chunk));
+            receiver.on('end', () => resolve(result));
+          }
         });
       request.on('error', error => {
           console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${error.message}`);

@@ -105,7 +105,7 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
     try {
       if (attachment.size > 1024 * 1024 * 25) throw new Error('maybe too big');
       let uri = url.parse(attachment.url);
-      let file = await curl.request({ hostname: uri.hostname, path: uri.path + (uri.search ?? '') });
+      let file = await curl.request({ hostname: uri.hostname, path: uri.path + (uri.search ?? ''), stream: true });
       attachment_mirrors.push({ filename: attachment.filename, content_type: attachment.content_type, content: file });
     } catch {
       content += '\n**Attachment ' + index + '**: ' + attachment.url;
