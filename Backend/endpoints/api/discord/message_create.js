@@ -194,7 +194,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
     let promise = chatgpt.getDynamicModel(chatgpt.getLanguageModels())
       .then(model => model ? chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model) : null)
       //.then(response => { console.log(`DEBUG PAINTING v1: "${message}" => "${response}"`); return response; })
-      .then(extraction => extraction && extraction != dummy_token ? chatgpt.getDynamicModel(chatgpt.getImageSizes()).then(size => size ? chatgpt.createImage(extraction, size) : null) : null)
+      .then(extraction => extraction && extraction != dummy_token && (extraction.match(/\p{L}/gu) ?? []).length > extraction.length * 0.5 ? chatgpt.getDynamicModel(chatgpt.getImageSizes()).then(size => size ? chatgpt.createImage(extraction, size) : null) : null)
       .then(file => file ? discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]) : undefined);
     promises.push(promise);
   }
