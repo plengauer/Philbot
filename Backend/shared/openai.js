@@ -9,9 +9,9 @@ const cost_limit = parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
 const debug = process.env.OPENAI_DEBUG == 'true'
 
 const meter = opentelemetry.metrics.getMeter('openai');
-meter.createObservableGauge('openai.cost.slotted.absolute').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost.value)));
-meter.createObservableGauge('openai.cost.slotted.relative').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost.value / cost_limit)));
-meter.createObservableGauge('openai.cost.slotted.progress').addCallback(async (result) => getCurrentCost().then(cost => result.observe((cost.value / cost_limit) / computeBillingSlotProgress())));
+meter.createObservableGauge('openai.cost.slotted.absolute').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost)));
+meter.createObservableGauge('openai.cost.slotted.relative').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost / cost_limit)));
+meter.createObservableGauge('openai.cost.slotted.progress').addCallback(async (result) => getCurrentCost().then(cost => result.observe((cost / cost_limit) / computeBillingSlotProgress())));
 const request_counter = meter.createCounter('openai.requests');
 const cost_counter = meter.createCounter('openai.cost');
 
@@ -213,24 +213,19 @@ async function HTTP(endpoint, body) {
 }
 
 async function bill(cost, model) {
-  await synchronized.locked('openai.billing', () => bill0(cost, model));
   const attributes = { 'openai.model': model };
   request_counter.add(1, attributes);
   cost_counter.add(cost, attributes);
-}
-
-async function bill0(cost, model) {
-  let total_cost = await getCurrentCost();
-  total_cost.value += cost;
-  total_cost.timestamp = Date.now();
-  await memory.set(costkey(), total_cost);
-  return total_cost;
+  return synchronized.locked('openai.billing', () => getCurrentCost()
+    .then(current_cost => memory.set(costkey(), { value: current_cost + cost, timestamp: Date.now() }, 60 * 60 * 24 * 31))
+  );
 }
 
 async function getCurrentCost() {
   let backup = { value: 0, timestamp: Date.now() };
   let cost = await memory.get(costkey(), backup);
-  return (new Date(cost.timestamp).getUTCFullYear() == new Date().getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == new Date().getUTCMonth()) ? cost : backup;
+  if (!(new Date(cost.timestamp).getUTCFullYear() == new Date().getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == new Date().getUTCMonth())) cost = backup;
+  return cost.value;
 }
 
 function costkey() {
@@ -246,7 +241,7 @@ async function shouldCreate(threshold = 0.8) {
 }
 
 async function computeCostProgress() {
-   return (await getCurrentCost()).value / cost_limit;
+   return (await getCurrentCost()) / cost_limit;
 }
 
 function computeBillingSlotProgress() {
