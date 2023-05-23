@@ -164,11 +164,17 @@ async function createBoolean(question, model = undefined, temperature = undefine
     response = await createResponse(null, null, `${question} Respond only with yes or no!`, model, temperature);
   }
   if (!response) return null;
-  response = response.trim().toLowerCase();
-  const match = response.match(/^([a-z]+)/);
-  response = match ? match[0] : response;
-  if (response != 'yes' && response != 'no') throw new Error('Response is not a bool! (' + response + ')');
-  return response == 'yes';
+  let boolean = response.trim().toLowerCase();
+  const match = boolean.match(/^([a-z]+)/);
+  boolean = match ? match[0] : boolean;
+  if (boolean != 'yes' && boolean != 'no') {
+    let sentiment = await createCompletion(`Determine whether the sentiment of the text is positive or negative.\nText: "${response}"\nSentiment: `, model, temperature);
+    const sentiment_match = sentiment.trim().toLowerCase().match(/^([a-z]+)/);
+    if (sentiment_match && sentiment_match[0] == 'positive') boolean = 'yes';
+    else if (sentiment_match && sentiment_match[0] == 'negative') boolean = 'no';
+    else throw new Error('Response is not a bool! (' + response + ') and sentiment analysis couldn\'t recover it (' + sentiment + ')!');
+  }
+  return boolean == 'yes';
 }
 
 const IMAGE_SIZES = ["256x256", "512x512", "1024x1024"];
