@@ -190,7 +190,7 @@ async function createImage(message, size = undefined) {
   try {
     let response = await HTTP('/v1/images/generations', { prompt: message, response_format: 'b64_json', size: size });
     let image = Buffer.from(response.data[0].b64_json, 'base64');
-    await bill(getImageCost(size), 'dall-e');
+    await bill(getImageCost(size), 'dall-e 2');
     return image;
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
