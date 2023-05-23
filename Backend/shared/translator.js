@@ -12,6 +12,7 @@ async function configure_translate(guild_id, channel_id, language) {
 }
 
 const NONE_LANGUAGES = [
+  'none',
   'internet slang',
   'mention',
   'discord mention',
