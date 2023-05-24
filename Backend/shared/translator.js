@@ -12,6 +12,7 @@ async function configure_translate(guild_id, channel_id, language) {
 }
 
 const NONE_LANGUAGES = [
+  'none',
   'internet slang',
   'mention',
   'discord mention',
@@ -74,7 +75,7 @@ async function translate(target_language, source, model = undefined) {
   //console.log(`DEBUG TRANSLATOR v2 #3 "${source}" => "${translation}"`);
   if (!translation || translation.length == 0) return;
   if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1).trim();
-  if (translation == dummy_token) return;
+  if (translation == dummy_token || translation.startsWith(dummy_token)) return;
   if (simplify(translation) == simplify(source)) return; // this can happen when something is valid in both language
   return translation;
 }

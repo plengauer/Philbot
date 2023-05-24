@@ -9,9 +9,9 @@ const cost_limit = parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
 const debug = process.env.OPENAI_DEBUG == 'true'
 
 const meter = opentelemetry.metrics.getMeter('openai');
-meter.createObservableGauge('openai.cost.slotted.absolute').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost.value)));
-meter.createObservableGauge('openai.cost.slotted.relative').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost.value / cost_limit)));
-meter.createObservableGauge('openai.cost.slotted.progress').addCallback(async (result) => getCurrentCost().then(cost => result.observe((cost.value / cost_limit) / computeBillingSlotProgress())));
+meter.createObservableGauge('openai.cost.slotted.absolute').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost)));
+meter.createObservableGauge('openai.cost.slotted.relative').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost / cost_limit)));
+meter.createObservableGauge('openai.cost.slotted.progress').addCallback(async (result) => getCurrentCost().then(cost => result.observe((cost / cost_limit) / computeBillingSlotProgress())));
 const request_counter = meter.createCounter('openai.requests');
 const cost_counter = meter.createCounter('openai.cost');
 
@@ -164,11 +164,17 @@ async function createBoolean(question, model = undefined, temperature = undefine
     response = await createResponse(null, null, `${question} Respond only with yes or no!`, model, temperature);
   }
   if (!response) return null;
-  response = response.trim().toLowerCase();
-  const match = response.match(/^([a-z]+)/);
-  response = match ? match[0] : response;
-  if (response != 'yes' && response != 'no') throw new Error('Response is not a bool! (' + response + ')');
-  return response == 'yes';
+  let boolean = response.trim().toLowerCase();
+  const match = boolean.match(/^([a-z]+)/);
+  boolean = match ? match[0] : boolean;
+  if (boolean != 'yes' && boolean != 'no') {
+    let sentiment = await createCompletion(`Determine whether the sentiment of the text is positive or negative.\nText: "${response}"\nSentiment: `, model, temperature);
+    const sentiment_match = sentiment.trim().toLowerCase().match(/^([a-z]+)/);
+    if (sentiment_match && sentiment_match[0] == 'positive') boolean = 'yes';
+    else if (sentiment_match && sentiment_match[0] == 'negative') boolean = 'no';
+    else throw new Error('Response is not a bool! (' + response + ') and sentiment analysis couldn\'t recover it (' + sentiment + ')!');
+  }
+  return boolean == 'yes';
 }
 
 const IMAGE_SIZES = ["256x256", "512x512", "1024x1024"];
@@ -184,7 +190,7 @@ async function createImage(message, size = undefined) {
   try {
     let response = await HTTP('/v1/images/generations', { prompt: message, response_format: 'b64_json', size: size });
     let image = Buffer.from(response.data[0].b64_json, 'base64');
-    await bill(getImageCost(size), 'dall-e');
+    await bill(getImageCost(size), 'dall-e 2');
     return image;
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
@@ -213,24 +219,19 @@ async function HTTP(endpoint, body) {
 }
 
 async function bill(cost, model) {
-  await synchronized.locked('openai.billing', () => bill0(cost, model));
   const attributes = { 'openai.model': model };
   request_counter.add(1, attributes);
   cost_counter.add(cost, attributes);
-}
-
-async function bill0(cost, model) {
-  let total_cost = await getCurrentCost();
-  total_cost.value += cost;
-  total_cost.timestamp = Date.now();
-  await memory.set(costkey(), total_cost);
-  return total_cost;
+  return synchronized.locked('openai.billing', () => getCurrentCost()
+    .then(current_cost => memory.set(costkey(), { value: current_cost + cost, timestamp: Date.now() }, 60 * 60 * 24 * 31))
+  );
 }
 
 async function getCurrentCost() {
   let backup = { value: 0, timestamp: Date.now() };
   let cost = await memory.get(costkey(), backup);
-  return (new Date(cost.timestamp).getUTCFullYear() == new Date().getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == new Date().getUTCMonth()) ? cost : backup;
+  if (!(new Date(cost.timestamp).getUTCFullYear() == new Date().getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == new Date().getUTCMonth())) cost = backup;
+  return cost.value;
 }
 
 function costkey() {
@@ -246,7 +247,7 @@ async function shouldCreate(threshold = 0.8) {
 }
 
 async function computeCostProgress() {
-   return (await getCurrentCost()).value / cost_limit;
+   return (await getCurrentCost()) / cost_limit;
 }
 
 function computeBillingSlotProgress() {
