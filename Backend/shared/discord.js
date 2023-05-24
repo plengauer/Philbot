@@ -43,6 +43,10 @@ async function me() {
   return HTTP(`/users/@me`, 'GET', undefined, 60 * 60);
 }
 
+async function user_retrieve(user_id) {
+  return HTTP(`/users/${user_id}`, 'GET');
+}
+
 async function guild_retrieve(guild_id) {
   return HTTP(`/guilds/${guild_id}`, 'GET');
 }
@@ -391,6 +395,7 @@ module.exports = {
   scheduledevent_link_create,
   
   me,
+  user_retrieve,
 
   guilds_list,
   guild_retrieve,

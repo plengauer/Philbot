@@ -72,7 +72,7 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
   }
 
   // build the content
-  let author = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member)).catch(() => '<UnknownUser>');
+  let author = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member)).catch(() => discord.user_retrieve(user_id).then(user => user2string(user)));
   while (content.includes('<@&')) {
     let start = content.indexOf('<@&');
     let end = content.indexOf('>', start) + 1;
@@ -84,7 +84,7 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
     let start = content.indexOf('<@');
     let end = content.indexOf('>', start) + 1;
     let mentioned_user_id = discord.parse_mention(content.substring(start, end));
-    let mentioned_member = await discord.guild_member_retrieve(guild_id, mentioned_user_id).then(member => member2string(member)).catch(() => '<UnknownUser>');
+    let mentioned_member = await discord.guild_member_retrieve(guild_id, mentioned_user_id).then(member => member2string(member)).catch(() => discord.user_retrieve(user_id).then(user => user2string(user)));
     content = content.replace(content.substring(start, end), '@' + mentioned_member);
   }
   content = `**${author}**: ${content}`;
@@ -127,9 +127,13 @@ function disarm_components(components) {
 }
 
 function member2string(member) {
-  let string = `${member.user.username}#${member.user.discriminator}`;
+  let string = user2string(member.user);
   if (member.nick) string = `${member.nick} (${string})`;
   return string;
+}
+
+function user2string(user) {
+  return `${user.username}#${user.discriminator}`
 }
 
 async function on_reaction_add(guild_id, channel_id, user_id, message_id, emoji) {
