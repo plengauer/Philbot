@@ -26,8 +26,9 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   if (!target_language) return;
   if (!await chatgpt.canCreate()) return;
 
-  let model = process.env.TRANSLATOR_MODEL_OVERRIDE ?? await chatgpt.getDynamicModel(chatgpt.getLanguageModels());
-  let model_fast = chatgpt.getLanguageModels()[Math.max(0, chatgpt.getLanguageModels().indexOf(model)-1)];
+  let models = await chatgpt.getLanguageModels();
+  let model = process.env.TRANSLATOR_MODEL_OVERRIDE ?? await chatgpt.getDynamicModel(models);
+  let model_fast = models[Math.max(0, models.indexOf(model)-1)];
   if (!chatgpt.compareLanguageModelByCost(model_fast, model)) model_fast = model;
 
   if (chatgpt.compareLanguageModelByPower(model_fast, 'gpt-4')) {
@@ -47,7 +48,7 @@ async function on_message_create(guild_id, channel_id, message_id, content) {
   // gpt-3.5-turbo seems really bad at answering with exactly only the language, worse then older generation completion models!
   let source_language = await chatgpt.createCompletion(
     `Determine the language of the text, ignoring typos.\nText: ${content}\nLanguage: `,
-    model != 'gpt-3.5-turbo' ? model : chatgpt.getLanguageModels()[chatgpt.getLanguageModels().indexOf('gpt-3.5-turbo') - 1],
+    model != 'gpt-3.5-turbo' ? model : models[models.indexOf('gpt-3.5-turbo') - 1],
     0
   );
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);

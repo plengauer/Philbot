@@ -15,11 +15,20 @@ meter.createObservableGauge('openai.cost.slotted.progress').addCallback(async (r
 const request_counter = meter.createCounter('openai.requests');
 const cost_counter = meter.createCounter('openai.cost');
 
-const LANGUAGE_COMPLETION_MODELS = ["text-ada-001", "text-babbage-001", "text-curie-001", "text-davinci-001", "text-davinci-002", "text-davinci-003"];
-const LANGUAGE_CHAT_MODELS = ["gpt-3.5-turbo", "gpt-4"];
+async function getLanguageModels() {
+  let models = await curl.request({ hostname: 'api.openai.com', path: '/v1/models', headers: { 'Authorization': 'Bearer ' + token }, cache: 60 * 60 * 24 }).then(result => result.data.map(model => model.id));
+  models = models.filter(model => model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || (model.match(/gpt-*/) && !model.match(/-\d{4}$/))).replace(/:/, '-');
+  models = Array.from(new Set(models));
+  models = models.sort((m1, m2) => {
+    let p1 = getModelPower(m1);
+    let p2 = getModelPower(m2);
+    return (p1 != p2) ? p1 - p2 : m1.localeCompare(m2);
+  });
+  return models;
+}
 
-function getLanguageModels() {
-  return LANGUAGE_COMPLETION_MODELS.concat(LANGUAGE_CHAT_MODELS);
+function getModelPower(model) {
+  return parseFloat(model.match(/\d+(\.\d+)?/g).join(''));
 }
 
 function compareLanguageModelByCost(cheap_model, expensive_model) {
@@ -27,12 +36,11 @@ function compareLanguageModelByCost(cheap_model, expensive_model) {
 }
 
 function compareLanguageModelByPower(bad_model, good_model) {
-  let models = getLanguageModels();
-  return models.indexOf(bad_model) < models.indexOf(good_model);
+  return getModelPower(bad_model) < getModelPower(good_model);
 }
 
 async function createCompletion(prompt, model = undefined, temperature = undefined) {
-  model = model ?? getLanguageModels().slice(-1);
+  model = model ?? (await getLanguageModels()).slice(-1);
   if (!token) return null;
   if (!await canCreate()) return null;
   
@@ -53,7 +61,7 @@ async function createResponse(history_token, system, message, model = undefined,
 
 async function createResponse0(history_token, system, message, model = undefined, temperature = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
-  model = model ?? getLanguageModels().slice(-1);
+  model = model ?? (await getLanguageModels()).slice(-1);
   if (!token) return null;
   if (!await canCreate()) return null;
 
@@ -148,7 +156,7 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
 }
 
 async function createBoolean(question, model = undefined, temperature = undefined) {
-  model = model ?? getLanguageModels().slice(-1);
+  model = model ?? (await getLanguageModels()).slice(-1);
   let response = null;
   if (model.startsWith('text-')) {
     response = await createCompletion(`Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, model, temperature);
