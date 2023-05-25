@@ -17,7 +17,7 @@ const cost_counter = meter.createCounter('openai.cost');
 
 async function getLanguageModels() {
   let models = await curl.request({ method: 'GET', hostname: 'api.openai.com', path: '/v1/models', headers: { 'Authorization': 'Bearer ' + token }, cache: 60 * 60 * 24 }).then(result => result.data.map(model => model.id));
-  models = models.filter(model => model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || (model.match(/gpt-*/) && !model.match(/-\d{4}$/))).replace(/:/, '-');
+  models = models.filter(model => model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || (model.match(/gpt-*/) && !model.match(/-\d{4}$/))).map(model => model.replace(/:/, '-'));
   models = Array.from(new Set(models));
   models = models.sort((m1, m2) => {
     let p1 = getModelPower(m1);
