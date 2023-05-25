@@ -36,7 +36,7 @@ async function createCompletion(prompt, model = undefined, temperature = undefin
   if (!token) return null;
   if (!await canCreate()) return null;
   
-  if (LANGUAGE_CHAT_MODELS.includes(model)) {
+  if (!model.startsWith('text-')) {
     return createResponse(null, null, `Complete the following text, respond with the completion only:\n${prompt}`, model, temperature);
   }
   
@@ -64,7 +64,7 @@ async function createResponse0(history_token, system, message, model = undefined
   conversation.push(input);
   
   let output = null;
-  if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
+  if (!model.startsWith('gpt-')) {
     let completion = await createCompletion(`Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', model, temperature);
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
@@ -126,16 +126,12 @@ function strip(haystack, needle) {
 
 function computeLanguageCost(model, tokens_prompt, tokens_completion) {
   switch (model) {
-    case "ada":
     case "text-ada-001":
       return (tokens_prompt + tokens_completion) / 1000 * 0.0004;
-    case "babbage":
     case "text-babbage-001":
       return (tokens_prompt + tokens_completion) / 1000 * 0.0005;
-    case "curie":
     case "text-curie-001":
       return (tokens_prompt + tokens_completion) / 1000 * 0.002;
-    case "davinci":
     case "text-davinci-001":
     case "text-davinci-002":
     case "text-davinci-003":
@@ -154,7 +150,7 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
 async function createBoolean(question, model = undefined, temperature = undefined) {
   model = model ?? getLanguageModels().slice(-1);
   let response = null;
-  if (LANGUAGE_COMPLETION_MODELS.includes(model)) {
+  if (model.startsWith('text-')) {
     response = await createCompletion(`Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, model, temperature);
   } else {
     response = await createResponse(null, null, `${question} Respond only with yes or no!`, model, temperature);
