@@ -1,6 +1,7 @@
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const permissions = require('./permissions.js');
+const synchronized = require('./synchronized.js');
 
 //TODO think about forencis, can we find out who is the origin
 // maybe if it continues find creator of invite? or list all people who can still invite
@@ -87,6 +88,10 @@ async function on_guild_member_add(guild_id, user_id) {
 }
 
 async function on_guild_message_create(guild_id, user_id) {
+  return synchronized(`raid_protection:guild:${guild_id}`, () => on_guild_message_create_0(guild_id, user_id));
+}
+
+async function on_guild_message_create_0(guild_id, user_id) {
   if (await memory.get(`raid_protection:lockdown:guild:${guild_id}`, false)) {
     return undefined;
   }
