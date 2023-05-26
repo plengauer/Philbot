@@ -19,12 +19,23 @@ async function read(guild_id) {
 }
 
 async function create(guild_id, name, game_masters, team_size, locations, length) {
-  let category = await discord.guild_channel_create(guild_id, `Tournament ${name}`, undefined, 4).then(category => category.id);
+  let date = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+  let start_time = ''
+    + date.getUTCFullYear()
+    + '-' + ((date.getUTCMonth() + 1) < 10 ? '0' : '') + (date.getUTCMonth() + 1)
+    + '-' + (date.getUTCDate() < 10 ? '0' : '') + date.getUTCDate()
+    + 'T' + (date.getUTCHours() < 10 ? '0' : '') + date.getUTCHours()
+    + ':' + (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes()
+    + ':00+00:00';
+
+  let category = await discord.guild_channel_create(guild_id, name, undefined, 4).then(category => category.id);
   let channel = await discord.guild_channel_create(guild_id, 'general', category, 0).then(channel => channel.id);
+  let event = await discord.scheduledevent_create(guild_id, channel_id, name, '', start_time).then(event => event.id);
   let tournament = {
     name: name,
     category: category,
     channel: channel,
+    event: event,
     game_masters: game_masters,
     team_size: team_size,
     locations: locations,
@@ -34,7 +45,7 @@ async function create(guild_id, name, game_masters, team_size, locations, length
     matches: []
   };
   await write(guild_id, tournament);
-  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been created.`)));
+  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been created. Pls edit the event to the correct time and share it ` + discord.scheduledevent_link_create(guild_id, event) + '.')));
   return true;
 }
 
@@ -42,38 +53,6 @@ async function _delete(guild_id, user_id) {
   await write(guild_id, null);
   await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been deleted.`)));
   return true;
-}
-
-//TODO question whether this makes still sense
-async function show(guild_id, user_id) {
-  let tournament = await read(guild_id);
-  if (!tournament) return 'No tournament';
-  return to_string(tournament);
-}
-
-//TODO question whether this still makes sense
-async function announce(guild_id, user_id) {
-  let tournament = await read(guild_id);
-  if (!tournament) return false;
-  return discord.post(tournament.channel, to_string(tournament))
-    .then(() => true);
-}
-
-//TODO question all uses of this method and if we should replace it with a nice embed
-function to_string(tournament) {
-  return `**${tournament.name}**\n`
-    + '\thosted by ' + tournament.game_masters.map(game_master => `<@${game_master}>`).join(', ') + '\n'
-    + `\t${tournament.teams.length} teams of ${tournament.team_size} fight on ` + tournament.locations.join(', ') + '.\n'
-    + '\nTeams:' + '\n'
-    + tournament.teams.map(team => `\tTeam ${team.id} "${team.name}" with ` + team.players.map(player => `<@${player}>`).join(', ')).join('\n') + '\n'
-    + '\tUnassigned players: ' + tournament.players.filter(player => tournament.teams.every(team => !team.players.includes(player))).map(player => `<@${player}>`).join(', ') + '\n'
-    + `\nMatches:` + '\n'
-    + tournament.matches.map(match =>
-        `\t${match.id}: ${tournament.teams[match.team1].name} -> ${tournament.teams[match.team2].name} @ ${tournament.locations[match.location]} (referee <@${match.referee}>)`
-        + (match.active ? ' (in progress)' : '')
-        + (match.winner ? ' (' + tournament.teams[match.winner].name + ')' : '')
-      ).join('\n')
-    ;
 }
 
 function random_int(limit) {
@@ -153,52 +132,20 @@ function create_matches(length, locations, teams, players_per_team, referees) {
   }
 }
 
-async function register_player(guild_id, user_id, player) {
-  let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (user_id != player && !tournament.game_masters.includes(user_id)) return false;
-  if (tournament.players.includes(player)) return true;
-  tournament.players.push(player);
-  return write(guild_id, tournament)
-    .then(() => Promise.all([
-        tournament.role ? update_role(guild_id, player, tournament.role, true) : Promise.resolve(),
-        Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `<@${player}> has registered for ${tournament.name}.`)))
-      ]))
-    .then(() => true);
-}
-
-async function unregister_player(guild_id, user_id, player) {
-  let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (user_id != player && !tournament.game_masters.includes(user_id)) return false;
-  if (!tournament.players.includes(player)) return true;
-  if (tournament.active && (tournament.teams.some(team => team.players.include(player)) || tournament.matches.some(match => match.referee == player))) return false; // use replace
-  tournament.players = tournament.players.filter(p => p !== player);
-  for (let team of tournament.teams) {
-    if (!team.players.includes(player)) continue;
-    team.players = team.players.filter(p => p !== player);
-  }
-  return write(guild_id, tournament)
-    .then(() => Promise.all([
-        tournament.role ? update_role(guild_id, player, tournament.role, false) : Promise.resolve(),
-        Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `<@${player}> has dropped out for ${tournament.name}.`)))
-      ]))
-    .then(() => true);
-}
-
 async function define_team(guild_id, user_id, name, players) {
   let tournament = await read(guild_id);
   if (!tournament) return false;
   if (!tournament.game_masters.includes(user_id)) return false;
-  if (players.some(player => !tournament.players.includes(player))) return false;
+  let all_players = await discord.scheduledevent_users_list(guild_id, tournament.event).then(users => users.map(user => user.id));
+  if (players.some(player => !all_players.includes(player))) return false;
   if (tournament.active) return false;
   if (tournament.teams.some(team => team.players.some(player => players.includes(player)))) return false;
   let id = tournament.teams.length;
   tournament.teams.push({id: id, name: name, players: players});
   recompute_matches(tournament);
-  return write(guild_id, tournament)
-    .then(() => Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Team ${id} "${name}" has been defined as ` + players.map(player => `<@${player}>`).join(', ') + `, the schedule has been adjusted.`))))
-    .then(() => true);
+  await write(guild_id, tournament);
+  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Team ${id} "${name}" has been defined as ` + players.map(player => `<@${player}>`).join(', ') + `, the schedule has been adjusted.`)));
+  return true;
 }
 
 async function dissolve_team(guild_id, user_id, id) {
@@ -230,7 +177,8 @@ async function replace_player(guild_id, user_id, player_replaced, player_replaci
   let tournament = await read(guild_id);
   if (!tournament) return false;
   if (!tournament.game_masters.includes(user_id)) return false;
-  if (!tournament.players.includes(player_replacing)) return false;
+  let all_players = await discord.scheduledevent_users_list(guild_id, tournament.event).then(users => users.map(user => user.id));
+  if (!all_players.includes(player_replacing)) return false;
   if (player_replaced == player_replacing) return true;
   for (let team of tournament.teams) {
     if (!team.players.includes(player_replaced)) continue;
@@ -247,6 +195,8 @@ async function replace_player(guild_id, user_id, player_replaced, player_replaci
   return true;
 }
 
+//TODO remove player that drops out, grant wins to all opponents in the past and auto wins into the future
+
 async function prepare(guild_id, user_id) {
   let tournament = await read(guild_id);
   if (!tournament) return false;
@@ -257,7 +207,7 @@ async function prepare(guild_id, user_id) {
         .filter(team => team.players.length != tournament.team_size)
         .map(team => team.name + ' (' + team.players.map(player => `<@${player}>`).join(', ') + ')')
         .join(', ') + '. '
-      + 'Unassigned players are: ' + tournament.players
+      + 'Unassigned players are: ' + await discord.scheduledevent_users_list(guild_id, tournament.event).then(users => users.map(user => user.id))
         .filter(player => !tournament.teams.some(team => team.players.includes(player)))
         .map(player => `<@${player}>`)
         .join(', ') + '.';
@@ -268,6 +218,8 @@ async function prepare(guild_id, user_id) {
     await Promise.all(tournament.game_masters.map(game_master => discord.post(game_master, 'Cannot prepare the tournament, schedule is empty.')));
     return false;
   }
+
+  let all_players = await discord.scheduledevent_users_list(guild_id, tournament.event).then(users => users.map(user => user.id)); //TODO replace with all teams and referees
 
   // create roles
   await Promise.all([
@@ -286,17 +238,17 @@ async function prepare(guild_id, user_id) {
   // assign roles to the right people
   await Promise.all([
     write(guild_id, tournament),
-    Promise.all(tournament.game_masters.concat(tournament.players).map(user => discord.assign_role(guild_id, user, tournament.role))),
+    Promise.all(tournament.game_masters.concat(all_players).map(user => discord.assign_role(guild_id, user, tournament.role))),
     Promise.all(tournament.game_masters.map(user => discord.assign_role(guild_id, user, tournament.role_master))),
     Promise.all(tournament.teams.map(team => Promise.all(team.players.map(player => discord.assign_role(guild_id, player, team.role))))),
   ]);
   
   // announce
   await Promise.all([
-    // create pretty embed
-    discord.post(tournament.channel, '\**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n' + to_string(tournament) + '\n\n <@&' + tournament.role + '> **JOIN NOW**'),
-    Promise.all(tournament.players.concat(tournament.game_masters).map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby).catch(ex => {}))),
-    Promise.all(tournament.players.concat(tournament.game_masters).map(user_id => discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for updates.')
+    // create pretty embed about the schedule
+    discord.post(tournament.channel, '\**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n<@&' + tournament.role + '> **JOIN NOW**'),
+    Promise.all(all_players.concat(tournament.game_masters).map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby).catch(ex => {}))),
+    Promise.all(all_players.concat(tournament.game_masters).map(user_id => discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for updates.')
       .then(sent => sent ? undefined : discord.post('I cannot DM <@' + user_id + '>. To manage the tournament, pls allow me to send you messages (Settings -> Privacy & Safety -> Allow direct messages from server members).'))
     ))
   ]);
@@ -401,7 +353,8 @@ async function match_completed(guild_id, user_id, match_id, team_id_winner) {
   
   if (tournament.matches.every(match => match.winner != null)) {
     await announce_tournament_result(tournament);
-    await tournament.game_masters.concat(tournament.players).map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby).catch(e => {}));
+    let all_players = await discord.scheduledevent_users_list(guild_id, tournament.event).then(users => users.map(user => user.id)); // should we use this or resolve teams?
+    await tournament.game_masters.concat(all_players).map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby).catch(e => {}));
   }
 
   return true;
@@ -506,10 +459,11 @@ async function announce_upcoming_matches(tournament, guild_id) {
 
 async function announce_tournament_result(tournament) {
   let scores = compute_scores(tournament);
-  let score_string = 'Score:\n' + tournament.teams.map(team => `\t${team.name}: ${scores[team.id]}`).join('\n')
+  let score_string = 'Score:\n' + tournament.teams.map(team => `\t${team.name}: ${scores[team.id]}`).join('\n');
+  let all_players = await discord.scheduledevent_users_list(guild_id, tournament.event).then(users => users.map(user => user.id)); // should we use this or resolve teams?
   return Promise.all([
       Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `\n**THE TOURNAMENT HAS BEEN COMPLETED**\n\n${score_string}`))),
-      Promise.all(tournament.players.map(player => discord.try_dms(player,
+      Promise.all(all_players.map(player => discord.try_dms(player,
           `**The tournament has been completed**. You have won `
           + scores[tournament.teams.findIndex(team => team.players.includes(player))]
           + ` matches and reached place #`
@@ -541,7 +495,7 @@ function countValuesHigher(array, value) {
   return count;
 }
 
-module.exports = { create, _delete, announce, show, register_player, unregister_player, replace_player, define_team, dissolve_team, to_string, prepare, start, match_started, match_aborted, match_completed }
+module.exports = { create, _delete, replace_player, define_team, dissolve_team, prepare, start, match_started, match_aborted, match_completed }
 
 
 

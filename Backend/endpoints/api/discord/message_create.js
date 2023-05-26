@@ -662,31 +662,6 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let length = parseInt(tokens[4].trim());
     return tournament.create(guild_id, name, category, channel, game_masters, team_size, locations, length)
       .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
-  
-  } else if (message.startsWith('tournament register ')) {
-    guild_id = guild_id ?? await resolveGuildID(user_id);
-    message = message.split(' ').slice(2).join(' ');
-    let player = message === 'me' ? user_id : discord.parse_mention(message);
-    if (!player) return reactNotOK(channel_id, event_id);
-    return tournament.register_player(guild_id, user_id, player)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
-
-  } else if (message.startsWith('tournament unregister ')) {
-    guild_id = guild_id ?? await resolveGuildID(user_id);
-    message = message.split(' ').slice(2).join(' ');
-    let player = message === 'me' ? user_id : discord.parse_mention(message);
-    if (!player) return reactNotOK(channel_id, event_id);
-    return tournament.unregister_player(guild_id, user_id, player)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
-      
-  } else if (message === 'tournament announce') {
-    guild_id = guild_id ?? await resolveGuildID(user_id);
-    return tournament.announce(guild_id, user_id)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
-  
-  } else if (message === 'tournament show') {
-    guild_id = guild_id ?? await resolveGuildID(user_id);
-    return tournament.show(guild_id, user_id).then(string => discord.respond(channel_id, event_id, string));
 
   } else if (message.startsWith('tournament define team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);

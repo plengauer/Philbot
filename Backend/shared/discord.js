@@ -224,6 +224,17 @@ async function scheduledevent_modify(guild_id, event_id, event) {
   return HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}`, 'PATCH', event); 
 }
 
+async function scheduledevent_users_list(guild_id, event_id) {
+  const limit = 100;
+  let users = [];
+  for (;;) {
+    let users_chunk = await HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}/users?limit=${limit}` + (users.length > 0 ? '&after=' + users[users.length - 1].id : ''), 'GET').then(result => result.map(result.user));
+    users = users.concat(users_chunk);
+    if (users_chunks.length < limit) break;
+  }
+  return users;
+}
+
 async function invite_create(channel_id) {
   return HTTP(`/channels/${channel_id}/invites`, 'POST', { max_age: 0, max_uses: 1 });
 }
@@ -437,6 +448,7 @@ module.exports = {
   scheduledevents_list,
   scheduledevent_create,
   scheduledevent_modify,
+  scheduledevent_users_list,
 
   invite_create,
   invite_delete,
