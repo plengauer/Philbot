@@ -78,12 +78,12 @@ async function revoke_invites(guild) {
 async function kick_and_ban_suspects(guild) {
   return discord.guild_members_list(guild.id)
     .then(members => members.filter(member => new Date(member.joined_at) > new Date(Date.now() - 1000 * GUILD_MEMBER_SUSPECT_TIMEFRAME)))
-    .then(suspects => suspects.map(suspect => kick_and_ban_user(guild.id, member.user.id).then(() => suspect)))
+    .then(suspects => suspects.map(suspect => kick_and_ban_user(guild.id, member.user.id, 'suspect about contribution to a raid').then(() => suspect)))
     .then(promises => Promise.all(promises));
 }
 
-async function kick_and_ban_user(guild_id, user_id) {
-  return discord.guild_member_kick(guild_id, user_id).then(() => discord.guild_ban_create(guild_id, user_id, 'suspect about contribution to a raid'));
+async function kick_and_ban_user(guild_id, user_id, reason) {
+  return discord.guild_member_kick(guild_id, user_id).then(() => discord.guild_ban_create(guild_id, user_id));
 }
 
 async function slowdown_channels(guild) {
@@ -109,6 +109,8 @@ async function on_guild_message_create_for_scam_protection(guild_id, channel_id,
   let message = await discord.message_retrieve(channel_id, message_id).catch(_ => null);
   if (!message) return; // this can happen ebcause we handle one message at a time, and we may have deleted some already that we still get events for
   if (message.content == '') return;
+  const key = `raid_protection:scam:guild:${guild_id}:user:${message.author.id}`;
+  if (await memory.get(key, false)) return discord.message_delete(channel_id, message_id);
   let channel_ids = await discord.guild_channels_list(guild_id).then(channels => channels.map(channel => channel.id));
   let count = 0;
   let suspect_messages = [];
@@ -121,9 +123,10 @@ async function on_guild_message_create_for_scam_protection(guild_id, channel_id,
   }
   if (count < GUILD_MESSAGE_SCAM_COUNT) return;
   return Promise.all([
+    memory.set(key, true, 60 * 5),
     notify_scam(guild_id),
     quarantine_messages(suspect_messages),
-    kick_and_ban_user(guild_id, message.author.id)
+    kick_and_ban_user(guild_id, message.author.id, 'suspect about a scam')
   ]).then(() => notify_scam_contained(guild_id, messages));
 }
 
@@ -139,7 +142,7 @@ async function quarantine_messages(messages) {
 async function notify_scam_contained(guild_id, quarantined_messages) {
   let example = quarantined_messages[0];
   return notify_moderators(guild_id, 'I have **contained** the **suspected scam**. I have quarantined ' + quarantine_messages.length + ' messages.'
-    + ' The user ' + discord.mention_user(example.author.id) + ' has been kicked and banned because they were sending similar messages faster than a human could.'
+    + ' The user ' + discord.mention_user(example.author.id) + ' has been kicked and banned because they were sending identical messages faster than a human could.'
     + ' That means, most likely, the persons account has been hacked. Before inviting the person back, please make sure they have taken back control over their account.' 
     + ' The following is an example message that has been quarantined. Do not click any links!'
     + '\n'
