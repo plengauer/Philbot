@@ -139,7 +139,7 @@ async function quarantine_messages(messages) {
 async function notify_scam_contained(guild_id, quarantined_messages) {
   let example = quarantined_messages[0];
   return notify_moderators(guild_id, 'I have **contained** the **suspected scam**. I have quarantined ' + quarantine_messages.length + ' messages.'
-    + ' The user ' + discord.mention_user(example.author.id) + ' has been kicked and banned because they were sending messages to several channels faster than a human could.'
+    + ' The user ' + discord.mention_user(example.author.id) + ' has been kicked and banned because they were sending similar messages faster than a human could.'
     + ' That means, most likely, the persons account has been hacked. Before inviting the person back, please make sure they have taken back control over their account.' 
     + ' The following is an example message that has been quarantined. Do not click any links!'
     + '\n'
