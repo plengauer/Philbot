@@ -1,4 +1,5 @@
 const process = require('process');
+const url = require('url');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
 const synchronized = require('./synchronized.js');
@@ -188,13 +189,20 @@ async function createImage(message, size = undefined) {
   if (!token) return null;
   if (!await canCreate()) return null;
   try {
-    let response = await HTTP('/v1/images/generations', { prompt: message, response_format: 'b64_json', size: size });
-    let image = Buffer.from(response.data[0].b64_json, 'base64');
+    let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
+    let pipe = estimated_size > 1024 * 1024;
+    let response = await HTTP('/v1/images/generations', { prompt: message, response_format: pipe ? 'url' : 'b64_json', size: size });
+    let result = response.data[0];
+    let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
     await bill(getImageCost(size), 'dall-e 2');
     return image;
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
   }
+}
+
+async function pipeImage(url) {
+  return curl.request({ hostname: url.hostname, path: url.pathname + (url.search ?? ''), stream: true });
 }
 
 function getImageCost(size) {
@@ -214,7 +222,7 @@ async function HTTP(endpoint, body) {
     body: body,
     timeout: 1000 * 60 * 15
   });
-  if (debug) console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + (endpoint == '/v1/images/generations' ? '###' : JSON.stringify(result)));
+  if (debug) console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + (endpoint == '/v1/images/generations' && body.response_format == 'b64_json' ? '###' : JSON.stringify(result)));
   return result;
 }
 
