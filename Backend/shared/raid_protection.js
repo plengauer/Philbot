@@ -92,14 +92,10 @@ async function on_guild_message_create(guild_id, user_id) {
 }
 
 async function on_guild_message_create_0(guild_id, user_id) {
-  if (await memory.get(`raid_protection:lockdown:guild:${guild_id}`, false)) {
-    return undefined;
-  }
+  if (await memory.get(`raid_protection:lockdown:guild:${guild_id}`, false)) return;
   let members = await discord.guild_members_list(guild_id);
   let suspects = members.filter(member => new Date(member.joined_at) > new Date(Date.now() - 1000 * GUILD_MEMBER_SUSPECT_TIMEFRAME));
-  if (!suspects.some(suspect => suspect.user.id == user_id)) {
-    return undefined;
-  }
+  if (!suspects.some(suspect => suspect.user.id == user_id)) return;
   const key = `raid_protection:detection:guild.message.create:guild:${guild_id}`;
   let counter = await memory.get(key, 0, GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME);
   if (counter < GUILD_MESSAGE_CREATE_THRESHOLD) return memory.set(key, counter + 1, GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME * 1000 - Date.now() % (GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME * 1000));
