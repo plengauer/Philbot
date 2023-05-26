@@ -72,7 +72,10 @@ async function notify_lockdown(guild, roles_with_revoked_permissions, invites_in
 }
 
 async function notify_moderators(guild_id, text) {
-  return list_moderators(guild_id).then(mods => mods.map(mod => discord.try_dms(mod.user.id, text))).then(promises => Promise.all(promises)); //TODO if no moderator is reachable, put it in general chat, if no general channel is available, post it somewhere
+  return list_moderators(guild_id).then(mods => mods.map(mod => discord.try_dms(mod.user.id, text))).then(promises => Promise.all(promises))
+    .catch(_ => discord.guild_retrieve(guild_id).then(guild => guild.system_channel_id ?? Promise.reject(new Error('No system channel!'))).then(channel_id => discord.post(channel_id, text)))
+    .catch(_ => discord.guild_channels_list(guild_id).then(channels => Promise.all(channels.map(channel => discord.post(channel.id, text)))))
+    .catch(_ => Promise.resolve());
 }
 
 async function list_moderators(guild_id) {
