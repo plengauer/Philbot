@@ -8,6 +8,7 @@ const permissions = require('./permissions.js');
 //TODO use event for registration
 //TODO use embeds for annoucnements
 //TODO use components for referees and maybe even more stuff
+//TODO synchronize
 
 async function write(guild_id, tournament) {
   return tournament ? memory.set('tournament:guild:' + guild_id, tournament) : memory.unset('tournament:guild:' + guild_id);
@@ -17,7 +18,9 @@ async function read(guild_id) {
   return memory.get('tournament:guild:' + guild_id, null);
 }
 
-async function create(guild_id, name, category, channel, game_masters, team_size, locations, length) {
+async function create(guild_id, name, game_masters, team_size, locations, length) {
+  let category = await discord.guild_channel_create(guild_id, `Tournament ${name}`, undefined, 4).then(category => category.id);
+  let channel = await discord.guild_channel_create(guild_id, 'general', category, 0).then(channel => channel.id);
   let tournament = {
     name: name,
     category: category,
@@ -30,23 +33,25 @@ async function create(guild_id, name, category, channel, game_masters, team_size
     players: [],
     matches: []
   };
-  return write(guild_id, tournament)
-    .then(() => Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, 'The tournament **"' + tournament.name + '"** has been created.'))))
-    .then(() => true);
+  await write(guild_id, tournament);
+  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been created.`)));
+  return true;
 }
 
 async function _delete(guild_id, user_id) {
-  return write(guild_id, null)
-    .then(() => Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, 'The tournament **"' + tournament.name + '"** has been deleted.'))))
-    .then(() => true);
+  await write(guild_id, null);
+  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been deleted.`)));
+  return true;
 }
 
+//TODO question whether this makes still sense
 async function show(guild_id, user_id) {
   let tournament = await read(guild_id);
   if (!tournament) return 'No tournament';
   return to_string(tournament);
 }
 
+//TODO question whether this still makes sense
 async function announce(guild_id, user_id) {
   let tournament = await read(guild_id);
   if (!tournament) return false;
@@ -54,6 +59,7 @@ async function announce(guild_id, user_id) {
     .then(() => true);
 }
 
+//TODO question all uses of this method and if we should replace it with a nice embed
 function to_string(tournament) {
   return `**${tournament.name}**\n`
     + '\thosted by ' + tournament.game_masters.map(game_master => `<@${game_master}>`).join(', ') + '\n'
@@ -287,6 +293,7 @@ async function prepare(guild_id, user_id) {
   
   // announce
   await Promise.all([
+    // create pretty embed
     discord.post(tournament.channel, '\**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n' + to_string(tournament) + '\n\n <@&' + tournament.role + '> **JOIN NOW**'),
     Promise.all(tournament.players.concat(tournament.game_masters).map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby).catch(ex => {}))),
     Promise.all(tournament.players.concat(tournament.game_masters).map(user_id => discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for updates.')
