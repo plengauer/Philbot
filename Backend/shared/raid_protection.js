@@ -3,8 +3,38 @@ const discord = require('./discord.js');
 const permissions = require('./permissions.js');
 const synchronized = require('./synchronized.js');
 
+const GUILD_MEMBER_SUSPECT_TIMEFRAME = 60 * 60 * 24;
+const GUILD_MESSAGE_CREATE_THRESHOLD = 100;
+const GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME = 60 * 60;
+
+async function on_guild_member_add(guild_id, user_id) {
+  return memory.get(`raid_protection:lockdown:guild:${guild_id}`, false).then(lockdown => lockdown ? kick_and_ban_user(guild_id, user_id) : Promise.resolve());
+}
+
+async function on_guild_message_create(guild_id, channel_id, user_id, message_id) {
+  return Promise.all([
+    on_guild_message_create_for_raid_protection(guild_id, user_id),
+    on_guild_message_create_for_scam_protection(guild_id, channel_id, message_id)
+  ]);
+}
+
 //TODO think about forencis, can we find out who is the origin
 // maybe if it continues find creator of invite? or list all people who can still invite
+
+async function on_guild_message_create_for_raid_protection(guild_id, user_id) {
+  return synchronized(`raid_protection:guild:${guild_id}`, () => on_guild_message_create_0(guild_id, user_id));
+}
+
+async function on_guild_message_create_0(guild_id, user_id) {
+  if (await memory.get(`raid_protection:lockdown:guild:${guild_id}`, false)) return;
+  let members = await discord.guild_members_list(guild_id);
+  let suspects = members.filter(member => new Date(member.joined_at) > new Date(Date.now() - 1000 * GUILD_MEMBER_SUSPECT_TIMEFRAME));
+  if (!suspects.some(suspect => suspect.user.id == user_id)) return;
+  const key = `raid_protection:detection:guild.message.create:guild:${guild_id}`;
+  let counter = await memory.get(key, 0, GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME);
+  if (counter < GUILD_MESSAGE_CREATE_THRESHOLD) return memory.set(key, counter + 1, GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME * 1000 - Date.now() % (GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME * 1000));
+  return lockdown(guild_id);
+}
 
 async function lockdown(guild_id) {
   return discord.guild_retrieve(guild_id)
@@ -71,6 +101,52 @@ async function notify_lockdown(guild, roles_with_revoked_permissions, invites_in
     );
 }
 
+// goal of these numbers is to make sure its a machine, not a real human
+const GUILD_MESSAGE_SCAM_TIMEFRAME = 1000; // rate limit resets as low as once a second
+const GUILD_MESSAGE_SCAM_COUNT = 5; // default rate limit is as low as 5
+
+async function on_guild_message_create_for_scam_protection(guild_id, channel_id, message_id) {
+  let message = await discord.message_retrieve(channel_id, message_id).catch(_ => null);
+  if (!message) return; // this can happen ebcause we handle one message at a time, and we may have deleted some already that we still get events for
+  if (message.content == '') return;
+  let channel_ids = await discord.guild_channels_list(guild_id).then(channels => channels.map(channel => channel.id));
+  let count = 0;
+  let suspect_messages = [];
+  for (let channel_id of channel_ids) {
+    let messages = await discord.messages(channel_id);
+    messages = messages.filter(other_message => other_message.author.id == message.author.id);
+    messages = messages.filter(other_message => new Date(other_message.timestamp).getTime() > new Date(message.timestamp).getTime() - GUILD_MESSAGE_SCAM_TIMEFRAME);
+    messages = messages.filter(other_message => other_message.content == message.content);
+    suspect_messages = suspect_messages.concat(messages);
+  }
+  if (count < GUILD_MESSAGE_SCAM_COUNT) return;
+  return Promise.all([
+    notify_scam(guild_id),
+    quarantine_messages(suspect_messages),
+    kick_and_ban_user(guild_id, message.author.id)
+  ]).then(() => notify_scam_contained(guild_id, messages));
+}
+
+async function notify_scam(guild_id) {
+  let guild = await discord.guild_retrieve(guild_id);
+  return notify_moderators(guild_id, `**ATTENTION**: There is a **suspected scam** going on in server **${guild.name}**. I'm taking automatic action to protect the server and its members.`);
+}
+
+async function quarantine_messages(messages) {
+  return Promise.all(messages.map(message => discord.message_delete(message.channel_id, message.id)))
+}
+
+async function notify_scam_contained(guild_id, quarantined_messages) {
+  let example = quarantined_messages[0];
+  return notify_moderators(guild_id, 'I have **contained** the **suspected scam**. I have quarantined ' + quarantine_messages.length + ' messages.'
+    + ' The user ' + discord.mention_user(example.author.id) + ' has been kicked and banned because they were sending messages to several channels faster than a human could.'
+    + ' That means, most likely, the persons account has been hacked. Before inviting the person back, please make sure they have taken back control over their account.' 
+    + ' The following is an example message that has been quarantined. Do not click any links!'
+    + '\n'
+    + example.author.username + '#' + example.author.discriminator + ': ' + example.content
+  );
+}
+
 async function notify_moderators(guild_id, text) {
   return list_moderators(guild_id).then(mods => mods.map(mod => discord.try_dms(mod.user.id, text))).then(promises => Promise.all(promises))
     .catch(_ => discord.guild_retrieve(guild_id).then(guild => guild.system_channel_id ?? Promise.reject(new Error('No system channel!'))).then(channel_id => discord.post(channel_id, text)))
@@ -80,29 +156,6 @@ async function notify_moderators(guild_id, text) {
 
 async function list_moderators(guild_id) {
   return discord.guild_members_list_with_any_permission(guild_id, [ 'ADMINISTRATOR', 'MANAGE_SERVER', 'MANAGE_ROLES', 'MANAGE_CHANNELS', 'MODERATE_MEMBERS', 'KICK_MEMBERS', 'BAN_MEMBERS' ]);
-}
-
-const GUILD_MEMBER_SUSPECT_TIMEFRAME = 60 * 60 * 24;
-const GUILD_MESSAGE_CREATE_THRESHOLD = 100;
-const GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME = 60 * 60;
-
-async function on_guild_member_add(guild_id, user_id) {
-  return memory.get(`raid_protection:lockdown:guild:${guild_id}`, false).then(lockdown => lockdown ? kick_and_ban_user(guild_id, user_id) : Promise.resolve());
-}
-
-async function on_guild_message_create(guild_id, user_id) {
-  return synchronized(`raid_protection:guild:${guild_id}`, () => on_guild_message_create_0(guild_id, user_id));
-}
-
-async function on_guild_message_create_0(guild_id, user_id) {
-  if (await memory.get(`raid_protection:lockdown:guild:${guild_id}`, false)) return;
-  let members = await discord.guild_members_list(guild_id);
-  let suspects = members.filter(member => new Date(member.joined_at) > new Date(Date.now() - 1000 * GUILD_MEMBER_SUSPECT_TIMEFRAME));
-  if (!suspects.some(suspect => suspect.user.id == user_id)) return;
-  const key = `raid_protection:detection:guild.message.create:guild:${guild_id}`;
-  let counter = await memory.get(key, 0, GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME);
-  if (counter < GUILD_MESSAGE_CREATE_THRESHOLD) return memory.set(key, counter + 1, GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME * 1000 - Date.now() % (GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME * 1000));
-  return lockdown(guild_id);
 }
 
 module.exports = { lockdown, all_clear, on_guild_member_add, on_guild_message_create }

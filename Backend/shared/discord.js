@@ -232,6 +232,10 @@ async function invite_delete(invite_code)  {
   return HTTP(`/invites/${invite_code}`, 'DELETE');
 }
 
+async function messages(channel_id) {
+  return HTTP(`/channels/${channel_id}/messages`, 'GET');
+}
+
 async function message_retrieve(channel_id, message_id) {
   return HTTP(`/channels/${channel_id}/messages/${message_id}`, 'GET'); 
 }
@@ -440,6 +444,7 @@ module.exports = {
   message_retrieve,
   message_update,
   message_delete,
+  messages,
 
   trigger_typing_indicator,
   post,
