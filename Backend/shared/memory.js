@@ -6,9 +6,17 @@ const discord = require('./discord.js');
 const directory = process.env.MEMORY_DIRECTORY;
 
 async function clean() {
-  return ls()
-    .then(keys => keys.map(key => read(key).catch(error => remove(key))))
-    .then(promises => Promise.all(promises));
+  for (let keys of chunkify(await ls(), 100)) {
+    await Promise.all(keys.map(key => read(key).catch(error => remove(key))));
+  }
+}
+
+function chunkify(array, size) {
+  let chunks = [];
+  for (let i = 0; i < array.length / size + 1; i++) {
+    chunks.push(array.slice(i * size, Math.min(array.length, (i + 1) * size)));
+  }
+  return chunks.filter(chunk => chunk.length > 0);
 }
 
 async function get(key, backup) {
