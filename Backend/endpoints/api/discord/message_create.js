@@ -181,7 +181,8 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   }
   
   if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
-    let promise = chatgpt.getDynamicModel(chatgpt.getLanguageModels())
+    let promise = chatgpt.getLanguageModels()
+      .then(models => chatgpt.getDynamicModel(models))
       .then(model => (model && !chatgpt.compareLanguageModelByPower(model, 'gpt-4')) ? model : null)
       .then(model => model ? chatgpt.createBoolean(`Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it?`, model) : false)
       //.then(response => { console.log(`DEBUG INNUENDO v6: "${message}" => "${response}"`); return response; })
@@ -191,7 +192,8 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   
   if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
     const dummy_token = 'NULL';
-    let promise = chatgpt.getDynamicModel(chatgpt.getLanguageModels())
+    let promise = chatgpt.getLanguageModels()
+      .then(models => chatgpt.getDynamicModel(models))
       .then(model => model ? chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model) : null)
       //.then(response => { console.log(`DEBUG PAINTING v1: "${message}" => "${response}"`); return response; })
       .then(extraction => extraction && extraction != dummy_token && (extraction.match(/\p{L}/gu) ?? []).length > extraction.length * 0.5 ? chatgpt.getDynamicModel(chatgpt.getImageSizes()).then(size => size ? chatgpt.createImage(extraction, size) : null) : null)
@@ -898,7 +900,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!split || split < 0) return reactNotOK(channel_id, event_id);
     let language = message.substring(0, split).trim();
     let text = message.substring(split + 1).trim();
-    return handleLongResponse(channel_id, () => chatgpt.getDynamicModel(chatgpt.getLanguageModels())
+    return handleLongResponse(channel_id, () => chatgpt.getLanguageModels()
+      .then(models => chatgpt.getDynamicModel(models))
       .then(model => model ? translator.translate(language, text, model) : null)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
     );
@@ -940,7 +943,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
 }
 
 async function createAIResponse(guild_id, channel_id, user_id, user_name, message) {
-  let model = await chatgpt.getDynamicModel(chatgpt.getLanguageModels(), chatgpt.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
+  let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels(), chatgpt.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
   if (!model) return null;
   let system_message = await createAIContext(guild_id, user_id, user_name, message, model);
   return chatgpt.createResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, model);
