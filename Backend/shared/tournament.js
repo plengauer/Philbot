@@ -285,7 +285,27 @@ async function on_interaction(guild_id, user_id, interaction_id, interaction_tok
     switch(data.custom_id.split('.')[3]) {
       case 'start': return match_start(guild_id, user_id, match_id).then(() => discord.interact(interaction_id, interaction_token));
       case 'abort': return match_abort(guild_id, user_id, match_id).then(() => discord.interact(interaction_id, interaction_token));
-      case 'complete': return match_complete(guild_id, user_id, match_id).then(() => discord.interact(interaction_id, interaction_token));
+      case 'complete': return discord.interact(interaction_id, interaction_token, {
+        type: 9,
+        data: {
+          "title": "Select Winner",
+          "custom_id": `tournament.referee.${match_id}.complete.modal`,
+          "components": [{
+            "type": 1,
+            "components": [{
+              "type": 4,
+              "custom_id": `tournament.referee.${match_id}.complete.winner`,
+              "label": "Name of winning team",
+              "style": 1,
+              "min_length": 1,
+              "max_length": 4000,
+              "placeholder": "",
+              "required": true
+            }]
+          }]
+        }
+      });
+      case 'complete.modal': return match_complete(guild_id, user_id, data.components[0].components[0].value).then(() => discord.interact(interaction_id, interaction_token));
       default: throw new Error('Unknown interaction: ' + data.custom_id);
     }
   } else {
@@ -329,18 +349,18 @@ async function match_abort(guild_id, user_id, match_id) {
   await announce_match_aborted(tournament, match_id);
 }
 
-async function match_complete(guild_id, user_id, match_id, team_id_winner) {
+async function match_complete(guild_id, user_id, match_id, team_name_winner) {
   let tournament = await read(guild_id);
   if (!tournament) throw new Error();
   if (!tournament.active) throw new Error();
   if (match_id < 0 || tournament.matches.length <= match_id) throw new Error();
-  if (team_id_winner < 0 || tournament.teams.length <= team_id_winner) throw new Error();
+  if (tournament.teams.every(team => team.name != team_name_winner)) throw new Error();
   if (tournament.matches[match_id].referee != user_id && !tournament.game_masters.includes(user_id)) throw new Error();
   if (!tournament.matches[match_id].active) throw new Error();
   if (tournament.matches[match_id].winner && !tournament.game_masters.includes(user_id)) throw new Error();
 
   tournament.matches[match_id].active = false;
-  tournament.matches[match_id].winner = team_id_winner;
+  tournament.matches[match_id].winner = tournament.teams.findIndex(team => team.name == team_name_winner);
   await write(tournament);
 
   await Promise.all([
