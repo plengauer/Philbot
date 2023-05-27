@@ -1,3 +1,4 @@
+const memory = require('../../../shared/memory.js');
 const discord = require('../../../shared/discord.js');
 const features = require('../../../shared/features.js');
 const raid_protection = require('../../../shared/raid_protection.js');
