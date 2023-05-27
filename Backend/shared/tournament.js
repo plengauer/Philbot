@@ -233,9 +233,9 @@ async function prepare(guild_id, user_id) {
   // assign roles to the right people
   await Promise.all([
     write(guild_id, tournament),
-    get_all_involved_users(tournament).then(users => Promise.all(users.map(user => discord.assign_role(guild_id, user, tournament.role)))),
-    Promise.all(tournament.game_masters.map(user => discord.assign_role(guild_id, user, tournament.role_master))),
-    Promise.all(tournament.teams.map(team => Promise.all(team.players.map(player => discord.assign_role(guild_id, player, team.role))))),
+    get_all_involved_users(tournament).then(users => Promise.all(users.map(user => discord.guild_member_role_assign(guild_id, user, tournament.role)))),
+    Promise.all(tournament.game_masters.map(user => discord.guild_member_role_assign(guild_id, user, tournament.role_master))),
+    Promise.all(tournament.teams.map(team => Promise.all(team.players.map(player => discord.guild_member_role_assign(guild_id, player, team.role))))),
   ]);
   
   // announce
@@ -342,7 +342,7 @@ async function match_completed(guild_id, user_id, match_id, team_id_winner) {
 
   await Promise.all([
     announce_match_result(tournament, match_id),
-    discord.unassign_role(guild_id, tournament.matches[match_id].referee, tournament.role_referee),
+    discord.guild_member_role_unassign(guild_id, tournament.matches[match_id].referee, tournament.role_referee),
     announce_upcoming_matches(tournament, guild_id),
   ]);
   
@@ -423,7 +423,7 @@ async function announce_upcoming_matches(tournament, guild_id) {
         ));
       active_users.add(match.referee);
       if (next) {
-        promises.push(discord.assign_role(guild_id, match.referee, tournament.role_referee));
+        promises.push(discord.guild_member_role_assign(guild_id, match.referee, tournament.role_referee));
       }
     }
     for (let player of players) {
