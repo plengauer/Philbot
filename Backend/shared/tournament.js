@@ -3,9 +3,6 @@ const discord = require('./discord.js');
 const permissions = require('./permissions.js');
 
 //TODO dedicated referees, that are circled through, and the method we use now are only "auxiliary"
-//TOOD retry all discord rate-limited operations
-//TODO auto-create category
-//TODO use event for registration
 //TODO use embeds for annoucnements
 //TODO use components for referees and maybe even more stuff
 //TODO synchronize
