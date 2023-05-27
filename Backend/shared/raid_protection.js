@@ -22,10 +22,10 @@ async function on_guild_message_create(guild_id, channel_id, user_id, message_id
 // maybe if it continues find creator of invite? or list all people who can still invite
 
 async function on_guild_message_create_for_raid_protection(guild_id, user_id) {
-  return synchronized(`raid_protection:guild:${guild_id}`, () => on_guild_message_create_0(guild_id, user_id));
+  return synchronized.locked(`raid_protection:guild:${guild_id}`, () => on_guild_message_create_for_raid_protection_0(guild_id, user_id));
 }
 
-async function on_guild_message_create_0(guild_id, user_id) {
+async function on_guild_message_create_for_raid_protection_0(guild_id, user_id) {
   if (await memory.get(`raid_protection:lockdown:guild:${guild_id}`, false)) return;
   let members = await discord.guild_members_list(guild_id);
   let suspects = members.filter(member => new Date(member.joined_at) > new Date(Date.now() - 1000 * GUILD_MEMBER_SUSPECT_TIMEFRAME));
@@ -106,6 +106,10 @@ const GUILD_MESSAGE_SCAM_TIMEFRAME = 1000; // rate limit resets as low as once a
 const GUILD_MESSAGE_SCAM_COUNT = 5; // default rate limit is as low as 5
 
 async function on_guild_message_create_for_scam_protection(guild_id, channel_id, message_id) {
+  return synchronized.locked(`scam_protection:guild:${guild_id}`, () => on_guild_message_create_for_scam_protection_0(guild_id, channel_id, message_id));
+}
+
+async function on_guild_message_create_for_scam_protection_0(guild_id, channel_id, message_id) {
   let message = await discord.message_retrieve(channel_id, message_id).catch(_ => null);
   if (!message) return; // this can happen ebcause we handle one message at a time, and we may have deleted some already that we still get events for
   if (message.content == '') return;
