@@ -493,7 +493,7 @@ async function create_referee_components(tournament, match_id) {
     "components": [
       { type: 2, label:    'Start', style: 1, custom_id: `tournament.referee.${match_id}.start`   , disabled: match.active },
       { type: 2, label: 'Complete', style: 3, custom_id: `tournament.referee.${match_id}.complete`, disabled: !match.active || !!match.winner },
-      { type: 2, label:    'Abort', style: 4, custom_id: `tournament.referee.${match_id}.abot`    , disabled: !match.active || !!match.winner },
+      { type: 2, label:    'Abort', style: 4, custom_id: `tournament.referee.${match_id}.abort`   , disabled: !match.active || !!match.winner },
     ]
   }];
 }
