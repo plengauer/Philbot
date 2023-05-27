@@ -34,7 +34,7 @@ async function create_0(guild_id, name, date, game_masters, team_size, locations
     guild_id: guild_id,
     category_id: category,
     channel_id: channel,
-    event: event,
+    event_id: event,
     game_masters: game_masters,
     team_size: team_size,
     locations: locations,
@@ -43,7 +43,7 @@ async function create_0(guild_id, name, date, game_masters, team_size, locations
     matches: []
   };
   await write(tournament);
-  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been created. Pls edit the event to the correct time and share it ` + discord.scheduledevent_link_create(guild_id, event) + '.')));
+  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been created. Pls edit the event to the correct time and share it ` + discord.scheduledevent_link_create(guild_id, tournament.event_id) + '.')));
 }
 
 async function _delete(guild_id, user_id) {
@@ -222,12 +222,13 @@ async function prepare_0(guild_id, user_id) {
     Promise.all(tournament.teams.map(team => create_channel(tournament.guild_id, tournament.category_id, `Team ${team.name}`, [ tournament.role ], [ team.role ], [ tournament.role_referee, tournament.role_master ]).then(channel_id => team.channel = channel_id)))
   ]);
 
-  // assign roles to the right people
+  // assign roles to the right people, and change event
   await Promise.all([
     write(tournament),
+    discord.scheduledevent_update_location(guild_id, tournament.event_id, tournament.lobby),
     get_all_involved_users(tournament).then(users => Promise.all(users.map(user => discord.guild_member_role_assign(tournament.guild_id, user, tournament.role)))),
+    get_all_active_players(tournament).then(players => Promise.all(players.map(player => discord.guild_member_role_assign(tournament.guild_id, player, team.role)))),
     Promise.all(tournament.game_masters.map(user => discord.guild_member_role_assign(tournament.guild_id, user, tournament.role_master))),
-    Promise.all(tournament.teams.map(team => Promise.all(team.players.map(player => discord.guild_member_role_assign(tournament.guild_id, player, team.role))))),
   ]);
   
   // announce

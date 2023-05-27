@@ -225,6 +225,10 @@ async function scheduledevent_update_status(guild_id, event_id, status) {
   return HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}`, 'PATCH', { status: status }); 
 }
 
+async function scheduledevent_update_location(guild_id, event_id, channel_id) {
+  return HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}`, 'PATCH', { entity_type: 2, channel_id: channel_id, scheduled_end_time: null }); 
+}
+
 async function scheduledevent_users_list(guild_id, event_id) {
   const limit = 100;
   let users = [];
@@ -449,6 +453,7 @@ module.exports = {
   scheduledevents_list,
   scheduledevent_create,
   scheduledevent_update_status,
+  scheduledevent_update_location,
   scheduledevent_users_list,
 
   invite_create,
