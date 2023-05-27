@@ -24,7 +24,7 @@ async function create(guild_id, name, game_masters, team_size, locations, length
     + '-' + (date.getUTCDate() < 10 ? '0' : '') + date.getUTCDate()
     + 'T' + (date.getUTCHours() < 10 ? '0' : '') + date.getUTCHours()
     + ':' + (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes()
-    + ':00+00:00';
+    + ':00+00:00'; //TODO make that configurable
 
   let category = await discord.guild_channel_create(guild_id, name, undefined, 4).then(category => category.id);
   let channel = await discord.guild_channel_create(guild_id, 'general', category, 0).then(channel => channel.id);
@@ -285,8 +285,21 @@ async function start(guild_id, user_id) {
 
   return true;
 }
+async function on_interaction(guild_id, channel_id, message_id, interaction_id, interaction_token, data) {
+  if (data.custom_id.startsWith(`tournament.referee.`)) {
+    let match_id = data.custom_id.split('.')[2];
+    switch(data.custom_id.split('.')[3]) {
+      case 'start': return match_start(guild_id, null, match_id).then(() => discord.interact(interation_id, interaction_token)); //TODO user id?
+      case 'complete': return match_complete(guild_id, null, match_id).then(() => discord.interact(interation_id, interaction_token)); //TODO user id?
+      case 'abort': return match_abort(guild_id, null, match_id).then(() => discord.interact(interation_id, interaction_token)); //TODO user id?
+      default: throw new Error('Unknown interaction: ' + data.custom_id);
+    }
+  } else {
+    throw new Error('Unknown interaction: ' + data.custom_id);
+  }
+}
 
-async function match_started(guild_id, user_id, match_id) {
+async function match_start(guild_id, user_id, match_id) {
   let tournament = await read(guild_id);
   if (!tournament) return false;
   if (!tournament.active) return false;
@@ -311,7 +324,7 @@ async function match_started(guild_id, user_id, match_id) {
   return true;
 }
 
-async function match_aborted(guild_id, user_id, match_id) {
+async function match_abort(guild_id, user_id, match_id) {
   let tournament = await read(guild_id);
   if (!tournament) return false;
   if (!tournament.active) return false;
@@ -325,7 +338,7 @@ async function match_aborted(guild_id, user_id, match_id) {
   return true;
 }
 
-async function match_completed(guild_id, user_id, match_id, team_id_winner) {
+async function match_complete(guild_id, user_id, match_id, team_id_winner) {
   let tournament = await read(guild_id);
   if (!tournament) return false;
   if (!tournament.active) return false;
@@ -517,7 +530,7 @@ function countValuesHigher(array, value) {
   return count;
 }
 
-module.exports = { create, _delete, replace_player, define_team, dissolve_team, prepare, start, match_started, match_aborted, match_completed }
+module.exports = { create, _delete, replace_player, define_team, dissolve_team, prepare, start, on_interaction }
 
 
 
