@@ -407,7 +407,6 @@ async function announce_upcoming_matches(tournament, guild_id) {
     }
     let next = match_users.every(user => !active_users.has(user));
     if (!active_users.has(match.referee)) {
-      //TODO replace with component for referee to control the match
       await discord.try_dms(match.referee, `Next up, you are the referee in match ${match.id}: **${tournament.teams[match.team1].name}** vs **${tournament.teams[match.team2].name}** in **${tournament.locations[match.location]}**.`);
       if (next) {
         await discord.guild_member_role_assign(guild_id, match.referee, tournament.role_referee);
