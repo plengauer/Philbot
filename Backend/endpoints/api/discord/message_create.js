@@ -656,11 +656,12 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     message = message.split(' ').slice(2).join(' ');
     let tokens = message.split(',');
     let name = tokens[0].trim();
-    let game_masters = tokens[1].split(';').map(mention => discord.parse_mention(mention)).filter(user => !!user);
-    let team_size = parseInt(tokens[2].trim());
-    let locations = tokens[3].split(';').map(location => location.trim());
-    let length = parseInt(tokens[4].trim());
-    return tournament.create(guild_id, name, category, channel, game_masters, team_size, locations, length)
+    let date = new Date(tokens[1].trim());
+    let game_masters = tokens[2].split(';').map(mention => discord.parse_mention(mention)).filter(user => !!user);
+    let team_size = parseInt(tokens[3].trim());
+    let locations = tokens[4].split(';').map(location => location.trim());
+    let length = parseInt(tokens[5].trim());
+    return tournament.create(guild_id, name, date, category, channel, game_masters, team_size, locations, length)
       .then(() => reactOK(channel_id, event_id))
       .catch(_ => reactNotOK(channel_id, event_id));
 
