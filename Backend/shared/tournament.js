@@ -49,7 +49,6 @@ async function create_0(guild_id, name, game_masters, team_size, locations, leng
     locations: locations,
     length: length,
     teams: [],
-    players: [],
     matches: []
   };
   await write(guild_id, tournament);
