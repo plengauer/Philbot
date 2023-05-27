@@ -877,6 +877,15 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (mirror_guild_id && !await features.isActive(mirror_guild_id, 'mirror')) return respondNeedsFeatureActive(channel_id, event_id, 'mirror', 'mirror');
     return mirror.configure_mirror(guild_id, user_id, mirror_guild_id).then(() => reactOK(channel_id, event_id));
   
+  } else if (message.startsWith('personality ')) {
+    message = message.split(' ').slice(1).join(' ').trim();
+    guild_id = guild_id ?? await resolveGuildID(user_id);
+    if (guild_id && !await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'define AI personality');
+    if (message.length == 0) return reactNotOK(channel_id, event_id);
+    const key = 'ai:personality:' + (guild_id ? `guild:${guild_id}` : `channel:${channel_id}`);
+    return (message.toLowerCase() == 'reset' ? memory.unset(key) : memory.set(key, message))
+      .then(() => reactOK(channel_id, event_id));
+    
   } else if (await delayed_memory.materialize(`response:` + memory.mask(message) + `:user:${user_id}`)) {
     return reactOK(channel_id, event_id);
 
@@ -899,18 +908,26 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
 async function createAIResponse(guild_id, channel_id, user_id, user_name, message) {
   let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels(), chatgpt.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
   if (!model) return null;
-  let system_message = await createAIContext(guild_id, user_id, user_name, message, model);
+  let system_message = await createAIContext(guild_id, channel_id, user_id, user_name, message, model);
   return chatgpt.createResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, model);
 }
 
-async function createAIContext(guild_id, user_id, user_name, message, model) {
+async function createAIContext(guild_id, channel_id, user_id, user_name, message, model) {
   // basic identity information
   let me = await discord.me();
   let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(member => member.nick ?? member.user.username) : me.username;
-  let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(member => member.nick ?? member.user.username) : user_name;
-  let system_message = `My name is ${my_name}. I am a Discord bot. Your name is ${your_name}.`;
+  let system_message = `My name is ${my_name}. I am a Discord bot.`;
+
+  // personality
+  let personality = await memory.get(`ai:personality:channel:${channel_id}`, guild_id ? await memory.get(`ai:personality:guild:${guild_id}`, null) : null);
+  if (personality) {
+    if (!personality.match(/.*[\.\?\!]$/)) personality += '.';
+    system_message += ' ' + personality;
+  }
 
   // information about others
+  let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(member => member.nick ?? member.user.username) : user_name;
+  system_message += `Your name is ${your_name}.`;
   let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
   let mentioned_members = mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention));
   let mentioned_roles = mentioned_entities.filter(mention => mention.startsWith('<@&')).map(mention => discord.parse_role(mention));
