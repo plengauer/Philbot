@@ -51,7 +51,7 @@ async function read(key, tries = 3) {
       try {
         resolve(JSON.parse(content));
       } catch (error) {
-        if (tries > 0) fs.rename(filename(key), filename(key) + '.damaged', () => reject(error));
+        if (tries == 0) fs.rename(filename(key), filename(key) + '.damaged', () => reject(error));
         else new Promise(resolve => setTimeout(resolve, 100)).then(() => read(key, tries - 1).then(content => resolve(content)).catch(error => reject(error)));
       }
     }))
