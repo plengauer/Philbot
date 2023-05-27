@@ -33,18 +33,10 @@ async function tryScheduleEvent(guild, event_config) {
   if (distance > scheduling_distance) { 
     return Promise.resolve();
   }
-  // %Y-%m-%dT%H:%M:%S
-  let scheduled_start_string = ''
-          + scheduled_start.getUTCFullYear()
-    + '-' + ((scheduled_start.getUTCMonth() + 1) < 10 ? '0' : '') + (scheduled_start.getUTCMonth() + 1)
-    + '-' + (scheduled_start.getUTCDate() < 10 ? '0' : '') + scheduled_start.getUTCDate()
-    + 'T' + (scheduled_start.getUTCHours() < 10 ? '0' : '') + scheduled_start.getUTCHours()
-    + ':' + (scheduled_start.getUTCMinutes() < 10 ? '0' : '') + scheduled_start.getUTCMinutes()
-    + ':00+00:00';
   
   let found = false;
   for (let event of await discord.scheduledevents_list(guild.id)) {
-    found = found || ((!event_config.name || event.name === event_config.name) && event.scheduled_start_time == scheduled_start_string);
+    found = found || ((!event_config.name || event.name === event_config.name) && new Date(event.scheduled_start_time).getTime() == scheduled_start.getTime());
   }
   if (found) {
     return Promise.resolve();
@@ -101,7 +93,7 @@ async function tryScheduleEvent(guild, event_config) {
     return Promise.resolve();
   }
   
-  return discord.scheduledevent_create(guild.id, event_config.channel_id, event_config.name, event_config.description, scheduled_start_string);
+  return discord.scheduledevent_create(guild.id, event_config.channel_id, event_config.name, event_config.description, scheduled_start);
 }
 
 async function sendReminders() {

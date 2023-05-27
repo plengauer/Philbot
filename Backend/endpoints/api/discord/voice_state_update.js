@@ -22,7 +22,7 @@ async function checkAndStartEvents(guild_id, channel_id) {
   let now = new Date();
   return discord.scheduledevents_list(guild_id).then(events => events.map(event => {
     if (event.channel_id === channel_id && event.status == 1 && new Date(Date.parse(event.scheduled_start_time).valueOf() - 1000 * 60 * 60) < now) {
-      return discord.scheduledevent_modify(guild_id, event.id, { status: 2 /* 'ACTIVE' */ });
+      return discord.scheduledevent_update_status(guild_id, event.id, 2);
     } else {
       return Promise.resolve();
     }

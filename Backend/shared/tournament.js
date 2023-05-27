@@ -25,19 +25,10 @@ async function create(guild_id, name, game_masters, team_size, locations, length
   return locked(guild_id, () => create_0(guild_id, name, game_masters, team_size, locations, length));
 }
 
-async function create_0(guild_id, name, game_masters, team_size, locations, length) {
-  let date = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
-  let start_time = ''
-    + date.getUTCFullYear()
-    + '-' + ((date.getUTCMonth() + 1) < 10 ? '0' : '') + (date.getUTCMonth() + 1)
-    + '-' + (date.getUTCDate() < 10 ? '0' : '') + date.getUTCDate()
-    + 'T' + (date.getUTCHours() < 10 ? '0' : '') + date.getUTCHours()
-    + ':' + (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes()
-    + ':00+00:00'; //TODO make that configurable
-
+async function create_0(guild_id, name, date, game_masters, team_size, locations, length) {
   let category = await discord.guild_channel_create(guild_id, name, undefined, 4).then(category => category.id);
   let channel = await discord.guild_channel_create(guild_id, 'general', category, 0).then(channel => channel.id);
-  let event = await discord.scheduledevent_create(guild_id, channel_id, name, '', start_time).then(event => event.id);
+  let event = await discord.scheduledevent_create(guild_id, null, name, '', date).then(event => event.id);
   let tournament = {
     name: name,
     guild_id: guild_id,

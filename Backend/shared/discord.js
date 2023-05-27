@@ -214,14 +214,15 @@ async function scheduledevent_create(guild_id, channel_id, name, description, sc
       channel_id: channel_id,
       name: name,
       description: description,
-      scheduled_start_time: scheduled_start_time,
+      scheduled_start_time: scheduled_start_time.toISOString(),
+      scheduled_end_time: channel_id ? undefined : new Date(scheduled_start_time + 1000 * 60 * 60).toISOString(),
       privacy_level: 2 /* GUILD_ONLY */,
-      entity_type: 2 /* VOICE */
+      entity_type: channel_id ? 2 : 3
     }); 
 }
 
-async function scheduledevent_modify(guild_id, event_id, event) {
-  return HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}`, 'PATCH', event); 
+async function scheduledevent_update_status(guild_id, event_id, status) {
+  return HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}`, 'PATCH', { status: status }); 
 }
 
 async function scheduledevent_users_list(guild_id, event_id) {
@@ -447,7 +448,7 @@ module.exports = {
   
   scheduledevents_list,
   scheduledevent_create,
-  scheduledevent_modify,
+  scheduledevent_update_status,
   scheduledevent_users_list,
 
   invite_create,
