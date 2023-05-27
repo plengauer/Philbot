@@ -6,6 +6,7 @@ const permissions = require('./permissions.js');
 //TODO use embeds for annoucnements
 //TODO use components for referees and maybe even more stuff
 //TODO synchronize
+//TODO think about what can do wrong. reset match, replace player, auto wins
 
 async function write(guild_id, tournament) {
   return tournament ? memory.set('tournament:guild:' + guild_id, tournament) : memory.unset('tournament:guild:' + guild_id);
@@ -295,10 +296,8 @@ async function match_started(guild_id, user_id, match_id) {
   tournament.matches[match_id].active = true;
   await write(guild_id, tournament);
  
-  await announce_match_started(tournament, match_id);
-
   await Promise.all([
-    announce_match_started(tournament, match_id),
+    announce_match_started(guild_id, tournament, match_id),
     Promise.all(tournament.teams[tournament.matches[match_id].team1].players
       .map(player => discord.guild_member_move(guild_id, player, tournament.teams[tournament.matches[match_id].team1].channel)
         .catch(e => discord.try_dms(tournament.matches[match_id].referee, `Player <@${player}> is not connected to any voice channel. Pls verify and restart the match if needed.`))
@@ -307,7 +306,7 @@ async function match_started(guild_id, user_id, match_id) {
       .map(player => discord.guild_member_move(guild_id, player, tournament.teams[tournament.matches[match_id].team2].channel)
         .catch(e => discord.try_dms(tournament.matches[match_id].referee, `Player <@${player}> is not connected to any voice channel. Pls verify and restart the match if needed.`))
     ))
-  ])
+  ]);
 
   return true;
 }
@@ -322,7 +321,7 @@ async function match_aborted(guild_id, user_id, match_id) {
 
   tournament.matches[match_id].active = false;
   await write(guild_id, tournament);
-  await announce_match_aborted(tournament, match_id);
+  await announce_match_aborted(guild_id, tournament, match_id);
   return true;
 }
 
@@ -341,7 +340,7 @@ async function match_completed(guild_id, user_id, match_id, team_id_winner) {
   await write(guild_id, tournament);
 
   await Promise.all([
-    announce_match_result(tournament, match_id),
+    announce_match_result(guild_id, tournament, match_id),
     discord.guild_member_role_unassign(guild_id, tournament.matches[match_id].referee, tournament.role_referee),
     announce_upcoming_matches(tournament, guild_id),
   ]);
@@ -354,30 +353,26 @@ async function match_completed(guild_id, user_id, match_id, team_id_winner) {
   return true;
 }
 
-async function announce_match_started(tournament, match_id) {
+async function announce_match_started(guild_id, tournament, match_id) {
   return Promise.all([
       Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master,
         `Match ${match_id}, `
         + `**${tournament.teams[tournament.matches[match_id].team1].name}** vs **${tournament.teams[tournament.matches[match_id].team2].name}**,`
         + ' has been started.'
       ))),
-      //TODO update components
-      discord.try_dms(tournament.matches[match_id].referee,
-        'The match you referee\'d has been started. '
-        + `Use the command 'tournament complete match ${match_id} ${tournament.matches[match_id].team1}' or 'tournament complete match ${match_id} ${tournament.matches[match_id].team2}' to register the result. `
-        + `In case anything goes wrong, use 'tournament abort match ${match_id}' to abort the match.`
-      )
+      update_referee_interaction(guild_id, tournament, match_id),
+      discord.try_dms(tournament.matches[match_id].referee, 'The match you referee\'d has been started.')
     ]);
 }
 
-async function announce_match_aborted(tournament, match_id) {
+async function announce_match_aborted(guild_id, tournament, match_id) {
   return Promise.all([
       Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master,
         `Match ${match_id}, `
         + `**${tournament.teams[tournament.matches[match_id].team1].name}** vs **${tournament.teams[tournament.matches[match_id].team2].name}**,`
         + ' has been aborted.'
       ))),
-      //TODO update components
+      update_referee_interaction(guild_id, tournament, match_id),
       discord.try_dms(tournament.matches[match_id].referee, 'The match you referee\'d has been aborted.')
     ]);
 }
@@ -389,6 +384,7 @@ async function announce_match_result(tournament, match_id) {
         + `**${tournament.teams[tournament.matches[match_id].team1].name}** vs **${tournament.teams[tournament.matches[match_id].team2].name}**,`
         + ' has been completed.'
       ))),
+      update_referee_interaction(guild_id, tournament, match_id),
       discord.try_dms(tournament.matches[match_id].referee, 'The match you referee\'d has been completed.'),
       discord.post(tournament.channel, 
         `Match ${match_id}, `
@@ -400,7 +396,6 @@ async function announce_match_result(tournament, match_id) {
 }
 
 async function announce_upcoming_matches(tournament, guild_id) {
-  let promises = [];
   let active_users = new Set()
   for (let match of tournament.matches) {
     if (match.winner) continue;
@@ -413,31 +408,27 @@ async function announce_upcoming_matches(tournament, guild_id) {
     let next = match_users.every(user => !active_users.has(user));
     if (!active_users.has(match.referee)) {
       //TODO replace with component for referee to control the match
-      promises.push(discord.try_dms(match.referee,
-          `Next up, you are the referee in match ${match.id}: **${tournament.teams[match.team1].name}** vs **${tournament.teams[match.team2].name}** in **${tournament.locations[match.location]}**. `
-          + (next ?
-              `All players are free, pls check if they are ready and start the match when they are. `
-              + `Use the command 'tournament start match ${match.id}' when you have given the teams the signal to start.` :
-              `Not all players are free yet, you will be notified.`
-            )
-        ));
-      active_users.add(match.referee);
+      await discord.try_dms(match.referee, `Next up, you are the referee in match ${match.id}: **${tournament.teams[match.team1].name}** vs **${tournament.teams[match.team2].name}** in **${tournament.locations[match.location]}**.`);
       if (next) {
-        promises.push(discord.guild_member_role_assign(guild_id, match.referee, tournament.role_referee));
+        await discord.guild_member_role_assign(guild_id, match.referee, tournament.role_referee);
+        await discord.try_dms(match.referee, `All players are free, pls check if they are ready and start the match when they are.`);
+        await update_referee_interaction(guild_id, tournament, match.id);
+      } else {
+        await discord.try_dms(match.referee, `Not all players are free yet, you will be notified.`);
       }
+      active_users.add(match.referee);
     }
     for (let player of players) {
       if (active_users.has(player)) continue;
       active_users.add(player);
-      //TODO replace with component signaling person is ready
-      promises.push(discord.try_dms(player,
+      //TODO replace with component signaling person is ready and tell referee
+      await discord.try_dms(player,
           `Next up, you are playing in match ${match.id}: **${tournament.teams[match.team1].name}** vs **${tournament.teams[match.team2].name}** in **${tournament.locations[match.location]}**. `
           + (next ? `All players are free, pls get into position and wait for the referee <@${match.referee}> to give the start signal.` : `Not all players are free yet, you will be notified.`)
-        ));
+        );
     }
     if (next) {
-      //TODO replace with pretty embed
-      promises.push(discord.post(tournament.channel,
+      await discord.post(tournament.channel,
         `Next up is match ${match.id}: `
         + `**${tournament.teams[match.team1].name}** (` + tournament.teams[match.team1].players.map(player => `<@${player}>`).join(', ') + `)`
         + ` vs `
@@ -445,10 +436,9 @@ async function announce_upcoming_matches(tournament, guild_id) {
         + ` in **${tournament.locations[match.location]}**`
         + ` with the referee <@${match.referee}>` 
         + `.`
-      ));
+      );
     }
   }
-  return Promise.all(promises);
 }
 
 async function announce_tournament_result(tournament) {
@@ -466,6 +456,34 @@ async function announce_tournament_result(tournament) {
       //TODO replace with pretty embed!
       discord.post(tournament.channel, `\n**THE TOURNAMENT HAS BEEN COMPLETED**\n\n${score_string}\n\nThank you all for participating.`)
     ]);
+}
+
+async function update_referee_interaction(guild_id, tournament, match_id) {
+  let match = tournament.matches[match_id];
+  let text = `Match **${tournament.teams[match.team1].name}** vs **${tournament.teams[match.team1].name}**`;
+  if (match.winner) {
+    text += ` => **${tournament.teams[match.team1].winner}**`;
+  }
+  let components = create_referee_components(tournament, match_id);
+  let channel_id = await discord.dms_channel_retrieve(match.referee).then(channel => channel.id);
+  if (match.interaction_id) {
+    await discord.message_update(channel_id, match.interaction_id, text, [], components);
+  } else {
+    tournament.interaction_id = await discord.post(channel_id, text, undefined, true, [], components).then(message => message.id);
+  }
+  await write(guild_id, tournament);
+}
+
+async function create_referee_components(tournament, match_id) {
+  let match = tournament.matches[match_id];
+  return [{
+    "type": 1,
+    "components": [
+      { type: 2, label:    'Start', style: 1, custom_id: `tournament.referee.${match_id}.start`   , disabled: match.active },
+      { type: 2, label: 'Complete', style: 3, custom_id: `tournament.referee.${match_id}.complete`, disabled: !match.active || !!match.winner },
+      { type: 2, label:    'Abort', style: 4, custom_id: `tournament.referee.${match_id}.abot`    , disabled: !match.active || !!match.winner },
+    ]
+  }];
 }
 
 async function get_all_interested_users(tournament) {
