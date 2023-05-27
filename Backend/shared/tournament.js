@@ -4,9 +4,9 @@ const permissions = require('./permissions.js');
 const synchronized = require('./synchronized.js');
 
 //TODO dedicated referees, that are circled through, and the method we use now are only "auxiliary"
-//TODO use embeds for annoucnements
-//TODO use components for referees and maybe even more stuff
-//TODO synchronize
+//TODO re-introduce use embeds for annoucnements
+//TODO use components for admin stuff (team setup)
+//TODO how to bring game masters to create teams, maybe use some component to do it
 //TODO think about what can do wrong. reset match, replace player, auto wins
 
 async function write(tournament) {
