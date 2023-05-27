@@ -51,7 +51,7 @@ async function create_0(guild_id, name, game_masters, team_size, locations, leng
     teams: [],
     matches: []
   };
-  await write(guild_id, tournament);
+  await write(tournament);
   await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been created. Pls edit the event to the correct time and share it ` + discord.scheduledevent_link_create(guild_id, event) + '.')));
 }
 
