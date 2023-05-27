@@ -1,6 +1,7 @@
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const permissions = require('./permissions.js');
+const synchronized = require('./synchronized.js');
 
 //TODO dedicated referees, that are circled through, and the method we use now are only "auxiliary"
 //TODO use embeds for annoucnements
@@ -16,7 +17,15 @@ async function read(guild_id) {
   return memory.get('tournament:guild:' + guild_id, null);
 }
 
+async function locked(guild_id, func) {
+  return synchronized.locked('tournament:guild:' + guild_id, () => func());
+}
+
 async function create(guild_id, name, game_masters, team_size, locations, length) {
+  return locked(guild_id, () => create_0(guild_id, name, game_masters, team_size, locations, length));
+}
+
+async function create_0(guild_id, name, game_masters, team_size, locations, length) {
   let date = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
   let start_time = ''
     + date.getUTCFullYear()
@@ -48,6 +57,10 @@ async function create(guild_id, name, game_masters, team_size, locations, length
 }
 
 async function _delete(guild_id, user_id) {
+  return locked(guild_id, () => _delete_0(guild_id, user_id));
+}
+
+async function _delete_0(guild_id, user_id) {
   let tournament = await read(guild_id);
   await memory.unset('tournament:guild:' + guild_id);
   await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been deleted.`)));
@@ -131,6 +144,10 @@ function create_matches(length, locations, teams, players_per_team, referees) {
 }
 
 async function define_team(guild_id, user_id, name, players) {
+  return locked(guild_id, () => define_team_0(guild_id, user_id, name, players));
+}
+
+async function define_team_0(guild_id, user_id, name, players) {
   let tournament = await read(guild_id);
   if (!tournament) throw new Error();
   if (!tournament.game_masters.includes(user_id)) throw new Error();
@@ -146,6 +163,10 @@ async function define_team(guild_id, user_id, name, players) {
 }
 
 async function dissolve_team(guild_id, user_id, id) {
+  return locked(guild_id, () => dissolve_team_0(guild_id, user_id, id));
+}
+
+async function dissolve_team_0(guild_id, user_id, id) {
   let tournament = await read(guild_id);
   if (!tournament) throw new Error();
   if (!tournament.game_masters.includes(user_id)) throw new Error();
@@ -169,30 +190,13 @@ function recompute_matches(tournament) {
     );
 }
 
-async function replace_player(guild_id, user_id, player_replaced, player_replacing) {
-  let tournament = await read(guild_id);
-  if (!tournament) throw new Error();
-  if (!tournament.game_masters.includes(user_id)) throw new Error();
-  let all_players = await get_all_interested_users(tournament);
-  if (!all_players.includes(player_replacing)) throw new Error();
-  if (player_replaced == player_replacing) throw new Error();
-  for (let team of tournament.teams) {
-    if (!team.players.includes(player_replaced)) continue;
-    team.players = team.players.map(p => p == player_replaced ? player_replacing : p);
-    if (team.role) {
-      await update_role(tournament.guild_id, player_replaced, team.role, false);
-      await update_role(tournament.guild_id, player_replacing, team.role, true);
-    }
-  }
-  for (let match of tournament.matches) {
-    match.referee = match.referee == player_replaced ? player_replacing : match.referee;
-  }
-  await write(tournament);
-}
-
 //TODO remove player that drops out, grant wins to all opponents in the past and auto wins into the future
 
 async function prepare(guild_id, user_id) {
+  return locked(guild_id, () => prepare_0(guild_id, user_id));
+}
+
+async function prepare_0(guild_id, user_id) {
   let tournament = await read(guild_id);
   if (!tournament) throw new Error();
   if (!tournament.game_masters.includes(user_id)) throw new Error();
@@ -263,6 +267,10 @@ async function create_role(guild_id, name) {
 }
 
 async function start(guild_id, user_id) {
+  return locked(guild_id, () => start_0(guild_id, user_id));
+}
+
+async function start_0(guild_id, user_id) {
   let tournament = await read(guild_id);
   if (!tournament) throw new Error();
   if (!tournament.game_masters.includes(user_id)) throw new Error();
@@ -280,6 +288,10 @@ async function start(guild_id, user_id) {
 }
 
 async function on_interaction(guild_id, user_id, interaction_id, interaction_token, data) {
+  return locked(guild_id, () => on_interaction_0(guild_id, user_id, interaction_id, interaction_token, data));
+}
+
+async function on_interaction_0(guild_id, user_id, interaction_id, interaction_token, data) {
   if (data.custom_id.startsWith(`tournament.referee.`)) {
     let match_id = data.custom_id.split('.')[2];
     switch(data.custom_id.split('.')[3]) {
@@ -539,7 +551,32 @@ function countValuesHigher(array, value) {
   return count;
 }
 
-module.exports = { create, _delete, replace_player, define_team, dissolve_team, prepare, start, on_interaction }
+async function replace_player(guild_id, user_id, player_replaced, player_replacing) {
+  return locked(guild_id, () => replace_player_0(guild_id, user_id, player_replaced, player_replacing));
+}
+
+async function replace_player_0(guild_id, user_id, player_replaced, player_replacing) {
+  let tournament = await read(guild_id);
+  if (!tournament) throw new Error();
+  if (!tournament.game_masters.includes(user_id)) throw new Error();
+  let all_players = await get_all_interested_users(tournament);
+  if (!all_players.includes(player_replacing)) throw new Error();
+  if (player_replaced == player_replacing) throw new Error();
+  for (let team of tournament.teams) {
+    if (!team.players.includes(player_replaced)) continue;
+    team.players = team.players.map(p => p == player_replaced ? player_replacing : p);
+    if (team.role) {
+      await update_role(tournament.guild_id, player_replaced, team.role, false);
+      await update_role(tournament.guild_id, player_replacing, team.role, true);
+    }
+  }
+  for (let match of tournament.matches) {
+    match.referee = match.referee == player_replaced ? player_replacing : match.referee;
+  }
+  await write(tournament);
+}
+
+module.exports = { create, _delete, define_team, dissolve_team, prepare, start, on_interaction, replace_player }
 
 
 
