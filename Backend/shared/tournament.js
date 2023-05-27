@@ -8,8 +8,8 @@ const permissions = require('./permissions.js');
 //TODO synchronize
 //TODO think about what can do wrong. reset match, replace player, auto wins
 
-async function write(guild_id, tournament) {
-  return tournament ? memory.set('tournament:guild:' + guild_id, tournament) : memory.unset('tournament:guild:' + guild_id);
+async function write(tournament) {
+  return memory.set('tournament:guild:' + tournament.guild_id, tournament);
 }
 
 async function read(guild_id) {
@@ -31,8 +31,9 @@ async function create(guild_id, name, game_masters, team_size, locations, length
   let event = await discord.scheduledevent_create(guild_id, channel_id, name, '', start_time).then(event => event.id);
   let tournament = {
     name: name,
-    category: category,
-    channel: channel,
+    guild_id: guild_id,
+    category_id: category,
+    channel_id: channel,
     event: event,
     game_masters: game_masters,
     team_size: team_size,
@@ -47,7 +48,8 @@ async function create(guild_id, name, game_masters, team_size, locations, length
 }
 
 async function _delete(guild_id, user_id) {
-  await write(guild_id, null);
+  let tournament = await read(guild_id);
+  await memory.unset('tournament:guild:' + guild_id);
   await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been deleted.`)));
 }
 
@@ -139,7 +141,7 @@ async function define_team(guild_id, user_id, name, players) {
   let id = tournament.teams.length;
   tournament.teams.push({id: id, name: name, players: players});
   recompute_matches(tournament);
-  await write(guild_id, tournament);
+  await write(tournament);
   await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Team ${id} "${name}" has been defined as ` + players.map(player => `<@${player}>`).join(', ') + `, the schedule has been adjusted.`)));
 }
 
@@ -153,7 +155,7 @@ async function dissolve_team(guild_id, user_id, id) {
   tournament.teams = tournament.teams.slice(0, id).concat(tournament.teams.slice(id + 1, tournament.teams.length));
   for (let id = 0; id < tournament.teams.length; id++) tournament.teams[id].id = id;
   recompute_matches(tournament);
-  await write(guild_id, tournament);
+  await write(tournament);
   for (let game_master of tournament.game_masters) {
     await discord.try_dms(game_master, `Team ${team.id} "${team.name}" has been dissolved (` + team.players.map(player => `<@${player}>`).join(', ') + `), the schedule has been adjusted.`);
   }
@@ -178,14 +180,14 @@ async function replace_player(guild_id, user_id, player_replaced, player_replaci
     if (!team.players.includes(player_replaced)) continue;
     team.players = team.players.map(p => p == player_replaced ? player_replacing : p);
     if (team.role) {
-      await update_role(guild_id, player_replaced, team.role, false);
-      await update_role(guild_id, player_replacing, team.role, true);
+      await update_role(tournament.guild_id, player_replaced, team.role, false);
+      await update_role(tournament.guild_id, player_replacing, team.role, true);
     }
   }
   for (let match of tournament.matches) {
     match.referee = match.referee == player_replaced ? player_replacing : match.referee;
   }
-  await write(guild_id, tournament);
+  await write(tournament);
 }
 
 //TODO remove player that drops out, grant wins to all opponents in the past and auto wins into the future
@@ -200,7 +202,7 @@ async function prepare(guild_id, user_id) {
         .filter(team => team.players.length != tournament.team_size)
         .map(team => team.name + ' (' + team.players.map(player => `<@${player}>`).join(', ') + ')')
         .join(', ') + '. '
-      + 'Unassigned players are: ' + await discord.scheduledevent_users_list(guild_id, tournament.event).then(users => users.map(user => user.id))
+      + 'Unassigned players are: ' + (await get_all_interested_users(tournament)).map(user => user.id)
         .filter(player => !tournament.teams.some(team => team.players.includes(player)))
         .map(player => `<@${player}>`)
         .join(', ') + '.';
@@ -214,31 +216,31 @@ async function prepare(guild_id, user_id) {
 
   // create roles
   await Promise.all([
-    create_role(guild_id, tournament.name).then(role_id => tournament.role = role_id),
-    create_role(guild_id, `${tournament.name} Game Master`).then(role_id => tournament.role_master = role_id),
-    create_role(guild_id, `${tournament.name} Referee`).then(role_id => tournament.role_referee = role_id),
-    Promise.all(tournament.teams.map(team => create_role(guild_id, `${tournament.name} Team ${team.name}`).then(role_id => team.role = role_id)))
+    create_role(tournament.guild_id, tournament.name).then(role_id => tournament.role = role_id),
+    create_role(tournament.guild_id, `${tournament.name} Game Master`).then(role_id => tournament.role_master = role_id),
+    create_role(tournament.guild_id, `${tournament.name} Referee`).then(role_id => tournament.role_referee = role_id),
+    Promise.all(tournament.teams.map(team => create_role(tournament.guild_id, `${tournament.name} Team ${team.name}`).then(role_id => team.role = role_id)))
   ]);
 
   // create all channels
   await Promise.all([
-    create_channel(guild_id, tournament.category, 'Lobby', [ tournament.role ], [ tournament.role ], [ tournament.role_master ]).then(channel_id => tournament.lobby = channel_id),
-    Promise.all(tournament.teams.map(team => create_channel(guild_id, tournament.category, `Team ${team.name}`, [ tournament.role ], [ team.role ], [ tournament.role_referee, tournament.role_master ]).then(channel_id => team.channel = channel_id)))
+    create_channel(tournament.guild_id, tournament.category_id, 'Lobby', [ tournament.role ], [ tournament.role ], [ tournament.role_master ]).then(channel_id => tournament.lobby = channel_id),
+    Promise.all(tournament.teams.map(team => create_channel(tournament.guild_id, tournament.category_id, `Team ${team.name}`, [ tournament.role ], [ team.role ], [ tournament.role_referee, tournament.role_master ]).then(channel_id => team.channel = channel_id)))
   ]);
 
   // assign roles to the right people
   await Promise.all([
-    write(guild_id, tournament),
-    get_all_involved_users(tournament).then(users => Promise.all(users.map(user => discord.guild_member_role_assign(guild_id, user, tournament.role)))),
-    Promise.all(tournament.game_masters.map(user => discord.guild_member_role_assign(guild_id, user, tournament.role_master))),
-    Promise.all(tournament.teams.map(team => Promise.all(team.players.map(player => discord.guild_member_role_assign(guild_id, player, team.role))))),
+    write(tournament),
+    get_all_involved_users(tournament).then(users => Promise.all(users.map(user => discord.guild_member_role_assign(tournament.guild_id, user, tournament.role)))),
+    Promise.all(tournament.game_masters.map(user => discord.guild_member_role_assign(tournament.guild_id, user, tournament.role_master))),
+    Promise.all(tournament.teams.map(team => Promise.all(team.players.map(player => discord.guild_member_role_assign(tournament.guild_id, player, team.role))))),
   ]);
   
   // announce
   await Promise.all([
     // create pretty embed about the schedule
-    discord.post(tournament.channel, '\**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n<@&' + tournament.role + '> **JOIN NOW**'),
-    Promise.all(get_all_involved_users(tournament).map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby).catch(ex => {}))),
+    discord.post(tournament.channel_id, '\**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n<@&' + tournament.role + '> **JOIN NOW**'),
+    Promise.all(get_all_involved_users(tournament).map(user_id => discord.guild_member_move(tournament.guild_id, user_id, tournament.lobby).catch(ex => {}))),
     Promise.all(get_all_involved_users(tournament).map(user_id => discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for updates.')
       .then(sent => sent ? undefined : discord.post('I cannot DM <@' + user_id + '>. To manage the tournament, pls allow me to send you messages (Settings -> Privacy & Safety -> Allow direct messages from server members).'))
     ))
@@ -267,23 +269,23 @@ async function start(guild_id, user_id) {
   if (tournament.active) throw new Error();
 
   tournament.active = true;
-  await write(guild_id, tournament);
-  await discord.post(tournament.channel, '\**THE TOURNAMENT HAS STARTED**');
-  await announce_upcoming_matches(tournament, guild_id);
+  await write(tournament);
+  await discord.post(tournament.channel_id, '\**THE TOURNAMENT HAS STARTED**');
+  await announce_upcoming_matches(tournament);
 
   await Promise.all(get_all_active_players(tournament).map(player => 
-    discord.guild_member_move(guild_id, player, team.channel)
+    discord.guild_member_move(tournament.guild_id, player, team.channel)
       .catch(e => Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Player <@${player}> is not connected to any voice channel. Pls verify.`))))
   ));
 }
 
-async function on_interaction(guild_id, channel_id, message_id, interaction_id, interaction_token, data) {
+async function on_interaction(guild_id, user_id, interaction_id, interaction_token, data) {
   if (data.custom_id.startsWith(`tournament.referee.`)) {
     let match_id = data.custom_id.split('.')[2];
     switch(data.custom_id.split('.')[3]) {
-      case 'start': return match_start(guild_id, null, match_id).then(() => discord.interact(interation_id, interaction_token)); //TODO user id?
-      case 'complete': return match_complete(guild_id, null, match_id).then(() => discord.interact(interation_id, interaction_token)); //TODO user id?
-      case 'abort': return match_abort(guild_id, null, match_id).then(() => discord.interact(interation_id, interaction_token)); //TODO user id?
+      case 'start': return match_start(guild_id, user_id, match_id).then(() => discord.interact(interaction_id, interaction_token));
+      case 'abort': return match_abort(guild_id, user_id, match_id).then(() => discord.interact(interaction_id, interaction_token));
+      case 'complete': return match_complete(guild_id, user_id, match_id).then(() => discord.interact(interaction_id, interaction_token));
       default: throw new Error('Unknown interaction: ' + data.custom_id);
     }
   } else {
@@ -299,7 +301,7 @@ async function match_start(guild_id, user_id, match_id) {
   if (tournament.matches[match_id].referee != user_id && !tournament.game_masters.includes(user_id)) throw new Error();
 
   tournament.matches[match_id].active = true;
-  await write(guild_id, tournament);
+  await write(tournament);
  
   await Promise.all([
     announce_match_started(guild_id, tournament, match_id),
@@ -323,8 +325,8 @@ async function match_abort(guild_id, user_id, match_id) {
   if (!tournament.matches[match_id].active) throw new Error();
 
   tournament.matches[match_id].active = false;
-  await write(guild_id, tournament);
-  await announce_match_aborted(guild_id, tournament, match_id);
+  await write(tournament);
+  await announce_match_aborted(tournament, match_id);
 }
 
 async function match_complete(guild_id, user_id, match_id, team_id_winner) {
@@ -339,40 +341,40 @@ async function match_complete(guild_id, user_id, match_id, team_id_winner) {
 
   tournament.matches[match_id].active = false;
   tournament.matches[match_id].winner = team_id_winner;
-  await write(guild_id, tournament);
+  await write(tournament);
 
   await Promise.all([
-    announce_match_result(guild_id, tournament, match_id),
-    discord.guild_member_role_unassign(guild_id, tournament.matches[match_id].referee, tournament.role_referee),
-    announce_upcoming_matches(tournament, guild_id),
+    announce_match_result(tournament.guild_id, tournament, match_id),
+    discord.guild_member_role_unassign(tournament.guild_id, tournament.matches[match_id].referee, tournament.role_referee),
+    announce_upcoming_matches(tournament),
   ]);
   
   if (tournament.matches.every(match => match.winner != null)) {
     await announce_tournament_result(tournament);
-    await get_all_involved_users(tournament).then(users => users.map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby)).catch(e => {}));
+    await get_all_involved_users(tournament).then(users => users.map(user_id => discord.guild_member_move(tournament.guild_id, user_id, tournament.lobby)).catch(e => {}));
   }
 }
 
-async function announce_match_started(guild_id, tournament, match_id) {
+async function announce_match_started(tournament, match_id) {
   return Promise.all([
       Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master,
         `Match ${match_id}, `
         + `**${tournament.teams[tournament.matches[match_id].team1].name}** vs **${tournament.teams[tournament.matches[match_id].team2].name}**,`
         + ' has been started.'
       ))),
-      update_referee_interaction(guild_id, tournament, match_id),
+      update_referee_interaction(tournament.guild_id, tournament, match_id),
       discord.try_dms(tournament.matches[match_id].referee, 'The match you referee\'d has been started.')
     ]);
 }
 
-async function announce_match_aborted(guild_id, tournament, match_id) {
+async function announce_match_aborted(tournament, match_id) {
   return Promise.all([
       Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master,
         `Match ${match_id}, `
         + `**${tournament.teams[tournament.matches[match_id].team1].name}** vs **${tournament.teams[tournament.matches[match_id].team2].name}**,`
         + ' has been aborted.'
       ))),
-      update_referee_interaction(guild_id, tournament, match_id),
+      update_referee_interaction(tournament, match_id),
       discord.try_dms(tournament.matches[match_id].referee, 'The match you referee\'d has been aborted.')
     ]);
 }
@@ -384,9 +386,9 @@ async function announce_match_result(tournament, match_id) {
         + `**${tournament.teams[tournament.matches[match_id].team1].name}** vs **${tournament.teams[tournament.matches[match_id].team2].name}**,`
         + ' has been completed.'
       ))),
-      update_referee_interaction(guild_id, tournament, match_id),
+      update_referee_interaction(tournament, match_id),
       discord.try_dms(tournament.matches[match_id].referee, 'The match you referee\'d has been completed.'),
-      discord.post(tournament.channel, 
+      discord.post(tournament.channel_id, 
         `Match ${match_id}, `
         + `**${tournament.teams[tournament.matches[match_id].team1].name}** vs **${tournament.teams[tournament.matches[match_id].team2].name}**`
         + ` in **${tournament.locations[tournament.matches[match_id].location]}**, has been completed. `
@@ -395,7 +397,7 @@ async function announce_match_result(tournament, match_id) {
     ]);
 }
 
-async function announce_upcoming_matches(tournament, guild_id) {
+async function announce_upcoming_matches(tournament) {
   let active_users = new Set()
   for (let match of tournament.matches) {
     if (match.winner) continue;
@@ -409,9 +411,9 @@ async function announce_upcoming_matches(tournament, guild_id) {
     if (!active_users.has(match.referee)) {
       await discord.try_dms(match.referee, `Next up, you are the referee in match ${match.id}: **${tournament.teams[match.team1].name}** vs **${tournament.teams[match.team2].name}** in **${tournament.locations[match.location]}**.`);
       if (next) {
-        await discord.guild_member_role_assign(guild_id, match.referee, tournament.role_referee);
+        await discord.guild_member_role_assign(tournament.guild_id, match.referee, tournament.role_referee);
         await discord.try_dms(match.referee, `All players are free, pls check if they are ready and start the match when they are.`);
-        await update_referee_interaction(guild_id, tournament, match.id);
+        await update_referee_interaction(tournament.guild_id, tournament, match.id);
       } else {
         await discord.try_dms(match.referee, `Not all players are free yet, you will be notified.`);
       }
@@ -427,7 +429,7 @@ async function announce_upcoming_matches(tournament, guild_id) {
         );
     }
     if (next) {
-      await discord.post(tournament.channel,
+      await discord.post(tournament.channel_id,
         `Next up is match ${match.id}: `
         + `**${tournament.teams[match.team1].name}** (` + tournament.teams[match.team1].players.map(player => `<@${player}>`).join(', ') + `)`
         + ` vs `
@@ -453,11 +455,11 @@ async function announce_tournament_result(tournament) {
           + `!`
         )))),
       //TODO replace with pretty embed!
-      discord.post(tournament.channel, `\n**THE TOURNAMENT HAS BEEN COMPLETED**\n\n${score_string}\n\nThank you all for participating.`)
+      discord.post(tournament.channel_id, `\n**THE TOURNAMENT HAS BEEN COMPLETED**\n\n${score_string}\n\nThank you all for participating.`)
     ]);
 }
 
-async function update_referee_interaction(guild_id, tournament, match_id) {
+async function update_referee_interaction(tournament, match_id) {
   let match = tournament.matches[match_id];
   let text = `Match **${tournament.teams[match.team1].name}** vs **${tournament.teams[match.team1].name}**`;
   if (match.winner) {
@@ -470,7 +472,7 @@ async function update_referee_interaction(guild_id, tournament, match_id) {
   } else {
     tournament.interaction_id = await discord.post(channel_id, text, undefined, true, [], components).then(message => message.id);
   }
-  await write(guild_id, tournament);
+  await write(tournament);
 }
 
 async function create_referee_components(tournament, match_id) {
@@ -486,7 +488,7 @@ async function create_referee_components(tournament, match_id) {
 }
 
 async function get_all_interested_users(tournament) {
-  return discord.scheduledevent_users_list(guild_id, tournament.event).then(users => users.map(user => user.id));
+  return discord.scheduledevent_users_list(tournament.guild_id, tournament.event).then(users => users.map(user => user.id));
 }
 
 async function get_all_active_players(tournament) {
