@@ -240,10 +240,10 @@ async function prepare(guild_id, user_id) {
   await Promise.all([
     // create pretty embed about the schedule
     discord.post(tournament.channel_id, '\**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n<@&' + tournament.role + '> **JOIN NOW**'),
-    Promise.all(get_all_involved_users(tournament).map(user_id => discord.guild_member_move(tournament.guild_id, user_id, tournament.lobby).catch(ex => {}))),
-    Promise.all(get_all_involved_users(tournament).map(user_id => discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for updates.')
+    Promise.all(get_all_involved_users(tournament).then(user_ids => user_ids.map(user_id => discord.guild_member_move(tournament.guild_id, user_id, tournament.lobby).catch(ex => {})))),
+    Promise.all(get_all_involved_users(tournament).then(user_ids => user_ids.map(user_id => discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for updates.')
       .then(sent => sent ? undefined : discord.post('I cannot DM <@' + user_id + '>. To manage the tournament, pls allow me to send you messages (Settings -> Privacy & Safety -> Allow direct messages from server members).'))
-    ))
+    )))
   ]);
 }
 
@@ -273,10 +273,10 @@ async function start(guild_id, user_id) {
   await discord.post(tournament.channel_id, '\**THE TOURNAMENT HAS STARTED**');
   await announce_upcoming_matches(tournament);
 
-  await Promise.all(get_all_active_players(tournament).map(player => 
+  await Promise.all(get_all_active_players(tournament).then(players => players.map(player => 
     discord.guild_member_move(tournament.guild_id, player, team.channel)
       .catch(e => Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Player <@${player}> is not connected to any voice channel. Pls verify.`))))
-  ));
+  )));
 }
 
 async function on_interaction(guild_id, user_id, interaction_id, interaction_token, data) {
@@ -516,7 +516,7 @@ async function get_all_active_players(tournament) {
 }
 
 async function get_all_involved_users(tournament) {
-  return Array.from(new Set(tournament.game_masters.concat(get_all_active_players(tournament)).concat(get_all_interested_users(tournament))));
+  return Array.from(new Set(tournament.game_masters.concat(await get_all_active_players(tournament))));
 }
 
 function compute_scores(tournament) {
