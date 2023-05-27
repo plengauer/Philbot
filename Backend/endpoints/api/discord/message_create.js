@@ -661,7 +661,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let locations = tokens[3].split(';').map(location => location.trim());
     let length = parseInt(tokens[4].trim());
     return tournament.create(guild_id, name, category, channel, game_masters, team_size, locations, length)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
+      .then(() => reactOK(channel_id, event_id))
+      .catch(_ => reactNotOK(channel_id, event_id));
 
   } else if (message.startsWith('tournament define team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -672,7 +673,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let players = message.substring(split + 1, message.length).split(' ').filter(token => token.length > 0).map(mention => discord.parse_mention(mention));
     if (name.length == 0 || players.some(player => !player)) return reactNotOK(channel_id, event_id);
     return tournament.define_team(guild_id, user_id, name, players)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
+      .then(() => reactOK(channel_id, event_id))
+      .catch(_ => reactNotOK(channel_id, event_id));
     
   } else if (message.startsWith('tournament dissolve team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -680,7 +682,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let id = parseInt(message.trim());
     if (isNaN(id)) return discord.respond(channel_id, event_id, 'You must refer to a team by its id.');
     return tournament.dissolve_team(guild_id, user_id, id)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
+      .then(() => reactOK(channel_id, event_id))
+      .catch(_ => reactNotOK(channel_id, event_id));
         
   } else if (message.startsWith('tournament replace ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -688,43 +691,20 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let players = message.split(' ').filter(token => token.length > 0).map(mention => discord.parse_mention(mention));
     if (players.length != 2) return discord.respond(channel_id, event_id, 'You must specify exactly two players.');
     return tournament.replace_player(guild_id, user_id, players[0], players[1])
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
+      .then(() => reactOK(channel_id, event_id))
+      .catch(_ => reactNotOK(channel_id, event_id));
     
   } else if (message === 'tournament prepare') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     return tournament.prepare(guild_id, user_id)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
+      .then(() => reactOK(channel_id, event_id))
+      .catch(_ => reactNotOK(channel_id, event_id));
     
   } else if (message === 'tournament start') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     return tournament.start(guild_id, user_id)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
-    
-  } else if (message.startsWith('tournament start match ')) {
-    guild_id = guild_id ?? await resolveGuildID(user_id);
-    message = message.split(' ').slice(3).join(' ');
-    let match_id = parseInt(message.trim());
-    if (isNaN(match_id)) return discord.respond(channel_id, event_id, 'You must refer to the match by its id.');
-    return tournament.match_started(guild_id, user_id, match_id)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
-      
-  } else if (message.startsWith('tournament abort match ')) {
-    guild_id = guild_id ?? await resolveGuildID(user_id);
-    message = message.split(' ').slice(3).join(' ');
-    let match_id = parseInt(message.trim());
-    if (isNaN(match_id)) return discord.respond(channel_id, event_id, 'You must refer to the match by its id.');
-    return tournament.match_aborted(guild_id, user_id, match_id)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
-
-  } else if (message.startsWith('tournament complete match ')) {
-    message = message.split(' ').slice(3).join(' ');
-    let tokens = message.split(' ');
-    let ids = tokens.filter(token => token.length > 0).map(token => parseInt(token));
-    let match_id = ids[0];
-    let winner = ids[1];
-    if (isNaN(match_id) || isNaN(winner)) return discord.respond(channel_id, event_id, 'You must refer to the match and the team by its id.');
-    return tournament.match_completed(guild_id, user_id, match_id, winner)
-      .then(ok => ok ? reactOK(channel_id, event_id) : reactNotOK(channel_id, event_id));
+      .then(() => reactOK(channel_id, event_id))
+      .catch(_ => reactNotOK(channel_id, event_id));
       
   } else if (message.startsWith('configure League of Legends ')) {
     message = message.substring('configure League of Legends '.length);

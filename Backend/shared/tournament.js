@@ -44,13 +44,11 @@ async function create(guild_id, name, game_masters, team_size, locations, length
   };
   await write(guild_id, tournament);
   await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been created. Pls edit the event to the correct time and share it ` + discord.scheduledevent_link_create(guild_id, event) + '.')));
-  return true;
 }
 
 async function _delete(guild_id, user_id) {
   await write(guild_id, null);
   await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been deleted.`)));
-  return true;
 }
 
 function random_int(limit) {
@@ -132,26 +130,25 @@ function create_matches(length, locations, teams, players_per_team, referees) {
 
 async function define_team(guild_id, user_id, name, players) {
   let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (!tournament.game_masters.includes(user_id)) return false;
+  if (!tournament) throw new Error();
+  if (!tournament.game_masters.includes(user_id)) throw new Error();
   let all_players = await get_all_involved_users(tournament);
-  if (players.some(player => !all_players.includes(player))) return false;
-  if (tournament.active) return false;
-  if (tournament.teams.some(team => team.players.some(player => players.includes(player)))) return false;
+  if (players.some(player => !all_players.includes(player))) throw new Error();
+  if (tournament.active) throw new Error();
+  if (tournament.teams.some(team => team.players.some(player => players.includes(player)))) throw new Error();
   let id = tournament.teams.length;
   tournament.teams.push({id: id, name: name, players: players});
   recompute_matches(tournament);
   await write(guild_id, tournament);
   await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Team ${id} "${name}" has been defined as ` + players.map(player => `<@${player}>`).join(', ') + `, the schedule has been adjusted.`)));
-  return true;
 }
 
 async function dissolve_team(guild_id, user_id, id) {
   let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (!tournament.game_masters.includes(user_id)) return false;
-  if (tournament.active) return false; //TODO in theory we could do that and just provide automatic wins ...
-  if (id < 0 || id >= tournament.teams.length) return false;
+  if (!tournament) throw new Error();
+  if (!tournament.game_masters.includes(user_id)) throw new Error();
+  if (tournament.active) throw new Error(); //TODO in theory we could do that and just provide automatic wins ...
+  if (id < 0 || id >= tournament.teams.length) throw new Error();
   let team = tournament.teams[id];
   tournament.teams = tournament.teams.slice(0, id).concat(tournament.teams.slice(id + 1, tournament.teams.length));
   for (let id = 0; id < tournament.teams.length; id++) tournament.teams[id].id = id;
@@ -160,7 +157,6 @@ async function dissolve_team(guild_id, user_id, id) {
   for (let game_master of tournament.game_masters) {
     await discord.try_dms(game_master, `Team ${team.id} "${team.name}" has been dissolved (` + team.players.map(player => `<@${player}>`).join(', ') + `), the schedule has been adjusted.`);
   }
-  return true;
 }
 
 function recompute_matches(tournament) {
@@ -173,11 +169,11 @@ function recompute_matches(tournament) {
 
 async function replace_player(guild_id, user_id, player_replaced, player_replacing) {
   let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (!tournament.game_masters.includes(user_id)) return false;
+  if (!tournament) throw new Error();
+  if (!tournament.game_masters.includes(user_id)) throw new Error();
   let all_players = await get_all_interested_users(tournament);
-  if (!all_players.includes(player_replacing)) return false;
-  if (player_replaced == player_replacing) return true;
+  if (!all_players.includes(player_replacing)) throw new Error();
+  if (player_replaced == player_replacing) throw new Error();
   for (let team of tournament.teams) {
     if (!team.players.includes(player_replaced)) continue;
     team.players = team.players.map(p => p == player_replaced ? player_replacing : p);
@@ -190,15 +186,14 @@ async function replace_player(guild_id, user_id, player_replaced, player_replaci
     match.referee = match.referee == player_replaced ? player_replacing : match.referee;
   }
   await write(guild_id, tournament);
-  return true;
 }
 
 //TODO remove player that drops out, grant wins to all opponents in the past and auto wins into the future
 
 async function prepare(guild_id, user_id) {
   let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (!tournament.game_masters.includes(user_id)) return false;
+  if (!tournament) throw new Error();
+  if (!tournament.game_masters.includes(user_id)) throw new Error();
   if (tournament.teams.some(team => team.players.length != tournament.team_size)) {
     let text = 'Cannot prepare the tournament, not all teams are full. '
       + 'Incomplete teams are: ' + tournament.teams
@@ -210,11 +205,11 @@ async function prepare(guild_id, user_id) {
         .map(player => `<@${player}>`)
         .join(', ') + '.';
     await Promise.all(tournament.game_masters.map(game_master => discord.post(game_master, text)));
-    return false;
+    throw new Error();
   }
   if (tournament.matches.length == 0) {
     await Promise.all(tournament.game_masters.map(game_master => discord.post(game_master, 'Cannot prepare the tournament, schedule is empty.')));
-    return false;
+    throw new Error();
   }
 
   // create roles
@@ -248,8 +243,6 @@ async function prepare(guild_id, user_id) {
       .then(sent => sent ? undefined : discord.post('I cannot DM <@' + user_id + '>. To manage the tournament, pls allow me to send you messages (Settings -> Privacy & Safety -> Allow direct messages from server members).'))
     ))
   ]);
-
-  return true;
 }
 
 async function create_channel(guild_id, category, name, listen_roles = [], speak_roles = [], admin_roles = []) {
@@ -269,9 +262,9 @@ async function create_role(guild_id, name) {
 
 async function start(guild_id, user_id) {
   let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (!tournament.game_masters.includes(user_id)) return false;
-  if (tournament.active) return true;
+  if (!tournament) throw new Error();
+  if (!tournament.game_masters.includes(user_id)) throw new Error();
+  if (tournament.active) throw new Error();
 
   tournament.active = true;
   await write(guild_id, tournament);
@@ -282,9 +275,8 @@ async function start(guild_id, user_id) {
     discord.guild_member_move(guild_id, player, team.channel)
       .catch(e => Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Player <@${player}> is not connected to any voice channel. Pls verify.`))))
   ));
-
-  return true;
 }
+
 async function on_interaction(guild_id, channel_id, message_id, interaction_id, interaction_token, data) {
   if (data.custom_id.startsWith(`tournament.referee.`)) {
     let match_id = data.custom_id.split('.')[2];
@@ -301,10 +293,10 @@ async function on_interaction(guild_id, channel_id, message_id, interaction_id, 
 
 async function match_start(guild_id, user_id, match_id) {
   let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (!tournament.active) return false;
-  if (match_id < 0 || tournament.matches.length <= match_id) return false;
-  if (tournament.matches[match_id].referee != user_id && !tournament.game_masters.includes(user_id)) return false;
+  if (!tournament) throw new Error();
+  if (!tournament.active) throw new Error();
+  if (match_id < 0 || tournament.matches.length <= match_id) throw new Error();
+  if (tournament.matches[match_id].referee != user_id && !tournament.game_masters.includes(user_id)) throw new Error();
 
   tournament.matches[match_id].active = true;
   await write(guild_id, tournament);
@@ -320,33 +312,30 @@ async function match_start(guild_id, user_id, match_id) {
         .catch(e => discord.try_dms(tournament.matches[match_id].referee, `Player <@${player}> is not connected to any voice channel. Pls verify and restart the match if needed.`))
     ))
   ]);
-
-  return true;
 }
 
 async function match_abort(guild_id, user_id, match_id) {
   let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (!tournament.active) return false;
-  if (match_id < 0 || tournament.matches.length <= match_id) return false;
-  if (tournament.matches[match_id].referee != user_id && !tournament.game_masters.includes(user_id)) return false;
-  if (!tournament.matches[match_id].active) return false;
+  if (!tournament) throw new Error();
+  if (!tournament.active) throw new Error();
+  if (match_id < 0 || tournament.matches.length <= match_id) throw new Error();
+  if (tournament.matches[match_id].referee != user_id && !tournament.game_masters.includes(user_id)) throw new Error();
+  if (!tournament.matches[match_id].active) throw new Error();
 
   tournament.matches[match_id].active = false;
   await write(guild_id, tournament);
   await announce_match_aborted(guild_id, tournament, match_id);
-  return true;
 }
 
 async function match_complete(guild_id, user_id, match_id, team_id_winner) {
   let tournament = await read(guild_id);
-  if (!tournament) return false;
-  if (!tournament.active) return false;
-  if (match_id < 0 || tournament.matches.length <= match_id) return false;
-  if (team_id_winner < 0 || tournament.teams.length <= team_id_winner) return false;
-  if (tournament.matches[match_id].referee != user_id && !tournament.game_masters.includes(user_id)) return false;
-  if (!tournament.matches[match_id].active) return false;
-  if (tournament.matches[match_id].winner && !tournament.game_masters.includes(user_id)) return false;
+  if (!tournament) throw new Error();
+  if (!tournament.active) throw new Error();
+  if (match_id < 0 || tournament.matches.length <= match_id) throw new Error();
+  if (team_id_winner < 0 || tournament.teams.length <= team_id_winner) throw new Error();
+  if (tournament.matches[match_id].referee != user_id && !tournament.game_masters.includes(user_id)) throw new Error();
+  if (!tournament.matches[match_id].active) throw new Error();
+  if (tournament.matches[match_id].winner && !tournament.game_masters.includes(user_id)) throw new Error();
 
   tournament.matches[match_id].active = false;
   tournament.matches[match_id].winner = team_id_winner;
@@ -362,8 +351,6 @@ async function match_complete(guild_id, user_id, match_id, team_id_winner) {
     await announce_tournament_result(tournament);
     await get_all_involved_users(tournament).then(users => users.map(user_id => discord.guild_member_move(guild_id, user_id, tournament.lobby)).catch(e => {}));
   }
-
-  return true;
 }
 
 async function announce_match_started(guild_id, tournament, match_id) {
