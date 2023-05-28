@@ -879,10 +879,29 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
   
   } else if (message.startsWith('personality ')) {
     message = message.split(' ').slice(1).join(' ').trim();
+    if (!message.includes(':')) return reactNotOK(channel_id, event_id);    
+    let scope = message.substring(0, message.indexOf(':'));
+    let personality = message.substring(messge.indexOf(':') + 1, message.length);
+    if (personality.length == 0) return reactNotOK(channel_id, event_id);
     guild_id = guild_id ?? await resolveGuildID(user_id);
+    let key = 'ai:personality:';
+    switch(scope) {
+      case 'server':
+        if (!guild_id) reactNotOK(channel_id, event_id);
+        if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'define AI personality for server');
+        key += `guild:${guild_id}`;
+        break;
+      case 'channel':
+        if (guild_id && !await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'define AI personality for channel');
+        key += `channel:${channel_id}`;
+        break;
+      case 'user':
+        key += `user:${user_id}`;
+        break;
+      default:
+        return respond(channel_id, event_id, 'You need to define the scope of the personality (one of "server", "channel", or "user")!');
+    }
     if (guild_id && !await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'define AI personality');
-    if (message.length == 0) return reactNotOK(channel_id, event_id);
-    const key = 'ai:personality:' + (guild_id ? `guild:${guild_id}` : `channel:${channel_id}`);
     return (message.toLowerCase() == 'reset' ? memory.unset(key) : memory.set(key, message))
       .then(() => reactOK(channel_id, event_id));
     
@@ -919,7 +938,9 @@ async function createAIContext(guild_id, channel_id, user_id, user_name, message
   let system_message = `My name is ${my_name}. I am a Discord bot.`;
 
   // personality
-  let personality = await memory.get(`ai:personality:channel:${channel_id}`, guild_id ? await memory.get(`ai:personality:guild:${guild_id}`, null) : null);
+  let personality = await memory.get(`ai:personality:channel:${channel_id}`, null)
+    ?? (guild_id ? await memory.get(`ai:personality:guild:${guild_id}`, null) : null)
+    ?? await memory.get(`ai:personality:user:${user_id}`, null);
   if (personality) {
     if (!personality.match(/.*[\.\?\!]$/)) personality += '.';
     system_message += ' ' + personality;
