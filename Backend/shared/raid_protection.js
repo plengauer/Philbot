@@ -116,16 +116,12 @@ async function on_guild_message_create_for_scam_protection_0(guild_id, channel_i
   const key = `raid_protection:scam:guild:${guild_id}:user:${message.author.id}`;
   if (await memory.get(key, false)) return discord.message_delete(channel_id, message_id);
   let channel_ids = await discord.guild_channels_list(guild_id).then(channels => channels.map(channel => channel.id));
-  let count = 0;
-  let suspect_messages = [];
-  for (let channel_id of channel_ids) {
-    let messages = await discord.messages(channel_id).catch(_ => []);
-    messages = messages.filter(other_message => other_message.author.id == message.author.id);
-    messages = messages.filter(other_message => new Date(other_message.timestamp).getTime() > new Date(message.timestamp).getTime() - GUILD_MESSAGE_SCAM_TIMEFRAME);
-    messages = messages.filter(other_message => other_message.content == message.content);
-    suspect_messages = suspect_messages.concat(messages);
-  }
-  if (count < GUILD_MESSAGE_SCAM_COUNT) return;
+  let suspect_messages = (await Promise.all(channel_ids.map(channel_id => discord.messages(channel_id).catch(_ => []))))
+    .reduce((m1, m2) => m1.concat(m2), [])
+    .filter(other_message => other_message.author.id == message.author.id)
+    .filter(other_message => other_message.content == message.content)
+    .filter(other_message => new Date(other_message.timestamp).getTime() > new Date(message.timestamp).getTime() - GUILD_MESSAGE_SCAM_TIMEFRAME);
+  if (suspect_messages.length < GUILD_MESSAGE_SCAM_COUNT) return;
   return Promise.all([
     memory.set(key, true, 60 * 5),
     notify_scam(guild_id),
