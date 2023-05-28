@@ -887,7 +887,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let key = 'ai:personality:';
     switch(scope) {
       case 'server':
-        if (!guild_id) reactNotOK(channel_id, event_id);
+        if (!guild_id) return reactNotOK(channel_id, event_id);
         if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'define AI personality for server');
         key += `guild:${guild_id}`;
         break;
@@ -899,7 +899,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
         key += `user:${user_id}`;
         break;
       default:
-        return respond(channel_id, event_id, 'You need to define the scope of the personality (one of "server", "channel", or "user")!');
+        return discord.respond(channel_id, event_id, 'You need to define the scope of the personality (one of "server", "channel", or "user")!');
     }
     return (message.toLowerCase() == 'reset' ? memory.unset(key) : memory.set(key, message))
       .then(() => reactOK(channel_id, event_id));
