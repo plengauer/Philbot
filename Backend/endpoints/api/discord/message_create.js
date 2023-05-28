@@ -901,7 +901,6 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       default:
         return respond(channel_id, event_id, 'You need to define the scope of the personality (one of "server", "channel", or "user")!');
     }
-    if (guild_id && !await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'define AI personality');
     return (message.toLowerCase() == 'reset' ? memory.unset(key) : memory.set(key, message))
       .then(() => reactOK(channel_id, event_id));
     
