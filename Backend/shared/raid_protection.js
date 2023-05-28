@@ -119,7 +119,7 @@ async function on_guild_message_create_for_scam_protection_0(guild_id, channel_i
   let count = 0;
   let suspect_messages = [];
   for (let channel_id of channel_ids) {
-    let messages = await discord.messages(channel_id);
+    let messages = await discord.messages(channel_id).catch(_ => []);
     messages = messages.filter(other_message => other_message.author.id == message.author.id);
     messages = messages.filter(other_message => new Date(other_message.timestamp).getTime() > new Date(message.timestamp).getTime() - GUILD_MESSAGE_SCAM_TIMEFRAME);
     messages = messages.filter(other_message => other_message.content == message.content);
