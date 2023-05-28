@@ -42,15 +42,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     mentioned = true;
     message = message.substring(message.indexOf('>') + 1).trim();
   } else if (guild_id && message.startsWith('<@&')) {
-    let role = undefined;
-    let roles = await discord.guild_roles_list(guild_id);
-    for (let index = 0; index < roles.length; index++) {
-      if (roles[index].name === me.username) {
-        role = roles[index];
-        break;
-      }
-    }
-    mentioned = role && message.startsWith(`<@&${role.id}>`);
+    mentioned = (await discord.guild_member_retrieve(guild_id, me.id)).roles.some(role_id => message.startsWith(discord.mention_role(role_id)));
     if (mentioned) message = message.substring(message.indexOf('>') + 1).trim();
   } else {
     mentioned = !guild_id && user_id != me.id;
