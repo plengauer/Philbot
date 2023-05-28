@@ -395,7 +395,7 @@ function guild_member_has_permission_0(guild, roles, member, permission) {
 }
 
 async function HTTP(endpoint, method, payload = undefined, ttc = undefined) {
-  return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` }, cache: ttc ?? 10 });
+  return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` }, cache: ttc });
 }
 
 async function GATEWAY_HTTP(endpoint, method, guild_id, payload = undefined, ttc = undefined) {
