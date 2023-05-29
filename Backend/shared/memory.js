@@ -145,8 +145,8 @@ async function toString(resolve, includes = [], excludes = []) {
     }
     for (let id in dictionary) {
       let resolved = `${dictionary[id]}-${id}`;
-      key = key.replace(id, resolved);
-      value = value.replace(id, resolved);
+      key = key.replace(new RegExp(id, 'g'), resolved);
+      value = value.replace(new RegExp(id, 'g'), resolved);
     }
     let line = `${key}=${value}`;
     if (includes.every(include => line.includes(include)) && excludes.every(exclude => !line.includes(exclude))) {
