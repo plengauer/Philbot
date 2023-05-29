@@ -26,10 +26,12 @@ async function create(guild_id, name, date, game_masters, team_size, locations, 
 }
 
 async function create_0(guild_id, name, date, game_masters, team_size, locations, length) {
+  let tournament = await read(guild_id);
+  if (tournament) throw new Error();
   let category = await discord.guild_channel_create(guild_id, name, undefined, 4).then(category => category.id);
   let channel = await discord.guild_channel_create(guild_id, 'general', category, 0).then(channel => channel.id);
   let event = await discord.scheduledevent_create(guild_id, null, name, '', date).then(event => event.id);
-  let tournament = {
+  tournament = {
     name: name,
     guild_id: guild_id,
     category_id: category,
@@ -43,7 +45,7 @@ async function create_0(guild_id, name, date, game_masters, team_size, locations
     matches: []
   };
   await write(tournament);
-  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been created. Pls edit the event to the correct time and share it ` + discord.scheduledevent_link_create(guild_id, tournament.event_id) + '.')));
+  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `The tournament **${tournament.name}** has been created. Pls share the event ` + discord.scheduledevent_link_create(guild_id, tournament.event_id) + ' to register.')));
 }
 
 async function _delete(guild_id, user_id) {
