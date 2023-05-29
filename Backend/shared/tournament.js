@@ -240,7 +240,7 @@ async function prepare_0(guild_id, user_id) {
     // adjust event to the right channel
     await discord.scheduledevent_update_location(guild_id, tournament.event_id, tournament.lobby_channel_id);
   } catch (error) {
-    for (let channel_id of [ tournament.lobby_channel_id ].concat(teams.map(team => team.channel_id)).filter(channel_id => !!channel_id)) {
+    for (let channel_id of [ tournament.lobby_channel_id ].concat(tournament.teams.map(team => team.channel_id)).filter(channel_id => !!channel_id)) {
       await discord.guild_channel_delete(guild_id, channel_id).catch(_ => {});
     }
     for (let role_id of [ tournament.role_id, tournament.role_id_master, tournament.role_id_referee ].concat(tournament.teams.map(team => team.role_id)).filter(role_id => !!role_id)) {
