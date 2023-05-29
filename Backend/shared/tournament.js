@@ -163,7 +163,6 @@ async function dissolve_team_0(guild_id, user_id, name) {
   if (!tournament) throw new Error();
   if (!tournament.game_masters.includes(user_id)) throw new Error();
   if (tournament.active) throw new Error(); //TODO in theory we could do that and just provide automatic wins ...
-  let team = tournament.teams[id];
   tournament.teams = tournament.teams.filter(team => team.name != name);
   for (let id = 0; id < tournament.teams.length; id++) tournament.teams[id].id = id;
   recompute_matches(tournament);
