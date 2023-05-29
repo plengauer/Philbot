@@ -210,48 +210,68 @@ async function prepare_0(guild_id, user_id) {
   }
 
   // create roles
-  await Promise.all([
-    create_role(tournament.guild_id, tournament.name).then(role_id => tournament.role_id = role_id),
-    create_role(tournament.guild_id, `${tournament.name} Game Master`).then(role_id => tournament.role_id_master = role_id),
-    create_role(tournament.guild_id, `${tournament.name} Referee`).then(role_id => tournament.role_id_referee = role_id),
-    Promise.all(tournament.teams.map(team => create_role(tournament.guild_id, `${tournament.name} Team ${team.name}`).then(role_id => team.role_id = role_id)))
-  ]);
+  tournament.role_id = await create_role(tournament.guild_id, tournament.name);
+  tournament.role_id_master = await create_role(tournament.guild_id, `${tournament.name} Game Master`);
+  tournament.role_id_referee = await create_role(tournament.guild_id, `${tournament.name} Referee`);
+  for (let team of tournament.teams) {
+    team.role_id = await create_role(tournament.guild_id, `${tournament.name} Team ${team.name}`);
+  }
 
   // create all channels
-  await Promise.all([
-    create_channel(tournament.guild_id, tournament.category_id, 'Lobby', [ tournament.role_id ], [ tournament.role_id ], [ tournament.role_id_master ]).then(channel_id => tournament.lobby_channel_id = channel_id),
-    Promise.all(tournament.teams.map(team => create_channel(tournament.guild_id, tournament.category_id, `Team ${team.name}`, [ tournament.role_id ], [ team.role_id ], [ tournament.role_id_referee, tournament.role_id_master ]).then(channel_id => team.channel_id = channel_id)))
-  ]);
+  tournament.lobby_channel_id = await create_channel(tournament.guild_id, tournament.category_id, 'Lobby', [], [ tournament.role_id ], [ tournament.role_id_master ]);
+  for (let team of tournament.teams) {
+    team.channel_id = await create_channel(tournament.guild_id, tournament.category_id, `Team ${team.name}`, [ tournament.role_id ], [ team.role_id ], [ tournament.role_id_referee, tournament.role_id_master ]);
+  }
 
-  // assign roles to the right people, and change event
-  await Promise.all([
-    write(tournament),
-    discord.scheduledevent_update_location(guild_id, tournament.event_id, tournament.lobby_channel_id),
-    get_all_involved_users(tournament).then(users => Promise.all(users.map(user => discord.guild_member_role_assign(tournament.guild_id, user, tournament.role_id)))),
-    get_all_active_players(tournament).then(players => Promise.all(players.map(player => discord.guild_member_role_assign(tournament.guild_id, player, team.role_id)))),
-    Promise.all(tournament.game_masters.map(user => discord.guild_member_role_assign(tournament.guild_id, user, tournament.role_id_master))),
-  ]);
-  
+  // assign roles to users
+  for (let user_id of await get_all_involved_users(tournament)) {
+    await discord.guild_member_role_assign(tournament.guild_id, user_id, tournament.role_id);
+  }
+  for (let team of tournament.teams) {
+    for (let player of team.players) {
+      await discord.guild_member_role_assign(tournament.guild_id, player, team.role_id);
+    }
+  }
+  for (let game_master of tournament.game_masters) {
+    await discord.guild_member_role_assign(tournament.guild_id, game_master, tournament.role_id_master);
+  }
+
+  // adjust event to the right channel
+  await discord.scheduledevent_update_location(guild_id, tournament.event_id, tournament.lobby_channel_id);
+
+  // save all the work
+  write(tournament);
+
   // announce
-  await Promise.all([
-    // create pretty embed about the schedule
-    discord.post(tournament.channel_id, '\**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n<@&' + tournament.role_id + '> **JOIN NOW**'),
-    Promise.all(get_all_involved_users(tournament).then(user_ids => user_ids.map(user_id => discord.guild_member_move(tournament.guild_id, user_id, tournament.lobby_channel_id).catch(ex => {})))),
-    Promise.all(get_all_involved_users(tournament).then(user_ids => user_ids.map(user_id => discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for updates.')
-      .then(sent => sent ? undefined : discord.post('I cannot DM <@' + user_id + '>. To manage the tournament, pls allow me to send you messages (Settings -> Privacy & Safety -> Allow direct messages from server members).'))
-    )))
-  ]);
+  await discord.post(tournament.channel_id, '**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n<@&' + tournament.role_id + '> **JOIN NOW**');
+
+  // broadcast message to all users
+  for (let user_id of await get_all_involved_users()) {
+    let sent = await discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for personalized updates right in this channel.');
+    if (!sent) {
+      await discord.post(tournament.channel_id, 'I cannot DM <@' + user_id + '>. To manage the tournament, pls allow me to send you personalized messages (Settings -> Privacy & Safety -> Allow direct messages from server members).');
+    }
+  }
+
+  // move people that are already in the server
+  for (let user_id of await get_all_involved_users(tournament)) {
+    await discord.guild_member_move(tournament.guild_id, user_id, tournament.lobby_channel_id).catch(_ => {});
+  }
 }
 
 async function create_channel(guild_id, category, name, listen_roles = [], speak_roles = [], admin_roles = []) {
-  return discord.guild_channel_create(guild_id, name, category, 2)
-    .then(result => result.id)
-    .then(channel_id => Promise.all([
-        discord.guild_channel_permission_overwrite(channel_id, guild_id, undefined, permissions.compile(permissions.all())),
-        Promise.all(listen_roles.map(role_id => discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT']), undefined))),
-        Promise.all( speak_roles.map(role_id => discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT', 'SPEAK', 'STREAM']), undefined))),
-        Promise.all( admin_roles.map(role_id => discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT', 'SPEAK', 'STREAM', 'MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'KICK_MEMBERS', 'MOVE_MEMBERS']), undefined)))
-      ]).then(() => channel_id));
+  let channel_id = await discord.guild_channel_create(guild_id, name, category, 2).then(channel => channel.id);
+  await discord.guild_channel_permission_overwrite(channel_id, guild_id, undefined, permissions.compile(permissions.all()));
+  for (let role_id of listen_roles) {
+    await discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT']), undefined);
+  }
+  for (let role_id of speak_roles) {
+    await discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT', 'SPEAK', 'STREAM']), undefined);
+  }
+  for (let role_id of admin_roles) {
+    await discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT', 'SPEAK', 'STREAM', 'MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'MOVE_MEMBERS']), undefined);
+  }
+  return channel_id;
 }
 
 async function create_role(guild_id, name) {
