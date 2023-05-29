@@ -672,9 +672,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
   } else if (message.startsWith('tournament dissolve team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     message = message.split(' ').slice(3).join(' ');
-    let id = parseInt(message.trim());
-    if (isNaN(id)) return discord.respond(channel_id, event_id, 'You must refer to a team by its id.');
-    return tournament.dissolve_team(guild_id, user_id, id)
+    let name = message.trim();
+    return tournament.dissolve_team(guild_id, user_id, name)
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
         
