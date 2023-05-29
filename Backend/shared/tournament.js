@@ -209,35 +209,45 @@ async function prepare_0(guild_id, user_id) {
     throw new Error();
   }
 
-  // create roles
-  tournament.role_id = await create_role(tournament.guild_id, tournament.name);
-  tournament.role_id_master = await create_role(tournament.guild_id, `${tournament.name} Game Master`);
-  tournament.role_id_referee = await create_role(tournament.guild_id, `${tournament.name} Referee`);
-  for (let team of tournament.teams) {
-    team.role_id = await create_role(tournament.guild_id, `${tournament.name} Team ${team.name}`);
-  }
-
-  // create all channels
-  tournament.lobby_channel_id = await create_channel(tournament.guild_id, tournament.category_id, 'Lobby', [], [ tournament.role_id ], [ tournament.role_id_master ]);
-  for (let team of tournament.teams) {
-    team.channel_id = await create_channel(tournament.guild_id, tournament.category_id, `Team ${team.name}`, [ tournament.role_id ], [ team.role_id ], [ tournament.role_id_referee, tournament.role_id_master ]);
-  }
-
-  // assign roles to users
-  for (let user_id of await get_all_involved_users(tournament)) {
-    await discord.guild_member_role_assign(tournament.guild_id, user_id, tournament.role_id);
-  }
-  for (let team of tournament.teams) {
-    for (let player of team.players) {
-      await discord.guild_member_role_assign(tournament.guild_id, player, team.role_id);
+  try {
+    // create roles
+    tournament.role_id = await create_role(tournament.guild_id, tournament.name);
+    tournament.role_id_master = await create_role(tournament.guild_id, `${tournament.name} Game Master`);
+    tournament.role_id_referee = await create_role(tournament.guild_id, `${tournament.name} Referee`);
+    for (let team of tournament.teams) {
+      team.role_id = await create_role(tournament.guild_id, `${tournament.name} Team ${team.name}`);
     }
-  }
-  for (let game_master of tournament.game_masters) {
-    await discord.guild_member_role_assign(tournament.guild_id, game_master, tournament.role_id_master);
-  }
 
-  // adjust event to the right channel
-  await discord.scheduledevent_update_location(guild_id, tournament.event_id, tournament.lobby_channel_id);
+    // create all channels
+    tournament.lobby_channel_id = await create_channel(tournament.guild_id, tournament.category_id, 'Lobby', [], [ tournament.role_id ], [ tournament.role_id_master ]);
+    for (let team of tournament.teams) {
+      team.channel_id = await create_channel(tournament.guild_id, tournament.category_id, `Team ${team.name}`, [ tournament.role_id ], [ team.role_id ], [ tournament.role_id_referee, tournament.role_id_master ]);
+    }
+
+    // assign roles to users
+    for (let user_id of await get_all_involved_users(tournament)) {
+      await discord.guild_member_role_assign(tournament.guild_id, user_id, tournament.role_id);
+    }
+    for (let team of tournament.teams) {
+      for (let player of team.players) {
+        await discord.guild_member_role_assign(tournament.guild_id, player, team.role_id);
+      }
+    }
+    for (let game_master of tournament.game_masters) {
+      await discord.guild_member_role_assign(tournament.guild_id, game_master, tournament.role_id_master);
+    }
+
+    // adjust event to the right channel
+    await discord.scheduledevent_update_location(guild_id, tournament.event_id, tournament.lobby_channel_id);
+  } catch (error) {
+    for (let channel_id of [ tournament.lobby_channel_id ].concat(teams.map(team => team.channel_id)).filter(channel_id => !!channel_id)) {
+      await discord.guild_channel_delete(guild_id, channel_id).catch(_ => {});
+    }
+    for (let role_id of [ tournament.role_id, tournament.role_id_master, tournament.role_id_referee ].concat(tournament.teams.map(team => team.role_id)).filter(role_id => !!role_id)) {
+      await discord.guild_role_delete(guild_id, role_id).catch(_ => {});
+    }
+    throw error;
+  }
 
   // save all the work
   write(tournament);
@@ -260,16 +270,19 @@ async function prepare_0(guild_id, user_id) {
 }
 
 async function create_channel(guild_id, category, name, listen_roles = [], speak_roles = [], admin_roles = []) {
+  const listen_permissions = ['VIEW_CHANNELS', 'CONNECT'];
+  const speak_permissions = listen_permissions.concat(['SPEAK', 'STREAM']);
+  const admin_permissions = speak_permissions.concat(['MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'MOVE_MEMBERS']);
   let channel_id = await discord.guild_channel_create(guild_id, name, category, 2).then(channel => channel.id);
   await discord.guild_channel_permission_overwrite(channel_id, guild_id, undefined, permissions.compile(permissions.all()));
   for (let role_id of listen_roles) {
-    await discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT']), undefined);
+    await discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(listen_permissions), undefined);
   }
   for (let role_id of speak_roles) {
-    await discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT', 'SPEAK', 'STREAM']), undefined);
+    await discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(speak_permissions), undefined);
   }
   for (let role_id of admin_roles) {
-    await discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(['VIEW_CHANNELS', 'CONNECT', 'SPEAK', 'STREAM', 'MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'MOVE_MEMBERS']), undefined);
+    await discord.guild_channel_permission_overwrite(channel_id, role_id, permissions.compile(admin_permissions), undefined);
   }
   return channel_id;
 }
