@@ -167,9 +167,7 @@ async function dissolve_team_0(guild_id, user_id, name) {
   for (let id = 0; id < tournament.teams.length; id++) tournament.teams[id].id = id;
   recompute_matches(tournament);
   await write(tournament);
-  for (let game_master of tournament.game_masters) {
-    await discord.try_dms(game_master, `Team ${team.id} "${team.name}" has been dissolved (` + team.players.map(player => `<@${player}>`).join(', ') + `), the schedule has been adjusted.`);
-  }
+  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Team "${name}" has been dissolved (` + team.players.map(player => `<@${player}>`).join(', ') + `), the schedule has been adjusted.`)));
 }
 
 function recompute_matches(tournament) {
