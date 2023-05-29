@@ -256,7 +256,7 @@ async function prepare_0(guild_id, user_id) {
   await discord.post(tournament.channel_id, '**THE TOURNAMENT IS ABOUT TO BEGIN**\n\n<@&' + tournament.role_id + '> **JOIN NOW**');
 
   // broadcast message to all users
-  for (let user_id of await get_all_involved_users()) {
+  for (let user_id of await get_all_involved_users(tournament)) {
     let sent = await discord.try_dms(user_id, 'Hi. I will be your personal assistant for today\'s tournament. I will tell you when to be where. Stay tuned for personalized updates right in this channel.');
     if (!sent) {
       await discord.post(tournament.channel_id, 'I cannot DM <@' + user_id + '>. To manage the tournament, pls allow me to send you personalized messages (Settings -> Privacy & Safety -> Allow direct messages from server members).');
@@ -272,7 +272,7 @@ async function prepare_0(guild_id, user_id) {
 async function create_channel(guild_id, category, name, listen_roles = [], speak_roles = [], admin_roles = []) {
   const listen_permissions = ['VIEW_CHANNELS', 'CONNECT'];
   const speak_permissions = listen_permissions.concat(['SPEAK', 'STREAM']);
-  const admin_permissions = speak_permissions.concat(['MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'MOVE_MEMBERS']);
+  const admin_permissions = speak_permissions.concat(['USE_VAD', 'PRIORITY_SPEAKER', 'MUTE_MEMBERS', 'DEAFEN_MEMBERS', 'MOVE_MEMBERS']);
   let channel_id = await discord.guild_channel_create(guild_id, name, category, 2).then(channel => channel.id);
   await discord.guild_channel_permission_overwrite(channel_id, guild_id, undefined, permissions.compile(permissions.all()));
   for (let role_id of listen_roles) {
