@@ -653,9 +653,9 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let team_size = parseInt(tokens[3].trim());
     let locations = tokens[4].split(';').map(location => location.trim());
     let length = parseInt(tokens[5].trim());
-    return tournament.create(guild_id, name, date, category, channel, game_masters, team_size, locations, length)
+    return tournament.create(guild_id, name, date, game_masters, team_size, locations, length)
       .then(() => reactOK(channel_id, event_id))
-      .catch(_ => reactNotOK(channel_id, event_id));
+      .catch(error => discord.respond(channel_id, event_id, error.message));
 
   } else if (message.startsWith('tournament define team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);

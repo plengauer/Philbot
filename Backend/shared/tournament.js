@@ -21,8 +21,8 @@ async function locked(guild_id, func) {
   return synchronized.locked('tournament:guild:' + guild_id, () => func());
 }
 
-async function create(guild_id, name, game_masters, team_size, locations, length) {
-  return locked(guild_id, () => create_0(guild_id, name, game_masters, team_size, locations, length));
+async function create(guild_id, name, date, game_masters, team_size, locations, length) {
+  return locked(guild_id, () => create_0(guild_id, name, date, game_masters, team_size, locations, length));
 }
 
 async function create_0(guild_id, name, date, game_masters, team_size, locations, length) {
@@ -142,7 +142,7 @@ async function define_team_0(guild_id, user_id, name, players) {
   if (!tournament) throw new Error();
   if (!tournament.game_masters.includes(user_id)) throw new Error();
   let all_players = await get_all_interested_users(tournament);
-  if (players.some(player => !all_players.includes(player))) throw new Error();
+  if (players.some(player => !all_players.includes(player)) && !process.env.TOURNAMENT_INTERESTED_PLAYER_OVERRIDE) throw new Error();
   if (tournament.active) throw new Error();
   if (tournament.teams.some(team => team.players.some(player => players.includes(player)))) throw new Error();
   let id = tournament.teams.length;

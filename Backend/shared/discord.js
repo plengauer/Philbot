@@ -211,13 +211,14 @@ async function scheduledevents_list(guild_id) {
 
 async function scheduledevent_create(guild_id, channel_id, name, description, scheduled_start_time) {
   return HTTP(`/guilds/${guild_id}/scheduled-events`, 'POST', {
-      channel_id: channel_id,
       name: name,
       description: description,
-      scheduled_start_time: scheduled_start_time.toISOString(),
-      scheduled_end_time: channel_id ? undefined : new Date(scheduled_start_time + 1000 * 60 * 60).toISOString(),
       privacy_level: 2 /* GUILD_ONLY */,
-      entity_type: channel_id ? 2 : 3
+      scheduled_start_time: scheduled_start_time.toISOString(),
+      entity_type: channel_id ? 2 : 3,
+      channel_id: channel_id,
+      scheduled_end_time: channel_id ? undefined : new Date(scheduled_start_time.getTime() + 1000 * 60 * 60).toISOString(),
+      entity_metadata: channel_id ? undefined : { location: 'TBD' }
     }); 
 }
 
