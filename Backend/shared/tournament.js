@@ -324,8 +324,9 @@ async function on_interaction(guild_id, user_id, interaction_id, interaction_tok
 async function on_interaction_0(guild_id, user_id, interaction_id, interaction_token, data) {
   if (data.custom_id.startsWith(`tournament.referee.`)) {
     //TODO guild id may not be valid here if it comes from a DM!
-    let match_id = data.custom_id.split('.')[2];
-    switch(data.custom_id.split('.')[3]) {
+    guild_id = data.custom_id.split('.')[2];
+    let match_id = data.custom_id.split('.')[3];
+    switch(data.custom_id.split('.')[4]) {
       case 'start': return match_start(guild_id, user_id, match_id).then(() => discord.interact(interaction_id, interaction_token));
       case 'abort': return match_abort(guild_id, user_id, match_id).then(() => discord.interact(interaction_id, interaction_token));
       case 'complete': return discord.interact(interaction_id, interaction_token, {
@@ -421,9 +422,7 @@ async function match_complete(guild_id, user_id, match_id, team_name_winner) {
 async function announce_match_started(tournament, match_id) {
   return Promise.all([
       Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master,
-        `Match ${match_id}, `
-        + `**${tournament.teams[tournament.matches[match_id].team1].name}** vs **${tournament.teams[tournament.matches[match_id].team2].name}**,`
-        + ' has been started.'
+        `Match ${match_id}, **${tournament.teams[tournament.matches[match_id].team1].name}** vs **${tournament.teams[tournament.matches[match_id].team2].name}**, has been started.`
       ))),
       update_referee_interaction(tournament.guild_id, tournament, match_id),
       discord.try_dms(tournament.matches[match_id].referee, 'The match you referee\'d has been started.')
@@ -544,9 +543,9 @@ function create_referee_components(tournament, match_id) {
   return [{
     "type": 1,
     "components": [
-      { type: 2, label:    'Start', style: 1, custom_id: `tournament.referee.${match_id}.start`   , disabled: match.active },
-      { type: 2, label: 'Complete', style: 3, custom_id: `tournament.referee.${match_id}.complete`, disabled: !match.active || !!match.winner },
-      { type: 2, label:    'Abort', style: 4, custom_id: `tournament.referee.${match_id}.abort`   , disabled: !match.active || !!match.winner },
+      { type: 2, label:    'Start', style: 1, custom_id: `tournament.referee.${guild_id}.${match_id}.start`   , disabled: match.active },
+      { type: 2, label: 'Complete', style: 3, custom_id: `tournament.referee.${guild_id}.${match_id}.complete`, disabled: !match.active || !!match.winner },
+      { type: 2, label:    'Abort', style: 4, custom_id: `tournament.referee.${guild_id}.${match_id}.abort`   , disabled: !match.active || !!match.winner },
     ]
   }];
 }
