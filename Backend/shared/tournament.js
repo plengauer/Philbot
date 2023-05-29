@@ -66,7 +66,7 @@ function random_element(array) {
   return array[random_int(array.length)];
 }
 
-function create_matches(length, locations, teams, players_per_team, referees) {
+function create_matches(length, locations, teams, players_per_team, referees, use_active_player_referees) {
   if (length <= 0 || teams < 2) return [];
   
   let expected_matches = length * locations;
@@ -118,7 +118,7 @@ function create_matches(length, locations, teams, players_per_team, referees) {
     // automatic due to algorithm
     
     // check if referee is one of the teams
-    if (teams > 2 && matches.some(match => players_per_team[match.team1].includes(match.referee) || players_per_team[match.team2].includes(match.referee))) continue again;
+    if (!use_active_player_referees && matches.some(match => players_per_team[match.team1].includes(match.referee) || players_per_team[match.team2].includes(match.referee))) continue again;
     
     // check if equal (approx) distribution of location per team
     // random, good enough (for now, stretch though)
@@ -172,10 +172,11 @@ async function dissolve_team_0(guild_id, user_id, name) {
 }
 
 function recompute_matches(tournament) {
+  let referees = tournament.game_masters.concat(tournament.teams.filter(team => team.players.length > 0).map(team => team.players[0]));
   return tournament.matches = create_matches(
       tournament.length, tournament.locations.length, tournament.teams.length,
-      tournament.teams.map(team => team.players),
-      tournament.game_masters.concat(tournament.teams.filter(team => team.players.length > 0).map(team => team.players[0]))
+      tournament.teams.map(team => team.players), referees,
+      referees.length - 2 * location < location,
     );
 }
 
