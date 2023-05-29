@@ -26,7 +26,7 @@ async function notifyMembers(event) {
     const mute_ttl = 60 * 60 * 24 * 7 * 4;
     let link = discord.scheduledevent_link_create(event.guild_id, event.id);
     return discord.guild_members_list(event.guild_id)
-        .then(members => members.map(member =>
+        .then(members => Promise.all(members.map(member =>
             Promise.all([
                 memory.get(`mute:user:${member.user.id}`, false),
                 memory.get(`mute:user:${member.user.id}:activity:${event.name}`, false),
@@ -41,7 +41,7 @@ async function notifyMembers(event) {
                 })
             ])
             .then(values => values.some(value => value) ? null : member))
-        )
+        ))
         .then(promises => Promise.all(promises))
         .then(members => members.filter(member => member))
         .then(members => members.map(member =>
