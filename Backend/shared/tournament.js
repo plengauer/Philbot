@@ -306,10 +306,15 @@ async function start_0(guild_id, user_id) {
   await discord.post(tournament.channel_id, '\**THE TOURNAMENT HAS STARTED**');
   await announce_upcoming_matches(tournament);
 
-  await Promise.all(get_all_active_players(tournament).then(players => players.map(player => 
-    discord.guild_member_move(tournament.guild_id, player, team.channel_id)
-      .catch(e => Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Player <@${player}> is not connected to any voice channel. Pls verify.`))))
-  )));
+  for (let team of tournament.teams) {
+    for (let player of team.players) {
+      try {
+        await discord.guild_member_move(tournament.guild_id, player, team.channel_id);
+      } catch {
+        await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Player <@${player}> is not connected to any voice channel. Pls verify.`)));
+      }
+    }
+  }
 }
 
 async function on_interaction(guild_id, user_id, interaction_id, interaction_token, data) {
@@ -318,6 +323,7 @@ async function on_interaction(guild_id, user_id, interaction_id, interaction_tok
 
 async function on_interaction_0(guild_id, user_id, interaction_id, interaction_token, data) {
   if (data.custom_id.startsWith(`tournament.referee.`)) {
+    //TODO guild id may not be valid here if it comes from a DM!
     let match_id = data.custom_id.split('.')[2];
     switch(data.custom_id.split('.')[3]) {
       case 'start': return match_start(guild_id, user_id, match_id).then(() => discord.interact(interaction_id, interaction_token));
@@ -470,7 +476,7 @@ async function announce_upcoming_matches(tournament) {
       if (next) {
         await discord.guild_member_role_assign(tournament.guild_id, match.referee, tournament.role_id_referee);
         await discord.try_dms(match.referee, `All players are free, pls check if they are ready and start the match when they are.`);
-        await update_referee_interaction(tournament.guild_id, tournament, match.id);
+        await update_referee_interaction(tournament, match.id);
       } else {
         await discord.try_dms(match.referee, `Not all players are free yet, you will be notified.`);
       }
@@ -528,11 +534,12 @@ async function update_referee_interaction(tournament, match_id) {
     await discord.message_update(channel_id, match.interaction_id, text, [], components);
   } else {
     tournament.interaction_id = await discord.post(channel_id, text, undefined, true, [], components).then(message => message.id);
+    //TODO handle error (proactively check if all referees are available, introduce a method for the game master to override)
   }
   await write(tournament);
 }
 
-async function create_referee_components(tournament, match_id) {
+function create_referee_components(tournament, match_id) {
   let match = tournament.matches[match_id];
   return [{
     "type": 1,
