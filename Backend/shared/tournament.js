@@ -154,18 +154,17 @@ async function define_team_0(guild_id, user_id, name, players) {
   await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Team ${id} "${name}" has been defined as ` + players.map(player => `<@${player}>`).join(', ') + `, the schedule has been adjusted.`)));
 }
 
-async function dissolve_team(guild_id, user_id, id) {
-  return locked(guild_id, () => dissolve_team_0(guild_id, user_id, id));
+async function dissolve_team(guild_id, user_id, name) {
+  return locked(guild_id, () => dissolve_team_0(guild_id, user_id, name));
 }
 
-async function dissolve_team_0(guild_id, user_id, id) {
+async function dissolve_team_0(guild_id, user_id, name) {
   let tournament = await read(guild_id);
   if (!tournament) throw new Error();
   if (!tournament.game_masters.includes(user_id)) throw new Error();
   if (tournament.active) throw new Error(); //TODO in theory we could do that and just provide automatic wins ...
-  if (id < 0 || id >= tournament.teams.length) throw new Error();
   let team = tournament.teams[id];
-  tournament.teams = tournament.teams.slice(0, id).concat(tournament.teams.slice(id + 1, tournament.teams.length));
+  tournament.teams = tournament.teams.filter(team => team.name != name);
   for (let id = 0; id < tournament.teams.length; id++) tournament.teams[id].id = id;
   recompute_matches(tournament);
   await write(tournament);
