@@ -173,7 +173,7 @@ async function dissolve_team_0(guild_id, user_id, name) {
 
 function recompute_matches(tournament) {
   let referees = tournament.game_masters.concat(tournament.teams.filter(team => team.players.length > 0).map(team => team.players[0]));
-  let parallel_locations = Math.min(tournament.locations.length, Max.floor(tournament.teams.length / 2));
+  let parallel_locations = Math.min(tournament.locations.length, Math.floor(tournament.teams.length / 2));
   return tournament.matches = create_matches(
       tournament.length, tournament.locations.length, tournament.teams.length,
       tournament.teams.map(team => team.players), referees,
