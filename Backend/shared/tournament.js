@@ -163,11 +163,12 @@ async function dissolve_team_0(guild_id, user_id, name) {
   if (!tournament) throw new Error();
   if (!tournament.game_masters.includes(user_id)) throw new Error();
   if (tournament.active) throw new Error(); //TODO in theory we could do that and just provide automatic wins ...
+  let team = tournament.teams.find(team => team.name == name);
   tournament.teams = tournament.teams.filter(team => team.name != name);
   for (let id = 0; id < tournament.teams.length; id++) tournament.teams[id].id = id;
   recompute_matches(tournament);
   await write(tournament);
-  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Team "${name}" has been dissolved (` + team.players.map(player => `<@${player}>`).join(', ') + `), the schedule has been adjusted.`)));
+  await Promise.all(tournament.game_masters.map(game_master => discord.try_dms(game_master, `Team "${team.name}" has been dissolved (` + team.players.map(player => `<@${player}>`).join(', ') + `), the schedule has been adjusted.`)));
 }
 
 function recompute_matches(tournament) {
