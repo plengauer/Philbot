@@ -176,7 +176,7 @@ function recompute_matches(tournament) {
   return tournament.matches = create_matches(
       tournament.length, tournament.locations.length, tournament.teams.length,
       tournament.teams.map(team => team.players), referees,
-      referees.length - 2 * location < location,
+      referees.length - 2 * tournament.locations.length < tournament.locations.length,
     );
 }
 
