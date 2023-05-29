@@ -234,9 +234,9 @@ async function scheduledevent_users_list(guild_id, event_id) {
   const limit = 100;
   let users = [];
   for (;;) {
-    let users_chunk = await HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}/users?limit=${limit}` + (users.length > 0 ? '&after=' + users[users.length - 1].id : ''), 'GET').then(result => result.map(result.user));
+    let users_chunk = await HTTP(`/guilds/${guild_id}/scheduled-events/${event_id}/users?limit=${limit}` + (users.length > 0 ? '&after=' + users[users.length - 1].id : ''), 'GET').then(list => list.map(entry => entry.user));
     users = users.concat(users_chunk);
-    if (users_chunks.length < limit) break;
+    if (users_chunk.length < limit) break;
   }
   return users;
 }

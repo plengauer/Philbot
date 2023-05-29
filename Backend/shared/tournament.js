@@ -513,7 +513,7 @@ async function create_referee_components(tournament, match_id) {
 }
 
 async function get_all_interested_users(tournament) {
-  return discord.scheduledevent_users_list(tournament.guild_id, tournament.event).then(users => users.map(user => user.id));
+  return discord.scheduledevent_users_list(tournament.guild_id, tournament.event_id).then(users => users.map(user => user.id));
 }
 
 async function get_all_active_players(tournament) {

@@ -667,7 +667,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (name.length == 0 || players.some(player => !player)) return reactNotOK(channel_id, event_id);
     return tournament.define_team(guild_id, user_id, name, players)
       .then(() => reactOK(channel_id, event_id))
-      .catch(_ => reactNotOK(channel_id, event_id));
+      .catch(error => discord.respond(channel_id, event_id, error.message));
     
   } else if (message.startsWith('tournament dissolve team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -676,7 +676,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (isNaN(id)) return discord.respond(channel_id, event_id, 'You must refer to a team by its id.');
     return tournament.dissolve_team(guild_id, user_id, id)
       .then(() => reactOK(channel_id, event_id))
-      .catch(_ => reactNotOK(channel_id, event_id));
+      .catch(error => discord.respond(channel_id, event_id, error.message));
         
   } else if (message.startsWith('tournament replace ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -685,19 +685,19 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (players.length != 2) return discord.respond(channel_id, event_id, 'You must specify exactly two players.');
     return tournament.replace_player(guild_id, user_id, players[0], players[1])
       .then(() => reactOK(channel_id, event_id))
-      .catch(_ => reactNotOK(channel_id, event_id));
+      .catch(error => discord.respond(channel_id, event_id, error.message));
     
   } else if (message === 'tournament prepare') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     return tournament.prepare(guild_id, user_id)
       .then(() => reactOK(channel_id, event_id))
-      .catch(_ => reactNotOK(channel_id, event_id));
+      .catch(error => discord.respond(channel_id, event_id, error.message));
     
   } else if (message === 'tournament start') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     return tournament.start(guild_id, user_id)
       .then(() => reactOK(channel_id, event_id))
-      .catch(_ => reactNotOK(channel_id, event_id));
+      .catch(error => discord.respond(channel_id, event_id, error.message));
       
   } else if (message.startsWith('configure League of Legends ')) {
     message = message.substring('configure League of Legends '.length);
