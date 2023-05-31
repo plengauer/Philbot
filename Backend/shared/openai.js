@@ -236,9 +236,10 @@ async function bill(cost, model) {
 }
 
 async function getCurrentCost() {
-  let backup = { value: 0, timestamp: Date.now() };
+  let now = new Date();
+  let backup = { value: 0, timestamp: now };
   let cost = await memory.get(costkey(), backup);
-  if (!(new Date(cost.timestamp).getUTCFullYear() == new Date().getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == new Date().getUTCMonth())) cost = backup;
+  if (!(new Date(cost.timestamp).getUTCFullYear() == now.getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == now.getUTCMonth())) cost = backup;
   return cost.value;
 }
 
