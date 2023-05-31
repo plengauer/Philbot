@@ -175,14 +175,24 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
   if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
     let promise = chatgpt.getLanguageModels()
       .then(models => chatgpt.getDynamicModel(models))
-      .then(model => (model && !chatgpt.compareLanguageModelByPower(model, 'gpt-4')) ? model : null)
-      .then(model => model ? chatgpt.createBoolean(`Is "${message}" exactly one proper sentence and, assuming people enjoy innuendo, is it funny to respond with "That's what she said!" to it?`, model) : false)
-      //.then(response => { console.log(`DEBUG INNUENDO v6: "${message}" => "${response}"`); return response; })
+      .then(model => (model && !chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) ? model : null)
+      .then(model => model ? chatgpt.createBoolean(`Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`, model) : false)
+      //.then(response => { console.log(`DEBUG INNUENDO v7: "${message}" => "${response}"`); return response; })
       .then(isFunny => isFunny ? discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`) : undefined);
     promises.push(promise);
   }
   
-  if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
+  if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 250) {
+    let promise = chatgpt.getLanguageModels()
+      .then(models => chatgpt.getDynamicModel(models))
+      .then(model => (model && !chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) ? model : null)
+      .then(model => model ? chatgpt.createBoolean(`Is "${message}" a typical boomer statement?`, model) : false)
+      //.then(response => { console.log(`DEBUG BOOMER v1: "${message}" => "${response}"`); return response; })
+      .then(isBoomer => isBoomer ? discord.respond(channel_id, event_id, 'ok boomer') : undefined);
+    promises.push(promise);
+  }
+  
+  if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 250) {
     const dummy_token = 'NULL';
     let promise = chatgpt.getLanguageModels()
       .then(models => chatgpt.getDynamicModel(models))
