@@ -1,7 +1,6 @@
 const process = require('process');
 const fs = require('fs');
 const url = require('url');
-const boomer = require('boomerencoding');
 const curl = require('../../../shared/curl.js');
 const memory = require('../../../shared/memory.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
@@ -189,7 +188,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, user_name,
       .then(model => (model && !chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) ? model : null)
       .then(model => model ? chatgpt.createBoolean(`Is "${message}" a typical boomer statement?`, model) : false)
       //.then(response => { console.log(`DEBUG BOOMER v1: "${message}" => "${response}"`); return response; })
-      .then(isBoomer => isBoomer ? discord.respond(channel_id, event_id, boomer.encoding.encode('ok boomer')) : undefined);
+      .then(isBoomer => isBoomer ? discord.respond(channel_id, event_id, 'ok boomer') : undefined);
     promises.push(promise);
   }
   
