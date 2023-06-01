@@ -949,7 +949,7 @@ async function createAIContext(guild_id, channel_id, user_id, user_name, message
 
   // information about others
   let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(member => member.nick ?? member.user.username) : user_name;
-  system_message += `Your name is ${your_name}.`;
+  system_message += ` Your name is ${your_name}.`;
   let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
   let mentioned_members = mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention));
   let mentioned_roles = mentioned_entities.filter(mention => mention.startsWith('<@&')).map(mention => discord.parse_role(mention));

@@ -230,9 +230,12 @@ async function bill(cost, model) {
   const attributes = { 'openai.model': model };
   request_counter.add(1, attributes);
   cost_counter.add(cost, attributes);
-  return synchronized.locked('openai.billing', () => getCurrentCost()
-    .then(current_cost => memory.set(costkey(), { value: current_cost + cost, timestamp: Date.now() }, 60 * 60 * 24 * 31))
-  );
+  let now = new Date();
+  return synchronized.locked('openai.billing', () => {
+    let now = Date.now(); // we need to get the time first because we may be just at the limit of a billing slot (this way we may lose a single entry worst case, but we wont carry over all the cost to the next)
+    return getCurrentCost(now).then(current_cost => memory.set(costkey(), { value: current_cost.value + cost, timestamp: now }, 60 * 60 * 24 * 31));
+  });
+  
 }
 
 async function getCurrentCost() {
