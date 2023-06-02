@@ -127,23 +127,32 @@ async function handleMessageForFunReplies(channel_id, event_id, message) {
   if (Math.random() >= PROBABILITY) return;
   let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
   if (!model) return;
-  switch (Math.floor(Math.random() * 3)) {
+  switch (Math.floor(Math.random() * 4)) {
     case 0:
+      if (5 < message.length && message.length < 150) break;
       if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
       if (!await chatgpt.createBoolean(`Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`, model)) break;
       await discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`);
       break;
     case 1:
+      if (10 < message.length && message.length < 150) break;
       if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
       if (!await chatgpt.createBoolean(`Is "${message}" a typical boomer statement?`, model)) break;
       await discord.respond(channel_id, event_id, boomer.encode('ok boomer'));
       break;
     case 2:
+      if (25 < message.length && message.length < 250) break;
       const dummy_token = 'NULL';
       let extraction = await chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model);
       if (!extraction || extraction == dummy_token || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
       let file = await chatgpt.createImage(extraction, await chatgpt.getDynamicModel(chatgpt.getImageSizes()));
       await discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
+      break;
+    case 3:
+      if (25 < message.length && message.length < 250) break;
+      if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
+      let comeback = await chatgpt.createCompletion(`Write a clever comeback for a text.\nText: ${message}\nComeback:`, model);
+      await discord.respond(channel_id, event_id, comeback);
       break;
     default:
       throw new Error();
