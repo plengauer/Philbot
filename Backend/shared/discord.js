@@ -403,11 +403,11 @@ function guild_member_has_permission_0(guild, roles, member, permission) {
     .some(permission_names => permission_names.includes(permission) || permission_names.includes('ADMINISTRATOR'));
 }
 
-async function HTTP(endpoint, method, payload = undefined, ttc = undefined) {
+async function HTTP(endpoint, method, payload = undefined, ttc = 1) {
   return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` }, cache: ttc });
 }
 
-async function GATEWAY_HTTP(endpoint, method, guild_id, payload = undefined, ttc = undefined) {
+async function GATEWAY_HTTP(endpoint, method, guild_id, payload = undefined, ttc = 1) {
   let callback_url = await retry(() => callbacks[guild_id] ?? Promise.reject('No callback gateway known'));
   return curl.request({ secure: false, method: method, hostname: url.parse(callback_url).hostname, port: url.parse(callback_url).port, path: endpoint, headers: { 'x-authorization': process.env.DISCORD_API_TOKEN }, body: payload, cache: ttc ?? 10 });
 }
