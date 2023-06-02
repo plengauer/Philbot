@@ -46,7 +46,7 @@ async function playGreeting(guild_id, channel_id, user_id) {
 
 async function guessActivities(guild_id, channel_id, user_id) {
   if ((await memory.get(`activities:current:user:${user_id}`, [])).length > 0) return;
-  let user_ids = [];
+  if ((await discord.user_retrieve(user_id)).bot) return;
   let all_activities = [];
   for (let user_id of await discord.guild_members_list(guild_id).then(members => members.map(member => member.user.id))) {
     let voice_state = await memory.get(`voice_channel:user:${user_id}`, null);
