@@ -21,6 +21,7 @@ const role_management = require('../../../shared/role_management.js');
 const chatgpt = require('../../../shared/openai.js');
 const translator = require('../../../shared/translator.js');
 const mirror = require('../../../shared/mirror.js');
+const { getDynamicModel } = require('../../../shared/openai.js');
 
 async function handle(payload) {
   return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id, payload.attachments, payload.embeds, payload.components)
@@ -50,180 +51,120 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   }
   
   return Promise.all([
-      mentioned ?
-        handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me)
-          .catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) :
-        Promise.resolve(),
-      handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned),
-      guild_id ? features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()) : Promise.resolve()
-    ]);
+    guild_id && !mentioned ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
+    mentioned ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
+  ]);
 }
 
-async function handleMessage(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, mentioned) {
-  let promises = [];
+async function handleMessage(guild_id, channel_id, event_id, user_id, message) {
+  return Promise.all([
+    features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
+    features.isActive(guild_id, 'role management').then(active => active ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
+    translator.on_message_create(guild_id, channel_id, event_id, message),
+    handleMessageForTriggers(guild_id, channel_id, event_id, message),
+    handleMessageForSpecificActivityMentions(guild_id, channel_id, event_id, user_id, message),
+    handleMessageForGenericActivityMentions(guild_id, channel_id, event_id, user_id, message),
+    handleMessageForSOSMentions(guild_id, channel_id, event_id, user_id, message),
+    Math.random() < 0.1 && message.toLowerCase().includes('joke') ? curl.request({ hostname: 'icanhazdadjoke.com', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result)) : Promise.resolve(),
+    Math.random() < 0.5 && message.toLowerCase().includes('chuck norris') ? curl.request({ hostname: 'api.chucknorris.io', path: '/jokes/random', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, result)) : Promise.resolve(),
+    Math.random() < 0.5 && message.toLowerCase().includes('ron swanson') ? curl.request({ hostname: 'ron-swanson-quotes.herokuapp.com', path: '/v2/quotes' }).then(result => discord.respond(channel_id, event_id, result[0])) : Promise.resolve(),
+    handleMessageForFunReplies(channel_id, event_id, message),
+  ]);
+}
 
-  if(guild_id && await features.isActive(guild_id, 'role management')) {
-    promises.push(role_management.on_message_create(guild_id, user_id, message));
-  }
-
-  if (guild_id && !mentioned) {
-    promises.push(translator.on_message_create(guild_id, channel_id, event_id, message));
-  }
-  
-  if (guild_id && message.includes('@') && message.split('').some((char, index) => char == '@' && (index == 0 || message.charAt(index-1) != '<'))) {
-    let promise = discord.guild_members_list(guild_id)
-      .then(members => members
-        .map(member => member.user.id)
-        .filter(other_user_id => user_id !== other_user_id && !message.includes(other_user_id))
-        .map(other_user_id => memory.get(`activities:all:user:${other_user_id}`, [])
-          .then(other_activities => {
-            for (let index = 0; index < message.length; index++) {
-              if (message.charAt(index) !== '@' || (index > 0 && message.charAt(index-1) === '<')) continue;
-              let f = index + 1;
-              for (let t = f + 1; t <= message.length; t++) {
-                let activity = message.substring(f, t);
-                if (other_activities.includes(activity)) {
-                  return memory.list([
-                    `mute:activity:${activity}`,
-                    `mute:user:${other_user_id}`,
-                    `mute:user:${other_user_id}:activity:${activity}`,
-                    `mute:user:${other_user_id}:other:${user_id}`
-                  ]).then(values => !values.reduce((b1, b2) => b1 || b2, false))
-                }
-              }
-            }
-            return false;
-          }).then(value => value ? other_user_id : null)
-        )
-      ).then(promises => Promise.all(promises))
-      .then(user_ids => user_ids.filter(user_id => user_id != null))
-      .then(user_ids => user_ids.length == 0 ? Promise.resolve() : discord.respond(channel_id, event_id, 'Fyi ' + user_ids.map(user_id => `<@${user_id}>`).join(', ')));
-    promises.push(promise);
-  }
-  
-  if (guild_id && message.toLowerCase().split(' ').includes('@activity')) {
-    let activities = await memory.get(`activities:current:user:${user_id}`, []);
-    let promise = discord.guild_members_list(guild_id)
-      .then(members => members
-        .map(member => member.user.id)
-        .filter(other_user_id => user_id !== other_user_id && !message.includes(other_user_id))
-        .map(other_user_id => memory.get(`activities:all:user:${other_user_id }`, [])
-          .then(other_activities => {
-            for (let activity of activities) {
-              if (other_activities.includes(activity)) {
-                return memory.list([
-                  `mute:activity:${activity}`,
-                  `mute:user:${other_user_id}`,
-                  `mute:user:${other_user_id}:activity:${activity}`,
-                  `mute:user:${other_user_id}:other:${user_id}`
-                ]).then(values => !values.reduce((b1, b2) => b1 || b2, false))
-              }
-            }
-            return false;
-          }).then(value => value ? other_user_id : null)
-        )
-      ).then(promises => Promise.all(promises))
-      .then(user_ids => user_ids.filter(user_id => user_id != null))
-      .then(user_ids => user_ids.length == 0 ? Promise.resolve() : discord.respond(channel_id, event_id, 'Fyi (' + activities.join(' ') + ') ' + user_ids.map(user_id => `<@${user_id}>`).join(', ')));
-    promises.push(promise);
-  }
-  
-  if (guild_id && (message.toUpperCase().includes('SOS') || message.toUpperCase().includes('S.O.S'))) {
-    let activities = await memory.get(`activities:current:user:${user_id}`, []);
-    let promise = discord.guild_members_list(guild_id)
-      .then(members => members
-        .map(member => member.user.id)
-        .filter(other_user_id => user_id !== other_user_id && !message.includes(other_user_id ))
-        .map(other_user_id => memory.get(`activities:all:user:${other_user_id }`, [])
-          .then(other_activities => {
-            for (let activity of activities) {
-              if (other_activities.includes(activity)) {
-                return memory.list([
-                  `mute:activity:${activity}`,
-                  `mute:user:${other_user_id}`,
-                  `mute:user:${other_user_id}:activity:${activity}`,
-                  `mute:user:${other_user_id}:other:${user_id}`
-                ]).then(values => !values.reduce((b1, b2) => b1 || b2, false))
-              }
-            }
-            return false;
-          }).then(value => value ? other_user_id : null)
-        )
-      ).then(promises => Promise.all(promises))
-      .then(user_ids => user_ids.filter(user_id => user_id != null))
-      .then(user_ids => user_ids.length == 0 ? Promise.resolve() : discord.respond(channel_id, event_id, '**SOS** by ' + `<@${user_id}>` + ' for ' + activities.join(' ') + ' ' + user_ids.map(user_id => `<@${user_id}>`).join(', ')));
-    promises.push(promise);
-  }
-  
-  if (Math.random() < 0.1 && !mentioned && message.toLowerCase().includes('joke') && (message.toLowerCase().includes('wow') || message.toLowerCase().includes('world of warcraft'))) {
-    let promise = wow.getJoke().then(result => discord.respond(channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result));
-    promises.push(promise);
-  } else if (!mentioned && Math.random() < 0.1 && message.toLowerCase().includes('joke')) {
-    let promise = curl.request({ hostname: 'icanhazdadjoke.com', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result));
-    promises.push(promise);
-  }
-  
-  if (Math.random() < 0.5 && !mentioned && message.toLowerCase().includes('chuck norris')) {
-    let promise = curl.request({ hostname: 'api.chucknorris.io', path: '/jokes/random', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, result));
-    promises.push(promise);
-  }
-  
-  if (Math.random() < 0.5 && !mentioned && message.toLowerCase().includes('ron swanson')) {
-    let promise = curl.request({ hostname: 'ron-swanson-quotes.herokuapp.com', path: '/v2/quotes' }).then(result => discord.respond(channel_id, event_id, result[0]));
-    promises.push(promise);
-  }
-  
-  if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 150) {
-    let promise = chatgpt.getLanguageModels()
-      .then(models => chatgpt.getDynamicModel(models))
-      .then(model => (model && !chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) ? model : null)
-      .then(model => model ? chatgpt.createBoolean(`Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`, model) : false)
-      //.then(response => { console.log(`DEBUG INNUENDO v7: "${message}" => "${response}"`); return response; })
-      .then(isFunny => isFunny ? discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`) : undefined);
-    promises.push(promise);
-  }
-  
-  if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 250) {
-    let promise = chatgpt.getLanguageModels()
-      .then(models => chatgpt.getDynamicModel(models))
-      .then(model => (model && !chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) ? model : null)
-      .then(model => model ? chatgpt.createBoolean(`Is "${message}" a typical boomer statement?`, model) : false)
-      //.then(response => { console.log(`DEBUG BOOMER v1: "${message}" => "${response}"`); return response; })
-      .then(isBoomer => isBoomer ? discord.respond(channel_id, event_id, boomer.encode('ok boomer')) : undefined);
-    promises.push(promise);
-  }
-  
-  if (Math.random() < 0.01 && !mentioned && guild_id && message.length > 10 && message.length < 250) {
-    const dummy_token = 'NULL';
-    let promise = chatgpt.getLanguageModels()
-      .then(models => chatgpt.getDynamicModel(models))
-      .then(model => model ? chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model) : null)
-      //.then(response => { console.log(`DEBUG PAINTING v1: "${message}" => "${response}"`); return response; })
-      .then(extraction => extraction && extraction != dummy_token && (extraction.match(/\p{L}/gu) ?? []).length > extraction.length * 0.5 ? chatgpt.getDynamicModel(chatgpt.getImageSizes()).then(size => size ? chatgpt.createImage(extraction, size) : null) : null)
-      .then(file => file ? discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]) : undefined);
-    promises.push(promise);
-  }
-  
-  if (guild_id && !mentioned) {
-    let tokens = message.toLowerCase().split(' ');
-    let triggers = [];
-    for (let i = 0; i < tokens.length; i++) {
-      for (let j = i + 1; j <= Math.min(i + 5, tokens.length); j++) {
-        triggers.push(tokens.slice(i, j).join(' '));
-      }
+async function handleMessageForSpecificActivityMentions(guild_id, channel_id, event_id, user_id, message) {
+  if(!message.includes('@') || !message.split('').some((char, index) => char == '@' && (index == 0 || message.charAt(index-1) != '<'))) return;
+  let activities = [];
+  for (let index = 0; index < message.length; index++) {
+    if (message.charAt(index) != '@' || (index > 0 && message.charAt(index-1) == '<')) continue;
+    let f = index + 1;
+    for (let t = f + 1; t <= message.length; t++) {
+      activities.push(message.substring(f, t));
     }
-    promises.push(
-      memory.list(Array.from(new Set(triggers)).map(trigger => `trigger:guild:${guild_id}:trigger:` + memory.mask(trigger)))
-        .then(entries => Promise.all(entries
-          .map(entry => entry.value)
-          .filter(value => typeof value == 'string' || Math.random() < value.probability)
-          .map(value => typeof value == 'string' ? value : value.response)
-          .map(value => discord.respond(channel_id, event_id, value))
-        ))
-    );
   }
-  
-  return Promise.all(promises);
+  let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
+  return discord.respond(channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
+}
+
+async function handleMessageForGenericActivityMentions(guild_id, channel_id, event_id, user_id, message) {
+  if (!message.includes('@activity')) return;
+  let activities = await memory.get(`activities:current:user:${user_id}`, []);
+  let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
+  return discord.respond(channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
+}
+
+async function handleMessageForSOSMentions(guild_id, channel_id, event_id, user_id, message) {
+  if (!message.toUpperCase().includes('SOS') && !message.toUpperCase().includes('S.O.S')) return;
+  let activities = await memory.get(`activities:current:user:${user_id}`, []);
+  let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
+  return discord.respond(channel_id, event_id, `**SOS** by ${discord.mention_user(user_id)} for ` + activities.join(',') + ` ` + user_ids.map(discord.mention_user).join(', '));
+}
+
+async function resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities) {
+  let members = await discord.guild_members_list(guild_id);
+  let user_ids = members.map(member => member.user.id).filter(other_user_id => user_id !== other_user_id && !message.includes(other_user_id));
+  user_ids = await Promise.all(user_ids.map(other_user_id => memory.get(`activities:all:user:${other_user_id }`, [])
+    .then(other_activities => {
+      for (let activity of activities) {
+        if (other_activities.includes(activity)) {
+          return memory.list([
+            `mute:activity:${activity}`,
+            `mute:user:${other_user_id}`,
+            `mute:user:${other_user_id}:activity:${activity}`,
+            `mute:user:${other_user_id}:other:${user_id}`
+          ]).then(values => !values.reduce((b1, b2) => b1 || b2, false))
+        }
+      }
+      return false;
+    }).then(value => value ? other_user_id : null)
+  ));
+  user_ids = user_ids.filter(user_id => !!user_id);
+  return user_ids;
+}
+
+async function handleMessageForFunReplies(channel_id, event_id, message) {
+  const PROBABILITY = 0.01;
+  if (Math.random() >= PROBABILITY) return;
+  let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
+  if (!model) return;
+  switch (Math.floor(Math.random() * 3)) {
+    case 0:
+      if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
+      if (!await chatgpt.createBoolean(`Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`, model)) break;
+      await discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`);
+      break;
+    case 1:
+      if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
+      if (!await chatgpt.createBoolean(`Is "${message}" a typical boomer statement?`, model)) break;
+      await discord.respond(channel_id, event_id, boomer.encode('ok boomer'));
+      break;
+    case 2:
+      const dummy_token = 'NULL';
+      let extraction = await chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model);
+      if (!extraction || extraction == dummy_token || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
+      let file = await chatgpt.createImage(extraction, await chatgpt.getDynamicModel(chatgpt.getImageSizes()));
+      await discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
+      break;
+    default:
+      throw new Error();
+  }
+}
+
+async function handleMessageForTriggers(guild_id, channel_id, event_id, message) {
+  let tokens = message.toLowerCase().split(' ');
+  let triggers = [];
+  for (let i = 0; i < tokens.length; i++) {
+    for (let j = i + 1; j <= Math.min(i + 5, tokens.length); j++) {
+      triggers.push(tokens.slice(i, j).join(' '));
+    }
+  }
+  let entries = await memory.list(Array.from(new Set(triggers)).map(trigger => `trigger:guild:${guild_id}:trigger:` + memory.mask(trigger)));
+  return Promise.all(entries
+    .map(entry => entry.value)
+    .filter(value => typeof value == 'string' || Math.random() < value.probability)
+    .map(value => typeof value == 'string' ? value : value.response)
+    .map(value => discord.respond(channel_id, event_id, value))
+  );
 }
 
 async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me) {
