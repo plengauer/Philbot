@@ -233,7 +233,7 @@ async function bill(cost, model) {
   let now = new Date();
   return synchronized.locked('openai.billing', () => {
     let now = Date.now(); // we need to get the time first because we may be just at the limit of a billing slot (this way we may lose a single entry worst case, but we wont carry over all the cost to the next)
-    return getCurrentCost(now).then(current_cost => memory.set(costkey(), { value: current_cost.value + cost, timestamp: now }, 60 * 60 * 24 * 31));
+    return getCurrentCost(now).then(current_cost => memory.set(costkey(), { value: current_cost + cost, timestamp: now }, 60 * 60 * 24 * 31));
   });
   
 }
