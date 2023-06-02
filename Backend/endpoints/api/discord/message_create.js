@@ -83,20 +83,25 @@ async function handleMessageForSpecificActivityMentions(guild_id, channel_id, ev
     }
   }
   let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
+  if (user_ids.length == 0) return;
   return discord.respond(channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
 }
 
 async function handleMessageForGenericActivityMentions(guild_id, channel_id, event_id, user_id, message) {
   if (!message.includes('@activity')) return;
   let activities = await memory.get(`activities:current:user:${user_id}`, []);
+  if (activities.length == 0) return;
   let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
+  if (user_ids.length == 0) return;
   return discord.respond(channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
 }
 
 async function handleMessageForSOSMentions(guild_id, channel_id, event_id, user_id, message) {
   if (!message.toUpperCase().includes('SOS') && !message.toUpperCase().includes('S.O.S')) return;
   let activities = await memory.get(`activities:current:user:${user_id}`, []);
+  if (activities.length == 0) return;
   let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
+  if (user_ids.length == 0) return;
   return discord.respond(channel_id, event_id, `**SOS** by ${discord.mention_user(user_id)} for ` + activities.join(',') + ` ` + user_ids.map(discord.mention_user).join(', '));
 }
 
