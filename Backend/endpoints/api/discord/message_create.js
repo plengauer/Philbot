@@ -60,7 +60,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, message) {
   return Promise.all([
     features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
     features.isActive(guild_id, 'role management').then(active => active ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
-    translator.on_message_create(guild_id, channel_id, event_id, message),
+    translator.on_message_create(guild_id, channel_id, event_id, user_id, message),
     handleMessageForTriggers(guild_id, channel_id, event_id, message),
     handleMessageForSpecificActivityMentions(guild_id, channel_id, event_id, user_id, message),
     handleMessageForGenericActivityMentions(guild_id, channel_id, event_id, user_id, message),
@@ -68,7 +68,7 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, message) {
     Math.random() < 0.1 && message.toLowerCase().includes('joke') ? curl.request({ hostname: 'icanhazdadjoke.com', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result)) : Promise.resolve(),
     Math.random() < 0.5 && message.toLowerCase().includes('chuck norris') ? curl.request({ hostname: 'api.chucknorris.io', path: '/jokes/random', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, result)) : Promise.resolve(),
     Math.random() < 0.5 && message.toLowerCase().includes('ron swanson') ? curl.request({ hostname: 'ron-swanson-quotes.herokuapp.com', path: '/v2/quotes' }).then(result => discord.respond(channel_id, event_id, result[0])) : Promise.resolve(),
-    handleMessageForFunReplies(channel_id, event_id, message),
+    handleMessageForFunReplies(channel_id, event_id, user_id, message),
   ]);
 }
 
@@ -122,7 +122,7 @@ async function resolveMembersForSpecialActivityMentions(guild_id, user_id, messa
   return user_ids;
 }
 
-async function handleMessageForFunReplies(channel_id, event_id, message) {
+async function handleMessageForFunReplies(channel_id, event_id, user_id, message) {
   const PROBABILITY = 0.01;
   if (Math.random() >= PROBABILITY) return;
   let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
@@ -131,27 +131,27 @@ async function handleMessageForFunReplies(channel_id, event_id, message) {
     case 0:
       if (5 < message.length && message.length < 150) break;
       if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
-      if (!await chatgpt.createBoolean(`Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`, model)) break;
+      if (!await chatgpt.createBoolean(user_id, `Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`, model)) break;
       await discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`);
       break;
     case 1:
       if (10 < message.length && message.length < 150) break;
       if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
-      if (!await chatgpt.createBoolean(`Is "${message}" a typical boomer statement?`, model)) break;
+      if (!await chatgpt.createBoolean(user_id, `Is "${message}" a typical boomer statement?`, model)) break;
       await discord.respond(channel_id, event_id, boomer.encode('ok boomer'));
       break;
     case 2:
       if (25 < message.length && message.length < 250) break;
       const dummy_token = 'NULL';
-      let extraction = await chatgpt.createCompletion(`Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model);
+      let extraction = await chatgpt.createCompletion(user_id, `Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model);
       if (!extraction || extraction == dummy_token || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
-      let file = await chatgpt.createImage(extraction, await chatgpt.getDynamicModel(chatgpt.getImageSizes()));
+      let file = await chatgpt.createImage(user_id, extraction, await chatgpt.getDynamicModel(chatgpt.getImageSizes()));
       await discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
       break;
     case 3:
       if (25 < message.length && message.length < 250) break;
       if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
-      let comeback = await chatgpt.createCompletion(`Write a clever comeback for a text.\nText: ${message}\nComeback:`, model);
+      let comeback = await chatgpt.createCompletion(user_id, `Write a clever comeback for a text.\nText: ${message}\nComeback:`, model);
       await discord.respond(channel_id, event_id, comeback);
       break;
     default:
@@ -798,14 +798,14 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let text = message.substring(split + 1).trim();
     return handleLongResponse(channel_id, () => chatgpt.getLanguageModels()
       .then(models => chatgpt.getDynamicModel(models))
-      .then(model => model ? translator.translate(language, text, model) : null)
+      .then(model => model ? translator.translate(user_id, language, text, model) : null)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
     );
   
   } else if (message.startsWith('draw ')) {
     message = message.split(' ').slice(1).join(' ');
     return handleLongResponse(channel_id, () => chatgpt.getDynamicModel(chatgpt.getImageSizes())
-      .then(size => size ? chatgpt.createImage(message, size) : null)
+      .then(size => size ? chatgpt.createImage(user_id, message, size) : null)
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
       .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
@@ -869,7 +869,7 @@ async function createAIResponse(guild_id, channel_id, user_id, user_name, messag
   let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels(), chatgpt.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
   if (!model) return null;
   let system_message = await createAIContext(guild_id, channel_id, user_id, user_name, message, model);
-  return chatgpt.createResponse(`channel:${channel_id}:user:${user_id}`, system_message, message, model);
+  return chatgpt.createResponse(user_id, `channel:${channel_id}:user:${user_id}`, system_message, message, model);
 }
 
 async function createAIContext(guild_id, channel_id, user_id, user_name, message, model) {
@@ -921,7 +921,7 @@ async function createAIContext(guild_id, channel_id, user_id, user_name, message
       .replace(/\$\{link_code\}/g, url + '/code')
       .replace(/\$\{link_discord_add\}/g, url + '/deploy')
       .replace(/\$\{link_monitoring\}/g, url + '/monitoring');
-  if (help_prompt.length > about_me.length || await chatgpt.createBoolean(help_prompt, model)) {
+  if (help_prompt.length > about_me.length || await chatgpt.createBoolean(user_id, help_prompt, model)) {
     system_message += about_me;
   }
 

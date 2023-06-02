@@ -40,27 +40,27 @@ function compareLanguageModelByPower(bad_model, good_model) {
   return getModelPower(bad_model) < getModelPower(good_model);
 }
 
-async function createCompletion(prompt, model = undefined, temperature = undefined) {
+async function createCompletion(user, prompt, model = undefined, temperature = undefined) {
   model = model ?? (await getLanguageModels()).slice(-1);
   if (!token) return null;
   if (!await canCreate()) return null;
   
   if (!model.startsWith('text-')) {
-    return createResponse(null, null, `Complete the following text, respond with the completion only:\n${prompt}`, model, temperature);
+    return createResponse(user, null, null, `Complete the following text, respond with the completion only:\n${prompt}`, model, temperature);
   }
   
-  let response = await HTTP('/v1/completions' , { "model": model, "prompt": prompt, temperature: temperature });
+  let response = await HTTP('/v1/completions' , { user: user, "model": model, "prompt": prompt, temperature: temperature });
   let completion = response.choices[0].text.trim();
-  await bill(computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
+  await bill(computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens), response.model, user);
   return completion;
 }
 
-async function createResponse(history_token, system, message, model = undefined, temperature = undefined) {
-  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(history_token, system, message, model, temperature));
-  else return createResponse0(history_token, system, message, model, temperature);
+async function createResponse(user, history_token, system, message, model = undefined, temperature = undefined) {
+  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(user, history_token, system, message, model, temperature));
+  else return createResponse0(user, history_token, system, message, model, temperature);
 }
 
-async function createResponse0(history_token, system, message, model = undefined, temperature = undefined) {
+async function createResponse0(user, history_token, system, message, model = undefined, temperature = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   model = model ?? (await getLanguageModels()).slice(-1);
   if (!token) return null;
@@ -74,13 +74,13 @@ async function createResponse0(history_token, system, message, model = undefined
   
   let output = null;
   if (!model.startsWith('gpt-')) {
-    let completion = await createCompletion(`Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', model, temperature);
+    let completion = await createCompletion(user, `Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', model, temperature);
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
   } else {
-    let response = await HTTP('/v1/chat/completions' , { "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature });
+    let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature });
     output = response.choices[0].message;
-    await bill(computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens), response.model);
+    await bill(computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens), response.model, user);
   }
   output.content = sanitizeResponse(output.content);
 
@@ -156,20 +156,20 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
   }
 }
 
-async function createBoolean(question, model = undefined, temperature = undefined) {
+async function createBoolean(user, question, model = undefined, temperature = undefined) {
   model = model ?? (await getLanguageModels()).slice(-1);
   let response = null;
   if (model.startsWith('text-')) {
-    response = await createCompletion(`Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, model, temperature);
+    response = await createCompletion(user, `Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, model, temperature);
   } else {
-    response = await createResponse(null, null, `${question} Respond only with yes or no!`, model, temperature);
+    response = await createResponse(user, null, null, `${question} Respond only with yes or no!`, model, temperature);
   }
   if (!response) return null;
   let boolean = response.trim().toLowerCase();
   const match = boolean.match(/^([a-z]+)/);
   boolean = match ? match[0] : boolean;
   if (boolean != 'yes' && boolean != 'no') {
-    let sentiment = await createCompletion(`Determine whether the sentiment of the text is positive or negative.\nText: "${response}"\nSentiment: `, model, temperature);
+    let sentiment = await createCompletion(user, `Determine whether the sentiment of the text is positive or negative.\nText: "${response}"\nSentiment: `, model, temperature);
     const sentiment_match = sentiment.trim().toLowerCase().match(/^([a-z]+)/);
     if (sentiment_match && sentiment_match[0] == 'positive') boolean = 'yes';
     else if (sentiment_match && sentiment_match[0] == 'negative') boolean = 'no';
@@ -184,17 +184,17 @@ function getImageSizes() {
   return IMAGE_SIZES;
 }
 
-async function createImage(message, size = undefined) {
+async function createImage(user, prompt, size = undefined) {
   if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
   if (!token) return null;
   if (!await canCreate()) return null;
   try {
     let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
     let pipe = estimated_size > 1024 * 1024;
-    let response = await HTTP('/v1/images/generations', { prompt: message, response_format: pipe ? 'url' : 'b64_json', size: size });
+    let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', size: size });
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
-    await bill(getImageCost(size), 'dall-e 2');
+    await bill(getImageCost(size), 'dall-e 2', user);
     return image;
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
@@ -226,11 +226,10 @@ async function HTTP(endpoint, body) {
   return result;
 }
 
-async function bill(cost, model) {
-  const attributes = { 'openai.model': model };
+async function bill(cost, model, user) {
+  const attributes = { 'openai.model': model, 'openai.user': user };
   request_counter.add(1, attributes);
   cost_counter.add(cost, attributes);
-  let now = new Date();
   return synchronized.locked('openai.billing', () => {
     let now = Date.now(); // we need to get the time first because we may be just at the limit of a billing slot (this way we may lose a single entry worst case, but we wont carry over all the cost to the next)
     return getCurrentCost(now).then(current_cost => memory.set(costkey(), { value: current_cost + cost, timestamp: now }, 60 * 60 * 24 * 31));
