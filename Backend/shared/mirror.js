@@ -110,6 +110,8 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
       attachment_mirrors.push({ filename: attachment.filename, content_type: attachment.content_type, content: file });
     } catch {
       content += '\n**Attachment ' + index + '**: ' + attachment.url;
+      let embed_url = 'attachment://' + attachment.filename;
+      embeds = embeds.filter(embed => !(embed.url == embed_url || (embed.image && embed.image.url == embed_url) || (embed.video && embed.video.url == embed_url)));
     }
   }
 
