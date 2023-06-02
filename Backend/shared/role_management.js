@@ -280,7 +280,7 @@ async function report_failure(guild_id, user_id, role_id, assign) {
     let role = await discord.guild_role_retrieve(guild_id, role_id);
     let member = await discord.guild_member_retrieve(guild_id, user_id);
     let operation = assign ? 'assign' : 'unassign';
-    let report = `I failed to ${operation} the role **${role.name}** to **${member.nick ?? member.user.username}** in ${guild.name}.`
+    let report = `I failed to ${operation} the role **${role.name}** to **${discord.member2name(member)}** in ${guild.name}.`
         + ` This can happen if I dont have enough permissions or my role is not ranked higher than the roles im supposed to ${operation}.`
         + ` Please assign the role manually.`
         + ` To avoid similar issues in the future, make sure that my own role (${me.username}) has the "Manage Roles" permission and that it is ranked higher than any role you want me to auto-assign.`;

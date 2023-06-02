@@ -36,14 +36,7 @@ async function handle0(guild_id, user_id, activities) {
 
   let guild = await discord.guild_retrieve(guild_id);
   let members = await discord.guild_members_list(guild_id);
-  let user_name = '';
-  for (let member of members) {
-    if (member.user.id !== user_id) {
-      continue;
-    }
-    user_name = (member.nick && member.nick.length > 0) ? member.nick : member.user.username;
-    break;
-  }
+  let user_name = discord.member2name(members.find(member => member.user.id == user_id));
   
   return Promise.all([
       memory.set(`activities:current:user:${user_id}`, activities.map(a => a.name), current_activities_ttl),
@@ -219,7 +212,7 @@ async function sendAutomaticNotification(guild_id, guild_name, member, activitie
   
   let others = await Promise.all(members_with_same_activity.filter(other_member => other_member !== member).map(other_member =>
       discord.guild_member_retrieve(guild_id, other_member)
-        .then(data => data.nick ?? data.user.username)
+        .then(discord.member2name)
         .then(name => delayed_memory.set(`response:` + memory.mask(`mute for ${name}`) + `:user:${member}`, `mute:user:${member}:other:${other_member}`, true, mute_ttl).then(() => name))
         .then(name => '**' + name + '**')
     )).then(names => names.join(' and '));

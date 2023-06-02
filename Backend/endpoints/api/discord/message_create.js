@@ -521,18 +521,11 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     
   } else if (message.startsWith('remember birthday ')) {
     let input = message.substring('remember birthday '.length).split(' ');
-    let username = input[0];
+    let user_id = discord.parse_mention(input[0]);
     let day = parseInt(input[1].substring(0, input[1].indexOf('.')));
     let month = parseInt(input[1].substring(input[1].indexOf('.') + 1, input[1].length));
-    for (let guild of await discord.guilds_list()) {
-      for (let member of await discord.guild_members_list(guild.id)) {
-        if (member.user.username === username || (member.nick ? member.nick === username : false)) {
-          await memory.set(`birthday:user:${member.user.id}`, { day: day, month: month });
-          return reactOK(channel_id, event_id);
-        }
-      }
-    }
-    return reactNotOK(channel_id, event_id);
+    return memory.set(`birthday:user:${user_id}`, { day: day, month: month })
+      .then(() => reactOK(channel_id, event_id));
     
   } else if (message.startsWith('notify me for ')) {
     let activity = message.substring('notify me for '.length).trim();
@@ -563,14 +556,11 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       guild_id = guild_id ?? await resolveGuildID(user_id);
       if (!guild_id) return discord.respond(channel_id, event_id, 'I do not know who you mean.');
       if (to_name.startsWith('<@') && to_name.endsWith('>')) {
-        if (to_name.startsWith('!')) to_name = to_name.substring(1);
-        to_id = to_name.substring(2, to_name.length - 1);
+        to_id = discord.parse_mention(to_name);
       } else if (to_name.startsWith('<@&')) {
         return discord.respond(channel_id, event_id, 'I can only remind individual users, not roles.')
       } else {
-        to_id = await discord.guild_members_list(guild_id)
-          .then(members => members.filter(member => member.user.username == to_name || (member.nick && member.nick == to_name)))
-          .then(members => members.length > 0 ? members[0].user.id : undefined);
+        to_id = await discord.guild_members_list(guild_id).then(members => members.find(member => to_name == discord.member2name(member))?.user?.id);
         if (!to_id) return discord.respond(channel_id, event_id, 'I do not know ' + to_name + '.');
       }
     }
@@ -935,7 +925,7 @@ async function createAIResponse(guild_id, channel_id, user_id, user_name, messag
 async function createAIContext(guild_id, channel_id, user_id, user_name, message, model) {
   // basic identity information
   let me = await discord.me();
-  let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(member => member.nick ?? member.user.username) : me.username;
+  let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(discord.member2name) : me.username;
   let system_message = `My name is ${my_name}. I am a Discord bot.`;
 
   // personality
@@ -948,7 +938,7 @@ async function createAIContext(guild_id, channel_id, user_id, user_name, message
   }
 
   // information about others
-  let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(member => member.nick ?? member.user.username) : user_name;
+  let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(discord.member2name) : user_name;
   system_message += ` Your name is ${your_name}.`;
   let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
   let mentioned_members = mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention));
@@ -964,7 +954,7 @@ async function createAIContext(guild_id, channel_id, user_id, user_name, message
     mentioned_members = await Promise.all(Array.from(new Set(mentioned_members)).map(user_id => discord.guild_member_retrieve(guild_id, user_id)));
     for (let member of mentioned_members) {
       let activities = await memory.get(`activities:all:user:${member.user.id}`, []);
-      system_message += ` The name of <@${member.user.id}> is ${member.nick ?? member.user.username}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
+      system_message += ` The name of <@${member.user.id}> is ${discord.member2name(member)}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
     }
   }
 

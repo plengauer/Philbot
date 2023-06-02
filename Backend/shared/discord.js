@@ -11,6 +11,14 @@ function register_callback(guild_id, url) {
   callbacks[guild_id] = url;
 }
 
+function user2name(user) {
+  return user.display_name ?? user.global_name ?? `${user.username}#${user.discriminator}`;
+}
+
+function member2name(member) {
+  return member.nick ?? user2name(member.user);
+}
+
 function parse_mention(mention) {
   mention = mention.trim();
   if (!mention.startsWith('<@') || !mention.endsWith('>')) return null;
@@ -406,6 +414,9 @@ async function GATEWAY_HTTP(endpoint, method, guild_id, payload = undefined, ttc
 
 module.exports = {
   register_callback,
+
+  user2name,
+  member2name,
 
   parse_mention,
   parse_role,

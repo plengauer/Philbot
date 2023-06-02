@@ -102,10 +102,10 @@ async function fillDictionaryWithGuildChannels(dictionary, guild) {
 async function fillDictionaryWithGuildMembers(dictionary, guild) {
   return discord.guild_members_list(guild.id)
     .then(members => members.map(member => {
-      putInDictionary(dictionary, member.user.id, member.user.username + '#' + member.user.discriminator);
-      if (member.nick) {
-        putInDictionary(dictionary, member.user.id, member.nick);
-      }
+      if (member.user.display_name) putInDictionary(dictionary, member.user.id, member.user.display_name);
+      if (member.user.global_name) putInDictionary(dictionary, member.user.id, member.user.global_name);
+      if (member.user.username && member.user.discriminator) putInDictionary(dictionary, member.user.id, member.user.username + '#' + member.user.discriminator);
+      if (member.nick) putInDictionary(dictionary, member.user.id, member.nick);
     }));
 }
 
