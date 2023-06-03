@@ -3,7 +3,6 @@ const url = require('url');
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const curl = require('./curl.js');
-const identity = require('./identity.js');
 
 async function on_voice_state_update(guild_id, channel_id, session_id) {
   if (channel_id) await memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24);
@@ -98,7 +97,8 @@ async function resolveTitle(link) {
 }
 
 async function stop(guild_id) {
-  return discord.disconnect(guild_id)
+  return on_voice_state_update(guild_id, null, null) // simulate a stop event so that, in case events arrive in the wrong order, they dont cause a reconnect
+    .then(() => discord.disconnect(guild_id))
     .then(() => memory.unset(`player:title:guild:${guild_id}`))
     .then(() => memory.unset(`player:paused:guild:${guild_id}`));
 }
