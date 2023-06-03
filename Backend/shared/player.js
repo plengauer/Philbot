@@ -239,7 +239,7 @@ async function updateInteractions(guild_id) {
 
 async function createInteractionComponents(guild_id) {
   let paused = await memory.get(`player:paused:guild:${guild_id}`, false);
-  let hasNext = (await getQueue(guild_id)).length >= 0;
+  let hasNext = (await getQueue(guild_id)).length > 0;
   if (true) {
     return [
       { type: 2, style: 2, label: '', emoji: { name: '🎵' }, custom_id: 'player.play.modal', disabled: false },
