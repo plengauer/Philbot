@@ -580,7 +580,7 @@ class Context:
         listener = None
         streamer = None
         with self.lock:
-            if not self.ws and self.socket and self.listener and self.streamer:
+            if not self.ws and not self.socket and not self.listener and not self.streamer:
                 return
             print('VOICE GATEWAY ' + self.guild_id + ' connection shutting down')
             listener = self.listener
