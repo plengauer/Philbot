@@ -497,19 +497,19 @@ class Context:
             case 4001: # invalid opcode
                 # fault must be in the code somewhere
                 # lets wait a bit to avoid busy loops and try again
-                time.sleep(5)
                 self.__stop()
+                time.sleep(5)
                 self.__try_start()
             case 4002: # failed to decode payload
                 # fault must be in the code somewhere
                 # lets wait a bit to avoid busy loops and try again
-                time.sleep(5)
                 self.__stop()
+                time.sleep(5)
                 self.__try_start()
             case 4003: # not authenticated
                 # we sent something before identifying, must be race condition
-                time.sleep(5)
                 self.__stop()
+                time.sleep(5)
                 self.__try_start()
             case 4004: # authentication failed
                 # the token is incorrect
@@ -521,8 +521,8 @@ class Context:
             case 4005: # already authenticated
                 # we sent a second identify message, fault, must be in the code
                 # lets wait a bit to avoid busy loops and try again
-                time.sleep(5)
                 self.__stop()
+                time.sleep(5)
                 self.__try_start()
             case 4006: # session is no longer valid
                 # this can happen when we (only bot users) are alone for a while, then the session is killed
@@ -546,8 +546,8 @@ class Context:
             case 4012: # unknown protocol
                 # not entirely sure what this refers to (the ws protocol, the first HTTP messages, the encoded frames), but either way, i guess the fault must lie in the code
                 # lets wait a bit to avoid busy loops and try again
-                time.sleep(5)
                 self.__stop()
+                time.sleep(5)
                 self.__try_start()
             case 4014: # disconnected (channel was deleted, you were kicked, voice server changed, or the main gateway session was dropped)
                 # thats a tricky one, the doc says not to try reconnecting, and we shouldn't open a new gateway connection, but we should try to reconnect on a discord level EXCEPT if we got kicked out of the channel (not the server)
@@ -562,8 +562,8 @@ class Context:
             case 4016: # unknown encryption mode
                 # fault must be in the code somewhere
                 # lets wait a bit to avoid busy loops and try again
-                time.sleep(5)
                 self.__stop()
+                time.sleep(5)
                 self.__try_start()
             case _: # something else
                 self.__stop()
