@@ -763,7 +763,7 @@ def cleanup():
     for file in os.listdir(STORAGE_DIRECTORY):
         if os.path.getmtime(file) + 60 * 60 < time_seconds():
             try:
-                os.remove(file)
+                os.remove(STORAGE_DIRECTORY + '/' + file)
             except:
                 pass
 
