@@ -248,8 +248,8 @@ async function onInteraction(guild_id, channel_id, message_id, interaction_id, i
         }]
       }
     });
-    case 'player.append': return appendToQueue(guild_id, data.components[0].components[0].value).then(() => discord.interact(interaction_id, interaciton_token));
-    case 'player.clear': return clearQueue(guild_id).then(() => discord.interact(interaction_id, interaciton_token));
+    case 'player.append': return appendToQueue(guild_id, data.components[0].components[0].value).then(() => discord.interact(interaction_id, interaction_token));
+    case 'player.clear': return clearQueue(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     default: throw new Error('Unknown interaction: ' + data.custom_id);
   }
 }
@@ -286,7 +286,7 @@ async function createInteractionComponents(guild_id) {
         type: 1,
         components: [
           { type: 2, style: 2, label: '', emoji: { name: '🔀' }, custom_id: 'player.shuffle', disabled: !hasNext },
-          { type: 2, style: 2, label: '', emoji: { name: '🔁' }, custom_id: 'player.repeat', disabled: connected },
+          { type: 2, style: 2, label: '', emoji: { name: '🔁' }, custom_id: 'player.repeat', disabled: !connected },
           { type: 2, style: 2, label: '', emoji: { name: '➕' }, custom_id: 'player.append.modal', disabled: false },
           { type: 2, style: 2, label: '', emoji: { name: '🗑️' }, custom_id: 'player.clear', disabled: !hasNext },
         ]
