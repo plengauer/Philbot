@@ -135,7 +135,6 @@ uninstall_voice() {
 
 install_scheduler() {
     sudo apt-get -y install ruby ruby-bundler &&
-    cp -f -T config.properties.scheduler ./scheduler/config.properties &&
     install scheduler scheduler ruby &&
     echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties
 }
