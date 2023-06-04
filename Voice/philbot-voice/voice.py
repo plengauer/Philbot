@@ -568,6 +568,7 @@ class Context:
                 self.__try_start()
             case _: # something else
                 self.__stop()
+                time.sleep(5)
                 self.__try_start()
     
     def __try_start(self):
@@ -623,9 +624,9 @@ class Context:
             self.user_id = user_id
             self.session_id = session_id
             self.callback_url = callback_url
-            if not self.channel_id:
-                self.endpoint = None
-                self.token = None
+            #if not self.channel_id:
+            #    self.endpoint = None
+            #    self.token = None
         self.__save()
         self.__try_start()
 
