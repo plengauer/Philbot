@@ -94,10 +94,7 @@ install_backend() {
     echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties
 }
 
-uninstall_backend() {
-    uninstall backend &&
-    rm -rf memory
-}
+uninstall_backend() { uninstall backend; }
 
 install_discordgateway2http() {
     curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&
@@ -131,7 +128,10 @@ install_voice() {
     rm libopus.tar.bz2
 }
 
-uninstall_voice() { uninstall voice; }
+uninstall_voice() {
+    uninstall voice &&
+    rm -rf voice_storage
+}
 
 install_scheduler() {
     sudo apt-get -y install ruby ruby-bundler &&
@@ -158,6 +158,7 @@ fi
 if [ $command = "redeploy" ]
 then
     bash $0 stop ${tiers[@]} &&
+    bash $0 uninstall ${tiers[@]} &&
     bash $0 install ${tiers[@]} &&
     bash $0 start ${tiers[@]}
 elif [ $command = "restart" ]
