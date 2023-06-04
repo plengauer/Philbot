@@ -6,10 +6,9 @@ const curl = require('./curl.js');
 
 async function on_voice_state_update(guild_id, channel_id, session_id) {
   if (channel_id) await memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24);
-  else await closeInteractions(guild_id);
   let me = await discord.me();
-  //let public_url = await identity.getPublicURL();
-  return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: 'http://127.0.0.1:8080/voice_callback' });
+  return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: 'http://127.0.0.1:8080/voice_callback' })
+    .then(() => channel_id ? updateInteractions(guild_id) : closeInteractions(guild_id));
 }
 
 async function on_voice_server_update(guild_id, endpoint, token) {
@@ -104,7 +103,8 @@ async function stop(guild_id) {
   return on_voice_state_update(guild_id, null, null) // simulate a stop event so that, in case events arrive in the wrong order, they dont cause a reconnect
     .then(() => discord.disconnect(guild_id))
     .then(() => memory.unset(`player:title:guild:${guild_id}`))
-    .then(() => memory.unset(`player:paused:guild:${guild_id}`));
+    .then(() => memory.unset(`player:paused:guild:${guild_id}`))
+    .then(() => closeInteractions(guild_id));
 }
 
 async function pause(guild_id) {
@@ -171,7 +171,8 @@ async function shuffleQueue(guild_id) {
 }
 
 async function clearQueue(guild_id) {
-  return memory.unset(`music_queue:guild:${guild_id}`);
+  return memory.unset(`music_queue:guild:${guild_id}`)
+    .then(() => updateInteractions(guild_id));
 }
 
 async function getQueue(guild_id) {
@@ -179,7 +180,8 @@ async function getQueue(guild_id) {
 }
 
 async function setQueue(guild_id, queue) {
-  return memory.set(`music_queue:guild:${guild_id}`, queue, 60 * 60 * 12);
+  return memory.set(`music_queue:guild:${guild_id}`, queue, 60 * 60 * 12)
+    .then(() => updateInteractions(guild_id));
 }
 
 async function openInteraction(guild_id, channel_id) {
