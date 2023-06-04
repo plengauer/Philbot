@@ -65,8 +65,12 @@ async function play0(guild_id, channel_id, youtube_link) {
   if (!channel_id) throw new Error('I don\'t know which channel to use!');
   // cant do this in parallel because the error from resolving the link should be the prominent error in case
   return VOICE_CONTENT(guild_id, youtube_link)
-    .then(() => HTTP_VOICE('voice_is_connected', { guild_id: guild_id, channel_id: channel_id }).catch(() => false).then(connected => connected == 'true' ? Promise.resolve() : discord.connect(guild_id, channel_id)))
+    .then(() => isConnected(guild_id, channel_id).then(connected => connected ? Promise.resolve() : discord.connect(guild_id, channel_id)))
     .then(() => resolveTitle(youtube_link).then(title => memory.set(`player:title:guild:${guild_id}`, title, 60 * 60 * 24)).then(() => updateInteractions(guild_id)));
+}
+
+async function isConnected(guild_id, channel_id) {
+  return HTTP_VOICE('voice_is_connected', { guild_id: guild_id, channel_id: channel_id }).then(connected => connected == 'true').catch(() => false);
 }
 
 async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = undefined, retries = 10, unavailable_links = []) {
@@ -239,14 +243,15 @@ async function updateInteractions(guild_id) {
 
 async function createInteractionComponents(guild_id) {
   let paused = await memory.get(`player:paused:guild:${guild_id}`, false);
+  let connected = await isConnected(guild_id, null);
   let hasNext = (await getQueue(guild_id)).length > 0;
   if (true) {
     return [
       { type: 2, style: 2, label: '', emoji: { name: '🎵' }, custom_id: 'player.play.modal', disabled: false },
-      { type: 2, style: 2, label: '', emoji: { name: '⏯️' }, custom_id: 'player.toggle', disabled: false },
+      { type: 2, style: 2, label: '', emoji: { name: '⏯️' }, custom_id: 'player.toggle', disabled: !connected },
       { type: 2, style: 2, label: '', emoji: { name: '⏩' }, custom_id: 'player.next', disabled: !hasNext },
       { type: 2, style: 2, label: '', emoji: { name: '🔀' }, custom_id: 'player.shuffle', disabled: !hasNext },
-      { type: 2, style: 2, label: '', emoji: { name: '⏹️' }, custom_id: 'player.stop', disabled: false }
+      { type: 2, style: 2, label: '', emoji: { name: '⏹️' }, custom_id: 'player.stop', disabled: !connected }
     ];
   } else {
     return [
