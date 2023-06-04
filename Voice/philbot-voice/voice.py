@@ -632,16 +632,18 @@ class Context:
         with self.lock:
             self.url = url
             self.paused = False
-        self.__try_start()
         self.__save()
+        self.__try_start()
 
     def pause(self):
         with self.lock:
             self.paused = True
+        self.__save()
 
     def resume(self):
         with self.lock:
             self.paused = False
+        self.__save()
     
     def is_connected(self):
         with self.lock:
