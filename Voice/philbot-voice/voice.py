@@ -61,6 +61,7 @@ UDP_MAX_PAYLOAD = 65507
 HTTP_PORT = int(os.environ.get('HTTP_PORT', str(12345)))
 UDP_PORT_MIN = int(os.environ.get('UDP_PORT_MIN', str(12346)))
 UDP_PORT_MAX = int(os.environ.get('UDP_PORT_MAX', str(65535)))
+STORAGE_DIRECTORY = os.environ['STORAGE_DIRECTORY']
 
 meter = opentelemetry.metrics.get_meter_provider().get_meter('voice', '1.0.0')
 app = Flask(__name__)
@@ -94,7 +95,7 @@ def download_from_youtube(guild_id, url):
     filename = url[url.index('v=') + 2:]
     if '&' in filename:
         filename = filename[:filename.index('&')]
-    filename = guild_id + '.' + filename
+    filename = STORAGE_DIRECTORY + '/' + guild_id + '.' + filename
     if os.path.exists(filename + '.' + codec):
         return filename + '.' + codec
     event = None
@@ -759,8 +760,8 @@ def voice_is_connected():
     return 'true' if context and context.is_connected() else 'false'
 
 def cleanup():
-    for file in os.listdir('.'):
-        if (file.endswith('.wav') or file.endswith('.aac') or file.endswith('.part') or file.endswith('.ytdl')) and os.path.getmtime(file) + 60 * 60 < time_seconds():
+    for file in os.listdir(STORAGE_DIRECTORY):
+        if os.path.getmtime(file) + 60 * 60 < time_seconds():
             try:
                 os.remove(file)
             except:
