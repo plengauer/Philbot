@@ -567,6 +567,7 @@ class Context:
                 self.__try_start()
             case _: # something else
                 self.__stop()
+                self.__try_start()
     
     def __try_start(self):
         with self.lock:
