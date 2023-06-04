@@ -202,7 +202,6 @@ async function onInteraction(guild_id, channel_id, message_id, interaction_id, i
     case 'player.stop': return stop(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.toggle': return memory.get(`player:paused:guild:${guild_id}`, false).then(paused => paused ? resume(guild_id) : pause(guild_id)).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.next': return discord.interact(interaction_id, interaction_token).then(() => playNext(guild_id, undefined));
-    case 'player.shuffle': return shuffleQueue(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.play.modal': return discord.interact(interaction_id, interaction_token, {
       type: 9,
       data: {
@@ -224,6 +223,30 @@ async function onInteraction(guild_id, channel_id, message_id, interaction_id, i
       }
     });
     case 'player.play': return discord.interact(interaction_id, interaction_token).then(() => play(guild_id, undefined, data.components[0].components[0].value));
+    case 'player.shuffle': return shuffleQueue(guild_id).then(() => discord.interact(interaction_id, interaction_token));
+    case 'player.repeat': return discord.interact(interaction_id, interaction_token); //TODO implement me
+    case 'player.append.modal': return discord.interact(interaction_id, interaction_token, {
+      type: 9,
+      data: {
+        "title": "Append",
+        "custom_id": "player.append",
+        "components": [{
+          "type": 1,
+          "components": [{
+            "type": 4,
+            "custom_id": "player.query",
+            "label": "Link or Search Query",
+            "style": 1,
+            "min_length": 5,
+            "max_length": 4000,
+            "placeholder": "Rick Astley - Never Gonna Give You Up",
+            "required": true
+          }]
+        }]
+      }
+    });
+    case 'player.append': return appendToQueue(guild_id, data.components[0].components[0].value).then(() => discord.interact(interaction_id, interaciton_token));
+    case 'player.clear': return clearQueue(guild_id).then(() => discord.interact(interaction_id, interaciton_token));
     default: throw new Error('Unknown interaction: ' + data.custom_id);
   }
 }
@@ -237,7 +260,7 @@ async function updateInteractions(guild_id) {
   let title = await memory.get(`player:title:guild:${guild_id}`, null);
   let text = title ? `Playing **${title}**` : '';
   let interaction_info = await memory.get(interactionkey(guild_id), {});
-  let components = [{ type: 1, components: await createInteractionComponents(guild_id) }];
+  let components = await createInteractionComponents(guild_id);
   return Promise.all(Object.keys(interaction_info).map(channel_id => discord.message_update(channel_id, interaction_info[channel_id], text, [], components)));
 }
 
@@ -247,20 +270,33 @@ async function createInteractionComponents(guild_id) {
   let hasNext = (await getQueue(guild_id)).length > 0;
   if (true) {
     return [
-      { type: 2, style: 2, label: '', emoji: { name: '🎵' }, custom_id: 'player.play.modal', disabled: false },
-      { type: 2, style: 2, label: '', emoji: { name: '⏯️' }, custom_id: 'player.toggle', disabled: !connected },
-      { type: 2, style: 2, label: '', emoji: { name: '⏩' }, custom_id: 'player.next', disabled: !hasNext },
-      { type: 2, style: 2, label: '', emoji: { name: '🔀' }, custom_id: 'player.shuffle', disabled: !hasNext },
-      { type: 2, style: 2, label: '', emoji: { name: '⏹️' }, custom_id: 'player.stop', disabled: !connected }
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 2, label: '', emoji: { name: '🎵' }, custom_id: 'player.play.modal', disabled: false },
+          { type: 2, style: 2, label: '', emoji: { name: '⏯️' }, custom_id: 'player.toggle', disabled: !connected },
+          { type: 2, style: 2, label: '', emoji: { name: '⏩' }, custom_id: 'player.next', disabled: !hasNext },
+          { type: 2, style: 2, label: '', emoji: { name: '⏹️' }, custom_id: 'player.stop', disabled: !connected }
+        ]
+      },
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 2, label: '', emoji: { name: '🔀' }, custom_id: 'player.shuffle', disabled: !hasNext },
+          { type: 2, style: 2, label: '', emoji: { name: '🔁' }, custom_id: 'player.repeat', disabled: connected },
+          { type: 2, style: 2, label: '', emoji: { name: '➕' }, custom_id: 'player.append.modal', disabled: false },
+          { type: 2, style: 2, label: '', emoji: { name: '🗑️' }, custom_id: 'player.clear', disabled: !hasNext },
+        ]
+      }
     ];
   } else {
-    return [
+    return [{ type: 1, components: [
       { type: 2, style: 1, label: 'Play', custom_id: 'player.play.modal', disabled: false },
       { type: 2, style: 2, label: 'Resume', custom_id: 'player.resume', disabled: !paused },
       { type: 2, style: 2, label: 'Pause', custom_id: 'player.pause', disabled: paused },
       { type: 2, style: 1, label: 'Next', custom_id: 'player.next', disabled: !hasNext },
-      { type: 2, style: 3, label: 'Stop', custom_id: 'player.stop', disabled: false }
-    ];
+      { type: 2, style: 3, label: 'Stop', custom_id: 'player.stop', disabled: connected }
+    ]}];
   }
 }
 
