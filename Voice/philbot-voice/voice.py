@@ -755,12 +755,24 @@ def voice_is_connected():
     context = get_context(body['guild_id'])
     return 'true' if context and context.is_connected() else 'false'
 
+def cleanup():
+    for file in os.listdir('.'):
+        if (file.endswith('.wav') or file.endswith('.aac') or file.endswith('.part') or file.endswith('.ytdl')) and os.path.getmtime(file) + 60 * 60 < time_seconds():
+            try:
+                os.remove(file)
+            except:
+                pass
+
+def cleanup_loop():
+    while True:
+        cleanup()
+        time.sleep(60 * 60)
+
 def main():
     for file in os.listdir('.'):
         if file.startswith('.state.') and file.endswith('.json'):
             get_context(file[len('.state.'):len(file) - len('.json')])
-        elif (file.endswith('.wav') or file.endswith('.aac') or file.endswith('.part') or file.endswith('.ytdl')) and os.path.getmtime(file) + 60 * 60 * 24 < time_seconds():
-            os.remove(file)
+    threading.Thread(target=cleanup_loop).start()
     print('VOICE ready')
     # app.run(port=HTTP_PORT, ssl_context='adhoc', threaded=True)
     app.run(port=HTTP_PORT, threaded=True)
