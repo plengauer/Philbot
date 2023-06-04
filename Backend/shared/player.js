@@ -12,7 +12,8 @@ async function on_voice_state_update(guild_id, channel_id, session_id) {
 }
 
 async function on_voice_server_update(guild_id, endpoint, token) {
-  return HTTP_VOICE('voice_server_update', { guild_id: guild_id, endpoint: endpoint, token: token });
+  return HTTP_VOICE('voice_server_update', { guild_id: guild_id, endpoint: endpoint, token: token })
+    .then(() => updateInteractions(guild_id));
 }
 
 async function play(guild_id, channel_id, search_string) {
