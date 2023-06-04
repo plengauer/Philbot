@@ -762,7 +762,7 @@ def voice_is_connected():
 
 def cleanup():
     for file in os.listdir(STORAGE_DIRECTORY):
-        if os.path.getmtime(file) + 60 * 60 < time_seconds():
+        if os.path.getmtime(STORAGE_DIRECTORY + '/' + file) + 60 * 60 < time_seconds():
             try:
                 os.remove(STORAGE_DIRECTORY + '/' + file)
             except:
