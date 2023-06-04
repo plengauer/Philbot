@@ -11,7 +11,7 @@ async function handle(payload) {
       await discord.post(values[0].system_channel_id, `Hi, I'm <@${me.id}>. I can play music, tell jokes, schedule weekly events, whatever you need. Type \'<@${me.id}> help\' to learn how to talk to me. I'm always around and happy to help.`);
     }
   } else {
-    if (await features.isActive(guild.id, "role management")) {
+    if (await features.isActive(guild_id, "role management")) {
       await role_management.update_all(guild_id);
     }
   }
