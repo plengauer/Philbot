@@ -117,10 +117,11 @@ const endpoint_discord_message_create = require('./endpoints/api/discord/message
 const endpoint_discord_message_reaction_add = require('./endpoints/api/discord/message_reaction_add.js');
 const endpoint_discord_message_reaction_remove = require('./endpoints/api/discord/message_reaction_remove.js');
 const endpoint_discord_presence_update = require('./endpoints/api/discord/presence_update.js');
-const endpoint_discord_voice_state_update = require('./endpoints/api/discord/voice_state_update.js');
-const endpoint_discord_voice_server_update = require('./endpoints/api/discord/voice_server_update.js');
+const endpoint_discord_typing_start = require('./endpoints/api/discord/typing_start.js');
 const endpoint_discord_voice_playback_finished = require('./endpoints/api/discord/voice_playback_finished.js');
 const endpoint_discord_voice_reconnect = require('./endpoints/api/discord/voice_reconnect.js');
+const endpoint_discord_voice_server_update = require('./endpoints/api/discord/voice_server_update.js');
+const endpoint_discord_voice_state_update = require('./endpoints/api/discord/voice_state_update.js');
 const discord = require('./shared/discord.js');
 
 let revision = 0;
@@ -322,10 +323,11 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/discord/message_reaction_add': return dispatchAPIAuthorized(headers, () => endpoint_discord_message_reaction_add.handle(payload));
         case '/discord/message_reaction_remove': return dispatchAPIAuthorized(headers, () => endpoint_discord_message_reaction_remove.handle(payload));
         case '/discord/presence_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_presence_update.handle(payload));
-        case '/discord/voice_state_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_state_update.handle(payload));
-        case '/discord/voice_server_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_server_update.handle(payload));
+        case '/discord/typing_start': return dispatchAPIAuthorized(headers, () => endpoint_discord_typing_start.handle(payload));
         case '/voice_callback/voice_playback_finished': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_playback_finished.handle(payload));
         case '/voice_callback/voice_reconnect': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_reconnect.handle(payload));
+        case '/discord/voice_server_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_server_update.handle(payload));
+        case '/discord/voice_state_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_state_update.handle(payload));
         default: return { status: 404, body: 'Not found' };
     }
 }
