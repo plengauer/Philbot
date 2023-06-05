@@ -227,7 +227,7 @@ async function createTranscription(user, audio_stream, audio_stream_format, audi
   if (!await canCreate()) return null;
   let body = new FormData();
   body.append('model', model, { contentType: 'string' });
-  body.append('file', audio_stream, { contentType: 'audio/' + audio_stream_format, filename: 'audio.' + format });
+  body.append('file', audio_stream, { contentType: 'audio/' + audio_stream_format, filename: 'audio.' + audio_stream_format });
   let response = await HTTP('/v1/audio/transcriptions', body, body.getHeaders());
   await bill(getTranscriptionCost(model, audio_stream_length_millis), model, user);
   return response.text;
