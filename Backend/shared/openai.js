@@ -235,7 +235,7 @@ async function createTranscription(user, audio_stream, audio_stream_format, audi
 
 function getTranscriptionCost(model, time_millis) {
   switch (model) {
-    case "whisper-1": return Math.round(time_millis / 1000) / 10 * 0.006;
+    case "whisper-1": return Math.round(time_millis / 1000) / 60 * 0.006;
     default: throw new Error('Unknown model: ' + model);
   }
 }
