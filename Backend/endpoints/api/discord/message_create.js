@@ -35,7 +35,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     if (!model) return;
     let uri = url.parse(attachment.url);
     let voice_message_audio = await curl.request({ hostname: uri.hostname, path: uri.pathname, stream: true });
-    if (!['mp3', 'mp4', 'wav', 'm4a'].map(format => 'audio/' + format).includes(attachment.content_type)) {
+    if (!['mp3', 'mp4', 'wav', 'm4a', 'webm', 'mpga', 'wav', 'mpeg'].map(format => 'audio/' + format).includes(attachment.content_type)) {
       const convertion = child_process.spawn("ffmpeg", ["-i", "pipe:0", "-f", "mp3", "pipe:1"]);
       voice_message_audio.pipe(convertion.stdin);
       voice_message_audio = convertion.stdout;
