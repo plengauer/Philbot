@@ -241,7 +241,7 @@ async function HTTP(endpoint, body, form = false) {
   let headers = {};
   if (form) {
     let formdata = new FormData();
-    for (let key of Object.keys(body)) {
+    for (let key in body) {
       formdata.append(key, body[key]);
     }
     headers = formdata.getHeaders();
@@ -307,7 +307,7 @@ function computeBillingSlotProgress() {
 async function getModels() {
   return curl.request({ method: 'GET', hostname: 'api.openai.com', path: '/v1/models', headers: { 'Authorization': 'Bearer ' + token }, cache: 60 * 60 * 24 })
     .then(result => result.data.map(model => model.id.replace(/:/, '-')))
-    .then(models = Array.from(new Set(models)));
+    .then(models => Array.from(new Set(models)));
 }
 
 function getModelPower(model) {

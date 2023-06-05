@@ -167,6 +167,7 @@ async function handleMessageForFunReplies(channel_id, event_id, user_id, message
       let extraction = await chatgpt.createCompletion(user_id, `Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model);
       if (!extraction || extraction == dummy_token || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
       let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
+      if (!image_model) break;
       let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
       let file = await chatgpt.createImage(user_id, extraction, image_model, image_size);
       await discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
