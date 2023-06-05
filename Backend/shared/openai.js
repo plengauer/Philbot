@@ -1,4 +1,5 @@
 const process = require('process');
+const child_process = require('child_process');
 const url = require('url');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
@@ -225,6 +226,12 @@ async function createTranscription(user, audio_stream, audio_stream_format, audi
   model = model ?? (await getTranscriptionModels()).slice(-1);
   if (!token) return null;
   if (!await canCreate()) return null;
+  if (!['mp3', 'mp4', 'wav', 'm4a', 'webm', 'mpga', 'wav', 'mpeg'].includes(audio_stream_format)) {
+    audio_stream_format = 'mp3';
+    const convertion = child_process.spawn("ffmpeg", ["-i", "pipe:0", "-f", audio_stream_format, "pipe:1"]);
+    audio_stream.pipe(convertion.stdin);
+    audio_stream = convertion.stdout;
+  }
   let body = new FormData();
   body.append('model', model, { contentType: 'string' });
   body.append('file', audio_stream, { contentType: 'audio/' + audio_stream_format, filename: 'audio.' + audio_stream_format });

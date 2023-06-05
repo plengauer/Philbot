@@ -1,6 +1,5 @@
 const process = require('process');
 const fs = require('fs');
-const child_process = require('child_process');
 const url = require('url');
 const boomer = require('boomerencoding');
 const curl = require('../../../shared/curl.js');
@@ -35,13 +34,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     if (!model) return;
     let uri = url.parse(attachment.url);
     let voice_message_audio = await curl.request({ hostname: uri.hostname, path: uri.pathname, stream: true });
-    const format = 'mp3';
-    if (!['mp3', 'mp4', 'wav', 'm4a', 'webm', 'mpga', 'wav', 'mpeg'].map(format => 'audio/' + format).includes(attachment.content_type)) {
-      const convertion = child_process.spawn("ffmpeg", ["-i", "pipe:0", "-f", format, "pipe:1"]);
-      voice_message_audio.pipe(convertion.stdin);
-      voice_message_audio = convertion.stdout;
-    }
-    message = await chatgpt.createTranscription(user_id, voice_message_audio, format, attachment.duration_secs * 1000, model);
+    message = await chatgpt.createTranscription(user_id, voice_message_audio, attachment.content_type.split('/')[1], attachment.duration_secs * 1000, model);
     if (!message) return;
     attachments = [];
   }
