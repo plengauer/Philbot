@@ -221,13 +221,13 @@ async function getTranscriptionModels() {
   return getModels().then(models => models.filter(model => model.startsWith('whisper-')));
 }
 
-async function createTranscription(user, audio_stream, audio_stream_length_millis, model = undefined) {
+async function createTranscription(user, audio_stream, audio_stream_format, audio_stream_length_millis, model = undefined) {
   model = model ?? (await getTranscriptionModels()).slice(-1);
   if (!token) return null;
   if (!await canCreate()) return null;
   let body = new FormData();
   body.append('model', model, { contentType: 'string' });
-  body.append('file', audio_stream, { contentType: 'audio/mp3', filename: 'voice_message.mp3' });
+  body.append('file', audio_stream, { contentType: 'audio/' + audio_stream_format, filename: 'audio.' + format });
   let response = await HTTP('/v1/audio/transcriptions', body, body.getHeaders());
   await bill(getTranscriptionCost(model, audio_stream_length_millis), model, user);
   return response.text;
@@ -235,7 +235,7 @@ async function createTranscription(user, audio_stream, audio_stream_length_milli
 
 function getTranscriptionCost(model, time_millis) {
   switch (model) {
-    case "whisper-1": return Math.round(time_millis / 1000) * 0.006;
+    case "whisper-1": return Math.round(time_millis / 1000) / 10 * 0.006;
     default: throw new Error('Unknown model: ' + model);
   }
 }
