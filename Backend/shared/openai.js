@@ -4,6 +4,7 @@ const memory = require('./memory.js');
 const curl = require('./curl.js');
 const synchronized = require('./synchronized.js');
 const opentelemetry = require('@opentelemetry/api');
+let FormData = require('form-data');
 
 const token = process.env.OPENAI_API_KEY;
 const cost_limit = parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
@@ -16,9 +17,17 @@ meter.createObservableGauge('openai.cost.slotted.progress').addCallback(async (r
 const request_counter = meter.createCounter('openai.requests');
 const cost_counter = meter.createCounter('openai.cost');
 
+function compareLanguageModelByCost(cheap_model, expensive_model) {
+  return computeLanguageCost(cheap_model, 1, 1) < computeLanguageCost(expensive_model, 1, 1);
+}
+
+function compareLanguageModelByPower(bad_model, good_model) {
+  return getModelPower(bad_model) < getModelPower(good_model);
+}
+
 async function getLanguageModels() {
-  let models = await curl.request({ method: 'GET', hostname: 'api.openai.com', path: '/v1/models', headers: { 'Authorization': 'Bearer ' + token }, cache: 60 * 60 * 24 }).then(result => result.data.map(model => model.id));
-  models = models.filter(model => model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || (model.match(/gpt-*/) && !model.match(/-\d{4}$/))).map(model => model.replace(/:/, '-'));
+  let models = await getModels();
+  models = models.filter(model => model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || (model.match(/gpt-*/) && !model.match(/-\d{4}$/)));
   models = Array.from(new Set(models));
   models = models.sort((m1, m2) => {
     let p1 = getModelPower(m1);
@@ -26,18 +35,6 @@ async function getLanguageModels() {
     return (p1 != p2) ? p1 - p2 : m1.localeCompare(m2);
   });
   return models;
-}
-
-function getModelPower(model) {
-  return parseFloat(model.match(/\d+(\.\d+)?/g).join(''));
-}
-
-function compareLanguageModelByCost(cheap_model, expensive_model) {
-  return computeLanguageCost(cheap_model, 1, 1) < computeLanguageCost(expensive_model, 1, 1);
-}
-
-function compareLanguageModelByPower(bad_model, good_model) {
-  return getModelPower(bad_model) < getModelPower(good_model);
 }
 
 async function createCompletion(user, prompt, model = undefined, temperature = undefined) {
@@ -178,13 +175,19 @@ async function createBoolean(user, question, model = undefined, temperature = un
   return boolean == 'yes';
 }
 
+const IMAGE_MODELS = [ 'dall-e 2' ];
 const IMAGE_SIZES = ["256x256", "512x512", "1024x1024"];
 
-function getImageSizes() {
+async function getImageModels() {
+  return IMAGE_MODELS;
+}
+
+function getImageSizes(model) {
   return IMAGE_SIZES;
 }
 
-async function createImage(user, prompt, size = undefined) {
+async function createImage(user, prompt, model = undefined, size = undefined) {
+  model = model ?? (await getImageModels()).slice(-1);
   if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
   if (!token) return null;
   if (!await canCreate()) return null;
@@ -194,7 +197,7 @@ async function createImage(user, prompt, size = undefined) {
     let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', size: size });
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
-    await bill(getImageCost(size), 'dall-e 2', user);
+    await bill(getImageCost(model, size), model, user);
     return image;
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
@@ -205,19 +208,50 @@ async function pipeImage(url) {
   return curl.request({ hostname: url.hostname, path: url.pathname + (url.search ?? ''), stream: true });
 }
 
-function getImageCost(size) {
+function getImageCost(model, size) {
   switch(size) {
     case   "256x256": return 0.016;
     case   "512x512": return 0.018;
     case "1024x1024": return 0.020;
+    default: throw new Error('Unknown size: ' + size);
   }
 }
 
-async function HTTP(endpoint, body) {
+async function getTranscriptionModels() {
+  return getModels().then(models => models.filter(model => model.startsWith('whisper-')));
+}
+
+async function createTranscription(user, audio_stream, audio_stream_length_millis, model = undefined) {
+  model = model ?? (await getTranscriptionModels()).slice(-1);
+  if (!token) return null;
+  if (!await canCreate()) return null;
+  let response = await HTTP('/v1/audio/transcriptions', { model: model, file: audio_stream }, true);
+  await bill(getTranscriptionCost(model, audio_stream_length_millis), model, user);
+  return response.text;
+}
+
+function getTranscriptionCost(model, time_millis) {
+  switch (model) {
+    case "whisper-1": return Math.round(time_millis / 1000) * 0.006;
+    default: throw new Error('Unknown model: ' + model);
+  }
+}
+
+async function HTTP(endpoint, body, form = false) {
+  let headers = {};
+  if (form) {
+    let formdata = new FormData();
+    for (let key of Object.keys(body)) {
+      formdata.append(key, body[key]);
+    }
+    headers = formdata.getHeaders();
+    body = formdata;
+  }
+  headers['Authorization'] = 'Bearer ' + token;
   let result = await curl.request({
     hostname: 'api.openai.com',
     path: endpoint,
-    headers: { 'Authorization': 'Bearer ' + token },
+    headers: headers,
     method: 'POST',
     body: body,
     timeout: 1000 * 60 * 15
@@ -270,6 +304,16 @@ function computeBillingSlotProgress() {
   return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
+async function getModels() {
+  return curl.request({ method: 'GET', hostname: 'api.openai.com', path: '/v1/models', headers: { 'Authorization': 'Bearer ' + token }, cache: 60 * 60 * 24 })
+    .then(result => result.data.map(model => model.id.replace(/:/, '-')))
+    .then(models = Array.from(new Set(models)));
+}
+
+function getModelPower(model) {
+  return parseFloat(model.match(/\d+(\.\d+)?/g).join(''));
+}
+
 const DEFAULT_DYNAMIC_MODEL_SAFETY = 0.5;
 
 function getDefaultDynamicModelSafety() {
@@ -286,4 +330,4 @@ async function getDynamicModel(models, safety = DEFAULT_DYNAMIC_MODEL_SAFETY) {
   return process.env.OPENAI_DYNAMIC_MODEL_OVERRIDE ?? models[model_index];
 }
 
-module.exports = { getLanguageModels, compareLanguageModelByCost, compareLanguageModelByPower, createCompletion, createResponse, createBoolean, getImageSizes, createImage, canCreate, shouldCreate, getDynamicModel, getDefaultDynamicModelSafety  }
+module.exports = { getLanguageModels, compareLanguageModelByCost, compareLanguageModelByPower, createCompletion, createResponse, createBoolean, getImageModels, getImageSizes, createImage, getTranscriptionModels, createTranscription, canCreate, shouldCreate, getDynamicModel, getDefaultDynamicModelSafety  }

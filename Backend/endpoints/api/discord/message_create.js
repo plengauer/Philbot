@@ -1,5 +1,6 @@
 const process = require('process');
 const fs = require('fs');
+const child_process = require('child_process');
 const url = require('url');
 const boomer = require('boomerencoding');
 const curl = require('../../../shared/curl.js');
@@ -21,14 +22,29 @@ const role_management = require('../../../shared/role_management.js');
 const chatgpt = require('../../../shared/openai.js');
 const translator = require('../../../shared/translator.js');
 const mirror = require('../../../shared/mirror.js');
-const { getDynamicModel } = require('../../../shared/openai.js');
 
 async function handle(payload) {
-  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id, payload.attachments, payload.embeds, payload.components)
+  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id, payload.attachments, payload.embeds, payload.components, payload.flags)
     .then(() => undefined);
 }
 
-async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, attachments, embeds, components) {
+async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, attachments, embeds, components, flags) {
+  if ((flags & (1 << 13)) != 0) {
+    let attachment = attachments[0];
+    let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
+    if (!model) return;
+    let uri = url.parse(attachment.url);
+    let voice_message_audio = await curl.request({ hostname: uri.hostname, path: uri.pathname, stream: true });
+    if (!['mp3', 'mp4', 'wav', 'm4a'].map(format => 'audio/' + format).includes(attachment.content_type)) {
+      const convertion = child_process.spawn("ffmpeg", ["-i", "pipe:0", "-f", "mp3", "pipe:1"]);
+      voice_message_audio.pipe(convertion.stdin);
+      voice_message_audio = convertion.stdout;
+    }
+    message = await chatgpt.createTranscription(user_id, voice_message_audio, attachment.duration_secs * 1000, model);
+    if (!message) return;
+    attachments = [];
+  }
+
   await mirror.on_message_create(guild_id, channel_id, user_id, event_id, message, referenced_message_id, attachments, embeds, components);
 
   message = message.trim();
@@ -150,7 +166,9 @@ async function handleMessageForFunReplies(channel_id, event_id, user_id, message
       const dummy_token = 'NULL';
       let extraction = await chatgpt.createCompletion(user_id, `Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model);
       if (!extraction || extraction == dummy_token || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
-      let file = await chatgpt.createImage(user_id, extraction, await chatgpt.getDynamicModel(chatgpt.getImageSizes()));
+      let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
+      let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
+      let file = await chatgpt.createImage(user_id, extraction, image_model, image_size);
       await discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
       break;
     case 3:
@@ -809,8 +827,10 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
   
   } else if (message.startsWith('draw ')) {
     message = message.split(' ').slice(1).join(' ');
-    return handleLongResponse(channel_id, () => chatgpt.getDynamicModel(chatgpt.getImageSizes())
-      .then(size => size ? chatgpt.createImage(user_id, message, size) : null)
+    let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
+    if (!image_model) return reactNotOK(channel_id, event_id);
+    let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
+    return handleLongResponse(channel_id, () => chatgpt.createImage(user_id, message, image_model, image_size)
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
       .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
