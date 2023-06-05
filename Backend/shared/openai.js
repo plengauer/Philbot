@@ -225,7 +225,10 @@ async function createTranscription(user, audio_stream, audio_stream_length_milli
   model = model ?? (await getTranscriptionModels()).slice(-1);
   if (!token) return null;
   if (!await canCreate()) return null;
-  let response = await HTTP('/v1/audio/transcriptions', { model: model, file: audio_stream }, true);
+  let body = new FormData();
+  body.append('model', model, { contentType: 'string' });
+  body.append('file', audio_stream, { contentType: 'audio/mp3', filename: 'voice_message.mp3' });
+  let response = await HTTP('/v1/audio/transcriptions', body, body.getHeaders());
   await bill(getTranscriptionCost(model, audio_stream_length_millis), model, user);
   return response.text;
 }
@@ -237,16 +240,7 @@ function getTranscriptionCost(model, time_millis) {
   }
 }
 
-async function HTTP(endpoint, body, form = false) {
-  let headers = {};
-  if (form) {
-    let formdata = new FormData();
-    for (let key in body) {
-      formdata.append(key, body[key]);
-    }
-    headers = formdata.getHeaders();
-    body = formdata;
-  }
+async function HTTP(endpoint, body, headers = {}) {
   headers['Authorization'] = 'Bearer ' + token;
   let result = await curl.request({
     hostname: 'api.openai.com',
@@ -256,7 +250,7 @@ async function HTTP(endpoint, body, form = false) {
     body: body,
     timeout: 1000 * 60 * 15
   });
-  if (debug) console.log('DEBUG OPENAI ' + JSON.stringify(body) + ' => ' + (endpoint == '/v1/images/generations' && body.response_format == 'b64_json' ? '###' : JSON.stringify(result)));
+  if (debug) console.log('DEBUG OPENAI ' + (endpoint == '/v1/audio/transcriptions' ? '<audio>' :  JSON.stringify(body)) + ' => ' + (endpoint == '/v1/images/generations' && body.response_format == 'b64_json' ? '###' : JSON.stringify(result)));
   return result;
 }
 
