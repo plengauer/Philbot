@@ -46,15 +46,17 @@ async function on_message_create(guild_id, channel_id, message_id, user_id, cont
   }
   
   // gpt-3.5-turbo seems really bad at answering with exactly only the language, worse then older generation completion models!
+  const dummy_token = 'NULL';
   let source_language = await chatgpt.createCompletion(
     user_id,
-    `Determine the language of the text, ignoring typos.\nText: ${content}\nLanguage: `,
+    `Determine the language of the text. Ignore typos. Respond with ${dummy_token} if no clear language can be determined.\nText: ${content}\nLanguage: `,
     model != 'gpt-3.5-turbo' ? model : models[models.indexOf('gpt-3.5-turbo') - 1],
     0
   );
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);
   if (!source_language) return;
   if (source_language.endsWith('.')) source_language = source_language.substring(0, source_language.length - 1);
+  if (source_language == dummy_token || source_language.startsWith(dummy_token)) return;
   if (source_language.split(',').some(language => language.split(' ').filter(token => token.length > 0).length > 3)) throw new Error('Invalid language: ' + source_language);
   if (source_language.toLowerCase().split(',').every(language => language == target_language.toLowerCase().trim() || NONE_LANGUAGES.some(none_language => language.includes(none_language)))) return;
   
