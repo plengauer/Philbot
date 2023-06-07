@@ -168,6 +168,10 @@ async function guild_channel_create(guild_id, name, category, type) {
     });
 }
 
+async function guild_channel_retrieve(guild_id, channel_id) {
+  return HTTP(`/channels/${channel_id}`, 'GET');
+}
+
 async function guild_channel_delete(guild_id, channel_id) {
   return HTTP(`/channels/${channel_id}`, 'DELETE');
 }
@@ -382,25 +386,36 @@ async function disconnect(guild_id) {
   return GATEWAY_HTTP('/voice_state_update', 'POST', guild_id, { guild_id: guild_id, channel_id: null });
 }
 
-async function guild_members_list_with_permission(guild_id, permission) {
-  return guild_members_list_with_any_permission(guild_id, [ permission ]);
+async function guild_members_list_with_permission(guild_id, channel_id, permission) {
+  return guild_members_list_with_any_permission(guild_id, channel_id, [ permission ]);
 }
 
-async function guild_members_list_with_any_permission(guild_id, permissions) {
-  return Promise.all([ guild_retrieve(guild_id), guild_members_list(guild_id), guild_roles_list(guild_id) ])
-    .then(data => data[1].filter(member => permissions.some(permission => guild_member_has_permission_0(data[0], data[2], member, permission))));
+async function guild_members_list_with_any_permission(guild_id, channel_id, permissions) {
+  return Promise.all([ guild_retrieve(guild_id), channel_id ? guild_channel_retrieve(guild_id, channel_id) : null, guild_members_list(guild_id), guild_roles_list(guild_id) ])
+    .then(data => data[2].filter(member => permissions.some(permission => guild_member_has_permission_0(data[0], data[1], data[3], member, permission))));
 }
 
-async function guild_member_has_permission(guild_id, user_id, permission) {
-  return Promise.all([ guild_retrieve(guild_id), guild_roles_list(guild_id), guild_member_retrieve(guild_id, user_id) ])
-    .then(data => guild_member_has_permission_0(data[0], data[1], data[2], permission));
+async function guild_member_has_permission(guild_id, channel_id, user_id, permission) {
+  return Promise.all([ guild_retrieve(guild_id), channel_id ? guild_channel_retrieve(guild_id, channel_id) : null, guild_roles_list(guild_id), guild_member_retrieve(guild_id, user_id) ])
+    .then(data => guild_member_has_permission_0(data[0], data[1], data[2], data[3], permission));
 }
 
-function guild_member_has_permission_0(guild, roles, member, permission) {
-  return guild.owner_id == member.user.id || roles
-    .filter(role => member.roles.includes(role.id))
-    .map(role => permissions.decompile(role.permissions))
-    .some(permission_names => permission_names.includes(permission) || permission_names.includes('ADMINISTRATOR'));
+async function guild_member_has_all_permissions(guild_id, channel_id, user_id, permissions) {
+  return Promise.all([ guild_retrieve(guild_id), channel_id ? guild_channel_retrieve(guild_id, channel_id) : null, guild_roles_list(guild_id), guild_member_retrieve(guild_id, user_id) ])
+    .then(data => permissions.every(permission => guild_member_has_permission_0(data[0], data[1], data[2], data[3], permission)));
+}
+
+function guild_member_has_permission_0(guild, channel, roles, member, permission) {
+  if (guild.owner_id == member.user.id) return true;
+  let member_permissions = Array.from(new Set(roles.filter(role => member.roles.includes(role.id)).map(role => permissions.decompile(role.permissions)).reduce((p1, p2) => p1.concat(p2), [])));
+  if (member_permissions.includes('ADMINISTRATOR')) return true;
+  for (let permission_overwrite of channel?.permission_overwrites ?? []) {
+    if ((permission_overwrite.type == 0 && member.roles.includes(permission_overwrite.id)) || (permission_overwrite.type == 1 && permission_overwrite.id == member.user.id)) {
+      if (permissions.decompile(permission_overwrite.deny).includes(permission)) return false;
+      if (permissions.decompile(permission_overwrite.allow).includes(permission)) return true;
+    }
+  }
+  return member_permissions.includes(permission);
 }
 
 async function HTTP(endpoint, method, payload = undefined, ttc = 1) {
@@ -450,6 +465,7 @@ module.exports = {
   guild_role_delete,
   
   guild_channels_list,
+  guild_channel_retrieve,
   guild_channel_create,
   guild_channel_delete,
   guild_channel_rename,
@@ -493,6 +509,7 @@ module.exports = {
   disconnect,
   
   guild_member_has_permission,
+  guild_member_has_all_permissions,
   guild_members_list_with_permission,
   guild_members_list_with_any_permission
 }

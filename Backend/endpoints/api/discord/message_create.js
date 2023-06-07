@@ -55,10 +55,10 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   } else if (message.startsWith('@' + me.username + ' ')) {
     mentioned = true;
     message = message.substring(1 + me.username.length).trim();
-  } else if (message.startsWith(`@` + discord.user2name(me) + ' ')) {
+  } else if (message.startsWith('@' + discord.user2name(me) + ' ')) {
     mentioned = true;
     message = message.substring(1 + discord.user2name(me).length).trim();
-  } else if (message.startsWith(`<@${me.id}>`) || message.startsWith(`<@!${me.id}>`)) {
+  } else if (message.startsWith(discord.mention_user(me.id)) || message.startsWith(`<@!${me.id}>`)) {
     mentioned = true;
     message = message.substring(message.indexOf('>') + 1).trim();
   } else if (guild_id && message.startsWith('<@&')) {
@@ -67,17 +67,29 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   } else {
     mentioned = !guild_id && user_id != me.id;
   }
+
+  let can_respond = !guild_id || await discord.guild_member_has_all_permissions(guild_id, channel_id, me.id, permissions.required());
+  if (!can_respond && mentioned) {
+    const key = `mute:auto:message.create.permissions:channel:${channel_id}`;
+    if (!await memory.get(key, false)) {
+      await memory.set(key, true, 60 * 60 * 24 * 7);
+      let text = `Due to permissions, I'm **unable to respond** to ${discord.message_link_create(guild_id, channel_id, event_id)}.`
+        + ' Make sure both my role and the channel overrides grant me at least ' + permissions.required().join(', ') + '.';
+      await Promise.all(discord.guild_members_list_with_any_permission(guild_id, null, ['MANAGE_SERVER', 'MANAGE_ROLES']))
+        .then(members => members.map(member => discord.try_dms(member.user.id, text)));
+    }
+  }
   
   return Promise.all([
-    guild_id && !mentioned ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
-    mentioned ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
+    features.isActive(guild_id, 'raid protection').then(active => guild_id && !mentioned && active ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
+    features.isActive(guild_id, 'role management').then(active => guild_id && !mentioned && active ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
+    guild_id && !mentioned && can_respond ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
+    mentioned && can_respond ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
   ]);
 }
 
 async function handleMessage(guild_id, channel_id, event_id, user_id, message) {
   return Promise.all([
-    features.isActive(guild_id, 'raid protection').then(active => active ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
-    features.isActive(guild_id, 'role management').then(active => active ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
     translator.on_message_create(guild_id, channel_id, event_id, user_id, message),
     handleMessageForTriggers(guild_id, channel_id, event_id, message),
     handleMessageForSpecificActivityMentions(guild_id, channel_id, event_id, user_id, message),
@@ -408,7 +420,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!await features.isActive(guild_id, 'repeating events')) {
       return respondNeedsFeatureActive(channel_id, event_id, 'repeating events', 'add a repeating event');
     }
-    if (!await discord.guild_member_has_permission(guild_id, user_id, 'MANAGE_EVENTS')) {
+    if (!await discord.guild_member_has_permission(guild_id, null, user_id, 'MANAGE_EVENTS')) {
       return discord.respond(channel_id, event_id, 'You need the \'Manage Events\' permission to add repeating events.')
     }
     
@@ -470,7 +482,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!await features.isActive(guild_id, 'repeating events')) {
       return respondNeedsFeatureActive(channel_id, event_id, 'repeating events', 'remove a repeating event');
     }
-    if (!await discord.guild_member_has_permission(guild_id, user_id, 'MANAGE_EVENTS')) {
+    if (!await discord.guild_member_has_permission(guild_id, null, user_id, 'MANAGE_EVENTS')) {
       return discord.respond(channel_id, event_id, 'You need the \'Manage Events\' permission to add or remove repeating events.')
     }
     message = message.substring('remove repeating event '.length);
@@ -721,7 +733,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'activate a feature');
     let feature = message.split(' ').slice(1).join(' ');
     if (!features.list().includes(feature)) return reactNotOK(channel_id, event_id);
-    let needed_permissions = await Promise.all(permissions.required([ feature ]).map(permission => discord.guild_member_has_permission(guild_id, me.id, permission).then(has => has ? null : permission))).then(names => names.filter(name => !!name));
+    let needed_permissions = await Promise.all(permissions.required([ feature ]).map(permission => discord.guild_member_has_permission(guild_id, null, me.id, permission).then(has => has ? null : permission))).then(names => names.filter(name => !!name));
     if (needed_permissions.length > 0) {
       return discord.respond(channel_id, event_id, `Before I can activate ${feature}, pls grant me the following permissions (via Server Settings -> Roles -> ${me.username} -> Permissions): ` + needed_permissions.map(name => `**${name}**`).join(', ') + '.');
     }
@@ -1006,7 +1018,7 @@ async function reactNotOK(channel_id, event_id) {
 }
 
 async function hasMasterPermission(guild_id, user_id) {
-  return discord.guild_member_has_permission(guild_id, user_id, 'MANAGE_SERVER');
+  return discord.guild_member_has_permission(guild_id, null, user_id, 'MANAGE_SERVER');
 }
 
 async function respondNeedsMasterPermission(channel_id, event_id, action) {

@@ -125,7 +125,7 @@ async function on_guild_message_create_for_scam_protection_0(guild_id, channel_i
   return Promise.all([
     memory.set(key, true, 60 * 5),
     notify_scam(guild_id),
-    quarantine_messages(suspect_messages),
+    quarantine_messages(suspect_messages).catch(() => {}),
     kick_and_ban_user(guild_id, message.author.id, 'suspect about a scam')
   ]).then(() => notify_scam_contained(guild_id, messages));
 }
@@ -158,7 +158,7 @@ async function notify_moderators(guild_id, text) {
 }
 
 async function list_moderators(guild_id) {
-  return discord.guild_members_list_with_any_permission(guild_id, [ 'ADMINISTRATOR', 'MANAGE_SERVER', 'MANAGE_ROLES', 'MANAGE_CHANNELS', 'MODERATE_MEMBERS', 'KICK_MEMBERS', 'BAN_MEMBERS' ]);
+  return discord.guild_members_list_with_any_permission(guild_id, null, [ 'ADMINISTRATOR', 'MANAGE_SERVER', 'MANAGE_ROLES', 'MANAGE_CHANNELS', 'MODERATE_MEMBERS', 'KICK_MEMBERS', 'BAN_MEMBERS' ]);
 }
 
 module.exports = { lockdown, all_clear, on_guild_member_add, on_guild_message_create }

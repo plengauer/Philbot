@@ -17,7 +17,7 @@ async function configure_mirror(guild_id, user_id, input_mirror_guild_id = undef
     let me = await discord.me();
     if (!members.every(member => member.user.id == user_id || member.user.id == me.id)) throw new Error();
     if (members.length != 2) throw new Error();
-    if (!discord.guild_member_has_permission(mirror.id, me.id, 'ADMINISTRATOR')) throw new Error();
+    if (!discord.guild_member_has_permission(mirror.id, null, me.id, 'ADMINISTRATOR')) throw new Error();
   } else {
     mirror = await discord.guild_create(`${original.name} Mirror`);
   }

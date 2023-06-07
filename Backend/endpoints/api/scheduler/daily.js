@@ -44,7 +44,7 @@ async function verifyPermissions(guild_id) {
   if (missing.length == 0 && unnecessary.length == 0) return;
   
   let guild = await discord.guild_retrieve(guild_id);
-  let manage_roles_members = await discord.guild_members_list_with_permission(guild_id, 'MANAGE_ROLES');
+  let manage_roles_members = await discord.guild_members_list_with_permission(guild_id, null, 'MANAGE_ROLES');
   manage_roles_members = manage_roles_members.filter(member => Math.random() < 1.0 / manage_roles_members.length); // only send to a few to not annoy too much
   if (missing.length > 0) {
     return Promise.all(manage_roles_members.map(manage_roles_member => discord.try_dms(manage_roles_member.user.id, `Hi ${discord.member2name(manage_roles_member)}, I'm **missing** some crucial **permissions** for ${guild.name} to do my work properly. Please grant me the following additional permissions (via Server Settings -> Roles -> ${my_role.name} -> Permissions): ` + missing.map(p => `**${p}**`).join(', ') + '.')));

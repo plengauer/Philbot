@@ -276,7 +276,7 @@ async function guild_member_role_unassign(guild_id, user_id, role_id) {
 async function report_failure(guild_id, user_id, role_id, assign) {
     let me = await discord.me();
     let guild = await discord.guild_retrieve(guild_id);
-    let reportees = await discord.guild_members_list_with_permission(guild_id, 'MANAGE_SERVER');
+    let reportees = await discord.guild_members_list_with_permission(guild_id, null, 'MANAGE_SERVER');
     let role = await discord.guild_role_retrieve(guild_id, role_id);
     let member = await discord.guild_member_retrieve(guild_id, user_id);
     let operation = assign ? 'assign' : 'unassign';
