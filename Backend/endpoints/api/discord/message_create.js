@@ -37,7 +37,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     if (!message) return;
     if (guild_id) {
       for (let member of await discord.guild_members_list(guild_id)) {
-        for (let name of [ discord.member2name(member), discord.user2name(member.user) ]) {
+        for (let name of [ discord.member2name(member), discord.user2name(member.user), discord.user.username ]) {
           while (message.includes(name)) message = message.replace(name, discord.mention_user(member.user.id));
         }
       }
