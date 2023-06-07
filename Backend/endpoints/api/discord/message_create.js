@@ -8,7 +8,6 @@ const delayed_memory = require('../../../shared/delayed_memory.js');
 const discord = require('../../../shared/discord.js');
 const player = require('../../../shared/player.js');
 const games = require('../../../shared/games/games.js');
-const wow = require('../../../shared/games/wow.js');
 const lol = require('../../../shared/games/lol.js');
 const urban_dictionary = require('../../../shared/urban_dictionary.js');
 const tournament = require('../../../shared/tournament.js');
@@ -36,18 +35,17 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     let voice_message_audio = await curl.request({ hostname: uri.hostname, path: uri.pathname, stream: true });
     message = await chatgpt.createTranscription(user_id, voice_message_audio, attachment.content_type.split('/')[1], attachment.duration_secs * 1000, model);
     if (!message) return;
-    attachments = [];
   }
 
   await mirror.on_message_create(guild_id, channel_id, user_id, event_id, message, referenced_message_id, attachments, embeds, components);
 
   message = message.trim();
   
-  let mentioned = false;
   let me = await discord.me();
+  let mentioned = false;
   if (me.id == user_id) {
     return; // avoid cycles
-  } else if (message.startsWith(`@${me.username}`)) {
+  } else if (message.startsWith(`@${me.username} `)) {
     mentioned = true;
     message = message.substring(1 + me.username.length).trim();
   } else if (message.startsWith(`<@${me.id}>`) || message.startsWith(`<@!${me.id}>`)) {
@@ -194,7 +192,7 @@ async function handleMessageForTriggers(guild_id, channel_id, event_id, message)
   );
 }
 
-async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me) {
+async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me, pure_command_handling = false) {
   if (message.length == 0) {
     return Promise.resolve();
   
@@ -274,26 +272,14 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     } else {
       notification_role_name = 'unknown';
     }
-    return identity.getPublicURL()
-        .then(url => discord.respond(channel_id, event_id, ('' + fs.readFileSync('./help.txt'))
-          .replace(/\$\{about_instruction\}/g, 'Use \'${name} about\'')
-          .replace(/\$\{name\}/g, `<@${me.id}>`)
-          .replace(/\$\{notification_role\}/g, notification_role_name)
-          + '\nUse ' + url + '/help to share this help with others outside your discord server.'
-        )
-      );
+    let url = await identity.getPublicURL();
+    return createHelpString(guild_id, discord.mention_user(me.id))
+      .then(help => discord.respond(channel_id, event_id, `${help}\nUse ${url}/help to share this information with others outside your discord server.`));
     
   } else if (message == 'about') {
-    return identity.getPublicURL()
-      .then(url => discord.respond(channel_id, event_id,  ('' + fs.readFileSync('./about.txt'))
-          .replace(/\$\{name\}/g, `<@${me.id}>`)
-          .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
-          .replace(/\$\{link_code\}/g, url + '/code')
-          .replace(/\$\{link_discord_add\}/g, url + '/deploy')
-          .replace(/\$\{link_monitoring\}/g, url + '/monitoring')
-          + '\nUse ' + url + '/about to share this about with others outside your discord server.'
-        )
-      );
+    let url = await identity.getPublicURL();
+    return createAboutString(discord.mention_user(me.id))
+      .then(about => discord.respond(channel_id, event_id, `${about}\nUse ${url}/about to share this information with others outside your discord server.`));
     
   } else if (message === 'good bot') {
     return discord.react(channel_id, event_id, '👍');
@@ -876,13 +862,41 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       let alias = await memory.get(`alias:` + memory.mask(tokens[0]) + `:guild:${guild_id}`, undefined);
       if (alias) {
         message = (alias + ' ' + message.substring(tokens[0].length + 1)).trim();
-        return handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me);
+        return handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me, pure_command_handling);
       }
     }
+
+    if (pure_command_handling) {
+      throw new Error('Unknown command: ' + message);
+    }
+
+    let command = await fixCommand(guild_id, user_id, message);
+    if (command) {
+      try {
+        return await handleCommand(guild_id, channel_id, event_id, user_id, user_name, command, referenced_message_id, me, true);
+      } catch (error) {
+        if(error.message.startsWith('Unknown command: ')) {
+          // just continue
+        } else {
+          throw error;
+        }
+      }
+    }
+
     return handleLongResponse(channel_id, () => createAIResponse(guild_id, channel_id, user_id, user_name, message))
       .then(response => response ?? `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(response => discord.respond(channel_id, event_id, response));
   }
+}
+
+async function fixCommand(guild_id, user_id, message) { 
+  let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
+  if (!model) return null;
+  let context = await createHelpString(guild_id, '');
+  const dummy_token = 'NULL';
+  let command = await chatgpt.createResponse(user_id, null, context, `Fix the command "${message}". Respond with the command only. Respond with "${dummy_token}" if it is not a valid command.`, model);
+  if (command == dummy_token || command.startsWith(dummy_token)) return null;
+  return command.trim();
 }
 
 async function createAIResponse(guild_id, channel_id, user_id, user_name, message) {
@@ -930,22 +944,40 @@ async function createAIContext(guild_id, channel_id, user_id, user_name, message
 
   // complex information about how myself
   const help_prompt = `Assuming I am a Discord bot called ${my_name}, is "${message}" a question about me, my capabilities, or how to interact with me?`;
-  let url = await identity.getPublicURL();
-  let about_me = ('' + fs.readFileSync('./help.txt'))
-      .replace(/\$\{about_instruction\}/g, 'Use \'${name} about\'')
-      .replace(/\$\{name\}/g, `@${my_name}`)
-      .replace(/\$\{notification_role\}/g, 'unknown');
-    + ('\n' + fs.readFileSync('./about.txt'))
-      .replace(/\$\{name\}/g, `@${my_name}`)
-      .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
-      .replace(/\$\{link_code\}/g, url + '/code')
-      .replace(/\$\{link_discord_add\}/g, url + '/deploy')
-      .replace(/\$\{link_monitoring\}/g, url + '/monitoring');
+  let about_me = (await createHelpString(guild_id, discord.mention_user(me.id))) + '\n' + (await createAboutString(discord.mention_user(me.id)));
   if (help_prompt.length > about_me.length || await chatgpt.createBoolean(user_id, help_prompt, model)) {
     system_message += ' ' + about_me;
   }
 
   return system_message;
+}
+
+async function createHelpString(guild_id, my_name) {
+  let notification_role_name;
+  if (guild_id) {
+    let notification_role_id = await memory.get(`notification:role:guild:${guild_id}`, null);
+    notification_role_name = !notification_role_id ?
+      '@everyone' :
+      await discord.guild_roles_list(guild_id)
+        .then(roles => roles.filter(role => role.id === notification_role_id))
+        .then(roles => roles.length > 0 ? ('@' + roles[0].name) : '@deleted-role')
+  } else {
+    notification_role_name = 'unknown';
+  }
+  return ('' + fs.readFileSync('./help.txt'))
+    .replace(/\$\{about_instruction\}/g, 'Use \'${name} about\'')
+    .replace(/\$\{name\}/g, my_name)
+    .replace(/\$\{notification_role\}/g, notification_role_name);
+}
+
+async function createAboutString(my_name) {
+  let url = await identity.getPublicURL();
+  return ('' + fs.readFileSync('./about.txt'))
+    .replace(/\$\{name\}/g, my_name)
+    .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
+    .replace(/\$\{link_code\}/g, url + '/code')
+    .replace(/\$\{link_discord_add\}/g, url + '/deploy')
+    .replace(/\$\{link_monitoring\}/g, url + '/monitoring');
 }
 
 async function handleLongResponse(channel_id, func) {
