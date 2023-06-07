@@ -35,6 +35,13 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     let voice_message_audio = await curl.request({ hostname: uri.hostname, path: uri.pathname, stream: true });
     message = await chatgpt.createTranscription(user_id, voice_message_audio, attachment.content_type.split('/')[1], attachment.duration_secs * 1000, model);
     if (!message) return;
+    if (guild_id) {
+      for (let member of await discord.guild_members_list(guild_id)) {
+        for (let name of [ discord.member2name(member), discord.user2name(member.user) ]) {
+          while (message.includes(name)) message = message.replace(name, discord.mention_user(member.user.id));
+        }
+      }
+    }
   }
 
   await mirror.on_message_create(guild_id, channel_id, user_id, event_id, message, referenced_message_id, attachments, embeds, components);
@@ -45,9 +52,12 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   let mentioned = false;
   if (me.id == user_id) {
     return; // avoid cycles
-  } else if (message.startsWith(`@${me.username} `)) {
+  } else if (message.startsWith('@' + me.username + ' ')) {
     mentioned = true;
     message = message.substring(1 + me.username.length).trim();
+  } else if (message.startsWith(`@` + discord.user2name(me) + ' ')) {
+    mentioned = true;
+    message = message.substring(1 + discord.user2name(me).length).trim();
   } else if (message.startsWith(`<@${me.id}>`) || message.startsWith(`<@!${me.id}>`)) {
     mentioned = true;
     message = message.substring(message.indexOf('>') + 1).trim();
