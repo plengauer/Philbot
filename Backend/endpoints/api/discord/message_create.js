@@ -68,7 +68,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     mentioned = !guild_id && user_id != me.id;
   }
 
-  let can_respond = !guild_id || await discord.guild_member_has_all_permissions(guild_id, channel_id, me.id, permissions.required()) || true;
+  let can_respond = !guild_id || await discord.guild_member_has_all_permissions(guild_id, channel_id, me.id, permissions.required());
   if (!can_respond && mentioned) {
     const key = `mute:auto:message.create.permissions:channel:${channel_id}`;
     if (!await memory.get(key, false)) {
@@ -915,6 +915,7 @@ async function fixCommand(guild_id, user_id, message) {
   let models = await chatgpt.getLanguageModels();
   let model = await chatgpt.getDynamicModel(models);
   model = models[Math.max(0, models.indexOf(model)-1)];
+  if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) return null;
   if (!model) return null;
   let context = await createHelpString(guild_id, '');
   const dummy_token = 'NULL';
