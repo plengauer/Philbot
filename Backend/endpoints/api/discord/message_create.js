@@ -73,10 +73,10 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     const key = `mute:auto:message.create.permissions:channel:${channel_id}`;
     if (!await memory.get(key, false)) {
       await memory.set(key, true, 60 * 60 * 24 * 7);
-      let text = `Due to permissions, I'm **unable to respond** to ${discord.message_link_create(guild_id, channel_id, event_id)}.`
-        + ' Make sure both my role and the channel overrides grant me at least ' + permissions.required().join(', ') + '.';
-      await Promise.all(discord.guild_members_list_with_any_permission(guild_id, null, ['MANAGE_SERVER', 'MANAGE_ROLES']))
-        .then(members => members.map(member => discord.try_dms(member.user.id, text)));
+      let text = `Due to missing permissions, I'm **unable to respond** to ${discord.message_link_create(guild_id, channel_id, event_id)}.`
+        + ' Make sure both my role and the channel overrides grant me at least the permissions ' + permissions.required().join(', ') + '.';
+      await discord.guild_members_list_with_any_permission(guild_id, null, ['MANAGE_SERVER', 'MANAGE_ROLES'])
+        .then(members => Promise.all(members.map(member => discord.try_dms(member.user.id, text))));
     }
   }
   
