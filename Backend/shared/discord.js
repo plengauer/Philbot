@@ -418,6 +418,10 @@ function guild_member_has_permission_0(guild, channel, roles, member, permission
   return member_permissions.includes(permission);
 }
 
+async function webhook_retrieve(webhook_id) {
+  return HTTP(`/webooks/${webhook_id}`, 'GET');
+}
+
 async function HTTP(endpoint, method, payload = undefined, ttc = 1) {
   return curl.request({ method: method, hostname: 'discord.com', path: `/api/v10${endpoint}`, body: payload, headers: { 'authorization': `Bot ${process.env.DISCORD_API_TOKEN}` }, cache: ttc });
 }
@@ -511,5 +515,7 @@ module.exports = {
   guild_member_has_permission,
   guild_member_has_all_permissions,
   guild_members_list_with_permission,
-  guild_members_list_with_any_permission
+  guild_members_list_with_any_permission,
+
+  webhook_retrieve
 }

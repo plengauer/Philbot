@@ -73,7 +73,7 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
   }
 
   // build the content
-  let author = await discord.guild_member_retrieve(guild_id, user_id).then(member2string).catch(() => discord.user_retrieve(user_id).then(discord.user2name)).catch(() => '<UnknownUser>');
+  content = `**${discord.mention_user(user_id)}**: ${content}`;
   while (content.includes('<@&')) {
     let start = content.indexOf('<@&');
     let end = content.indexOf('>', start) + 1;
@@ -85,11 +85,13 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
     let start = content.indexOf('<@');
     let end = content.indexOf('>', start) + 1;
     let mentioned_user_id = discord.parse_mention(content.substring(start, end));
-    let mentioned_member = await discord.guild_member_retrieve(guild_id, mentioned_user_id).then(member2string).catch(() => discord.user_retrieve(user_id).then(discord.user2name)).catch(() => '<UnknownUser>');
+    let mentioned_member = await discord.guild_member_retrieve(guild_id, mentioned_user_id).then(member2string)
+      .catch(() => discord.user_retrieve(mentioned_user_id).then(discord.user2name))
+      .catch(() => discord.webhook_retrieve(mentioned_user_id).then(webhook => webhook.name))
+      .catch(() => '<UnknownUser>');
     content = content.replace(content.substring(start, end), '@' + mentioned_member);
   }
-  content = `**${author}**: ${content}`;
-
+  
   // resolve a referenced message
   let referenced_message_id_mirror = referenced_message_id ? await memory.get(`mirror:message:${referenced_message_id}`) : undefined;
   
@@ -144,7 +146,10 @@ async function forward_reaction(guild_id, channel_id, user_id, message_id, emoji
   if (!mirror_info.channel_ids[channel_id]) return; // channel doesnt exist, that can happen when we start mirroring and first event we get is an reaction
   let referenced_message_id_mirror = message_id ? await memory.get(`mirror:message:${message_id}`) : undefined;
   if (!referenced_message_id_mirror) return; // message already aged out
-  let reactor = await discord.guild_member_retrieve(guild_id, user_id).then(member => member2string(member)).catch(() => discord.user_retrieve(user_id).then(discord.user2name)).catch(() => '<UnknownUser>');
+  let reactor = await discord.guild_member_retrieve(guild_id, user_id).then(member2string)
+    .catch(() => discord.user_retrieve(user_id).then(discord.user2name))
+    .catch(() => discord.webhook_retrieve(user_id).then(webhook => webhook.name))
+    .catch(() => '<UnknownUser>');
   let content = reactor + ': ' + (emoji.name ? (emoji.require_colons ? ':' + emoji.name + ':' : emoji.name) : '<UnknownEmoji>');
   return discord.post(mirror_info.channel_ids[channel_id], content, referenced_message_id_mirror);
 }
