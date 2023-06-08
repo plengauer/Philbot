@@ -647,6 +647,10 @@ class Context:
             self.paused = False
         self.__save()
     
+    def is_connecting(self):
+        with self.lock:
+            return self.channel_id is not None and self.session_id is not None and self.endpoint is not None
+    
     def is_connected(self):
         with self.lock:
             return self.ws is not None and self.listener is not None and self.streamer is not None
@@ -756,9 +760,19 @@ def voice_resume():
 def voice_is_connected():
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    body = request.json
-    context = get_context(body['guild_id'])
-    return 'true' if context and context.is_connected() else 'false'
+    guild_id = request.json['guild_id']
+    context = get_context(guild_id)
+    if not context or not context.is_connecting():
+        return 'false'
+    end = time_millis() + 1000 * 5
+    tryy = 1
+    while time_millis() < end:
+        context = get_context(guild_id)
+        if context and context.is_connected():
+            return 'true'
+        time.sleep(tryy * 100)
+        tryy = tryy * 2
+    return 'false'
 
 def cleanup():
     for file in os.listdir(STORAGE_DIRECTORY):
