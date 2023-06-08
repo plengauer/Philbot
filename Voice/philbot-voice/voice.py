@@ -765,12 +765,12 @@ def voice_is_connected():
     if not context or not context.is_connecting():
         return 'false'
     end = time_millis() + 1000 * 5
-    tryy = 1
+    tryy = 100
     while time_millis() < end:
         context = get_context(guild_id)
         if context and context.is_connected():
             return 'true'
-        time.sleep(tryy * 100)
+        time.sleep(tryy / 1000.0)
         tryy = tryy * 2
     return 'false'
 
