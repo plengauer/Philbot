@@ -8,12 +8,12 @@ async function on_voice_state_update(guild_id, channel_id, session_id) {
   if (channel_id) await memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24);
   let me = await discord.me();
   return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: 'http://127.0.0.1:8080/voice_callback' })
-    .then(() => updateInteractions(guild_id).then(resolve));
+    .then(() => updateInteractions(guild_id));
 }
 
 async function on_voice_server_update(guild_id, endpoint, token) {
   return HTTP_VOICE('voice_server_update', { guild_id: guild_id, endpoint: endpoint, token: token })
-    .then(() => updateInteractions(guild_id).then(resolve));
+    .then(() => updateInteractions(guild_id));
 }
 
 async function play(guild_id, channel_id, search_string) {
