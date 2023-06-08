@@ -911,10 +911,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
   }
 }
 
-async function fixCommand(guild_id, user_id, message) { 
-  let models = await chatgpt.getLanguageModels();
-  let model = await chatgpt.getDynamicModel(models);
-  model = models[Math.max(0, models.indexOf(model)-1)];
+async function fixCommand(guild_id, user_id, message) {
+  let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
   if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) return null;
   if (!model) return null;
   let context = await createHelpString(guild_id, '');
