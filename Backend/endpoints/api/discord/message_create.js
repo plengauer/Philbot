@@ -68,7 +68,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     mentioned = !guild_id && user_id != me.id;
   }
 
-  let can_respond = !guild_id || await discord.guild_member_has_all_permissions(guild_id, channel_id, me.id, permissions.required());
+  let can_respond = !guild_id || await discord.guild_member_has_all_permissions(guild_id, channel_id, me.id, permissions.required()) || process.env.DISABLE_MESSAGE_PERMISSION_CHECK == 'true';
   if (!can_respond && mentioned) {
     const key = `mute:auto:message.create.permissions:channel:${channel_id}`;
     if (!await memory.get(key, false)) {
