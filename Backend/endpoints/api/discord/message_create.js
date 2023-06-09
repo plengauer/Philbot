@@ -325,6 +325,14 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
         reactNotOK(channel_id, event_id)
       );
   
+  } else if (message == 'join') {
+    guild_id = guild_id ?? await resolveGuildID(user_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
+    let voice_channel_id = await memory.get(`player:voice_channel:guild:${guild_id}`, undefined);
+    if (!voice_channel_id) return reactNotOK(channel_id, event_id);
+    return discord.connect(guild_id, voice_channel_id)
+      .then(() => reactOK(channel_id, event_id));
+  
   } else if (message.startsWith('play ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);

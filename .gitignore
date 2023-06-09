@@ -1,5 +1,6 @@
 .vscode
 .memory
+voice_storage
 .DS_Store
 node_modules
 package-lock.json
