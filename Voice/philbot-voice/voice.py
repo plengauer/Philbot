@@ -261,7 +261,7 @@ class Context:
         secret_box = nacl.secret.SecretBox(bytes(self.secret_key))
         error = ctypes.c_int(0)
         decoder = pyogg.opus.opus_decoder_create(pyogg.opus.opus_int32(frame_rate), ctypes.c_int(channels), ctypes.byref(error))
-        file = wave.open(STORAGE_DIRECTORY + './output.wav', 'wb')
+        file = wave.open(STORAGE_DIRECTORY + './output.' + self.guild_id + '.wav', 'wb')
         file.setnchannels(channels)
         file.setsampwidth(sample_width)
         file.setframerate(frame_rate)
