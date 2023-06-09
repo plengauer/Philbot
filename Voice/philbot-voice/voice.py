@@ -257,7 +257,7 @@ class Context:
         sample_width = 2
         channels = 2
         desired_frame_size = int(frame_rate * frame_duration / 1000)
-        buffer = b"\x00" * desired_frame_size * desired_frame_size * channels * sample_width
+        buffer = b"\x00" * desired_frame_size * channels * sample_width
         secret_box = nacl.secret.SecretBox(bytes(self.secret_key))
         error = ctypes.c_int(0)
         decoder = pyogg.opus.opus_decoder_create(pyogg.opus.opus_int32(frame_rate), ctypes.c_int(channels), ctypes.byref(error))
