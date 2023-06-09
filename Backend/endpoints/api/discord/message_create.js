@@ -31,11 +31,10 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   if (is_voice_message) {
     let attachment = attachments[0];
     let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
-    if (!model) return;
     let uri = url.parse(attachment.url);
     let voice_message_audio = await curl.request({ hostname: uri.hostname, path: uri.pathname, stream: true });
     message = await chatgpt.createTranscription(user_id, voice_message_audio, attachment.content_type.split('/')[1], attachment.duration_secs * 1000, model);
-    if (!message) return;
+    if (!message) message = "";
     if (guild_id) {
       for (let member of await discord.guild_members_list(guild_id)) {
         for (let name of [ discord.member2name(member), discord.user2name(member.user), member.user.username ]) {
@@ -48,6 +47,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
   await mirror.on_message_create(guild_id, channel_id, user_id, event_id, is_voice_message, message, referenced_message_id, attachments, embeds, components);
 
   message = message.trim();
+  if (message.length == 0) return;
   
   let me = await discord.me();
   let mentioned = false;
