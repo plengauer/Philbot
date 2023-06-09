@@ -144,19 +144,19 @@ def resolve_url(guild_id, url):
     else:
         raise RuntimeError
     file = wave.open(filename, "rb")
-    if (file.getframerate() != 48000):
+    if (file.getframerate() != frame_rate):
         file.close()
         os.rename(filename, '_' + filename)
-        subprocess.run(['ffmpeg', '-i', '_' + filename, '-ar', '48000', filename]).check_returncode() # , '-f', 's16le'
+        subprocess.run(['ffmpeg', '-i', '_' + filename, '-ar', str(frame_rate), filename]).check_returncode() # , '-f', 's16le'
         os.remove('_' + filename)
         file = wave.open(filename, 'rb')
-    if (file.getnchannels() != 2):
+    if (file.getnchannels() != channels):
         file.close()
         os.rename(filename, '_' + filename)
-        subprocess.run(['ffmpeg', '-i', '_' + filename, '-ac', '2', filename]).check_returncode() # , '-f', 's16le'
+        subprocess.run(['ffmpeg', '-i', '_' + filename, '-ac', str(channels), filename]).check_returncode() # , '-f', 's16le'
         os.remove('_' + filename)
         file = wave.open(filename, 'rb')
-    if file.getsampwidth() != 2:
+    if file.getsampwidth() != sample_width:
         file.close()
         os.remove(filename)
         raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
