@@ -22,11 +22,11 @@ const translator = require('../../../shared/translator.js');
 const mirror = require('../../../shared/mirror.js');
 
 async function handle(payload) {
-  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.author.username, payload.content, payload.referenced_message?.id, payload.attachments, payload.embeds, payload.components, payload.flags)
+  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.content, payload.referenced_message?.id, payload.attachments, payload.embeds, payload.components, payload.flags)
     .then(() => undefined);
 }
 
-async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, attachments, embeds, components, flags) {
+async function handle0(guild_id, channel_id, event_id, user_id, message, referenced_message_id, attachments, embeds, components, flags) {
   let is_voice_message = (flags & (1 << 13)) != 0;
   if (is_voice_message) {
     let attachment = attachments[0];
@@ -85,7 +85,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     features.isActive(guild_id, 'raid protection').then(active => guild_id && !mentioned && active ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
     features.isActive(guild_id, 'role management').then(active => guild_id && !mentioned && active ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
     guild_id && !mentioned && can_respond ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
-    mentioned && can_respond ? handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
+    mentioned && can_respond ? handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
   ]);
 }
 
@@ -215,7 +215,7 @@ async function handleMessageForTriggers(guild_id, channel_id, event_id, message)
   );
 }
 
-async function handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, me, pure_command_handling = false) {
+async function handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me, pure_command_handling = false) {
   if (message.length == 0) {
     return Promise.resolve();
   
@@ -322,7 +322,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
   } else if (message === 'command execute') {
     return memory.consume(`command:user:${user_id}`, null)
       .then(command => command ?
-        handleCommand(guild_id, channel_id, event_id, user_id, user_name, command, me) :
+        handleCommand(guild_id, channel_id, event_id, user_id, command, referenced_message_id, me, pure_command_handling) :
         reactNotOK(channel_id, event_id)
       );
   
@@ -589,7 +589,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let reminder = {
       text: text,
       next: next,
-      from_username: to_name == 'me' ? 'You' : user_name,
+      from_username: to_name == 'me' ? 'You' : discord.member2name(await discord.guild_member_retrieve(guild_id, user_id)),
       from_id: user_id,
       to_username: to_name == 'me' ? 'you' : to_name,
       to_id: to_id
@@ -893,7 +893,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       let alias = await memory.get(`alias:` + memory.mask(tokens[0]) + `:guild:${guild_id}`, undefined);
       if (alias) {
         message = (alias + ' ' + message.substring(tokens[0].length + 1)).trim();
-        return handleCommand(guild_id, channel_id, event_id, user_id, user_name, message, me, pure_command_handling);
+        return handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me, pure_command_handling);
       }
     }
 
@@ -904,7 +904,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
     let command = await fixCommand(guild_id, user_id, message);
     if (command) {
       try {
-        return await handleCommand(guild_id, channel_id, event_id, user_id, user_name, command, referenced_message_id, me, true);
+        return await handleCommand(guild_id, channel_id, event_id, user_id, command, referenced_message_id, me, true);
       } catch (error) {
         if(error.message.startsWith('Unknown command: ')) {
           // just continue
@@ -914,7 +914,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, user_name,
       }
     }
 
-    return handleLongResponse(channel_id, () => createAIResponse(guild_id, channel_id, user_id, user_name, message))
+    return handleLongResponse(channel_id, () => createAIResponse(guild_id, channel_id, user_id, message))
       .then(response => response ?? `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(response => discord.respond(channel_id, event_id, response));
   }
@@ -931,17 +931,17 @@ async function fixCommand(guild_id, user_id, message) {
   return command.trim();
 }
 
-async function createAIResponse(guild_id, channel_id, user_id, user_name, message) {
+async function createAIResponse(guild_id, channel_id, user_id, message) {
   let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels(), chatgpt.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
   if (!model) return null;
-  let system_message = await createAIContext(guild_id, channel_id, user_id, user_name, message, model);
+  let system_message = await createAIContext(guild_id, channel_id, user_id, message, model);
   return chatgpt.createResponse(user_id, `channel:${channel_id}:user:${user_id}`, system_message, message, model);
 }
 
-async function createAIContext(guild_id, channel_id, user_id, user_name, message, model) {
+async function createAIContext(guild_id, channel_id, user_id, message, model) {
   // basic identity information
   let me = await discord.me();
-  let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(discord.member2name) : me.username;
+  let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(discord.member2name) : discord.user2name(me);
   let system_message = `My name is ${my_name}. I am a Discord bot.`;
 
   // personality
@@ -954,23 +954,31 @@ async function createAIContext(guild_id, channel_id, user_id, user_name, message
   }
 
   // information about others
-  let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(discord.member2name) : user_name;
+  let your_name = guild_id ? await discord.guild_member_retrieve(guild_id, user_id).then(discord.member2name) : await discord.user_retrieve(user_id).then(discord.user2name);
   system_message += ` Your name is ${your_name}.`;
   let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
   let mentioned_members = mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention));
   let mentioned_roles = mentioned_entities.filter(mention => mention.startsWith('<@&')).map(mention => discord.parse_role(mention));
   mentioned_members.push(user_id);
   if (guild_id) {
+    let guild = await discord.guild_retrieve(guild_id);
+    system_message = ` I am in a Discord server called ${guild.name}.`;
     mentioned_roles = await Promise.all(Array.from(new Set(mentioned_roles)).map(role_id => discord.guild_role_retrieve(guild_id, role_id)));
     for (let role of mentioned_roles) {
       let members_with_role = await discord.guild_members_list(guild_id, role.id).then(members => members.map(member => member.user.id));
       mentioned_members = members_with_role.concat(members_with_role);
       system_message += ` The name of <@&${role.id}> is ${role.name}` + (members_with_role.length > 0 ? ', members are ' + members_with_role.map(user_id => discord.mention_user(user_id)).join(', ') : '') + '.';
     }
-    mentioned_members = await Promise.all(Array.from(new Set(mentioned_members)).map(user_id => discord.guild_member_retrieve(guild_id, user_id)));
-    for (let member of mentioned_members) {
+    let members = await Promise.all(Array.from(new Set(mentioned_members)).map(user_id => discord.guild_member_retrieve(guild_id, user_id)));
+    for (let member of members) {
       let activities = await memory.get(`activities:all:user:${member.user.id}`, []);
-      system_message += ` The name of <@${member.user.id}> is ${discord.member2name(member)}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
+      system_message += ` The name of ${discord.mention_user(member.user.id)} is ${discord.member2name(member)}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
+    }
+  } else {
+    let users = await Promise.all(Array.from(new Set(mentioned_members)).map(user_id => discord.user_retrieve(user_id)));
+    for (let user of users) {
+      let activities = await memory.get(`activities:all:user:${user.id}`, []);
+      system_message += ` The name of ${discord.mention_user(user.id)} is ${discord.user2name(user)}` + (activities.length > 0 ? ', he/she plays ' + activities.join(', ') : '') + '.';
     }
   }
 
