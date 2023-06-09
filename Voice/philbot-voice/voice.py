@@ -137,6 +137,12 @@ def download_from_youtube(guild_id, url):
             downloads[event] = None
         event.set()
 
+frame_duration = 20
+frame_rate = 48000
+sample_width = 2
+channels = 2
+desired_frame_size = int(frame_rate * frame_duration / 1000)
+
 def resolve_url(guild_id, url):
     filename = None    
     if url.startswith('https://www.youtube.com/watch?v='):
@@ -166,12 +172,6 @@ def resolve_url(guild_id, url):
 
 counter_streams = meter.create_counter(name = 'discord.gateway.voice.streams', description = 'Number of streams', unit="count")
 counter_streaming = meter.create_counter(name = 'discord.gateway.voice.streaming', description = 'Amount of time streamed', unit="milliseconds")
-
-frame_duration = 20
-frame_rate = 48000
-sample_width = 2
-channels = 2
-desired_frame_size = int(frame_rate * frame_duration / 1000)
 
 class Context:
     lock = threading.Lock()
