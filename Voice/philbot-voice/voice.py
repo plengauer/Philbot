@@ -167,6 +167,12 @@ def resolve_url(guild_id, url):
 counter_streams = meter.create_counter(name = 'discord.gateway.voice.streams', description = 'Number of streams', unit="count")
 counter_streaming = meter.create_counter(name = 'discord.gateway.voice.streaming', description = 'Amount of time streamed', unit="milliseconds")
 
+frame_duration = 20
+frame_rate = 48000
+sample_width = 2
+channels = 2
+desired_frame_size = int(frame_rate * frame_duration / 1000)
+
 class Context:
     lock = threading.Lock()
     callback_url = None
@@ -252,11 +258,6 @@ class Context:
 
     def __listen(self):
         print('VOICE CONNECTION ' + self.guild_id + ' listening')
-        frame_duration = 20
-        frame_rate = 48000
-        sample_width = 2
-        channels = 2
-        desired_frame_size = int(frame_rate * frame_duration / 1000)
         buffer = b"\x00" * desired_frame_size * channels * sample_width
         secret_box = nacl.secret.SecretBox(bytes(self.secret_key))
         error = ctypes.c_int(0)
@@ -309,11 +310,6 @@ class Context:
         # https://github.com/Rapptz/discord.py/blob/master/discord/voice_client.py
         print('VOICE CONNECTION ' + self.guild_id + ' streaming')
 
-        frame_duration = 20
-        frame_rate = 48000
-        sample_width = 2
-        channels = 2
-        desired_frame_size = int(frame_rate * frame_duration / 1000)
         buffer = b"\x00" * desired_frame_size * channels * sample_width
         secret_box = nacl.secret.SecretBox(bytes(self.secret_key))
         error = ctypes.c_int(0)
