@@ -57,14 +57,22 @@ async function configure_mirror(guild_id, user_id, input_mirror_guild_id = undef
   }
 }
 
-async function on_message_create(guild_id, channel_id, user_id, message_id, content, referenced_message_id, attachments, embeds, components) {
+async function on_message_create(guild_id, channel_id, user_id, message_id, is_voice, content, referenced_message_id, attachments, embeds, components) {
+  return forward_all(guild_id, channel_id, user_id, is_voice ? 'Voice Message' : 'Message', content, attachments, embeds, components, message_id, referenced_message_id);
+}
+
+async function on_reaction_add(guild_id, channel_id, user_id, message_id, emoji) {
+  return forward_all(guild_id, channel_id, user_id, "Reaction", (emoji.name ? (emoji.require_colons ? ':' + emoji.name + ':' : emoji.name) : '<UnknownEmoji>'), [], [], [], null, message_id);
+}
+
+async function forward_all(guild_id, channel_id, user_id, action, content, attachments, embeds, components, message_id = undefined, referenced_message_id = undefined) {
   if (!guild_id) return;
   let mirrors = await memory.get(memorykey(guild_id), []);
-  return Promise.all(mirrors.map(mirror_info => forward_message(guild_id, channel_id, user_id, message_id, content, referenced_message_id, attachments, embeds, components, mirror_info)))
+  return Promise.all(mirrors.map(mirror_info => forward(mirror_info, guild_id, channel_id, user_id, action, content, attachments, embeds, components, message_id, referenced_message_id)))
     .finally(() => memory.set(memorykey(guild_id), mirrors));
 }
 
-async function forward_message(guild_id, channel_id, user_id, message_id, content, referenced_message_id, attachments, embeds, components, mirror_info) {
+async function forward(mirror_info, guild_id, channel_id, user_id, action, content, attachments, embeds, components, message_id, referenced_message_id) {
   // resolving the channel / making sure the channel exists
   if (!mirror_info.channel_ids[channel_id]) {
     let original = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.id == channel_id));
@@ -73,7 +81,7 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
   }
 
   // build the content
-  content = `**${discord.mention_user(user_id)}**: ${content}`;
+  content = `${action} by **${discord.mention_user(user_id)}**: ${content}`;
   while (content.includes('<@&')) {
     let start = content.indexOf('<@&');
     let end = content.indexOf('>', start) + 1;
@@ -118,7 +126,7 @@ async function forward_message(guild_id, channel_id, user_id, message_id, conten
   }
 
   let message = await discord.post(mirror_info.channel_ids[channel_id], content, referenced_message_id_mirror, true, embeds, components, attachment_mirrors);
-  await memory.set(`mirror:message:${message_id}`, message.id, 60 * 60 * 24 * 7);
+  if (message_id) await memory.set(`mirror:message:${message_id}`, message.id, 60 * 60 * 24 * 7);
 }
 
 function disarm_components(components) {
@@ -135,23 +143,6 @@ function member2string(member) {
   let string = discord.user2name(member.user);
   if (member.nick) string = `${member.nick} (${string})`;
   return string;
-}
-
-async function on_reaction_add(guild_id, channel_id, user_id, message_id, emoji) {
-  let mirrors = await memory.get(memorykey(guild_id), []);
-  return Promise.all(mirrors.map(mirror_info => forward_reaction(guild_id, channel_id, user_id, message_id, emoji, mirror_info)));
-}
-
-async function forward_reaction(guild_id, channel_id, user_id, message_id, emoji, mirror_info) {
-  if (!mirror_info.channel_ids[channel_id]) return; // channel doesnt exist, that can happen when we start mirroring and first event we get is an reaction
-  let referenced_message_id_mirror = message_id ? await memory.get(`mirror:message:${message_id}`) : undefined;
-  if (!referenced_message_id_mirror) return; // message already aged out
-  let reactor = await discord.guild_member_retrieve(guild_id, user_id).then(member2string)
-    .catch(() => discord.user_retrieve(user_id).then(discord.user2name))
-    .catch(() => discord.webhook_retrieve(user_id).then(webhook => webhook.name))
-    .catch(() => '<UnknownUser>');
-  let content = reactor + ': ' + (emoji.name ? (emoji.require_colons ? ':' + emoji.name + ':' : emoji.name) : '<UnknownEmoji>');
-  return discord.post(mirror_info.channel_ids[channel_id], content, referenced_message_id_mirror);
 }
 
 async function clean() {

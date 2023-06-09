@@ -27,7 +27,8 @@ async function handle(payload) {
 }
 
 async function handle0(guild_id, channel_id, event_id, user_id, user_name, message, referenced_message_id, attachments, embeds, components, flags) {
-  if ((flags & (1 << 13)) != 0) {
+  let is_voice_message = (flags & (1 << 13)) != 0;
+  if (is_voice_message) {
     let attachment = attachments[0];
     let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
     if (!model) return;
@@ -44,7 +45,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, user_name, messa
     }
   }
 
-  await mirror.on_message_create(guild_id, channel_id, user_id, event_id, message, referenced_message_id, attachments, embeds, components);
+  await mirror.on_message_create(guild_id, channel_id, user_id, event_id, is_voice_message, message, referenced_message_id, attachments, embeds, components);
 
   message = message.trim();
   
