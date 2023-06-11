@@ -236,8 +236,14 @@ async function createTranscription(user, audio_stream, audio_stream_format, audi
   body.append('model', model, { contentType: 'string' });
   body.append('file', audio_stream, { contentType: 'audio/' + audio_stream_format, filename: 'audio.' + audio_stream_format });
   let response = await HTTP('/v1/audio/transcriptions', body, body.getHeaders());
+  response.text = sanitizeTranscription(response.text);
   await bill(getTranscriptionCost(model, audio_stream_length_millis), model, user);
   return response.text;
+}
+
+function sanitizeTranscription(model, input) {
+  if (model == 'whisper-1' && input == 'Thank you.') return ''; // breathing is too often mistaken as "Thank you."
+  return input;
 }
 
 function getTranscriptionCost(model, time_millis) {
