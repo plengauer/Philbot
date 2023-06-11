@@ -1,4 +1,5 @@
 import os
+import io
 import time
 import random
 import json
@@ -13,7 +14,7 @@ import socket
 import requests
 import subprocess
 import websocket
-from flask import Flask, request, Response
+from flask import Flask, request, Response, send_file
 import yt_dlp
 import opentelemetry
 from opentelemetry.sdk.resources import Resource
@@ -81,6 +82,12 @@ def create_voice_package_header(sequence, timestamp, ssrc):
     struct.pack_into('>I', header, 8, ssrc)
     return bytes(header)
 
+def unwrap_voice_package_header(header):
+    sequence = struct.unpack_from('>H', header, 2)[0]
+    timestamp = struct.unpack_from('>I', header, 4)[0]
+    ssrc = int.from_bytes(header[8:8+4], byteorder='big')
+    return sequence, timestamp, ssrc
+
 def create_voice_package(sequence, timestamp, ssrc, secret_box, voice_chunk):
     header = create_voice_package_header(sequence, timestamp, ssrc)
     nonce = bytearray(24)
@@ -91,8 +98,15 @@ def unwrap_voice_package(package, secret_box):
     header = package[:12]
     nonce = bytearray(24)
     nonce[:12] = header
+    sequence, timestamp, ssrc = unwrap_voice_package_header(header)
     voice_chunk = secret_box.decrypt(package[12:], bytes(nonce))
-    return voice_chunk, struct.unpack_from('>H', header, 2)[0], struct.unpack_from('>I', header, 4)[0]
+    if voice_chunk[0] == 0xbe and voice_chunk[1] == 0xde: # RTP header extensions ...
+        extension_length = int.from_bytes(voice_chunk[2:2+2], byteorder='big')
+        voice_chunk = voice_chunk[2 + 2 + 4 * extension_length:]
+    return sequence, timestamp, ssrc, voice_chunk
+
+def generate_audio_file_path(guild_id, channel_id, user_id, nonce):
+    return STORAGE_DIRECTORY + '/audio.' + guild_id + '.' + channel_id + '.' + user_id + '.' + str(nonce) + '.wav' 
 
 download_lock = threading.Lock()
 downloads = {}
@@ -173,6 +187,118 @@ def resolve_url(guild_id, url):
 counter_streams = meter.create_counter(name = 'discord.gateway.voice.streams', description = 'Number of streams', unit="count")
 counter_streaming = meter.create_counter(name = 'discord.gateway.voice.streaming', description = 'Amount of time streamed', unit="milliseconds")
 
+class Packet:
+    sequence = None
+    timestamp = None
+    pcm = None
+
+    def __init__(self, sequence, timestamp, pcm):
+        self.sequence = sequence
+        self.timestamp = timestamp
+        self.time = time
+        self.pcm = pcm
+
+    def get_sequence(self):
+        return self.sequence
+    
+    def get_timestamp(self):
+        return self.timestamp
+    
+    def get_pcm(self):
+        return self.pcm
+
+class Stream:
+    guild_id = None
+    channel_id = None
+    user_id = None
+    nonce = None
+    file = None
+    packages = None
+    last_sequence = None
+    last_timestamp = None
+    buffer = None
+    buffer_revision = None
+
+    def __init__(self, guild_id, channel_id, user_id):
+        self.guild_id = guild_id
+        self.channel_id = channel_id
+        self.user_id = user_id
+    
+    def get_nonce(self):
+        return self.nonce
+    
+    def get_duration_secs(self):
+        return self.packages * frame_duration / 1000
+
+    def write(self, sequence, timestamp, pcm, nonce):
+        if not self.file:
+            self.nonce = nonce
+            self.file = wave.open(generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, nonce), 'wb')
+            self.file.setsampwidth(sample_width)
+            self.file.setnchannels(channels)
+            self.file.setframerate(frame_rate)
+            self.packages = 0
+            self.last_sequence = None
+            self.last_timestamp = None
+            self.buffer = {}
+            self.buffer_revision = None
+        self.buffer[sequence] = Packet(sequence, timestamp, pcm)
+        self.buffer_revision = time_millis()
+    
+    # create_voice_package(sequence, sequence * desired_frame_size, self.ssrc, secret_box, opus_frame)
+    def try_flush(self, limit = 1000):
+        if not self.file:
+            return False
+        # some basic threasholds
+        too_young_packages = max(0, limit - ((time_millis() - self.buffer_revision) if self.buffer_revision else 0)) // frame_duration
+        min_pause_duration = 1000
+        # find first earliest sequence in case we are just starting
+        if not self.last_sequence:
+            for sequence in self.buffer.keys():
+                if not self.last_sequence or self.last_sequence > sequence:
+                    self.last_sequence = sequence
+            if not self.last_sequence:
+                return False
+            self.last_timestamp = self.buffer[self.last_sequence].get_timestamp() - desired_frame_size
+            self.last_sequence = self.last_sequence - 1
+        # write packages and fill holes
+        do_flush = False
+        while len(self.buffer) > too_young_packages or (len(self.buffer) > 0 and self.buffer.get(self.last_sequence + 1)):
+            sequence = self.last_sequence + 1
+            packet = self.buffer.get(sequence)
+            if packet.get_timestamp() > self.last_timestamp + (desired_frame_size * min_pause_duration // frame_duration):
+                do_flush = True
+                break
+            if packet:
+                self.buffer.pop(sequence)
+            else:
+                packet = Packet(sequence, sequence * desired_frame_size, 0, b"\x00" * desired_frame_size * sample_width * channels)
+            self.file.writeframes(packet.get_pcm())
+            self.packages += 1
+            self.last_sequence = packet.get_sequence()
+            self.last_timestamp = packet.get_timestamp()
+        # check whether we ran out completely
+        if len(self.buffer) == 0 and too_young_packages == 0:
+            do_flush = True
+        # flush if necessary
+        if do_flush:
+            self.file.close()
+            self.file = None
+        return do_flush
+
+    def flush(self):
+        return self.try_flush(0)
+
+    def reset(self):
+        if self.file:
+            self.file.close()
+        self.nonce = None
+        self.file = None
+        self.packages = None
+        self.last_sequence = None
+        self.buffer = None
+        self.buffer_revision = None
+
 class Context:
     lock = threading.Lock()
     callback_url = None
@@ -193,6 +319,8 @@ class Context:
     port = None
     mode = None
     secret_key = None
+
+    ssrc_to_client_user_id = {}
 
     listener = None
     streamer = None
@@ -238,13 +366,19 @@ class Context:
                 except:
                     pass
     
-    def __callback(self, reason):
+    def __callback(self, reason, body = {}):
         delay = 1
         while True:
             if delay > 60 * 60:
                 break
             try:
-                requests.post(self.callback_url + '/' + reason, json={ "guild_id": self.guild_id, "channel_id": self.channel_id, "user_id": self.user_id }, headers={ 'x-authorization': os.environ['DISCORD_API_TOKEN'] }, verify=False)
+                body['guild_id'] = self.guild_id
+                if not body.get('channel_id'):
+                    with self.lock:
+                        if not self.channel_id:
+                            return
+                        body['channel_id'] = self.channel_id
+                requests.post(self.callback_url + '/' + reason, json=body, headers={ 'x-authorization': os.environ['DISCORD_API_TOKEN'] }, verify=False)
                 break
             except:
                 time.sleep(delay)
@@ -256,52 +390,55 @@ class Context:
     def __callback_reconnect(self):
         self.__callback('voice_reconnect')
 
+    def __callback_audio(self, channel_id, user_id, nonce, duration_secs):
+        self.__callback('voice_audio', { 'channel_id': channel_id, 'user_id': user_id, 'nonce': nonce, 'duration_secs': duration_secs })
+    
+    def __resolve_client_user_id(self, ssrc):
+        with self.lock:
+            return self.ssrc_to_client_user_id.get(ssrc)
+
     def __listen(self):
         print('VOICE CONNECTION ' + self.guild_id + ' listening')
+        channel_id = self.channel_id
         buffer = b"\x00" * desired_frame_size * channels * sample_width
         secret_box = nacl.secret.SecretBox(bytes(self.secret_key))
         error = ctypes.c_int(0)
         decoder = pyogg.opus.opus_decoder_create(pyogg.opus.opus_int32(frame_rate), ctypes.c_int(channels), ctypes.byref(error))
-        file = wave.open(STORAGE_DIRECTORY + '/output.' + self.guild_id + '.wav', 'wb')
-        file.setnchannels(channels)
-        file.setsampwidth(sample_width)
-        file.setframerate(frame_rate)
-        last_sequence = -1
+        streams = {}
         while True:
-            with self.lock:
-                if not self.listener:
-                    break
-            package = None
+            for user_id, stream in streams.items():
+                if stream.try_flush():
+                    threading.Thread(target=self.__callback_audio, kwargs={'channel_id': channel_id, 'user_id': user_id, 'nonce': stream.get_nonce(), 'duration_secs': stream.get_duration_secs()}).start()
+                    stream.reset()
             try:
+                with self.lock:
+                    if not self.listener:
+                        break
                 package, address = self.socket.recvfrom(UDP_MAX_PAYLOAD)
-            except: # TODO limit to socket closed exceptions only
-                continue
-            # print('VOICE CONNECTION received voice data package from ' + address[0] + ':' + str(address[1]) + ': ' + str(len(data)) + 'b')
-            voice_chunk = None
-            sequence = None
-            timestamp = None
-            try:
-                voice_chunk, sequence, timestamp = unwrap_voice_package(package, secret_box)
-            except: # TODO limit to wrong encryption (received random package)
-                continue
-            # TODO in all the following cases, handle and resort properly
-            if last_sequence < 0:
-                last_sequence = sequence - 1
-            if last_sequence + 1 < sequence:
-                while last_sequence + 1 != sequence:
-                    file.writeframes(b"\x00" * desired_frame_size * sample_width * channels)
-                    last_sequence += 1
-            elif last_sequence > sequence:
-                continue
-            last_sequence = sequence
-            effective_frame_size = pyogg.opus.opus_decode(decoder, ctypes.cast(voice_chunk, pyogg.opus.c_uchar_p), pyogg.opus.opus_int32(len(voice_chunk)), ctypes.cast(buffer, pyogg.opus.opus_int16_p), ctypes.c_int(len(buffer) // channels // sample_width), ctypes.c_int(0))
-            if effective_frame_size < 0:
-                effective_frame_size = 0
-            pcm = buffer[:effective_frame_size * sample_width * channels]
-            if effective_frame_size < desired_frame_size:
-                pcm += b"\x00" * (desired_frame_size - effective_frame_size) * sample_width * channels
-            file.writeframes(pcm)
-        file.close()
+                # print('VOICE CONNECTION received voice data package from ' + address[0] + ':' + str(address[1]) + ': ' + str(len(data)) + 'b')
+                if len(package) <= 8:
+                    continue
+                sequence, timestamp, ssrc, voice_chunk = unwrap_voice_package(package, secret_box)
+                user_id = self.__resolve_client_user_id(ssrc)
+                if not user_id:
+                    continue
+                effective_frame_size = pyogg.opus.opus_decode(decoder, ctypes.cast(voice_chunk, pyogg.opus.c_uchar_p), pyogg.opus.opus_int32(len(voice_chunk)), ctypes.cast(buffer, pyogg.opus.opus_int16_p), ctypes.c_int(len(buffer) // channels // sample_width), ctypes.c_int(0))
+                if effective_frame_size < 0:
+                    effective_frame_size = 0
+                pcm = buffer[:effective_frame_size * sample_width * channels]
+                if effective_frame_size < desired_frame_size:
+                    pcm += b"\x00" * (desired_frame_size - effective_frame_size) * sample_width * channels
+                if not streams.get(user_id):
+                    streams[user_id] = Stream(self.guild_id, channel_id, user_id)
+                streams[user_id].write(sequence, timestamp, pcm, random.randint(0, 1 << 30))
+            except nacl.exceptions.CryptoError:
+                pass
+            except OSError:
+                pass
+        for user_id, stream in streams.items():
+            if stream.flush():
+                threading.Thread(target=self.__callback_audio, kwargs={'channel_id': channel_id, 'user_id': user_id, 'nonce': stream.get_nonce(), 'duration_secs': stream.get_duration_secs()}).start()
+                stream.reset()
         pyogg.opus.opus_decoder_destroy(decoder)
         print('VOICE CONNECTION ' + self.guild_id + ' listener terminated')
 
@@ -352,7 +489,7 @@ class Context:
                         threading.Thread(target=self.__callback_playback_finished).start()
                     else:
                         file = wave.open(filename, 'rb')
-                        if file.getframerate() != 48000 or file.getnchannels() != 2 or file.getsampwidth() != 2:
+                        if file.getframerate() != frame_rate or file.getnchannels() != channels or file.getsampwidth() != sample_width:
                             print('VOICE CONNECTION ' + self.guild_id + ' skipping source because stream does not satisfy requirements')
                             file.close()
                             file = None
@@ -388,14 +525,6 @@ class Context:
                     pcm += b"\x00" * (desired_frame_size - effective_frame_size) * sample_width * channels
                 encoded_bytes = pyogg.opus.opus_encode(encoder, ctypes.cast(pcm, pyogg.opus.opus_int16_p), ctypes.c_int(desired_frame_size), ctypes.cast(buffer, pyogg.opus.c_uchar_p), pyogg.opus.opus_int32(len(buffer)))
                 opus_frame = bytes(buffer[:encoded_bytes])
-                ####################
-                #decoder = pyogg.opus.opus_decoder_create(pyogg.opus.opus_int32(frame_rate), ctypes.c_int(channels), ctypes.byref(error))
-                #effective_frame_size = pyogg.opus.opus_decode(decoder, ctypes.cast(opus_frame, pyogg.opus.c_uchar_p), pyogg.opus.opus_int32(len(opus_frame)), ctypes.cast(buffer, pyogg.opus.opus_int16_p), ctypes.c_int(len(buffer) // channels // sample_width), ctypes.c_int(0))
-                #pcm_reconstructed = buffer[:effective_frame_size]
-                #pyogg.opus.opus_decoder_destroy(decoder)
-                #encoded_bytes = pyogg.opus.opus_encode(encoder, ctypes.cast(pcm_reconstructed, pyogg.opus.opus_int16_p), ctypes.c_int(desired_frame_size), ctypes.cast(buffer, pyogg.opus.c_uchar_p), pyogg.opus.opus_int32(len(buffer)))
-                #opus_frame = bytes(buffer[:encoded_bytes])
-                ####################
             else:
                 opus_frame = b"\xF8\xFF\xFE"
             # send a frame
@@ -403,7 +532,7 @@ class Context:
             sequence += 1
             try:
                 self.socket.sendto(package, (self.ip, self.port))
-            except: # TODO limit to socket close exceptions only
+            except OSError:
                 pass
             # check if we need to heartbeat and do so if necessary
             if last_heartbeat + self.heartbeat_interval // 2 <= time_millis():
@@ -522,7 +651,8 @@ class Context:
                     self.streamer.start()
                 case 5:
                     print('VOICE GATEWAY ' + self.guild_id + ' received speaking')
-                    # nothing else to do ...
+                    self.ssrc_to_client_user_id[payload['d']['ssrc']] = payload['d']['user_id']
+                    print(payload['d']['user_id'] + ' => ' + str(payload['d']['ssrc']))
                 case 12:
                     print('VOICE GATWAY ' + self.guild_id + ' received streaming')
                     # nothing else to do ...
@@ -531,7 +661,7 @@ class Context:
                     # nothing else to do ...
                 case 18:
                     print('VOICE GATEWAY ' + self.guild_id + ' client connect')
-                    # nothing else to do ...
+                    # self.ssrc_to_client_user_id[payload['d']['audio_ssrc']] = payload['d']['user_id']
                 case _:
                     print('VOICE GATEWAY ' + self.guild_id + ' unknown opcode')
                     print(json.dumps(payload))
@@ -821,6 +951,12 @@ def voice_is_connected():
         time.sleep(tryy / 1000.0)
         tryy = tryy * 2
     return 'false'
+
+@app.route('/audio/guild/<guild_id>/channel/<channel_id>/user/<user_id>/nonce/<nonce>', methods=['GET'])
+def audio(guild_id, channel_id, user_id, nonce):
+    # authenticate? attacker would need to know all the right IDs in real time before they are cleared and would then "just" get a random audio chunk
+    with open(generate_audio_file_path(guild_id, channel_id, user_id, nonce), 'rb') as bites:
+        return send_file(io.BytesIO(bites.read()), mimetype='audio/wav')
 
 def cleanup():
     for file in os.listdir(STORAGE_DIRECTORY):

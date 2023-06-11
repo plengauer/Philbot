@@ -22,18 +22,19 @@ const translator = require('../../../shared/translator.js');
 const mirror = require('../../../shared/mirror.js');
 
 async function handle(payload) {
-  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.content, payload.referenced_message?.id, payload.attachments, payload.embeds, payload.components, payload.flags)
+  return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.content, payload.referenced_message?.id, payload.attachments ?? [], payload.embeds ?? [], payload.components ?? [], payload.flags)
     .then(() => undefined);
 }
 
 async function handle0(guild_id, channel_id, event_id, user_id, message, referenced_message_id, attachments, embeds, components, flags) {
   let is_voice_message = (flags & (1 << 13)) != 0;
-  if (is_voice_message) {
+  let is_audio = (flags & (1 << 31)) != 0;
+  if (is_voice_message || is_audio) {
     let attachment = attachments[0];
     let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
     let uri = url.parse(attachment.url);
-    let voice_message_audio = await curl.request({ hostname: uri.hostname, path: uri.pathname, stream: true });
-    message = await chatgpt.createTranscription(user_id, voice_message_audio, attachment.content_type.split('/')[1], attachment.duration_secs * 1000, model);
+    let audio = await curl.request({ secure: uri.protocol == 'https', hostname: uri.hostname, port: uri.port, path: uri.pathname, stream: true });
+    message = await chatgpt.createTranscription(user_id, audio, audio.headers['content-type'].split('/')[1], attachment.duration_secs * 1000, model);
     if (!message) message = "";
     if (guild_id) {
       for (let member of await discord.guild_members_list(guild_id)) {
@@ -44,7 +45,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
     }
   }
 
-  await mirror.on_message_create(guild_id, channel_id, user_id, event_id, is_voice_message, message, referenced_message_id, attachments, embeds, components);
+  await mirror.on_message_create(guild_id, channel_id, user_id, event_id, message, referenced_message_id, attachments, embeds, components, flags);
 
   message = message.trim();
   if (message.length == 0) return;

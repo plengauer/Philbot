@@ -57,8 +57,12 @@ async function configure_mirror(guild_id, user_id, input_mirror_guild_id = undef
   }
 }
 
-async function on_message_create(guild_id, channel_id, user_id, message_id, is_voice, content, referenced_message_id, attachments, embeds, components) {
-  return forward_all(guild_id, channel_id, user_id, is_voice ? 'Voice Message' : 'Message', content, attachments, embeds, components, message_id, referenced_message_id);
+async function on_message_create(guild_id, channel_id, user_id, message_id, content, referenced_message_id, attachments, embeds, components, flags) {
+  let action = null;
+  if ((flags & (1 << 13)) != 0) action = 'Voice Message';
+  else if ((flags & (1 << 31)) != 0) action = 'Audio';
+  else action = 'Message';
+  return forward_all(guild_id, channel_id, user_id, action, content, attachments, embeds, components, message_id, referenced_message_id);
 }
 
 async function on_reaction_add(guild_id, channel_id, user_id, message_id, emoji) {
