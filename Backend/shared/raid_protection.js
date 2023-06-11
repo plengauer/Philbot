@@ -78,7 +78,7 @@ async function revoke_invites(guild) {
 async function kick_and_ban_suspects(guild) {
   return discord.guild_members_list(guild.id)
     .then(members => members.filter(member => new Date(member.joined_at) > new Date(Date.now() - 1000 * GUILD_MEMBER_SUSPECT_TIMEFRAME)))
-    .then(suspects => suspects.map(suspect => kick_and_ban_user(guild.id, member.user.id, 'suspect about contribution to a raid').then(() => suspect)))
+    .then(suspects => suspects.map(suspect => kick_and_ban_user(guild.id, suspect.user.id, 'suspect about contribution to a raid').then(() => suspect)))
     .then(promises => Promise.all(promises));
 }
 

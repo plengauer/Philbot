@@ -83,8 +83,8 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
   }
   
   return Promise.all([
-    features.isActive(guild_id, 'raid protection').then(active => guild_id && !mentioned && active ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
-    features.isActive(guild_id, 'role management').then(active => guild_id && !mentioned && active ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
+    features.isActive(guild_id, 'raid protection').then(active => guild_id && !mentioned && active && !is_audio ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
+    features.isActive(guild_id, 'role management').then(active => guild_id && !mentioned && active && !is_audio ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
     guild_id && !mentioned && can_respond ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
     mentioned && can_respond ? handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
   ]);
