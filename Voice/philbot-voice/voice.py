@@ -269,7 +269,7 @@ class Stream:
             if packet:
                 self.buffer.pop(sequence)
             else:
-                packet = Packet(sequence, sequence * desired_frame_size, 0, b"\x00" * desired_frame_size * sample_width * channels)
+                packet = Packet(sequence, sequence * desired_frame_size, b"\x00" * desired_frame_size * sample_width * channels)
             if packet.get_timestamp() > self.last_timestamp + (desired_frame_size * min_pause_duration // frame_duration):
                 do_flush = True
                 break
