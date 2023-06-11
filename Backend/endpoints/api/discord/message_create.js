@@ -33,7 +33,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
     let attachment = attachments[0];
     let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
     let uri = url.parse(attachment.url);
-    let audio = await curl.request({ secure: uri.protocol == 'https', hostname: uri.hostname, port: uri.port, path: uri.pathname, stream: true });
+    let audio = await curl.request({ secure: uri.protocol == 'https', hostname: uri.hostname, port: uri.port, path: uri.pathname + (uri.search ?? ''), stream: true });
     message = await chatgpt.createTranscription(user_id, audio, audio.headers['content-type'].split('/')[1], attachment.duration_secs * 1000, model);
     if (!message) message = "";
     if (guild_id) {
