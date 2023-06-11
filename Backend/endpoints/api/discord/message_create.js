@@ -33,7 +33,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
     let attachment = attachments[0];
     let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
     let uri = url.parse(attachment.url);
-    let audio = await curl.request({ secure: uri.protocol == 'https', hostname: uri.hostname, port: uri.port, path: uri.pathname + (uri.search ?? ''), stream: true });
+    let audio = await curl.request({ secure: attachment.url.startsWith('https://'), hostname: uri.hostname, port: uri.port, path: uri.pathname + (uri.search ?? ''), stream: true });
     message = await chatgpt.createTranscription(user_id, audio, audio.headers['content-type'].split('/')[1], attachment.duration_secs * 1000, model);
     if (!message) message = "";
     if (guild_id) {
@@ -83,9 +83,9 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
   }
   
   return Promise.all([
-    features.isActive(guild_id, 'raid protection').then(active => guild_id && !mentioned && active && !is_audio ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
-    features.isActive(guild_id, 'role management').then(active => guild_id && !mentioned && active && !is_audio ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
-    guild_id && !mentioned && can_respond ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
+    features.isActive(guild_id, 'raid protection').then(active => guild_id && !mentioned && !is_audio && active ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
+    features.isActive(guild_id, 'role management').then(active => guild_id && !mentioned && !is_audio && active ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
+    guild_id && !mentioned && can_respond && !is_audio ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
     mentioned && can_respond ? handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
   ]);
 }
@@ -181,7 +181,7 @@ async function handleMessageForFunReplies(channel_id, event_id, user_id, message
       if (25 < message.length && message.length < 250) break;
       const dummy_token = 'NULL';
       let extraction = await chatgpt.createCompletion(user_id, `Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model);
-      if (!extraction || extraction == dummy_token || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
+      if (!extraction || extraction == dummy_token || extraction.startsWith(dummy_token) || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
       let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
       if (!image_model) break;
       let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
