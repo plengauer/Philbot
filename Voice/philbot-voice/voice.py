@@ -245,7 +245,6 @@ class Stream:
         self.buffer[sequence] = Packet(sequence, timestamp, pcm)
         self.buffer_revision = time_millis()
     
-    # create_voice_package(sequence, sequence * desired_frame_size, self.ssrc, secret_box, opus_frame)
     def try_flush(self, limit = 1000):
         if not self.file:
             return False
