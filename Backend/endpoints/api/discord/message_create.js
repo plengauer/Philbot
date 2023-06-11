@@ -1031,11 +1031,11 @@ async function handleLongResponse(channel_id, func) {
 }
 
 async function reactOK(channel_id, event_id) {
-  return discord.react(channel_id, event_id, '👍');
+  return event_id ? discord.react(channel_id, event_id, '👍') : undefined;
 }
 
 async function reactNotOK(channel_id, event_id) {
-  return discord.react(channel_id, event_id, '👎');
+  return event_id ? discord.react(channel_id, event_id, '👎') : undefined;
 }
 
 async function hasMasterPermission(guild_id, user_id) {
