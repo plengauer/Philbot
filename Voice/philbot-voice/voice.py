@@ -266,13 +266,13 @@ class Stream:
         while len(self.buffer) > too_young_packages or (len(self.buffer) > 0 and self.buffer.get(self.last_sequence + 1)):
             sequence = self.last_sequence + 1
             packet = self.buffer.get(sequence)
-            if packet.get_timestamp() > self.last_timestamp + (desired_frame_size * min_pause_duration // frame_duration):
-                do_flush = True
-                break
             if packet:
                 self.buffer.pop(sequence)
             else:
                 packet = Packet(sequence, sequence * desired_frame_size, 0, b"\x00" * desired_frame_size * sample_width * channels)
+            if packet.get_timestamp() > self.last_timestamp + (desired_frame_size * min_pause_duration // frame_duration):
+                do_flush = True
+                break
             self.file.writeframes(packet.get_pcm())
             self.packages += 1
             self.last_sequence = packet.get_sequence()
