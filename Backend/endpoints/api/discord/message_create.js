@@ -36,6 +36,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
     let audio = await curl.request({ secure: attachment.url.startsWith('https://'), hostname: uri.hostname, port: uri.port, path: uri.pathname + (uri.search ?? ''), stream: true });
     message = await chatgpt.createTranscription(user_id, audio, audio.headers['content-type'].split('/')[1], attachment.duration_secs * 1000, model);
     if (!message) message = "";
+    if (is_audio && message.length == 0) return;
     if (guild_id) {
       for (let member of await discord.guild_members_list(guild_id)) {
         for (let name of [ discord.member2name(member), discord.user2name(member.user), member.user.username ]) {
