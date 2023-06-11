@@ -652,7 +652,6 @@ class Context:
                 case 5:
                     print('VOICE GATEWAY ' + self.guild_id + ' received speaking')
                     self.ssrc_to_client_user_id[payload['d']['ssrc']] = payload['d']['user_id']
-                    print(payload['d']['user_id'] + ' => ' + str(payload['d']['ssrc']))
                 case 12:
                     print('VOICE GATWAY ' + self.guild_id + ' received streaming')
                     # nothing else to do ...
