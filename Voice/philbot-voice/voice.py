@@ -286,7 +286,7 @@ class Stream:
             from_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'wav');
             to_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'mp3');
             subprocess.run(['ffmpeg', '-i', from_filename, to_filename]).check_returncode()
-            os.remove(filename)
+            os.remove(from_filename)
         return do_flush
 
     def flush(self):
