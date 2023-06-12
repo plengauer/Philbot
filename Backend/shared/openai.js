@@ -244,6 +244,7 @@ async function createTranscription(user, audio_stream, audio_stream_format, audi
 function sanitizeTranscription(model, input) {
   if (model == 'whisper-1' && input == 'Thank you.') return ''; // breathing is too often mistaken as "Thank you."
   if (model == 'whisper-1' && input == 'you') return ''; // random throat clearings are represented as "you"
+  if (model == 'whisper-1' && input == 'Bye.') return ''; // random clicks are just translating to "Bye."
   return input;
 }
 

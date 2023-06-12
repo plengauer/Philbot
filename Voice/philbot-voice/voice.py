@@ -956,7 +956,7 @@ def voice_is_connected():
 
 @app.route('/audio/guild/<guild_id>/channel/<channel_id>/user/<user_id>/nonce/<nonce>', methods=['GET'])
 def audio(guild_id, channel_id, user_id, nonce):
-    # authenticate? attacker would need to know all the right IDs in real time before they are cleared and would then "just" get a random audio chunk
+    # authenticate?
     # attacker would have to know guild_id, channel_id (needs to be in the server), user_id (needs to be in the server or friend), and guess the right nonce, and access it in real-time
     # they would get a small random audio chunk
     for extension in ['wav', 'mp3']:
@@ -968,7 +968,7 @@ def audio(guild_id, channel_id, user_id, nonce):
 
 def cleanup():
     for file in os.listdir(STORAGE_DIRECTORY):
-        if os.path.getmtime(STORAGE_DIRECTORY + '/' + file) + 60 * 60 < time_seconds():
+        if os.path.getmtime(STORAGE_DIRECTORY + '/' + file) + 60 * 15 < time_seconds():
             try:
                 os.remove(STORAGE_DIRECTORY + '/' + file)
             except:
@@ -977,7 +977,7 @@ def cleanup():
 def cleanup_loop():
     while True:
         cleanup()
-        time.sleep(60 * 60)
+        time.sleep(60)
 
 def main():
     for file in os.listdir('.'):
