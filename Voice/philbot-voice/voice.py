@@ -105,8 +105,8 @@ def unwrap_voice_package(package, secret_box):
         voice_chunk = voice_chunk[2 + 2 + 4 * extension_length:]
     return sequence, timestamp, ssrc, voice_chunk
 
-def generate_audio_file_path(guild_id, channel_id, user_id, nonce):
-    return STORAGE_DIRECTORY + '/audio.' + guild_id + '.' + channel_id + '.' + user_id + '.' + str(nonce) + '.wav' 
+def generate_audio_file_path(guild_id, channel_id, user_id, nonce, extension = 'wav'):
+    return STORAGE_DIRECTORY + '/audio.' + guild_id + '.' + channel_id + '.' + user_id + '.' + str(nonce) + '.' + extension
 
 download_lock = threading.Lock()
 downloads = {}
@@ -233,7 +233,7 @@ class Stream:
     def write(self, sequence, timestamp, pcm, nonce):
         if not self.file:
             self.nonce = nonce
-            self.file = wave.open(generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, nonce), 'wb')
+            self.file = wave.open(generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, nonce, 'wav'), 'wb')
             self.file.setsampwidth(sample_width)
             self.file.setnchannels(channels)
             self.file.setframerate(frame_rate)
@@ -283,6 +283,10 @@ class Stream:
         if do_flush:
             self.file.close()
             self.file = None
+            from_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'wav');
+            to_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'mp3');
+            subprocess.run(['ffmpeg', '-i', from_filename, to_filename]).check_returncode()
+            os.remove(filename)
         return do_flush
 
     def flush(self):
@@ -953,8 +957,14 @@ def voice_is_connected():
 @app.route('/audio/guild/<guild_id>/channel/<channel_id>/user/<user_id>/nonce/<nonce>', methods=['GET'])
 def audio(guild_id, channel_id, user_id, nonce):
     # authenticate? attacker would need to know all the right IDs in real time before they are cleared and would then "just" get a random audio chunk
-    with open(generate_audio_file_path(guild_id, channel_id, user_id, nonce), 'rb') as bites:
-        return send_file(io.BytesIO(bites.read()), mimetype='audio/wav')
+    # attacker would have to know guild_id, channel_id (needs to be in the server), user_id (needs to be in the server or friend), and guess the right nonce, and access it in real-time
+    # they would get a small random audio chunk
+    for extension in ['wav', 'mp3']:
+        filename = generate_audio_file_path(guild_id, channel_id, user_id, nonce, extension)
+        if os.path.exists(filename):
+            with open(filename, 'rb') as bites:
+                return send_file(io.BytesIO(bites.read()), mimetype='audio/' + extension)
+    return Response('Not Found', status=404)
 
 def cleanup():
     for file in os.listdir(STORAGE_DIRECTORY):
