@@ -222,7 +222,7 @@ async function getTranscriptionModels() {
   return getModels().then(models => models.filter(model => model.startsWith('whisper-')));
 }
 
-async function createTranscription(user, audio_stream, audio_stream_format, audio_stream_length_millis, model = undefined) {
+async function createTranscription(user, prompt, audio_stream, audio_stream_format, audio_stream_length_millis, model = undefined) {
   model = model ?? (await getTranscriptionModels()).slice(-1);
   if (!token) return null;
   if (!await canCreate()) return null;
@@ -234,6 +234,7 @@ async function createTranscription(user, audio_stream, audio_stream_format, audi
   }
   let body = new FormData();
   body.append('model', model, { contentType: 'string' });
+  body.append('prompt', prompt, { contentType: 'string' });
   body.append('file', audio_stream, { contentType: 'audio/' + audio_stream_format, filename: 'audio.' + audio_stream_format });
   let response = await HTTP('/v1/audio/transcriptions', body, body.getHeaders());
   response.text = sanitizeTranscription(model, response.text);
@@ -242,10 +243,14 @@ async function createTranscription(user, audio_stream, audio_stream_format, audi
 }
 
 function sanitizeTranscription(model, input) {
-  if (model == 'whisper-1' && input == 'Thank you.') return ''; // breathing is too often mistaken as "Thank you."
-  if (model == 'whisper-1' && input == 'you') return ''; // random throat clearings are represented as "you"
-  if (model == 'whisper-1' && input == 'Bye.') return ''; // random clicks are just translating to "Bye."
+  if (model == 'whisper-1' && isRepeating(input, 'Thank you.')) return ''; // breathing is too often mistaken as "Thank you."
+  if (model == 'whisper-1' && isRepeating(input, 'you')) return ''; // random throat clearings are represented as "you"
+  if (model == 'whisper-1' && isRepeating(input, 'Bye.')) return ''; // random clicks / mousewheels are just translating to "Bye."
   return input;
+}
+
+function isRepeating(text, token) {
+  return text.split(' ').filter(t => t.length > 0).every(t => token == t);
 }
 
 function getTranscriptionCost(model, time_millis) {

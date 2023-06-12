@@ -27,14 +27,16 @@ async function handle(payload) {
 }
 
 async function handle0(guild_id, channel_id, event_id, user_id, message, referenced_message_id, attachments, embeds, components, flags) {
+  let me = await discord.me();
   let is_voice_message = (flags & (1 << 13)) != 0;
   let is_audio = (flags & (1 << 31)) != 0;
   if (is_voice_message || is_audio) {
     let attachment = attachments[0];
     let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
     let uri = url.parse(attachment.url);
+    let prompt = await createBasicAIContext(guild_id, me);
     let audio = await curl.request({ secure: attachment.url.startsWith('https://'), hostname: uri.hostname, port: uri.port, path: uri.pathname + (uri.search ?? ''), stream: true });
-    message = await chatgpt.createTranscription(user_id, audio, audio.headers['content-type'].split('/')[1], attachment.duration_secs * 1000, model);
+    message = await chatgpt.createTranscription(user_id, prompt, audio, audio.headers['content-type'].split('/')[1], attachment.duration_secs * 1000, model);
     if (!message) message = "";
     if (is_audio && message.length == 0) return;
     if (guild_id) {
@@ -51,7 +53,6 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
   message = message.trim();
   if (message.length == 0) return;
   
-  let me = await discord.me();
   let mentioned = false;
   if (me.id == user_id) {
     return; // avoid cycles
@@ -945,8 +946,7 @@ async function createAIResponse(guild_id, channel_id, user_id, message) {
 async function createAIContext(guild_id, channel_id, user_id, message, model) {
   // basic identity information
   let me = await discord.me();
-  let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(discord.member2name) : discord.user2name(me);
-  let system_message = `My name is ${my_name}. I am a Discord bot.`;
+  let system_message = await createBasicAIContext(guild_id, me);
 
   // personality
   let personality = await memory.get(`ai:personality:channel:${channel_id}`, null)
@@ -987,13 +987,18 @@ async function createAIContext(guild_id, channel_id, user_id, message, model) {
   }
 
   // complex information about how myself
-  const help_prompt = `Assuming I am a Discord bot called ${my_name}, is "${message}" a question about me, my capabilities, or how to interact with me?`;
+  const help_prompt = `Assuming I am a Discord bot, is "${message}" a question about me, my capabilities, or how to interact with me?`;
   let about_me = (await createHelpString(guild_id, discord.mention_user(me.id))) + '\n' + (await createAboutString(discord.mention_user(me.id)));
   if (help_prompt.length > about_me.length || await chatgpt.createBoolean(user_id, help_prompt, model)) {
     system_message += ' ' + about_me;
   }
 
   return system_message;
+}
+
+async function createBasicAIContext(guild_id, me) {
+  let my_name = guild_id ? await discord.guild_member_retrieve(guild_id, me.id).then(discord.member2name) : discord.user2name(me);
+  return `My name is ${my_name}. I am a Discord bot.`;
 }
 
 async function createHelpString(guild_id, my_name) {
