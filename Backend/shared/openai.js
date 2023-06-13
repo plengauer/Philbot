@@ -145,6 +145,8 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
       return (tokens_prompt + tokens_completion) / 1000 * 0.02;
     case "gpt-3.5-turbo":
       return (tokens_prompt + tokens_completion) / 1000 * 0.002;
+    case "gpt-3.5-turbo-16k":
+      return tokens_prompt / 1000 * 0.003 + tokens_completion / 1000 * 0.004;
     case "gpt-4":
       return tokens_prompt / 1000 * 0.03 + tokens_completion / 1000 * 0.06;
     case "gpt-4-32k":
