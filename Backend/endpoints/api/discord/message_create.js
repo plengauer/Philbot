@@ -71,6 +71,10 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
   } else {
     mentioned = !guild_id && user_id != me.id;
   }
+  if (mentioned) {
+    if (message.startsWith(',')) message = message.substring(1);
+    message = message.trim();
+  }
 
   let can_respond = !guild_id || await discord.guild_member_has_all_permissions(guild_id, channel_id, me.id, permissions.required()) || process.env.DISABLE_MESSAGE_PERMISSION_CHECK == 'true';
   if (!can_respond && mentioned) {
@@ -222,28 +226,28 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   if (message.length == 0) {
     return Promise.resolve();
   
-  } else if (message === 'debug') {
+  } else if (message.toLowerCase() == 'debug') {
     return reactOK(channel_id, event_id);
     
-  } else if (message === 'ping') {
+  } else if (message.toLowerCase() == 'ping') {
     return discord.respond(channel_id, event_id, 'pong');
     
-  } else if (message.startsWith('echo ')) {
+  } else if (message.toLowerCase().startsWith('echo ')) {
     return discord.respond(channel_id, event_id, message.split(' ').slice(1).join(' '));
   
-  } else if (message === 'fail') {
+  } else if (message.toLowerCase() == 'fail') {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
       return reactNotOK(channel_id, event_id);
     }
     throw new Error('This is a simulated error for production testing!');
   
-  } else if (message === 'timeout') {
+  } else if (message.toLowerCase() == 'timeout') {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
       return reactNotOK(channel_id, event_id);
     }
     return new Promise(resolve => setTimeout(resolve, 1000 * 60 * 60));
     
-  } else if (message === 'dump memory' || message.startsWith('dump memory ')) {
+  } else if (message.toLowerCase() == 'dump memory' || message.toLowerCase().startsWith('dump memory ')) {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
       return reactNotOK(channel_id, event_id);
     }
@@ -255,7 +259,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(result => console.log('\n' + result))
       .then(() => reactOK(channel_id, event_id));
   
-  } else if (message === 'show memory' || message.startsWith('show memory ')) {
+  } else if (message.toLowerCase() == 'show memory' || message.toLowerCase().startsWith('show memory ')) {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
       return reactNotOK(channel_id, event_id);
     }
@@ -266,13 +270,13 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       )
       .then(result => discord.respond(channel_id, event_id, result));
     
-  } else if (message.startsWith('clear memory')) {
+  } else if (message.toLowerCase().startsWith('clear memory')) {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
       return reactNotOK(channel_id, event_id);
     }
     return memory.unset(message.split(' ').slice(2).join(' ')).then(() => reactOK(channel_id, event_id));
     
-  } else if (message.startsWith("insert memory ")) {
+  } else if (message.toLowerCase().startsWith("insert memory ")) {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
       return reactNotOK(channel_id, event_id);
     }
@@ -286,7 +290,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     //if (value.includes(',')) value = value.split(',');
     return memory.set(key, value, 60 * 60 * 24 * 7 * 52).then(() => reactOK(channel_id, event_id));
     
-  } else if (message == 'help') {
+  } else if (message.toLowerCase() == 'help') {
     let notification_role_name;
     if (guild_id) {
       let notification_role_id = await memory.get(`notification:role:guild:${guild_id}`, null);
@@ -302,34 +306,34 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return createHelpString(guild_id, discord.mention_user(me.id))
       .then(help => discord.respond(channel_id, event_id, `${help}\nUse ${url}/help to share this information with others outside your discord server.`));
     
-  } else if (message == 'about') {
+  } else if (message.toLowerCase() == 'about') {
     let url = await identity.getPublicURL();
     return createAboutString(discord.mention_user(me.id))
       .then(about => discord.respond(channel_id, event_id, `${about}\nUse ${url}/about to share this information with others outside your discord server.`));
     
-  } else if (message === 'good bot') {
+  } else if (message.toLowerCase() == 'good bot') {
     return discord.react(channel_id, event_id, '👍');
     
-  } else if (message === 'bad bot') {
+  } else if (message.toLowerCase() == 'bad bot') {
     return discord.react(channel_id, event_id, '😢');
     
-  } else if (message.startsWith('command start ')) {
+  } else if (message.toLowerCase().startsWith('command start ')) {
     return memory.set(`command:user:${user_id}`, message.split(' ').slice(2).join(' '), 60 * 60)
       .then(() => reactOK(channel_id, event_id));
     
-  } else if (message.startsWith('command continue ')) {
+  } else if (message.toLowerCase().startsWith('command continue ')) {
     return memory.get(`command:user:${user_id}`, '')
       .then(command => memory.set(`command:user:${user_id}`, command + message.split(' ').slice(2).join(' '), 60 * 60))
       .then(() => reactOK(channel_id, event_id));
     
-  } else if (message === 'command execute') {
+  } else if (message.toLowerCase() == 'command execute') {
     return memory.consume(`command:user:${user_id}`, null)
       .then(command => command ?
         handleCommand(guild_id, channel_id, event_id, user_id, command, referenced_message_id, me, pure_command_handling) :
         reactNotOK(channel_id, event_id)
       );
   
-  } else if (message == 'join') {
+  } else if (message.toLowerCase() == 'join') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     let voice_state = await memory.get(`voice_channel:user:${user_id}`, null);
@@ -339,18 +343,18 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return discord.connect(guild_id, voice_channel_id)
       .then(() => reactOK(channel_id, event_id));
   
-  } else if (message.startsWith('play ')) {
+  } else if (message.toLowerCase().startsWith('play ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     message = message.split(' ').slice(1).join(' ');
-    let shuffle = message.startsWith('shuffled ');
+    let shuffle = message.toLowerCase().startsWith('shuffled ');
     if (shuffle) {
       message = message.split(' ').slice(1).join(' ');
     }
     let search_string = null;
     let voice_channel_id = null;
-    if (message.startsWith('in ')) {
+    if (message.toLowerCase().startsWith('in ')) {
       let channel_name = message.split(' ')[1];
       voice_channel_id = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == channel_name)).then(channel => channel?.id); 
       if (!voice_channel_id) return discord.respond(channel_id, event_id, 'I cannot find the channel ' + channel_name + '!');
@@ -370,46 +374,46 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .catch(error => discord.respond(channel_id, event_id, error.message))
       .finally(() => clearInterval(timer));
 
-  } else if (message === "player") {
+  } else if (message.toLowerCase() == "player") {
     return player.openInteraction(guild_id ?? await resolveGuildID(user_id), channel_id).then(() => reactOK(channel_id, event_id));
 
-  } else if (message === "stop") {
+  } else if (message.toLowerCase() == "stop") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.stop(guild_id).then(command => reactOK(channel_id, event_id).then(() => command));
     
-  } else if (message === "pause") {
+  } else if (message.toLowerCase() == "pause") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.pause(guild_id).then(() => reactOK(channel_id, event_id));
     
-  } else if (message === "resume") {
+  } else if (message.toLowerCase() == "resume") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.resume(guild_id).then(() => reactOK(channel_id, event_id));
     
-  } else if (message.startsWith('queue ')) {
+  } else if (message.toLowerCase().startsWith('queue ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.appendToQueue(guild_id, message.split(' ').slice(1).join(' ')).then(() => reactOK(channel_id, event_id))
       
-  } else if (message === 'shuffle queue') {
+  } else if (message.toLowerCase() == 'shuffle queue') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.shuffleQueue(guild_id).then(() => reactOK(channel_id, event_id));
     
-  } else if (message === 'clear queue') {
+  } else if (message.toLowerCase() == 'clear queue') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
     return player.clearQueue(guild_id).then(() => reactOK(channel_id, event_id));
     
-  } else if (message === 'show queue') {
+  } else if (message.toLowerCase() == 'show queue') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
@@ -426,7 +430,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     }
     return discord.respond(channel_id, event_id, 'The queue consists of ' + buffer + ' and ' + Math.max(0, queue.length - 5) + ' more...');
   
-  } else if (message.startsWith('add repeating event ')) {
+  } else if (message.toLowerCase().startsWith('add repeating event ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) {
       return discord.respond(channel_id, event_id, 'I can only add a repeating event via a text channel within a guild or while you are in a voice channel. Otherwise I do not know which guild to schedule this event for.');
@@ -488,7 +492,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     
     return memory.set(`repeating_events:config:guild:${guild_id}`, event_configs).then(() => reactOK(channel_id, event_id));
     
-  } else if (message.startsWith('remove repeating event ')) {
+  } else if (message.toLowerCase().startsWith('remove repeating event ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) {
       return discord.respond(channel_id, event_id, 'I can only removea repeating event via a text channel within a guild or while you are in a voice channel. Otherwise I do not know which guild to remove this event for.');
@@ -509,7 +513,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     }
     return memory.set(`repeating_events:config:guild:${guild_id}`, new_event_configs).then(() => reactOK(channel_id, event_id));
     
-  } else if (message.startsWith('remember birthday ')) {
+  } else if (message.toLowerCase().startsWith('remember birthday ')) {
     let input = message.substring('remember birthday '.length).split(' ');
     let user_id = discord.parse_mention(input[0]);
     let day = parseInt(input[1].substring(0, input[1].indexOf('.')));
@@ -517,10 +521,10 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return memory.set(`birthday:user:${user_id}`, { day: day, month: month })
       .then(() => reactOK(channel_id, event_id));
     
-  } else if (message.startsWith('notify me for ')) {
+  } else if (message.toLowerCase().startsWith('notify me for ')) {
     let activity = message.substring('notify me for '.length).trim();
     return memory.set(`notify:user:${user_id}:activity:${activity}`, true).then(() => reactOK(channel_id, event_id));
-  } else if (message.startsWith('stop notifying me for ')) {
+  } else if (message.toLowerCase().startsWith('stop notifying me for ')) {
     let activity = message.substring('stop notifying me for '.length).trim();
     return memory.unset(`notify:user:${user_id}:activity:${activity}`).then(() => reactOK(channel_id, event_id));
     
@@ -603,7 +607,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(reminders => memory.set(`reminders:user:${to_id}`, reminders.concat([reminder])))
       .then(() => reactOK(channel_id, event_id))
       
-  } else if (message.startsWith('random ')) {
+  } else if (message.toLowerCase().startsWith('random ')) {
     message = message.split(' ').slice(1).join(' ');
     if (message.includes(';')) {
       let tokens = message.split(';').map(token => token.trim());
@@ -619,20 +623,20 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       }
     }
   
-  } else if (message.startsWith('create alias ')) {
+  } else if (message.toLowerCase().startsWith('create alias ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'create an alias');
     let name = message.split(' ')[2];
     let command = message.split(' ').slice(3).join(' ');
     return memory.set(`alias:` + memory.mask(name) + `:guild:${guild_id}`, command).then(() => reactOK(channel_id, event_id));
     
-  } else if (message.startsWith('remove alias ')) {
+  } else if (message.toLowerCase().startsWith('remove alias ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'remove an alias');
     let name = message.split(' ')[2];
     return memory.unset(`alias:` + memory.mask(name) + `:guild:${guild_id}`).then(() => reactOK(channel_id, event_id));
 
-  } else if (message.startsWith('tournament create ')) {
+  } else if (message.toLowerCase().startsWith('tournament create ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id);
     if (!await features.isActive(guild_id, 'tournament')) return respondNeedsFeatureActive(channel_id, event_id, 'tournament', 'create a tournament');
@@ -648,7 +652,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
 
-  } else if (message.startsWith('tournament define team ')) {
+  } else if (message.toLowerCase().startsWith('tournament define team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     message = message.split(' ').slice(3).join(' ');
     let split = message.indexOf(':');
@@ -660,7 +664,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
     
-  } else if (message.startsWith('tournament dissolve team ')) {
+  } else if (message.toLowerCase().startsWith('tournament dissolve team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     message = message.split(' ').slice(3).join(' ');
     let name = message.trim();
@@ -668,7 +672,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
         
-  } else if (message.startsWith('tournament replace ')) {
+  } else if (message.toLowerCase().startsWith('tournament replace ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     message = message.split(' ').slice(2).join(' ');
     let players = message.split(' ').filter(token => token.length > 0).map(mention => discord.parse_mention(mention));
@@ -677,19 +681,19 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
     
-  } else if (message === 'tournament prepare') {
+  } else if (message.toLowerCase() == 'tournament prepare') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     return tournament.prepare(guild_id, user_id)
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
     
-  } else if (message === 'tournament start') {
+  } else if (message.toLowerCase() == 'tournament start') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     return tournament.start(guild_id, user_id)
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
       
-  } else if (message.startsWith('configure League of Legends ')) {
+  } else if (message.toLowerCase().startsWith('configure League of Legends ')) {
     message = message.substring('configure League of Legends '.length);
     let configs = message.split(';')
       .map(config => config.trim())
@@ -707,7 +711,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => games.getActivityHint('League of Legends', null, null, user_id))
       .then(hint => hint ? discord.respond(channel_id, event_id, hint.text) : reactOK(channel_id, event_id));
       
-  } else if (message.startsWith('add trigger ')) {
+  } else if (message.toLowerCase().startsWith('add trigger ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'add a trigger');
@@ -726,7 +730,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return memory.set(`trigger:guild:${guild_id}:trigger:` + memory.mask(trigger), { probability: probability, response: response })
       .then(() => reactOK(channel_id, event_id));
     
-  } else if (message.startsWith('remove trigger ')) {
+  } else if (message.toLowerCase().startsWith('remove trigger ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'remove a trigger');
@@ -735,13 +739,13 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return memory.unset(`trigger:guild:${guild_id}:trigger:` + memory.mask(trigger))
       .then(() => reactOK(channel_id, event_id));
   
-  } else if (message.startsWith('define ')) {
+  } else if (message.toLowerCase().startsWith('define ')) {
     message = message.substring('define '.length).trim();
     if (message.length == 0) return reactNotOK(channel_id, event_id);
     return urban_dictionary.lookup(message)
       .then(result => discord.respond(channel_id, event_id, result ? `${result.word}: ${result.definition} (${result.permalink})` : `No entry found for ${message}.`));
   
-  } else if (message.startsWith('activate ')) {
+  } else if (message.toLowerCase().startsWith('activate ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'activate a feature');
@@ -753,7 +757,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     }
     return features.setActive(guild_id, feature, true).then(() => reactOK(channel_id, event_id));
     
-  } else if (message.startsWith('deactivate ')) {
+  } else if (message.toLowerCase().startsWith('deactivate ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'deactivate a feature');
@@ -761,20 +765,20 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (!features.list().includes(feature)) return reactNotOK(channel_id, event_id);
     return features.setActive(guild_id, feature, false).then(() => reactOK(channel_id, event_id));
     
-  } else if (message == 'raid lockdown') {
+  } else if (message.toLowerCase() == 'raid lockdown') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'lock down the server');
     if (!await features.isActive(guild_id, 'raid protection')) return respondNeedsFeatureActive(channel_id, event_id, 'raid protection', 'lock down the server');
     return raid_protection.lockdown(guild_id).then(() => reactOK(channel_id, event_id));
     
-  } else if (message == 'raid all clear') {
+  } else if (message.toLowerCase() == 'raid all clear') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'lift lockdown the server');
     return raid_protection.all_clear(guild_id).then(() => reactOK(channel_id, event_id));
 
-  } else if (message.startsWith('subscribe to ')) {
+  } else if (message.toLowerCase().startsWith('subscribe to ')) {
     let tokens = message.split(' ').slice(2).filter(token => token.length > 0);
     let link = tokens[0];
     let filter = tokens.slice(1).join(' ');
@@ -786,7 +790,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
 
-  } else if (message.startsWith('unsubscribe from ')) {
+  } else if (message.toLowerCase().startsWith('unsubscribe from ')) {
     let tokens = message.split(' ').slice(2).filter(token => token.length > 0);
     let link = tokens[0];
     let filter = tokens.slice(1).join(' ');
@@ -798,14 +802,14 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
 
-  } else if (message == 'automatic roles list' || message == 'automatic roles list rules') {
+  } else if (message.toLowerCase() == 'automatic roles list' || message.toLowerCase() == 'automatic roles list rules') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set roles');
     if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
     return role_management.to_string(guild_id).then(string => discord.respond(channel_id, event_id, string));
 
-  } else if (message.startsWith('automatic roles create rule ')) {
+  } else if (message.toLowerCase().startsWith('automatic roles create rule ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set roles');
@@ -815,14 +819,14 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
     
-  } else if (message == 'automatic roles update') {
+  } else if (message.toLowerCase() == 'automatic roles update') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set roles');
     if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
     return role_management.update_all(guild_id).then(() => reactOK(channel_id, event_id));
   
-  } else if (message.startsWith('translate automatically to ')) {
+  } else if (message.toLowerCase().startsWith('translate automatically to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'enable auto translation');
@@ -830,7 +834,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return translator.configure_translate(guild_id, channel_id, target_language == 'nothing' ? null : target_language)
       .then(() => reactOK(channel_id, event_id));
   
-  } else if (message.startsWith('translate to ') || message.startsWith('translate that to ') || message.startsWith('translate this to ')) {
+  } else if (message.toLowerCase().startsWith('translate to ') || message.toLowerCase().startsWith('translate that to ') || message.toLowerCase().startsWith('translate this to ')) {
     message = message.substring(message.indexOf('to') + 2).trim();
     let split = message.indexOf(':');
     if (!split || split < 0) return reactNotOK(channel_id, event_id);
@@ -842,7 +846,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
     );
   
-  } else if (message.startsWith('draw ')) {
+  } else if (message.toLowerCase().startsWith('draw ')) {
     message = message.split(' ').slice(1).join(' ');
     let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
     if (!image_model) return reactNotOK(channel_id, event_id);
@@ -853,7 +857,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
     );
 
-  } else if (message == 'mirror' || message.startsWith('mirror to ')) {
+  } else if (message.toLowerCase() == 'mirror' || message.toLowerCase().startsWith('mirror to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'mirror server');
@@ -861,7 +865,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (mirror_guild_id && !await features.isActive(mirror_guild_id, 'mirror')) return respondNeedsFeatureActive(channel_id, event_id, 'mirror', 'mirror');
     return mirror.configure_mirror(guild_id, user_id, mirror_guild_id).then(() => reactOK(channel_id, event_id));
   
-  } else if (message.startsWith('personality ')) {
+  } else if (message.toLowerCase().startsWith('personality ')) {
     message = message.split(' ').slice(1).join(' ').trim();
     if (!message.includes(':')) return reactNotOK(channel_id, event_id);    
     let scope = message.substring(0, message.indexOf(':'));
