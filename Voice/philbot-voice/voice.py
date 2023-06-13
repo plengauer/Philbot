@@ -394,7 +394,7 @@ class Context:
         self.__callback('voice_reconnect')
 
     def __callback_audio(self, channel_id, user_id, nonce, duration_secs):
-        self.__callback('voice_audio', { 'channel_id': channel_id, 'user_id': user_id, 'nonce': nonce, 'format': 'wav', 'duration_secs': duration_secs })
+        self.__callback('voice_audio', { 'channel_id': channel_id, 'user_id': user_id, 'nonce': nonce, 'format': 'mp3', 'duration_secs': duration_secs })
     
     def __resolve_client_user_id(self, ssrc):
         with self.lock:
