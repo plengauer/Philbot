@@ -933,7 +933,7 @@ async function fixCommand(guild_id, user_id, message) {
   let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
   if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) return null;
   if (!model) return null;
-  let context = await createHelpString(guild_id, '');
+  let context = await createHelpString(guild_id, discord.mention_user((await discord.me()).id));
   const dummy_token = 'NULL';
   let command = await chatgpt.createResponse(user_id, null, context, `Fix the command "${message}". Respond with the command only. Respond with "${dummy_token}" if it is not a valid command.`, model);
   if (command == dummy_token || command.startsWith(dummy_token)) return null;
