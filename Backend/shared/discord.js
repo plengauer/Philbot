@@ -407,7 +407,7 @@ async function guild_member_has_all_permissions(guild_id, channel_id, user_id, p
 
 function guild_member_has_permission_0(guild, channel, roles, member, permission) {
   if (guild.owner_id == member.user.id) return true;
-  let member_permissions = Array.from(new Set(roles.filter(role => member.roles.includes(role.id)).map(role => permissions.decompile(role.permissions)).reduce((p1, p2) => p1.concat(p2), [])));
+  let member_permissions = Array.from(new Set(roles.filter(role => member.roles.includes(role.id) || role.id == guild.id).map(role => permissions.decompile(role.permissions)).reduce((p1, p2) => p1.concat(p2), [])));
   if (member_permissions.includes('ADMINISTRATOR')) return true;
   for (let permission_overwrite of channel?.permission_overwrites ?? []) {
     if ((permission_overwrite.type == 0 && member.roles.includes(permission_overwrite.id)) || (permission_overwrite.type == 1 && permission_overwrite.id == member.user.id)) {
