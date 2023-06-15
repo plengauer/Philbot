@@ -891,6 +891,10 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     }
     return (message.toLowerCase() == 'reset' ? memory.unset(key) : memory.set(key, message))
       .then(() => reactOK(channel_id, event_id));
+  
+  } else if (message.toLowerCase() == 'mute for me') {
+    return memory.set(`mute:user:${user_id}`, true, 60 * 60 * 24 * 7 * 4)
+      .then(() => reactOK(channel_id, event_id));
     
   } else if (await delayed_memory.materialize(`response:` + memory.mask(message) + `:user:${user_id}`)) {
     return reactOK(channel_id, event_id);
