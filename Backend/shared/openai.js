@@ -144,7 +144,7 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "text-davinci-003":
       return (tokens_prompt + tokens_completion) / 1000 * 0.02;
     case "gpt-3.5-turbo":
-      return (tokens_prompt + tokens_completion) / 1000 * 0.002;
+      return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.002;
     case "gpt-3.5-turbo-16k":
       return tokens_prompt / 1000 * 0.003 + tokens_completion / 1000 * 0.004;
     case "gpt-4":
