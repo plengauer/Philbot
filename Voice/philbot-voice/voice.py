@@ -264,16 +264,18 @@ class Stream:
         do_flush = False
         while len(self.buffer) > too_young_packages or (len(self.buffer) > 0 and self.buffer.get(self.last_sequence + 1)):
             sequence = (self.last_sequence + 1) & 0xFFFF
+            missing_packages = 0
             while not self.buffer.get(sequence):
                 sequence = (sequence + 1) & 0xFFFF
+                missing_packages += 1
             packet = self.buffer.get(sequence)
             if packet.get_timestamp() > self.last_timestamp + (desired_frame_size * min_pause_duration // frame_duration):
                 do_flush = True
                 break
             self.buffer.pop(sequence)
-            self.file.writeframes(b"\x00" * sample_width * channels * desired_frame_size * (sequence - self.last_sequence - 1))
+            self.file.writeframes(b"\x00" * sample_width * channels * desired_frame_size * missing_packages)
             self.file.writeframes(packet.get_pcm())
-            self.packages += sequence - self.last_sequence
+            self.packages += missing_packages + 1
             self.last_sequence = packet.get_sequence()
             self.last_timestamp = packet.get_timestamp()
         # check whether we ran out completely
