@@ -263,9 +263,9 @@ class Stream:
         # write packages and fill holes
         do_flush = False
         while len(self.buffer) > too_young_packages or (len(self.buffer) > 0 and self.buffer.get(self.last_sequence + 1)):
-            sequence = self.last_sequence + 1
+            sequence = (self.last_sequence + 1) & 0xFFFF
             while not self.buffer.get(sequence):
-                sequence += 1
+                sequence = (sequence + 1) & 0xFFFF
             packet = self.buffer.get(sequence)
             if packet.get_timestamp() > self.last_timestamp + (desired_frame_size * min_pause_duration // frame_duration):
                 do_flush = True
@@ -283,8 +283,8 @@ class Stream:
         if do_flush:
             self.file.close()
             self.file = None
-            from_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'wav');
-            to_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'mp3');
+            from_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'wav')
+            to_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'mp3')
             subprocess.run(['ffmpeg', '-i', from_filename, to_filename]).check_returncode()
             os.remove(from_filename)
         return do_flush
