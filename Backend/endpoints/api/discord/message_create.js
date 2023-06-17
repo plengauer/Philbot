@@ -33,7 +33,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
   let is_voice_message = (flags & (1 << 13)) != 0;
   let is_audio = (flags & (1 << 31)) != 0;
   if (is_voice_message || is_audio) {
-    let instructions = await createBasicAIContext(guild_id, me);
+    let instructions = (await createBasicAIContext(guild_id, me)) + ' This is a transcript of a Discord ' + (is_audio ? 'conversation' : 'voice message') + '.';
     message = await transcribeAttachment(user_id, attachments[0], instructions, is_audio);
     if (is_audio && !message) return;    
     if (guild_id) {

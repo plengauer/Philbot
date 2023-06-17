@@ -1,6 +1,5 @@
 const child_process = require('child_process');
 const { PassThrough } = require('stream');
-const fs = require('fs');
 
 function translate(input_stream, input_format, output_format) {
   if (input_format == output_format) return input_stream;
@@ -19,10 +18,10 @@ function merge(inputs, output_format) {
 
   let merged = new PassThrough();
   for (let i = 0; i < inputs.length; i++) {
-    const index = i;
+    let index = i;
     inputs[index].stream.on('end', () => {
-      if (index == inputs.length - 1) merged.end();
-      else inputs[index + 1].stream.pipe(merged, { end: false });
+      if (index + 1 < inputs.length) inputs[index + 1].stream.pipe(merged, { end: false });
+      else merged.end();
     });
   }
   inputs[0].stream.pipe(merged, { end: false });

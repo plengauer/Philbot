@@ -106,7 +106,7 @@ def unwrap_voice_package(package, secret_box):
     return sequence, timestamp, ssrc, voice_chunk
 
 def generate_audio_file_path(guild_id, channel_id, user_id, nonce, extension = 'wav'):
-    return STORAGE_DIRECTORY + '/audio.' + guild_id + '.' + channel_id + '.' + user_id + '.' + str(nonce) + '.' + extension
+    return STORAGE_DIRECTORY + '/audio.in.' + guild_id + '.' + channel_id + '.' + user_id + '.' + str(nonce) + '.' + extension
 
 download_lock = threading.Lock()
 downloads = {}
@@ -116,7 +116,7 @@ def download_from_youtube(guild_id, url):
     filename = url[url.index('v=') + 2:]
     if '&' in filename:
         filename = filename[:filename.index('&')]
-    filename = STORAGE_DIRECTORY + '/' + guild_id + '.' + filename
+    filename = STORAGE_DIRECTORY + '/audio.out.' + guild_id + '.' + filename
     if os.path.exists(filename + '.' + codec):
         return filename + '.' + codec
     event = None
