@@ -6,6 +6,7 @@ const curl = require('../../../shared/curl.js');
 const memory = require('../../../shared/memory.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
 const discord = require('../../../shared/discord.js');
+const audio = require('../../../shared/audio.js');
 const player = require('../../../shared/player.js');
 const games = require('../../../shared/games/games.js');
 const lol = require('../../../shared/games/lol.js');
@@ -28,17 +29,13 @@ async function handle(payload) {
 
 async function handle0(guild_id, channel_id, event_id, user_id, message, referenced_message_id, attachments, embeds, components, flags) {
   let me = await discord.me();
+
   let is_voice_message = (flags & (1 << 13)) != 0;
   let is_audio = (flags & (1 << 31)) != 0;
   if (is_voice_message || is_audio) {
-    let attachment = attachments[0];
-    let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
-    let uri = url.parse(attachment.url);
-    let prompt = await createBasicAIContext(guild_id, me);
-    let audio = await curl.request({ secure: attachment.url.startsWith('https://'), hostname: uri.hostname, port: uri.port, path: uri.pathname + (uri.search ?? ''), stream: true });
-    message = await chatgpt.createTranscription(user_id, prompt, audio, audio.headers['content-type'].split('/')[1], attachment.duration_secs * 1000, model);
-    if (!message) message = "";
-    if (is_audio && message.length == 0) return;
+    let instructions = await createBasicAIContext(guild_id, me);
+    message = await transcribeAttachment(user_id, attachments[0], instructions, is_audio);
+    if (is_audio && !message) return;    
     if (guild_id) {
       for (let member of await discord.guild_members_list(guild_id)) {
         for (let name of [ discord.member2name(member), discord.user2name(member.user), member.user.username ]) {
@@ -94,6 +91,43 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
     guild_id && !mentioned && can_respond && !is_audio ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
     mentioned && can_respond ? handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
   ]);
+}
+
+async function transcribeAttachment(user_id, attachment, transcription_instructions, try_baseline) {
+  let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
+  const baseline_key = `transcript:baseline:user:${user_id}`;
+  let content_type = attachment.content_type;
+  let duration_secs = attachment.duration_secs;
+  let attachment_audio = await streamAudio(attachment);
+  let baseline = try_baseline ? await memory.get(baseline_key) : null;  
+  if (baseline) {
+    try {
+      let baseline_audio = await streamAudio(baseline);
+      let format = content_type.split('/')[1];
+      attachment_audio = audio.merge([{ format: baseline.content_type.split('/')[1], stream: baseline_audio }, { format: content_type.split('/')[1], stream: attachment_audio }], format);
+      duration_secs += baseline.duration_secs;
+      content_type = 'audio/' + format;
+    } catch(error) {
+      return transcribeAttachment(user_id, attachment, transcription_instructions, false);
+    }
+  }
+  let transcription = await chatgpt.createTranscription(user_id, transcription_instructions, attachment_audio, content_type.split('/')[1], duration_secs * 1000, model);
+  if (!transcription) transcription = "";
+  if (baseline) {
+    if (!transcription.startsWith(baseline.text)) return transcribeAttachment(user_id, attachment, transcription_instructions, false);
+    transcription = transcription.substring(baseline.text.length).trim();
+  }
+  if (transcription.length == 0) return transcription;
+  let tokens = transcription.split(' ');
+  if (tokens.length > 5 && new Set(tokens).size > tokens.length * 0.8) {
+    await memory.set(baseline_key, { text: transcription, url: attachment.url, content_type: attachment.content_type, duration_secs: attachment.duration_secs }, 60 * 60 * 24);
+  }
+  return transcription;
+}
+
+async function streamAudio(attachment) {
+  let uri = url.parse(attachment.url);
+  return curl.request({ secure: attachment.url.startsWith('https://'), hostname: uri.hostname, port: uri.port, path: uri.pathname + (uri.search ?? ''), stream: true });  
 }
 
 async function handleMessage(guild_id, channel_id, event_id, user_id, message) {

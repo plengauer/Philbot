@@ -1,10 +1,10 @@
 const process = require('process');
-const child_process = require('child_process');
 const url = require('url');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
 const synchronized = require('./synchronized.js');
 const opentelemetry = require('@opentelemetry/api');
+const audio = require('./audio.js');
 let FormData = require('form-data');
 
 const token = process.env.OPENAI_API_KEY;
@@ -229,10 +229,9 @@ async function createTranscription(user, prompt, audio_stream, audio_stream_form
   if (!token) return null;
   if (!await canCreate()) return null;
   if (!['mp3', 'mp4', 'wav', 'm4a', 'webm', 'mpga', 'wav', 'mpeg'].includes(audio_stream_format)) {
-    audio_stream_format = 'mp3';
-    const convertion = child_process.spawn("ffmpeg", ["-i", "pipe:0", "-f", audio_stream_format, "pipe:1"]);
-    audio_stream.pipe(convertion.stdin);
-    audio_stream = convertion.stdout;
+    const preferred_audio_stream_format = 'mp3';
+    audio_stream = audio.translate(audio_stream, audio_stream_format, preferred_audio_stream_format);
+    audio_stream_format = preferred_audio_stream_format;
   }
   let body = new FormData();
   body.append('model', model, { contentType: 'string' });
