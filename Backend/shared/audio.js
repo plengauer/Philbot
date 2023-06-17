@@ -8,7 +8,7 @@ function translate(input_stream, input_format, output_format) {
   if (input_format == output_format) return input_stream;
   let convertion = child_process.spawn("ffmpeg", ["-i", "pipe:0", "-f", output_format, "pipe:1"]);
   input_stream.pipe(convertion.stdin);
-  if (DEBUG) convertion.stderr.on('data', chunk => console.log(chunk));
+  if (DEBUG) convertion.stderr.on('data', chunk => console.log('' + chunk));
   return convertion.stdout;
 }
 
