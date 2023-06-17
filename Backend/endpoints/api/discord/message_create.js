@@ -107,7 +107,7 @@ async function transcribeAttachment(user_id, attachment, transcription_instructi
       attachment_audio = audio.merge([{ format: baseline.content_type.split('/')[1], stream: baseline_audio }, { format: content_type.split('/')[1], stream: attachment_audio }], format);
       duration_secs += baseline.duration_secs;
       content_type = 'audio/' + format;
-    } catch(error) {
+    } catch {
       return transcribeAttachment(user_id, attachment, transcription_instructions, false);
     }
   }

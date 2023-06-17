@@ -16,12 +16,10 @@ function merge(inputs, output_format) {
   }
 
   let merged = new PassThrough();
-  let output = translate(merged, 'wav', output_format);
-  for (let input of inputs) {
-    input.stream.pipe(merged, { end: false });
+  for (let index = 0; index < inputs.length; index++) {
+    inputs[index].stream.pipe(merged, { end: index == inputs.length - 1 });
   }
-  merged.end();
-  return output;
+  return translate(merged, 'wav', output_format);
 }
 
 module.exports = { translate, merge }
