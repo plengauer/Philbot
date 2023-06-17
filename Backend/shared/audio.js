@@ -10,15 +10,23 @@ function translate(input_stream, input_format, output_format) {
 }
 
 function merge(inputs, output_format) {
+  if (inputs.length == 0) throw new Error();
+
   for (let input of inputs) {
     input.stream = translate(input.stream, input.format, 'wav');
     input.format = 'wav';
   }
 
   let merged = new PassThrough();
-  for (let index = 0; index < inputs.length; index++) {
-    inputs[index].stream.pipe(merged, { end: index == inputs.length - 1 });
+  for (let i = 0; i < inputs.length; i++) {
+    const index = i;
+    inputs[index].stream.on('end', () => {
+      if (index == inputs.length - 1) merged.end();
+      else inputs[index + 1].stream.pipe(merged, { end: false });
+    });
   }
+  inputs[0].stream.pipe(merged, { end: false });
+
   return translate(merged, 'wav', output_format);
 }
 
