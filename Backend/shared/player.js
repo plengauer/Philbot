@@ -130,7 +130,10 @@ async function popFromQueue(guild_id) {
 
 async function playNext(guild_id, channel_id) {
   let next = await popFromQueue(guild_id);
-  if (!next) return stop(guild_id).catch(ex => {/* just swallow exception */});
+  if (!next) {
+    if (await memory.get(`player:manual:guild:${guild_id}`, false)) return;
+    else return stop(guild_id).catch(ex => {/* just swallow exception */});
+  }
   try {
     await play(guild_id, channel_id, next);
   } catch (error) {
@@ -311,4 +314,8 @@ function interactionreversekey(message_id) {
   return `player:interaction:message:${message_id}`;
 }
 
-module.exports = { on_voice_state_update, on_voice_server_update, play, stop, pause, resume, playNext, appendToQueue, shuffleQueue, clearQueue, getQueue, openInteraction, onInteraction }
+async function registerManualJoin(guild_id) {
+  return memory.set(`player:manual:guild:${guild_id}`, true, 60 * 60 * 24);
+}
+
+module.exports = { on_voice_state_update, on_voice_server_update, play, stop, pause, resume, playNext, appendToQueue, shuffleQueue, clearQueue, getQueue, openInteraction, onInteraction, registerManualJoin }

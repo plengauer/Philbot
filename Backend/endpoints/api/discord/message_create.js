@@ -376,6 +376,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let voice_channel_id = voice_state.channel_id;
     if (!voice_channel_id) return reactNotOK(channel_id, event_id);
     return discord.connect(guild_id, voice_channel_id)
+      .then(() => player.registerManualJoin(guild_id))
       .then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase().startsWith('play ')) {
