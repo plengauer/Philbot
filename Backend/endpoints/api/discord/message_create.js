@@ -68,8 +68,9 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
   } else {
     mentioned = !guild_id && user_id != me.id;
   }
-  if (mentioned) {
+  if (mentioned && (is_audio || is_voice_message)) {
     if (message.startsWith(',')) message = message.substring(1);
+    if (message.endsWith('.')) message = message.substring(0, message.length - 1);
     message = message.trim();
   }
 
@@ -402,7 +403,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
 
     let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     return discord.trigger_typing_indicator(channel_id)
-      .then(() => search_string === 'next' ? player.playNext(guild_id, voice_channel_id) : player.play(guild_id, voice_channel_id, search_string))
+      .then(() => search_string.toLowerCase() == 'next' ? player.playNext(guild_id, voice_channel_id) : player.play(guild_id, voice_channel_id, search_string))
       .then(() => player.openInteraction(guild_id, channel_id))
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message))
