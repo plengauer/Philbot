@@ -235,19 +235,15 @@ async function createTranscription(user, prompt, audio_stream, audio_stream_form
   }
   let body = new FormData();
   body.append('model', model, { contentType: 'string' });
+  body.append('response_format', 'verbose_json', { contentType: 'string' });
   body.append('prompt', prompt, { contentType: 'string' });
   body.append('file', audio_stream, { contentType: 'audio/' + audio_stream_format, filename: 'audio.' + audio_stream_format });
   let response = await HTTP('/v1/audio/transcriptions', body, body.getHeaders());
-  response.text = sanitizeTranscription(model, response.text);
-  await bill(getTranscriptionCost(model, audio_stream_length_millis), model, user);
-  return response.text;
-}
-
-function sanitizeTranscription(model, input) {
-  if (model == 'whisper-1' && isRepeating(input, 'Thank you.')) return ''; // breathing is too often mistaken as "Thank you."
-  if (model == 'whisper-1' && isRepeating(input, 'you')) return ''; // random throat clearings are represented as "you"
-  if (model == 'whisper-1' && isRepeating(input, 'Bye.')) return ''; // random clicks / mousewheels are just translating to "Bye."
-  return input;
+  await bill(getTranscriptionCost(model, response.duration ? response.duration * 1000 : audio_stream_length_millis), model, user);  
+  const max_no_speech_probability = 0.2;
+  return response.segments ?
+    response.segments.filter(segment => segment.no_speech_prob < max_no_speech_probability).map(segment => segment.text.trim()).filter(segment => segment.length > 0).join(' ') :
+    response.text.trim();
 }
 
 function isRepeating(text, token) {
