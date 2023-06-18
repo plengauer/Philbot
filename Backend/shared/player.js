@@ -70,7 +70,7 @@ async function play0(guild_id, channel_id, youtube_link) {
 }
 
 async function isConnected(guild_id, channel_id) {
-  return HTTP_VOICE(`/guilds/${guild_id}/voice/connection`, { guild_id: guild_id, channel_id: channel_id }, 'GET').then(connected_channel_id => connected_channel_id == channel_id).catch(() => false);
+  return HTTP_VOICE(`/guilds/${guild_id}/voice/connection`, null, 'GET').then(connected_channel_id => !channel_id || connected_channel_id == channel_id).catch(() => false);
 }
 
 async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = undefined, retries = 10, unavailable_links = []) {
