@@ -54,7 +54,7 @@ function merge_v1(inputs, output_format) {
     channel_arguments.push('[' + index + ':0]');
   }
   let merging = ffmpeg(
-    input_arguments.concat(['-filter_complex', channel_arguments.join('') + 'concat=n=' + inputs.length + ':v=0:a=1[out]', '-f', output_format, '-map', '[out]', 'pipe:1'])
+    input_arguments.concat(['-filter_complex', channel_arguments.join('') + 'concat=n=' + inputs.length + ':v=0:a=1[out]', '-f', output_format, '-map', '[out]', 'pipe:1']),
     ['pipe', 'pipe', 'pipe'].concat(inputs.map(_ => 'pipe'))
   );
   for (let index = 0; index < inputs.length; index++) {
