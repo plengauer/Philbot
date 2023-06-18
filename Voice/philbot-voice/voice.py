@@ -858,7 +858,7 @@ meter.create_observable_gauge('discord.gateway.voice.connections.concurrent', [g
 def ping():
     return 'pong'
 
-@app.route('/voice_state_update', methods=['POST'])
+@app.route('/events/voice_state_update', methods=['POST'])
 def voice_state_update():
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
@@ -867,7 +867,7 @@ def voice_state_update():
     context.on_state_update(body['channel_id'], body['user_id'], body['session_id'], body['callback_url'])
     return 'Success'
 
-@app.route('/voice_server_update', methods=['POST'])
+@app.route('/events/voice_server_update', methods=['POST'])
 def voice_server_update():
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
@@ -876,14 +876,14 @@ def voice_server_update():
     context.on_server_update(body['endpoint'], body['token'])
     return 'Success'
 
-@app.route('/voice_content_update', methods=['POST'])
-def voice_content_update():
+@app.route('/guilds/<guild_id>/voice/content', methods=['POST'])
+def voice_content_update(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
-    context = get_context(body['guild_id'])
+    context = get_context(guild_id)
     try:
-        context.on_content_update(resolve_url(body['guild_id'], body['url']))
+        context.on_content_update(resolve_url(guild_id, body['url']))
     except yt_dlp.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
@@ -897,13 +897,13 @@ def voice_content_update():
             return Response('Video not found', status = 404)
     return 'Success'
 
-@app.route('/voice_content_lookahead', methods=['POST'])
-def voice_content_lookahead():
+@app.route('/guilds/<guild_id>/voice/lookahead', methods=['POST'])
+def voice_content_lookahead(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
     try:
-        resolve_url(body['guild_id'], body['url'])
+        resolve_url(guild_id, body['url'])
     except yt_dlp.utils.DownloadError as e:
         if 'Private video' in str(e):
             return Response('Private video', status = 403)
@@ -917,43 +917,40 @@ def voice_content_lookahead():
             return Response('Video not found', status = 404)
     return 'Success'
 
-@app.route('/voice_pause', methods=['POST'])
-def voice_pause():
+@app.route('/guilds/<guild_id>/voice/pause', methods=['POST'])
+def voice_pause(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    body = request.json
-    context = get_context(body['guild_id'])
+    context = get_context(guild_id)
     context.pause()
     return 'Success'
 
-@app.route('/voice_resume', methods=['POST'])
-def voice_resume():
+@app.route('/guilds/<guild_id>/voice/resume', methods=['POST'])
+def voice_resume(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    body = request.json
-    context = get_context(body['guild_id'])
+    context = get_context(guild_id)
     context.resume()
     return 'Success'
 
-@app.route('/voice_is_connected', methods=['POST'])
-def voice_is_connected():
+@app.route('/guilds/<guild_id>/voice/connection', methods=['GET'])
+def voice_is_connected(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    guild_id = request.json['guild_id']
     context = get_context(guild_id)
     if not context or not context.is_connecting():
-        return 'false'
+        return Response('Not found', status=404)
     end = time_millis() + 1000 * 5
     tryy = 100
     while time_millis() < end:
         context = get_context(guild_id)
         if context and context.is_connected():
-            return 'true'
+            return Response(context.channel_id, status=200)
         time.sleep(tryy / 1000.0)
         tryy = tryy * 2
-    return 'false'
+    return Response('Not found', status=404)
 
-@app.route('/audio/guild/<guild_id>/channel/<channel_id>/user/<user_id>/nonce/<nonce>', methods=['GET'])
+@app.route('/guilds/<guild_id>/channels/<channel_id>/audio/users/<user_id>/nonce/<nonce>', methods=['GET'])
 def audio(guild_id, channel_id, user_id, nonce):
     # authenticate?
     # attacker would have to know guild_id, channel_id (needs to be in the server), user_id (needs to be in the server or friend), and guess the right nonce, and access it in real-time

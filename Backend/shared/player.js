@@ -7,12 +7,12 @@ const curl = require('./curl.js');
 async function on_voice_state_update(guild_id, channel_id, session_id) {
   if (channel_id) await memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24);
   let me = await discord.me();
-  return HTTP_VOICE('voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: 'http://127.0.0.1:8080/voice_callback' })
+  return HTTP_VOICE('/events/voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: 'http://127.0.0.1:8080/voice_callback' })
     .then(() => updateInteractions(guild_id));
 }
 
 async function on_voice_server_update(guild_id, endpoint, token) {
-  return HTTP_VOICE('voice_server_update', { guild_id: guild_id, endpoint: endpoint, token: token })
+  return HTTP_VOICE('/events/voice_server_update', { guild_id: guild_id, endpoint: endpoint, token: token })
     .then(() => updateInteractions(guild_id));
 }
 
@@ -70,12 +70,11 @@ async function play0(guild_id, channel_id, youtube_link) {
 }
 
 async function isConnected(guild_id, channel_id) {
-  return HTTP_VOICE('voice_is_connected', { guild_id: guild_id, channel_id: channel_id }).then(connected => connected == 'true').catch(() => false);
+  return HTTP_VOICE(`/guilds/${guild_id}/voice/connection`, { guild_id: guild_id, channel_id: channel_id }, 'GET').then(connected_channel_id => connected_channel_id == channel_id).catch(() => false);
 }
 
 async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = undefined, retries = 10, unavailable_links = []) {
-  // HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', relatedToVideoId: 'video' })
-  return HTTP_VOICE(lookahead_only ? 'voice_content_lookahead' : 'voice_content_update', { guild_id: guild_id, url: link })
+  return HTTP_VOICE(`/guilds/${guild_id}/voice/` + (lookahead_only ? 'lookahead' : 'content'), { guild_id: guild_id, url: link })
     .catch(error => error.message.includes('HTTP') && error.message.includes('403') ? Promise.reject(new Error('The video is unavailable (private)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('451') ? Promise.reject(new Error('The video is unavailable (regional copy-right claims or age restriction)!')) : Promise.reject(error))
     .catch(error => error.message.includes('HTTP') && error.message.includes('404') ? Promise.reject(new Error('The video is unavailable!')) : Promise.reject(error))
@@ -92,8 +91,8 @@ async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = und
     );
 }
 
-async function HTTP_VOICE(operation, payload) {
-  return curl.request({ secure: false, method: 'POST', hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: `/${operation}`, headers: { 'x-authorization': process.env.DISCORD_API_TOKEN }, body: payload, timeout: 1000 * 60 * 60 * 24 });
+async function HTTP_VOICE(operation, payload, method = 'POST') {
+  return curl.request({ secure: false, method: method, hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: operation, headers: { 'x-authorization': process.env.DISCORD_API_TOKEN }, body: payload, timeout: 1000 * 60 * 60 * 24 });
 }
 
 async function resolveTitle(link) {
@@ -109,13 +108,13 @@ async function stop(guild_id) {
 }
 
 async function pause(guild_id) {
-  return HTTP_VOICE('voice_pause', { guild_id: guild_id })
+  return HTTP_VOICE(`/guilds/${guild_id}/voice/pause`, { guild_id: guild_id })
     .then(() => memory.set(`player:paused:guild:${guild_id}`, true, 60 * 60 * 24))
     .then(() => updateInteractions(guild_id));
 }
 
 async function resume(guild_id) {
-  return HTTP_VOICE('voice_resume', { guild_id: guild_id })
+  return HTTP_VOICE(`/guilds/${guild_id}/voice/resume`, { guild_id: guild_id })
     .then(() => memory.set(`player:paused:guild:${guild_id}`, false, 60 * 60 * 24))
     .then(() => updateInteractions(guild_id));
 }
