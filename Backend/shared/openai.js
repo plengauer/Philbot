@@ -240,7 +240,7 @@ async function createTranscription(user, prompt, audio_stream, audio_stream_form
   body.append('file', audio_stream, { contentType: 'audio/' + audio_stream_format, filename: 'audio.' + audio_stream_format });
   let response = await HTTP('/v1/audio/transcriptions', body, body.getHeaders());
   await bill(getTranscriptionCost(model, response.duration ? response.duration * 1000 : audio_stream_length_millis), model, user);  
-  const max_no_speech_probability = 0.2;
+  const max_no_speech_probability = 0.05;
   return response.segments ?
     response.segments.filter(segment => segment.no_speech_prob < max_no_speech_probability).map(segment => segment.text.trim()).filter(segment => segment.length > 0).join(' ') :
     response.text.trim();
