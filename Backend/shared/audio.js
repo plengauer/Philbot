@@ -4,7 +4,6 @@ const child_process = require('child_process');
 const { PassThrough } = require('stream');
 
 const DEBUG = (process.env.DEBUG_AUDIO ?? 'false') == 'true';
-const MERGE_STRATEGY = parseInt(process.env.AUDIO_MERGE_STRATEGY ?? '1');
 
 function translate(input_stream, input_format, output_format) {
   if (input_format == output_format) return input_stream;
