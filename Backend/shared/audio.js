@@ -1,4 +1,5 @@
 const process = require('process');
+const os = require('os');
 const child_process = require('child_process');
 const { PassThrough } = require('stream');
 
@@ -13,12 +14,9 @@ function translate(input_stream, input_format, output_format) {
 }
 
 function merge(inputs, output_format) {
-  switch(MERGE_STRATEGY) {
-    case 0: return merge_v0(inputs, output_format);
-    case 1: return merge_v1(inputs, output_format);
-    default: throw new Error('Unknown merging strategy: ' + MERGE_STRATEGY);
-  }
-}
+  if (os.platform() == 'win32') return merge_v0(inputs, output_format);
+  else return merge_v1(inputs, output_format);
+ }
 
 function merge_v0(inputs, output_format) {
   if (inputs.length == 0) throw new Error();
