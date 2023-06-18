@@ -246,10 +246,6 @@ async function createTranscription(user, prompt, audio_stream, audio_stream_form
     response.text.trim();
 }
 
-function isRepeating(text, token) {
-  return text.split(' ').filter(t => t.length > 0).every(t => token == t);
-}
-
 function getTranscriptionCost(model, time_millis) {
   switch (model) {
     case "whisper-1": return Math.round(time_millis / 1000) / 60 * 0.006;
