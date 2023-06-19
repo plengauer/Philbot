@@ -112,7 +112,7 @@ download_lock = threading.Lock()
 downloads = {}
 
 def download_from_youtube(guild_id, url):
-    codec = 'wav'
+    codec = 'mp3'
     filename = url[url.index('v=') + 2:]
     if '&' in filename:
         filename = filename[:filename.index('&')]
@@ -158,29 +158,11 @@ channels = 2
 desired_frame_size = int(frame_rate * frame_duration / 1000)
 
 def resolve_url(guild_id, url):
-    filename = None    
+    filename = None
     if url.startswith('https://www.youtube.com/watch?v='):
         filename = download_from_youtube(guild_id, url)
     else:
         raise RuntimeError
-    file = wave.open(filename, "rb")
-    if (file.getframerate() != frame_rate):
-        file.close()
-        os.rename(filename, '_' + filename)
-        subprocess.run(['ffmpeg', '-i', '_' + filename, '-ar', str(frame_rate), filename]).check_returncode() # , '-f', 's16le'
-        os.remove('_' + filename)
-        file = wave.open(filename, 'rb')
-    if (file.getnchannels() != channels):
-        file.close()
-        os.rename(filename, '_' + filename)
-        subprocess.run(['ffmpeg', '-i', '_' + filename, '-ac', str(channels), filename]).check_returncode() # , '-f', 's16le'
-        os.remove('_' + filename)
-        file = wave.open(filename, 'rb')
-    if file.getsampwidth() != sample_width:
-        file.close()
-        os.remove(filename)
-        raise RuntimeError('unexpected sample width: ' + str(file.getsampwidth()))
-    file.close()
     os.utime(filename)
     return 'file://' + filename
 
@@ -810,6 +792,24 @@ class Context:
         self.__try_start()
 
     def on_content_update(self, url):
+        filename = url[len('file://'):]
+
+        def convert(file_from, file_to):
+            subprocess.run(['ffmpeg', '-i', file_from, '-ar', str(frame_rate), '-ac', str(channels), '-sample_fmt', 's' + str(sample_width * 8), file_to]).check_returncode()
+        if filename.endswith('.wav'):
+            file = wave.open(filename, "rb")
+            all_ok = file.getframerate() == frame_rate and file.getnchannels() == channels and file.getsampwidth() == sample_width
+            file.close()
+            if not all_ok:
+                to_filename = '_' + filename.rsplit('.', 1)[0] + '.wav'
+                convert(filename, to_filename)
+                os.remove(filename)
+                os.rename(to_filename, filename)
+        else:
+            to_filename = filename.rsplit('.', 1)[0] + '.wav'
+            convert(filename, to_filename)
+            url = 'file://' + to_filename
+
         with self.lock:
             self.url = url
             self.paused = False
