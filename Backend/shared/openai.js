@@ -221,7 +221,7 @@ async function editImage(user, base_image, format, prompt, model = undefined, si
   }
   base_image = media.convert(base_image, format, format, ['-vf', 'format=rgba']);
   base_image = media.convert(base_image, format, format, ['-vf', 'colorchannelmixer=aa=0']);
-  // base_image = media.convert(base_image, format, format, ['-vf', 'crop=min(iw,ih):min(iw,ih):iw/2-min(iw,ih)/2:ih/2-min(iw,ih)/2']);
+  base_image = media.convert(base_image, format, format, ['-vf', 'crop=min(iw\\,ih):min(iw\\,ih):iw/2-min(iw\\,ih)/2:ih/2-min(iw\\,ih)/2']);
   try {
     let body = new FormData();
     body.append('user', user, { contentType: 'string' });
