@@ -263,7 +263,7 @@ async function HTTP(endpoint, body, headers = {}) {
     body: body,
     timeout: 1000 * 60 * 15
   });
-  if (debug) console.log('DEBUG OPENAI ' + (endpoint == '/v1/audio/transcriptions' ? '<audio>' :  JSON.stringify(body)) + ' => ' + (endpoint == '/v1/images/generations' && body.response_format == 'b64_json' ? '###' : JSON.stringify(result)));
+  if (debug) console.log('DEBUG OPENAI ' + (endpoint == '/v1/audio/transcriptions' ? '<audio>' :  JSON.stringify(body)) + ' => ' + (endpoint == '/v1/images/generations' && body.response_format == 'b64_json' ? '<image>' : JSON.stringify(result)));
   return result;
 }
 
