@@ -4,7 +4,7 @@ const memory = require('./memory.js');
 const curl = require('./curl.js');
 const synchronized = require('./synchronized.js');
 const opentelemetry = require('@opentelemetry/api');
-const audio = require('./audio.js');
+const media = require('./media.js');
 let FormData = require('form-data');
 
 const token = process.env.OPENAI_API_KEY;
@@ -194,10 +194,42 @@ async function createImage(user, prompt, model = undefined, size = undefined) {
   if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
   if (!token) return null;
   if (!await canCreate()) return null;
+  let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
+  let pipe = estimated_size > 1024 * 1024;
   try {
-    let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
-    let pipe = estimated_size > 1024 * 1024;
     let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', size: size });
+    let result = response.data[0];
+    let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
+    await bill(getImageCost(model, size), model, user);
+    return image;
+  } catch (error) {
+    throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
+  }
+}
+
+async function editImage(user, base_image, format, prompt, model = undefined, size = undefined) {
+  model = model ?? (await getImageModels()).slice(-1);
+  if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
+  if (!token) return null;
+  if (!await canCreate()) return null;
+  let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
+  let pipe = estimated_size > 1024 * 1024;
+  const preferred_format = 'png';
+  if (format != preferred_format) {
+    base_image = media.convert(base_image, format, preferred_format);
+    format = preferred_format;
+  }
+  base_image = media.convert(base_image, format, format, ['-vf', 'format=rgba']);
+  base_image = media.convert(base_image, format, format, ['-vf', 'colorchannelmixer=aa=0']);
+  // base_image = media.convert(base_image, format, format, ['-vf', 'crop=min(iw,ih):min(iw,ih):iw/2-min(iw,ih)/2:ih/2-min(iw,ih)/2']);
+  try {
+    let body = new FormData();
+    body.append('user', user, { contentType: 'string' });
+    body.append('prompt', prompt, { contentType: 'string' });
+    body.append('response_format', pipe ? 'url' : 'b64_json', { contentType: 'string' });
+    body.append('size', size, { contentType: 'string' });
+    body.append('image', base_image, { contentType: 'image/' + format, filename: 'image.' + format });
+    let response = await HTTP('/v1/images/edits', body, body.getHeaders());
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
     await bill(getImageCost(model, size), model, user);
@@ -230,7 +262,7 @@ async function createTranscription(user, prompt, audio_stream, audio_stream_form
   if (!await canCreate()) return null;
   if (!['mp3', 'mp4', 'wav', 'm4a', 'webm', 'mpga', 'wav', 'mpeg'].includes(audio_stream_format)) {
     const preferred_audio_stream_format = 'mp3';
-    audio_stream = audio.translate(audio_stream, audio_stream_format, preferred_audio_stream_format);
+    audio_stream = media.convert(audio_stream, audio_stream_format, preferred_audio_stream_format);
     audio_stream_format = preferred_audio_stream_format;
   }
   let body = new FormData();
@@ -263,7 +295,7 @@ async function HTTP(endpoint, body, headers = {}) {
     body: body,
     timeout: 1000 * 60 * 15
   });
-  if (debug) console.log('DEBUG OPENAI ' + (endpoint == '/v1/audio/transcriptions' ? '<audio>' :  JSON.stringify(body)) + ' => ' + (endpoint == '/v1/images/generations' && body.response_format == 'b64_json' ? '<image>' : JSON.stringify(result)));
+  if (debug) console.log('DEBUG OPENAI ' + (endpoint == '/v1/audio/transcriptions' ? '<audio>' :  JSON.stringify(body)) + ' => ' + (endpoint.startsWith('/v1/images/') && body.response_format == 'b64_json' ? '<image>' : JSON.stringify(result)));
   return result;
 }
 
@@ -337,4 +369,4 @@ async function getDynamicModel(models, safety = DEFAULT_DYNAMIC_MODEL_SAFETY) {
   return process.env.OPENAI_DYNAMIC_MODEL_OVERRIDE ?? models[model_index];
 }
 
-module.exports = { getLanguageModels, compareLanguageModelByCost, compareLanguageModelByPower, createCompletion, createResponse, createBoolean, getImageModels, getImageSizes, createImage, getTranscriptionModels, createTranscription, canCreate, shouldCreate, getDynamicModel, getDefaultDynamicModelSafety  }
+module.exports = { getLanguageModels, compareLanguageModelByCost, compareLanguageModelByPower, createCompletion, createResponse, createBoolean, getImageModels, getImageSizes, createImage, editImage, getTranscriptionModels, createTranscription, canCreate, shouldCreate, getDynamicModel, getDefaultDynamicModelSafety  }

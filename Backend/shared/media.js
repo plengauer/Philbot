@@ -5,19 +5,20 @@ const { PassThrough } = require('stream');
 
 const DEBUG = (process.env.DEBUG_AUDIO ?? 'false') == 'true';
 
-function translate(input_stream, input_format, output_format) {
-  if (input_format == output_format) return input_stream;
-  let convertion = ffmpeg(['-i', 'pipe:0', '-f', output_format, 'pipe:1']);
+function convert(input_stream, input_format, output_format, additional_arguments = []) {
+  if (input_format == output_format && additional_arguments.length == 0) return input_stream;
+  if (output_format == 'png') return convert(input_stream, input_format, 'image2', ['-c', output_format].concat(additional_arguments));
+  let convertion = ffmpeg(['-i', 'pipe:0', '-f', output_format].concat(additional_arguments).concat(['pipe:1']));
   input_stream.pipe(convertion.stdin);
   return convertion.stdout;
 }
 
-function merge(inputs, output_format) {
-  if (os.platform() == 'win32') return merge_v0(inputs, output_format);
-  else return merge_v1(inputs, output_format);
+function concat_audio(inputs, output_format) {
+  if (os.platform() == 'win32') return concat_audio_v0(inputs, output_format);
+  else return concat_audio_v1(inputs, output_format);
  }
 
-function merge_v0(inputs, output_format) {
+function concat_audio_v0(inputs, output_format) {
   if (inputs.length == 0) throw new Error();
 
   for (let input of inputs) {
@@ -38,7 +39,7 @@ function merge_v0(inputs, output_format) {
   return translate(merged, 'wav', output_format);
 }
 
-function merge_v1(inputs, output_format) {
+function concat_audio_v1(inputs, output_format) {
   if (inputs.length == 0) throw new Error();
   // ffmpeg -i input1.wav -i input2.wav -i input3.wav -i input4.wav -filter_complex '[0:0][1:0][2:0][3:0]concat=n=4:v=0:a=1[out]' -map '[out]' output.wav
   // ffmpeg -i pipe:3 -i pipe:4 -filter_complex '[0:0][1:0]concat=n=2:v=0:a=1[out]' -f mp3 -map '[out]' pipe:1
@@ -66,4 +67,4 @@ function ffmpeg(arguments, stdio = ['pipe', 'pipe', 'pipe']) {
   return process;
 }
 
-module.exports = { translate, merge }
+module.exports = { convert, concat_audio }

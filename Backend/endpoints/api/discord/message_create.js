@@ -6,7 +6,7 @@ const curl = require('../../../shared/curl.js');
 const memory = require('../../../shared/memory.js');
 const delayed_memory = require('../../../shared/delayed_memory.js');
 const discord = require('../../../shared/discord.js');
-const audio = require('../../../shared/audio.js');
+const media = require('../../../shared/media.js');
 const player = require('../../../shared/player.js');
 const games = require('../../../shared/games/games.js');
 const lol = require('../../../shared/games/lol.js');
@@ -99,13 +99,13 @@ async function transcribeAttachment(user_id, attachment, transcription_instructi
   const baseline_key = `transcript:baseline:user:${user_id}`;
   let content_type = attachment.content_type;
   let duration_secs = attachment.duration_secs;
-  let attachment_audio = await streamAudio(attachment);
+  let attachment_audio = await streamAttachment(attachment);
   let baseline = try_baseline ? await memory.get(baseline_key) : null;  
   if (baseline) {
     try {
-      let baseline_audio = await streamAudio(baseline);
+      let baseline_audio = await streamAttachment(baseline);
       let format = content_type.split('/')[1];
-      attachment_audio = audio.merge([{ format: baseline.content_type.split('/')[1], stream: baseline_audio }, { format: content_type.split('/')[1], stream: attachment_audio }], format);
+      attachment_audio = media.concat_audio([{ format: baseline.content_type.split('/')[1], stream: baseline_audio }, { format: content_type.split('/')[1], stream: attachment_audio }], format);
       duration_secs += baseline.duration_secs;
       content_type = 'audio/' + format;
     } catch {
@@ -126,7 +126,7 @@ async function transcribeAttachment(user_id, attachment, transcription_instructi
   return transcription;
 }
 
-async function streamAudio(attachment) {
+async function streamAttachment(attachment) {
   let uri = url.parse(attachment.url);
   return curl.request({ secure: attachment.url.startsWith('https://'), hostname: uri.hostname, port: uri.port, path: uri.pathname + (uri.search ?? ''), stream: true });  
 }
@@ -888,6 +888,29 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (!image_model) return reactNotOK(channel_id, event_id);
     let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
     return handleLongResponse(channel_id, () => chatgpt.createImage(user_id, message, image_model, image_size)
+      .then(image => image ? image : Promise.reject())
+      .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
+      .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
+    );
+  
+  } else if (message.toLowerCase().startsWith('edit ')) {
+    message = message.split(' ').slice(1).join(' ');
+    if (!referenced_message_id) return discord.respond(channel_id, event_id, 'Please reply to the original image!');
+    let referenced_message = await discord.message_retrieve(channel_id, referenced_message_id);
+    let attachment = referenced_message.attachments && referenced_message.attachments.length == 1 && referenced_message.attachments[0].content_type.startsWith('image/') ? referenced_message.attachments[0] : null;
+    if (!attachment) {
+      let embed = referenced_message.embeds && referenced_message.embeds.length == 1 && referenced_message.embeds[0].image ? referenced_message.embeds[0].image : null;
+      if (embed) {
+        attachment = { url: embed.url, content_type: 'image/' + embed.url.split('.').slice(-1) };
+      }
+    }
+    if (!attachment) return discord.respond(channel_id, event_id, 'Referenced message does not contain exactly one image!');
+    let image = await streamAttachment(attachment);
+    let format = attachment.content_type.split('/')[1];
+    let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
+    if (!image_model) return reactNotOK(channel_id, event_id);
+    let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
+    return handleLongResponse(channel_id, () => chatgpt.editImage(user_id, image, format, message, image_model, image_size)
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
       .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
