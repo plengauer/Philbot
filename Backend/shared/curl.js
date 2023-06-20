@@ -138,7 +138,7 @@ async function request_redirected(options, request) {
 
 async function request_failed(options, request) {
   return retry(() => request(options).then(response => {
-      if (500 <= response.status && response.status < 600) throw new Error('HTTP Error ' + response.status);
+      if (500 <= response.status && response.status < 600 && !options.body?.pipe) throw new Error('HTTP Error ' + response.status);
       else return response;
     }), e => e.message.startsWith('HTTP Error 5'));
 }
