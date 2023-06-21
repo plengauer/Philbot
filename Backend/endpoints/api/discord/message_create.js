@@ -1033,7 +1033,7 @@ async function createAIContext(guild_id, channel_id, user_id, message, model) {
   mentioned_members.push(user_id);
   if (guild_id) {
     let guild = await discord.guild_retrieve(guild_id);
-    system_message = ` I am in a Discord server called ${guild.name}.`;
+    system_message += ` I am in a Discord server called ${guild.name}.`;
     mentioned_roles = await Promise.all(Array.from(new Set(mentioned_roles)).map(role_id => discord.guild_role_retrieve(guild_id, role_id)));
     for (let role of mentioned_roles) {
       let members_with_role = await discord.guild_members_list(guild_id, role.id).then(members => members.map(member => member.user.id));
