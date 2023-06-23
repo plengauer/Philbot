@@ -64,6 +64,7 @@ function concat_audio_v1(inputs, output_format) {
 function ffmpeg(arguments, stdio = ['pipe', 'pipe', 'pipe']) {
   let process = child_process.spawn('ffmpeg', arguments, { stdio: stdio });
   if (DEBUG) process.stderr.on('data', chunk => console.log('' + chunk));
+  process.on('exit', (code, signal) => console.log(`PROCESS ffmpeg ` + arguments.join(' ') + (signal ?? code)));
   return process;
 }
 
