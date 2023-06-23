@@ -227,8 +227,9 @@ async function editImage(user, base_image, format, prompt, regions, model = unde
     base_image = media.convert(base_image, format, preferred_format);
     format = preferred_format;
   }
+  // base_image = media.convert(base_image, format, format, ['-vf', 'crop=min(iw\\,ih):min(iw\\,ih):iw/2-min(iw\\,ih)/2:ih/2-min(iw\\,ih)/2']);
   base_image = preprocessImage(base_image, format, regions);
-  base_image = media.convert(base_image, format, format, ['-vf', 'crop=min(iw\\,ih):min(iw\\,ih):iw/2-min(iw\\,ih)/2:ih/2-min(iw\\,ih)/2']);
+  base_image = media.convert(base_image, format, format, ['-vf', 'pad=width=max(iw\\,ih):height=max(iw\\,ih):x=(ow-iw)/2:y=(oh-ih)/2']);
   try {
     let body = new FormData();
     body.append('user', user, { contentType: 'string' });
