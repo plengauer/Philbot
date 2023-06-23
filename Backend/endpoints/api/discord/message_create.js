@@ -905,12 +905,15 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       }
     }
     if (!attachment) return discord.respond(channel_id, event_id, 'Referenced message does not contain exactly one image!');
+    let tokens = message.split(' ').filter(token => token.length > 0);
+    let regions = [{ x: parseFloat(tokens[0]), y: parseFloat(tokens[1]), w: parseFloat(tokens[2]), h: parseFloat(tokens[3]) }];
+    message = tokens.slice(4).join(' ');
     let image = await streamAttachment(attachment);
     let format = attachment.content_type.split('/')[1];
     let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
     if (!image_model) return reactNotOK(channel_id, event_id);
     let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
-    return handleLongResponse(channel_id, () => chatgpt.editImage(user_id, image, format, message, image_model, image_size)
+    return handleLongResponse(channel_id, () => chatgpt.editImage(user_id, image, format, message, regions, image_model, image_size)
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
       .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))

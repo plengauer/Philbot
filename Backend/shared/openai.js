@@ -207,6 +207,14 @@ async function createImage(user, prompt, model = undefined, size = undefined) {
   }
 }
 
+function preprocessImage(image, format, regions) {
+  image = media.convert(image, format, format, ['-vf', 'format=rgba']);
+  for (let region of regions) {
+    image = media.convert(image, format, format, ['-vf', `geq=a=if(between(X\\,W*${region.x}\\,W*(${region.x}+${region.w}))*between(Y\\,H*${region.y}\\,H*(${region.y}+${region.h}))\\,0\\,255):r=r(X\\,Y):g=g(X\\,Y):b=b(X\\,Y)`]);
+  }
+  return image;
+}
+
 async function editImage(user, base_image, format, prompt, regions, model = undefined, size = undefined) {
   model = model ?? (await getImageModels()).slice(-1);
   if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
@@ -214,17 +222,12 @@ async function editImage(user, base_image, format, prompt, regions, model = unde
   if (!await canCreate()) return null;
   let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
   let pipe = estimated_size > 1024 * 1024;
-  const preferred_format = 'png';
-  if (format != preferred_format) {
+  if (!['png'].includes(format)) {
+    const preferred_format = 'png';
     base_image = media.convert(base_image, format, preferred_format);
     format = preferred_format;
   }
-  base_image = media.convert(base_image, format, format, ['-vf', 'format=rgba']);
-  base_image = media.convert(base_image, format, format, ['-vf', 'alphar=1']);
-  for (let region of regions) {
-    // geq=if(between(X\,W*0.25\,W*(0.25+0.5))*between(Y\,H*0.25\,H*(0.25+0.5))\,p(X\,Y)\,p(X\,Y))
-    base_image = media.convert(base_image, format, format, ['-vf', `geq='if(between(X,W*lx,W*(lx+lw))*between(Y,H*ly,H*(ly+lh)),p(X,Y),p(X,Y)&what)':lx=${region.x}:ly=${region.y}:lw=${region.w}:lh=${region.h}`]);
-  }
+  base_image = preprocessImage(base_image, format, regions);
   base_image = media.convert(base_image, format, format, ['-vf', 'crop=min(iw\\,ih):min(iw\\,ih):iw/2-min(iw\\,ih)/2:ih/2-min(iw\\,ih)/2']);
   try {
     let body = new FormData();
