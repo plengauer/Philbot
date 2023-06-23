@@ -120,7 +120,7 @@ async function transcribeAttachment(user_id, attachment, transcription_instructi
   }
   if (transcription.length == 0) return transcription;
   let tokens = transcription.split(' ');
-  if (attachment.duration_secs < 30 && tokens.length > 5 && new Set(tokens).size > tokens.length * 0.8) {
+  if (3 < attachment.duration_secs && attachment.duration_secs < 30 && 5 < tokens.length && tokens.length * 0.8 < new Set(tokens).size) {
     await memory.set(baseline_key, { text: transcription, url: attachment.url, content_type: attachment.content_type, duration_secs: attachment.duration_secs }, 60 * 60 * 24);
   }
   return transcription;
