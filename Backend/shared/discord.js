@@ -409,11 +409,18 @@ function guild_member_has_permission_0(guild, channel, roles, member, permission
   if (guild.owner_id == member.user.id) return true;
   let member_permissions = Array.from(new Set(roles.filter(role => member.roles.includes(role.id) || role.id == guild.id).map(role => permissions.decompile(role.permissions)).reduce((p1, p2) => p1.concat(p2), [])));
   if (member_permissions.includes('ADMINISTRATOR')) return true;
+  //TODO https://discord.com/developers/docs/topics/permissions
   for (let permission_overwrite of channel?.permission_overwrites ?? []) {
-    if ((permission_overwrite.type == 0 && member.roles.includes(permission_overwrite.id)) || (permission_overwrite.type == 1 && permission_overwrite.id == member.user.id)) {
-      if (permissions.decompile(permission_overwrite.deny).includes(permission)) return false;
-      if (permissions.decompile(permission_overwrite.allow).includes(permission)) return true;
-    }
+    if (permission_overwrite.type == 1 && permission_overwrite.id == member.user.id && permissions.decompile(permission_overwrite.allow).includes(permission)) return true;
+  }
+  for (let permission_overwrite of channel?.permission_overwrites ?? []) {
+    if (permission_overwrite.type == 1 && permission_overwrite.id == member.user.id && permissions.decompile(permission_overwrite.deny).includes(permission)) return false;
+  }
+  for (let permission_overwrite of channel?.permission_overwrites ?? []) {
+    if (permission_overwrite.type == 0 && member.roles.includes(permission_overwrite.id) && permissions.decompile(permission_overwrite.allow).includes(permission)) return true;
+  }
+  for (let permission_overwrite of channel?.permission_overwrites ?? []) {
+    if (permission_overwrite.type == 0 && member.roles.includes(permission_overwrite.id) && permissions.decompile(permission_overwrite.deny).includes(permission)) return false;
   }
   return member_permissions.includes(permission);
 }
