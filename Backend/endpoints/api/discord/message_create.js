@@ -201,7 +201,7 @@ async function resolveMembersForSpecialActivityMentions(guild_id, user_id, messa
 }
 
 async function handleMessageForFunReplies(channel_id, event_id, user_id, message) {
-  const PROBABILITY = 0.05;
+  const PROBABILITY = 0.1;
   if (Math.random() >= PROBABILITY) return;
   let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
   if (!model) return;
@@ -213,7 +213,7 @@ async function handleMessageForFunReplies(channel_id, event_id, user_id, message
       await discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`);
       break;
     case 1:
-      if (10 < message.length && message.length < 150) break;
+      if (5 < message.length && message.length < 150) break;
       if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
       if (!await chatgpt.createBoolean(user_id, `Is "${message}" a typical boomer statement?`, model)) break;
       await discord.respond(channel_id, event_id, boomer.encode('ok boomer'));
