@@ -24,7 +24,7 @@ async function updateRankedRoles(guild_id, user_id) {
 
 async function resolveAccount(user_id) {
   return discord.user_retrieve(user_id)
-    .then(result => result.username)
+    .then(result => discord.user2name(result))
     .then(user_name => memory.get('activity_hint_config:activity:Fortnite:user:' + user_id, user_name));
 }
 
