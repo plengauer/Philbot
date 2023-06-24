@@ -169,7 +169,7 @@ async function resolveAccount(user_id) {
     .then(servers => servers.filter(server => server));
   
   return discord.user_retrieve(user_id)
-    .then(result => result.username)
+    .then(result => discord.user2name(result))
     .then(user_name => memory.get('activity_hint_config:activity:League of Legends:user:' + user_id, servers.map(server => { return { summoner: user_name, server: server }; })))
     .then(configs => Promise.all(configs.map(config => getSummoner(config.server, config.summoner))).then(summoners => summoners.filter(summoner => !!summoner)));
 }
