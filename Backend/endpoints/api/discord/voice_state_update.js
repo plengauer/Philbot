@@ -31,16 +31,18 @@ async function checkAndStartEvents(guild_id, channel_id) {
 
 async function playGreeting(guild_id, channel_id, user_id) {
   let now = new Date();
-  let canPlay = features.isActive(guild_id, 'player');
-  let birthday = memory.get(`birthday:user:${user_id}`, null);
-  let birthday_track = memory.get('track:birthday', null);
-  let intro_track = memory.get(`track:intro:user:${user_id}:guild:${guild_id}`, null);
-  if (await canPlay && await birthday_track && await birthday && (await birthday).month == now.getUTCMonth() + 1 && (await birthday).day == now.getUTCDate()) {
-    return player.play(guild_id, channel_id, await birthday_track);
-  } else if (await canPlay && await intro_track) {
-    return player.play(guild_id, channel_id, await intro_track).then(() => discord.dms_channel_retrieve(user_id)).then(channel => player.openInteraction(guild_id, channel.id));
-  } else {
-    return Promise.resolve();
+  let canPlay = await features.isActive(guild_id, 'player');
+  if (!canPlay) return;
+  let key = `mute:auto:greeting:guild:${guild_id}:user:${user_id}`;
+  if (await memory.get(key, false)) return;
+  await memory.set(key, true, 60 * 60 * 12);
+  let birthday = await memory.get(`birthday:user:${user_id}`, null);
+  let birthday_track = await memory.get('track:birthday', null);
+  let intro_track = await memory.get(`track:intro:user:${user_id}:guild:${guild_id}`, null);
+  if (birthday_track && birthday && birthday.month == now.getUTCMonth() + 1 && birthday.day == now.getUTCDate()) {
+    return player.play(guild_id, channel_id, birthday_track);
+  } else if (intro_track) {
+    return player.play(guild_id, channel_id, intro_track).then(() => discord.dms_channel_retrieve(user_id).then(channel => player.openInteraction(guild_id, channel.id)));
   }
 }
 
