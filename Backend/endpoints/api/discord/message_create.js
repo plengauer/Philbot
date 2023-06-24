@@ -201,7 +201,7 @@ async function resolveMembersForSpecialActivityMentions(guild_id, user_id, messa
 }
 
 async function handleMessageForFunReplies(channel_id, event_id, user_id, message) {
-  const PROBABILITY = 0.1;
+  const PROBABILITY = 0.01;
   if (Math.random() >= PROBABILITY) return;
   let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
   if (!model) return;
