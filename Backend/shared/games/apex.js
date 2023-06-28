@@ -64,8 +64,7 @@ async function getRanks(player) {
 }
 
 async function http_algs_api(player) {
-  return curl.request({ hostname: 'api.mozambiquehe.re', path: '/bridge?player=' + encodeURIComponent(player) + '&platform=PC', headers: { 'authorization': process.env.APEX_LEGENDS_API_TOKEN, 'accept': '*/*' } })
-    .then(result => JSON.parse(result));
+  return curl.request({ hostname: 'api.mozambiquehe.re', path: '/bridge?player=' + encodeURIComponent(player) + '&platform=PC', headers: { 'authorization': process.env.APEX_LEGENDS_API_TOKEN } });
 }
 
 async function http_tracker(player) {
