@@ -1,6 +1,7 @@
 const process = require('process');
 const memory = require('../memory.js');
 const discord = require('../discord.js');
+const synchronized = require('../synchronized.js');
 const curl = require('../curl.js');
 const trackernetwork_gg = require('./trackernetwork_gg.js');
 const troll = require('./troll.js');
@@ -59,8 +60,11 @@ async function getRanks(player) {
         ];
       })
     )
-    .catch(error => [])
+    .catch(error => promptConfiguration(user_id).then(() => []))
     .then(ranks => ranks.filter(rank => rank.name != 'Unranked'));
+}
+
+async function promptConfiguration(user_id) {
 }
 
 async function http_algs_api(player) {

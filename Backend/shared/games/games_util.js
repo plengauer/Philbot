@@ -2,15 +2,15 @@ const memory = require('../memory.js');
 const synchronized = require('../synchronized.js');
 const discord = require('../discord.js');
 
-async function updateRankedRoles(guild_id, user_id, activity, system, getUserAccount, getUserRanks) {
-  let roles = await synchronized.locked('ranked_roles:setup:guild:' + guild_id, () => getRoles(guild_id, activity, system));
-  let account = await getUserAccount(user_id);
+async function updateRankedRoles(guild_id, user_id, activity, config, getUserRanks) {
+  let roles = await synchronized.locked('ranked_roles:setup:guild:' + guild_id, () => getRoles(guild_id, activity, config.ranked_system));
+  let account = await getUserAccount(user_id, activity, config.servers ?? []);
   if (!account) return;
   let member = await discord.guild_member_retrieve(guild_id, user_id);
   let user_ranks = await getUserRanks(account);
-  if (!user_ranks) return;
-  for (let mode in system) {
-    for (let rank of system[mode]) {
+  if (!user_ranks) return promptConfiguration(user_id, activity);
+  for (let mode in config.ranked_system) {
+    for (let rank of config.ranked_system[mode]) {
       let role_id = roles[mode][rank.name];
       let actual = member.roles.includes(role_id);
       let expected = user_ranks.some(user_rank => user_rank.mode == mode && user_rank.name == rank.name);
@@ -18,6 +18,28 @@ async function updateRankedRoles(guild_id, user_id, activity, system, getUserAcc
       if (actual && !expected) await discord.guild_member_role_unassign(guild_id, user_id, role_id);
     }
   }
+}
+
+async function promptConfiguration(user_id, activity) {
+  return synchronized.locked('activity:config:prompt:user:' + user_id, () => promptConfiguration(user_id, activity));
+}
+
+async function promptConfiguration0(user_id, activity, servers) {
+  let muted = await memory.get('mute:auto:activity_hint_config:activity:' + activity + ':user:' + user_id, false);
+  if (muted) return;
+  await memory.set('mute:auto:activity_hint_config:activity:' + activity + ':user:' + user_id, false, 60 * 60 * 24 * 7 * 4);
+  let instruction = 'Respond with \'configure ' + activity + (servers.length > 0 ? '<server>' : '') + ' <name>\', filling in your data.' + (servers.length > 0 ? ' Valid servers are ' + servers.join(', ') + '.' : '');
+  await discord.try_dms(user_id, 'To give you real-time hints and assign roles based on your competitive rank, I need your in-game name. ' + instruction);
+  return;
+}
+
+async function getUserAccount(user_id, activity, servers) {
+  let accounts = await memory.get('activity_hint_config:activity:' + activity + ':user:' + user_id, null);
+  if (accounts) return accounts;
+  let user = await discord.user_retrieve(user_id);
+  let name = discord.user2name(user);
+  if (name.match(/#d+$/)) name = name.split('#').slice(-1).join('#');
+  return servers.length > 0 ? servers.map(server => { return { server: server, name: name }; }) : [{ server: null, name: name }];
 }
 
 async function getRoles(guild_id, activity, system) {
