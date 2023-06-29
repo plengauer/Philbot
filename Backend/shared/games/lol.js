@@ -166,8 +166,7 @@ function calculateMatchMetricMedian(player, mode, type, getMetric) {
 
 async function resolveAccount(user_id) {
   return games_util.getUserAccount(user_id, 'League of Legends', SERVERS)
-    .then(accounts => accounts.map(account => getSummoner(account.server, account.name)))
-    .then(Promise.all);
+    .then(accounts => Promise.all(accounts.map(account => getSummoner(account.server, account.name))));
 }
 
 async function getSummoner(server, summonerName) {
