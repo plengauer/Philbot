@@ -54,8 +54,8 @@ async function getRanks(account) {
         ];
       })
     )
-    .catch(error => [])
-    .then(ranks => ranks.filter(rank => rank.name != 'Unranked'));
+    .then(ranks => ranks.filter(rank => rank.name != 'Unranked'))
+    .catch(error => undefined);
 }
 
 async function http_algs_api(player) {

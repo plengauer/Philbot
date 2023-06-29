@@ -735,11 +735,15 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let activity = activities.find(activity => message.startsWith(activity));
     if (!activity) return reactNotOK(channel_id, event_id);
     message = message.substring(activity.length).trim();
-    let tokens = message.split(' ');
-    if (tokens.length < 1 || 2 < tokens.length) return reactNotOK(channel_id, event_id);
-    let server = tokens.length == 2 ? tokens[0] : null;
-    let name = tokens.length == 2 ? tokens[1] : tokens[0];
-    return memory.set('activity_hint_config:activity:' + activity + ':user:' + user_id, { server: server, name: name })
+    let accounts = [];
+    for (let account_string of message.split(',')) {
+      let tokens = account_string.trim().split(' ');
+      if (tokens.length < 1 || 2 < tokens.length) return reactNotOK(channel_id, event_id);
+      let server = tokens.length == 2 ? tokens[0] : null;
+      let name = tokens.length == 2 ? tokens[1] : tokens[0];
+      accounts.push({ server: server, name: name });
+    }
+    return memory.set('activity_hint_config:activity:' + activity + ':user:' + user_id, accounts)
       .then(() => reactOK(channel_id, event_id));
       
   } else if (message.toLowerCase().startsWith('add trigger ')) {

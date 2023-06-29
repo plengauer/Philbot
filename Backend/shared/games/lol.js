@@ -341,7 +341,8 @@ async function updateRankedRoles(guild_id, user_id) {
 }
 
 async function getLeagues(accounts) {
-  let summoners = await Promise.all(accounts.map(account => getSummoner(account.server, account.name)));
+  let summoners = await Promise.all(accounts.map(account => getSummoner(account.server, account.name))).then(summoners => summoners.filter(summoner => !!summoner));
+  if (summoners.length == 0) return undefined;
   /*
   [
     {
