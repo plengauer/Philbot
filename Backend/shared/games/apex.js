@@ -36,35 +36,26 @@ const ranked_system = {
 };
 
 async function updateRankedRoles(guild_id, user_id) {
-  return games_util.updateRankedRoles(guild_id, user_id, 'Apex Legends', ranked_system, resolveAccount, getRanks);
+  return games_util.updateRankedRoles(guild_id, user_id, 'Apex Legends', { ranked_system: ranked_system }, getRanks);
 }
 
-async function resolveAccount(user_id) {
-  return discord.user_retrieve(user_id)
-    .then(result => discord.user2name(result))
-    .then(user_name => memory.get('activity_hint_config:activity:Apex Legends:user:' + user_id, user_name))
-}
-
-async function getRanks(player) {
-  return http_algs_api(player)
+async function getRanks(account) {
+  return http_algs_api(account.name)
     .then(result => {
       return [
         { mode: 'Battle Royale', name: result.global.rank.rankScore > 1 ? result.global.rank.rankName : 'Unranked' },
         { mode: 'Arena', name: result.global.arena.rankScore > 1 ? result.global.arena.rankName : 'Unranked' }
       ];
     })
-    .catch(error => http_tracker(player)
+    .catch(error => http_tracker(account.name)
       .then(result => {
         return [
           { mode: 'Battle Royale', name: result.data.metadata.rankName.split(' ')[0] },
         ];
       })
     )
-    .catch(error => promptConfiguration(user_id).then(() => []))
+    .catch(error => [])
     .then(ranks => ranks.filter(rank => rank.name != 'Unranked'));
-}
-
-async function promptConfiguration(user_id) {
 }
 
 async function http_algs_api(player) {

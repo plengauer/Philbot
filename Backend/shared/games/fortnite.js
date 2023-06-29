@@ -19,17 +19,11 @@ const ranked_system = {
 };
 
 async function updateRankedRoles(guild_id, user_id) {
-  return games_util.updateRankedRoles(guild_id, user_id, 'Fortnite', ranked_system, resolveAccount, getRanks);
+  return games_util.updateRankedRoles(guild_id, user_id, 'Fortnite', { ranked_system: ranked_system }, getRanks);
 }
 
-async function resolveAccount(user_id) {
-  return discord.user_retrieve(user_id)
-    .then(result => discord.user2name(result))
-    .then(user_name => memory.get('activity_hint_config:activity:Fortnite:user:' + user_id, user_name));
-}
-
-async function getRanks(player) {
-  return http_tracker(player)
+async function getRanks(account) {
+  return http_tracker(account.name)
     .then(response => response.data.stats.p2.currentRank)
     .then(rank => rank.split(' ').slice(-1).join(' '))
     .then(rank => { return [ { mode: 'Battle Royale', name: rank } ]; });

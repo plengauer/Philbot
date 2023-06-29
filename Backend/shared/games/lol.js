@@ -165,13 +165,9 @@ function calculateMatchMetricMedian(player, mode, type, getMetric) {
 }
 
 async function resolveAccount(user_id) {
-  let servers = await Promise.all(SERVERS.map(server => memory.get('mute:activity:League of Legends:server:' + server, false).then(muted => muted ? null : server)))
-    .then(servers => servers.filter(server => server));
-  
-  return discord.user_retrieve(user_id)
-    .then(result => discord.user2name(result))
-    .then(user_name => memory.get('activity_hint_config:activity:League of Legends:user:' + user_id, servers.map(server => { return { summoner: user_name, server: server }; })))
-    .then(configs => Promise.all(configs.map(config => getSummoner(config.server, config.summoner))).then(summoners => summoners.filter(summoner => !!summoner)));
+  return games_util.getUserAccount(user_id, 'League of Legends', SERVERS)
+    .then(accounts => accounts.map(account => getSummoner(account.server, account.name)))
+    .then(Promise.all);
 }
 
 async function getSummoner(server, summonerName) {
@@ -341,10 +337,11 @@ const ranked_system = {
 }
 
 async function updateRankedRoles(guild_id, user_id) {
-  return games_util.updateRankedRoles(guild_id, user_id, 'League of Legends', ranked_system, resolveAccount, getLeagues);
+  return games_util.updateRankedRoles(guild_id, user_id, 'League of Legends', { servers: SERVERS, ranked_system: ranked_system }, getLeagues);
 }
 
-async function getLeagues(summoners) {
+async function getLeagues(accounts) {
+  let summoners = await Promise.all(accounts.map(account => getSummoner(account.server, account.name)));
   /*
   [
     {

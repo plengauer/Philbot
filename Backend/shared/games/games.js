@@ -8,7 +8,6 @@ const hitman = require('./hitman.js');
 const apex = require('./apex.js');
 const ksp = require('./ksp.js');
 const fortnite = require('./fortnite.js');
-const overwatch2 = require('./overwatch2.js');
 
 async function getActivityEmergencyNotification(name, details, state, user_name) {
   if (name === 'Red Dead Redemption 2') {
@@ -39,14 +38,13 @@ async function getActivityHint(name, details, state, user_id) {
     return fortnite.getInformation();
   } else if (name == 'Kerbal Space Program' || name == 'Kerbal Space Program 2') {
     return ksp.getInformation();
-  } else if (name == 'Overwatch 2') {
-    return overwatch2.getInformation();
   } else if (
     name === 'Genshin Impact' ||
     name === 'VALORANT' ||
     name === "PLAYERUNKNOWN'S BATTLEGROUNDS" ||
     name === "PUBG: BATTLEGROUNDS" ||
-    name === 'Overwatch'
+    name === 'Overwatch' ||
+    name === 'Overwatch 2'
   ) {
     return troll.getInformation();
   } else {
@@ -61,8 +59,6 @@ async function updateRankedRoles(name, guild_id, user_id) {
     return apex.updateRankedRoles(guild_id, user_id);
   } else if (name == 'Fortnite') {
     return fortnite.updateRankedRoles(guild_id, user_id);
-  } else if (name == 'Overwatch 2') {
-    return overwatch2.updateRankedRoles(guild_id, user_id);
   }
 }
 

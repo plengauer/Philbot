@@ -728,24 +728,19 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return tournament.start(guild_id, user_id)
       .then(() => reactOK(channel_id, event_id))
       .catch(error => discord.respond(channel_id, event_id, error.message));
-      
-  } else if (message.toLowerCase().startsWith('configure League of Legends ')) {
-    message = message.substring('configure League of Legends '.length);
-    let configs = message.split(';')
-      .map(config => config.trim())
-      .map(config => { return { server: config.substring(0, config.indexOf(' ')).trim(), summoner: config.substring(config.indexOf(' ') + 1, config.length).trim() }; });
-    if (configs.length == 0 || configs.some(config => config.server.length == 0 || config.summoner.length == 0)) {
-      return reactNotOK(channel_id, event_id);
-    }
-    let summoners = await Promise.all(configs.map(config => lol.getSummoner(config.server, config.summoner)));
-    for (let i = 0; i < configs.length; i++) {
-      if (!summoners[i]) {
-        return discord.respond(channel_id, event_id, `Summoner ${configs[i].summoner} does not exist on server ${configs[i].server}. Please double check the spelling and try again!`);
-      }
-    }
-    return memory.set('activity_hint_config:activity:League of Legends:user:' + user_id, configs)
-      .then(() => games.getActivityHint('League of Legends', null, null, user_id))
-      .then(hint => hint ? discord.respond(channel_id, event_id, hint.text) : reactOK(channel_id, event_id));
+
+  } else if (message.toLowerCase().startsWith('configure ')) {
+    message = message.split(' ').slice(1).join(' ');
+    let activities = await memory.get(`activities:all:user:${user_id}`, []);
+    let activity = activities.find(activity => message.startsWith(activity));
+    if (!activity) return reactNotOK(channel_id, event_id);
+    message = message.substring(activity.length).trim();
+    let tokens = message.split(' ');
+    if (tokens.length < 1 || 2 < tokens.length) return reactNotOK(channel_id, event_id);
+    let server = tokens.length == 2 ? tokens[0] : null;
+    let name = tokens.length == 2 ? tokens[1] : tokens[0];
+    return memory.set('activity_hint_config:activity:' + activity + ':user:' + user_id, { server: server, name: name })
+      .then(() => reactOK(channel_id, event_id));
       
   } else if (message.toLowerCase().startsWith('add trigger ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
