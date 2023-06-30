@@ -975,7 +975,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       throw new Error('Unknown command: ' + message);
     }
 
-    let command = await fixCommand(guild_id, user_id, message);
+    const try_fix_command = false;
+    let command = try_fix_command ? await fixCommand(guild_id, user_id, message) : null;
     if (command) {
       try {
         return await handleCommand(guild_id, channel_id, event_id, user_id, command, referenced_message_id, me, true);
