@@ -10,16 +10,6 @@ async function http_get(server, endpoint, ttc = undefined, key = process.env.RIO
   return curl.request({ secure: true, method: 'GET', hostname: '' + server + '.api.riotgames.com', path: endpoint, headers: { 'X-Riot-Token': key }, rate_limit_hint: { strip_digits : true }, cache: ttc });
 }
 
-function getConfigHint() {
-  return {
-    text: 'I cannot determine your summoner name. If you want me to give you hints about your current game, tell me your summoner name and the server you are on.'
-      + ' Respond with \'configure League of Legends euw1 NoobSlayerXXX\', filling in your server and your summoner name.'
-      + ' You can list more than one server + summoner name pairs, separate the pairs with \';\'.'
-      + ' Valid servers are ' + SERVERS.join(', ') + '.',
-    ttl: 60 * 60 * 24 * 7
-  };
-}
-
 async function getInformation(details, state, user_id) {
   return Promise.all([ getInformationClassic(details, state, user_id), getInformationTFT(details, state, user_id) ])
     .then(results => results.find(result => !!result));
@@ -30,11 +20,11 @@ async function getInformationClassic(details, state, user_id) {
   if (!process.env.RIOT_API_TOKEN) return null;
 
   let summoners = await resolveAccount(user_id);
-  if (summoners.length == 0) return getConfigHint();
+  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS);
   
   let games = await Promise.all(summoners.map(summoner => getActiveGame(summoner.server, summoner.id))).then(games => games.filter(game => !!game));
-  if (games.length > 1) return getConfigHint();
-  if (games.length == 0 && details && state && (details.includes('Summoner\'s Rift') || details.includes('ARAM')) && !(details.includes('AI') || details.includes('Custom')) && (state == 'In Game' || state == 'Im Spiel' || state == 'En Jeu')) return getConfigHint(); // be careful to not catch TFT by accident
+  if (games.length > 1) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS);
+  if (games.length == 0 && details && state && (details.includes('Summoner\'s Rift') || details.includes('ARAM')) && !(details.includes('AI') || details.includes('Custom')) && (state == 'In Game' || state == 'Im Spiel' || state == 'En Jeu')) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS);// be careful to not catch TFT by accident
   if (games.length == 0) return null;
   
   let game = games[0];
@@ -166,7 +156,8 @@ function calculateMatchMetricMedian(player, mode, type, getMetric) {
 
 async function resolveAccount(user_id) {
   return games_util.getUserAccount(user_id, 'League of Legends', SERVERS)
-    .then(accounts => Promise.all(accounts.map(account => getSummoner(account.server, account.name))));
+    .then(accounts => Promise.all(accounts.map(account => getSummoner(account.server, account.name))))
+    .then(summoners => summoners.filter(summoner => !!summoner));
 }
 
 async function getSummoner(server, summonerName) {
@@ -303,7 +294,7 @@ async function getInformationTFT(details, state, user_id) {
   if (!process.env.RIOT_TFT_API_TOKEN) return null;
 
   let summoners = await resolveAccount(user_id).then(summoners => Promise.all(summoners.map(summoner => getTFTSummoner(summoner.server, summoner.name))));
-  if (summoners.length == 0) return getConfigHint();
+  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS);
   
   return null; // TODO
 }

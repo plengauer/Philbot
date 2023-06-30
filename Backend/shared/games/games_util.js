@@ -59,4 +59,4 @@ async function getRoles(guild_id, activity, system) {
   return roles;
 }
 
-module.exports = { getUserAccount, updateRankedRoles }
+module.exports = { getUserAccount, promptConfiguration, updateRankedRoles }
