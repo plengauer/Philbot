@@ -961,6 +961,7 @@ def audio(guild_id, channel_id, user_id, nonce):
 def cleanup():
     for file in os.listdir(STORAGE_DIRECTORY):
         if os.path.getmtime(STORAGE_DIRECTORY + '/' + file) + 60 * 15 < time_seconds():
+            print('CLEANING ' + file)
             try:
                 os.remove(STORAGE_DIRECTORY + '/' + file)
             except:
