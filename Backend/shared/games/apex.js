@@ -36,7 +36,13 @@ const ranked_system = {
 };
 
 async function updateRankedRoles(guild_id, user_id) {
-  return games_util.updateRankedRoles(guild_id, user_id, 'Apex Legends', { ranked_system: ranked_system }, getRanks);
+  return games_util.updateRankedRoles(guild_id, user_id, 'Apex Legends', { ranked_system: ranked_system }, getRankss);
+}
+
+async function getRankss(accounts){
+  return Promise.all(accounts.map(account => getRanks(account)))
+    .then(rankss => rankss.reduce((r1, r2) => r1.concat(r2), []))
+    .catch(error => undefined);
 }
 
 async function getRanks(account) {
@@ -54,8 +60,7 @@ async function getRanks(account) {
         ];
       })
     )
-    .then(ranks => ranks.filter(rank => rank.name != 'Unranked'))
-    .catch(error => undefined);
+    .then(ranks => ranks.filter(rank => rank.name != 'Unranked'));
 }
 
 async function http_algs_api(player) {
