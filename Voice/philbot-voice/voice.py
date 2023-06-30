@@ -113,12 +113,12 @@ downloads = {}
 
 def download_from_youtube(guild_id, url):
     codec = 'mp3'
-    filename = url[url.index('v=') + 2:]
+    filename = 'audio.out.' + guild_id + '.' + url[url.index('v=') + 2:]
     if '&' in filename:
         filename = filename[:filename.index('&')]
-    filename = STORAGE_DIRECTORY + '/audio.out.' + guild_id + '.' + filename
-    if os.path.exists(filename + '.' + codec):
-        return filename + '.' + codec
+    path = STORAGE_DIRECTORY + '/' + filename + '.' + codec
+    if os.path.exists(path):
+        return path
     event = None
     download_in_progress = False
     with download_lock:
@@ -135,17 +135,15 @@ def download_from_youtube(guild_id, url):
             'no_warnings': True,
             'geo_bypass': True,
             'format': 'bestaudio',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': codec,
-                'preferredquality': '128' # kbps
-            }],
-            'outtmpl': filename,
+            'outtmpl': STORAGE_DIRECTORY + '/' + filename + '.%(ext)s',
             'nooverwrites': False
         }
         with yt_dlp.YoutubeDL(options) as ydl:
             ydl.download([url])
-            return filename + '.' + codec
+            dl_path = next(((os.path.join(STORAGE_DIRECTORY, file)) for file in os.listdir(STORAGE_DIRECTORY) if file.startswith(filename)), None)
+            subprocess.run(['ffmpeg', '-i', dl_path, '-f', codec, path]).check_returncode()
+            os.remove(dl_path)
+            return path
     finally:
         with download_lock:
             downloads[event] = None
@@ -158,13 +156,13 @@ channels = 2
 desired_frame_size = int(frame_rate * frame_duration / 1000)
 
 def resolve_url(guild_id, url):
-    filename = None
+    path = None
     if url.startswith('https://www.youtube.com/watch?v='):
-        filename = download_from_youtube(guild_id, url)
+        path = download_from_youtube(guild_id, url)
     else:
         raise RuntimeError
-    os.utime(filename)
-    return 'file://' + filename
+    os.utime(path)
+    return path
 
 counter_streams = meter.create_counter(name = 'discord.gateway.voice.streams', description = 'Number of streams', unit="count")
 counter_streaming = meter.create_counter(name = 'discord.gateway.voice.streaming', description = 'Amount of time streamed', unit="milliseconds")
@@ -267,10 +265,10 @@ class Stream:
         if do_flush:
             self.file.close()
             self.file = None
-            from_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'wav')
-            to_filename = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'mp3')
-            subprocess.run(['ffmpeg', '-i', from_filename, to_filename]).check_returncode()
-            os.remove(from_filename)
+            from_path = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'wav')
+            to_path = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'mp3')
+            subprocess.run(['ffmpeg', '-i', from_path, to_path]).check_returncode()
+            os.remove(from_path)
         return do_flush
 
     def flush(self):
@@ -295,7 +293,7 @@ class Context:
     session_id = None
     endpoint = None
     token = None
-    url = None
+    path = None
     paused = False
 
     ws = None
@@ -325,7 +323,7 @@ class Context:
                 self.session_id = state['session_id']
                 self.endpoint = state['endpoint']
                 self.token = state['token']
-                self.url = state['url']
+                self.path = state['path']
                 self.paused = state['paused']
         except:
             pass
@@ -344,7 +342,7 @@ class Context:
                         'session_id': self.session_id,
                         'endpoint': self.endpoint,
                         'token': self.token,
-                        'url': self.url,
+                        'path': self.path,
                         'paused': self.paused
                     }))
             else:
@@ -444,7 +442,7 @@ class Context:
             raise RuntimeError('unexpected mode: ' + self.mode)
 
         sequence = 0
-        filename = None
+        path = None
         file = None
         timestamp = time_millis()
         last_heartbeat = timestamp
@@ -455,49 +453,49 @@ class Context:
             with self.lock:
                 if not self.streamer:
                     break
-                if not filename and not self.url:
+                if not path and not self.path:
                     pass
-                elif filename and not self.url:
+                elif path and not self.path:
                     file.close()
                     try:
-                        os.remove(filename)
+                        os.remove(path)
                     except:
                         pass
                     file = None
-                    filename = None
+                    path = None
                     print('VOICE CONNECTION ' + self.guild_id + ' stream completed')
                     threading.Thread(target=self.__callback_playback_finished).start()
-                elif not filename and self.url:
-                    filename = self.url[len('file://'):]
-                    if not os.path.exists(filename):
+                elif not path and self.path:
+                    path = self.path
+                    if not os.path.exists(path):
                         print('VOICE CONNECTION ' + self.guild_id + ' skipping source because local file is not available')
-                        filename = None
-                        self.url = None
+                        path = None
+                        self.path = None
                         threading.Thread(target=self.__callback_playback_finished).start()
                     else:
-                        file = wave.open(filename, 'rb')
+                        file = wave.open(path, 'rb')
                         if file.getframerate() != frame_rate or file.getnchannels() != channels or file.getsampwidth() != sample_width:
                             print('VOICE CONNECTION ' + self.guild_id + ' skipping source because stream does not satisfy requirements')
                             file.close()
                             file = None
                             try:
-                                os.remove(filename)
+                                os.remove(path)
                             except:
                                 pass
-                            filename = None
-                            self.url = None
+                            path = None
+                            self.path = None
                             threading.Thread(target=self.__callback_playback_finished).start()
                         else:
-                            print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + filename + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
+                            print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + path + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
                             counter_streams.add(1, { "guild_id": self.guild_id })
-                elif filename and self.url and filename != self.url[len('file://'):]:
+                elif path and self.path and path != self.path:
                     file.close()
                     try:
-                        os.remove(filename)
+                        os.remove(path)
                     except:
                         pass
                     file = None
-                    filename = None
+                    path = None
                     print('VOICE CONNECTION ' + self.guild_id + ' stream changing source')
                 paused = self.paused
             # encode a frame
@@ -506,7 +504,7 @@ class Context:
                 pcm = file.readframes(desired_frame_size)
                 if len(pcm) == 0:
                     with self.lock:
-                        self.url = None
+                        self.path = None
                 effective_frame_size = len(pcm) // sample_width // channels
                 if effective_frame_size < desired_frame_size:
                     pcm += b"\x00" * (desired_frame_size - effective_frame_size) * sample_width * channels
@@ -550,10 +548,10 @@ class Context:
                 # current theory is that above when calculating effective and desired frame rates, we miss in some places a "divide by 2", reason is that we seem to pass the length in bytes, but as a short pointer. thats inconcistent
             timestamp = new_timestamp
 
-        if filename:
+        if path:
             file.close()
             try:
-                os.remove(filename)
+                os.remove(path)
             except:
                 pass
         pyogg.opus.opus_encoder_destroy(encoder)
@@ -791,27 +789,25 @@ class Context:
         self.__save()
         self.__try_start()
 
-    def on_content_update(self, url):
-        filename = url[len('file://'):]
-
+    def on_content_update(self, path):
         def convert(file_from, file_to):
             subprocess.run(['ffmpeg', '-i', file_from, '-ar', str(frame_rate), '-ac', str(channels), '-sample_fmt', 's' + str(sample_width * 8), file_to]).check_returncode()
-        if filename.endswith('.wav'):
-            file = wave.open(filename, "rb")
+        if path.endswith('.wav'):
+            file = wave.open(path, "rb")
             all_ok = file.getframerate() == frame_rate and file.getnchannels() == channels and file.getsampwidth() == sample_width
             file.close()
             if not all_ok:
-                to_filename = '_' + filename.rsplit('.', 1)[0] + '.wav'
-                convert(filename, to_filename)
-                os.remove(filename)
-                os.rename(to_filename, filename)
+                to_path = '_' + path.rsplit('.', 1)[0] + '.wav'
+                convert(path, to_path)
+                os.remove(path)
+                os.rename(to_path, path)
         else:
-            to_filename = filename.rsplit('.', 1)[0] + '.wav'
-            convert(filename, to_filename)
-            url = 'file://' + to_filename
+            to_path = path.rsplit('.', 1)[0] + '.wav'
+            convert(path, to_path)
+            path = to_path
 
         with self.lock:
-            self.url = url
+            self.path = path
             self.paused = False
         self.__save()
         self.__try_start()
@@ -956,9 +952,9 @@ def audio(guild_id, channel_id, user_id, nonce):
     # attacker would have to know guild_id, channel_id (needs to be in the server), user_id (needs to be in the server or friend), and guess the right nonce, and access it in real-time
     # they would get a small random audio chunk
     for extension in ['wav', 'mp3']:
-        filename = generate_audio_file_path(guild_id, channel_id, user_id, nonce, extension)
-        if os.path.exists(filename):
-            with open(filename, 'rb') as bites:
+        path = generate_audio_file_path(guild_id, channel_id, user_id, nonce, extension)
+        if os.path.exists(path):
+            with open(path, 'rb') as bites:
                 return send_file(io.BytesIO(bites.read()), mimetype='audio/' + extension)
     return Response('Not Found', status=404)
 
