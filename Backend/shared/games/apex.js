@@ -1,7 +1,4 @@
 const process = require('process');
-const memory = require('../memory.js');
-const discord = require('../discord.js');
-const synchronized = require('../synchronized.js');
 const curl = require('../curl.js');
 const trackernetwork_gg = require('./trackernetwork_gg.js');
 const troll = require('./troll.js');
@@ -9,14 +6,6 @@ const games_util = require('./games_util.js');
 
 async function getInformation() {
   return troll.getInformation();
-}
-
-function getConfigHint() {
-  return {
-    text: 'I cannot determine your EA Origin name. If you want me to give you hints about your current game, tell me your EA Origin name (even if you play on Steam, I need the Origin name that is linked to your steam account).'
-      + ' Respond with \'configure Apex Legends NoobSlayerXXX\', filling in your EA Origin name.',
-    ttl: 60 * 60 * 24 * 7
-  };
 }
 
 const ranks = [
@@ -68,6 +57,8 @@ async function http_algs_api(player) {
 }
 
 async function http_tracker(player) {
+  // API broken (returns 500 which should be 404, causing retries and therefore unhandled errors)
+  throw new Error();
   return trackernetwork_gg.get('public-api.tracker.gg', '/apex/v1/standard/profile/5/' + encodeURIComponent(player));
 }
 
