@@ -19,7 +19,11 @@ const ranked_system = {
 };
 
 async function updateRankedRoles(guild_id, user_id) {
-  return games_util.updateRankedRoles(guild_id, user_id, 'Fortnite', { ranked_system: ranked_system }, getRanks);
+  return games_util.updateRankedRoles(guild_id, user_id, 'Fortnite', { ranked_system: ranked_system }, getRankss);
+}
+
+async function getRankss(accounts) {
+  return Promise.all(accounts.map(account => getRanks(account))).catch(() => undefined);
 }
 
 async function getRanks(account) {
