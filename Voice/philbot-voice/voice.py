@@ -136,11 +136,13 @@ def download_from_youtube(guild_id, url):
             'geo_bypass': True,
             'format': 'bestaudio',
             'outtmpl': STORAGE_DIRECTORY + '/' + filename + '.%(ext)s',
-            'nooverwrites': False
+            'nooverwrites': False,
+            'updatetime': False
         }
         with yt_dlp.YoutubeDL(options) as ydl:
             ydl.download([url])
             dl_path = next(((os.path.join(STORAGE_DIRECTORY, file)) for file in os.listdir(STORAGE_DIRECTORY) if file.startswith(filename)), None)
+            os.utime(dl_path)
             subprocess.run(['ffmpeg', '-i', dl_path, '-f', codec, path]).check_returncode()
             os.remove(dl_path)
             return path
