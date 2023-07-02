@@ -119,7 +119,7 @@ async function getCurrentCost(vendor) {
     return cost.value;
 }
 
-function getCostLimit(vendor) { //TODO move this to implementations
+function getCostLimit(vendor) {
     switch(vendor) {
         case 'openai': return openai.getCostLimit();
         case 'google': return googleai.getCostLimit();
@@ -127,7 +127,7 @@ function getCostLimit(vendor) { //TODO move this to implementations
     }
 }
 
-function isSameBillingSlot(vendor, timestamp, now) { //TODO move this to implementation
+function isSameBillingSlot(vendor, timestamp, now) {
     switch(vendor) {
         case 'openai': return openai.isSameBillingSlot(timestamp, now);
         case 'google': return googleai.isSameBillingSlot(timestamp, now);
@@ -135,7 +135,7 @@ function isSameBillingSlot(vendor, timestamp, now) { //TODO move this to impleme
     }
 }
 
-function computeBillingSlotProgress(vendor) { //TODO move this to implementations (or make public)
+function computeBillingSlotProgress(vendor) {
     switch(vendor) {
         case 'openai': return openai.computeBillingSlotProgress();
         case 'google': return googleai.computeBillingSlotProgress();
