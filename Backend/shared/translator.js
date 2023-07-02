@@ -74,7 +74,7 @@ async function translate(model, user, target_language, source) {
     + `Translate the text as ${dummy_token} if it is untranslatable or unnecessary to translate.\n`
     + `Text: "${source}"\n`
     + `Translation: `;
-  let translation = await chatgpt.createCompletion(user, prompt, model, 0);
+  let translation = await ai.createCompletion(model, user, prompt, 0);
   //console.log(`DEBUG TRANSLATOR v2 #3 "${source}" => "${translation}"`);
   if (!translation || translation.length == 0) return;
   if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1).trim();
