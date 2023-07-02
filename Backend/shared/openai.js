@@ -262,9 +262,7 @@ async function getTranscriptionModels() {
 }
 
 async function createTranscription(model, user, prompt, audio_stream, audio_stream_format, audio_stream_length_millis, report) {
-  model = model ?? (await getTranscriptionModels()).slice(-1);
   if (!token) return null;
-  if (!await canCreate()) return null;
   if (!['mp3', 'mp4', 'wav', 'm4a', 'webm', 'mpga', 'wav', 'mpeg'].includes(audio_stream_format)) {
     const preferred_audio_stream_format = 'mp3';
     audio_stream = media.convert(audio_stream, audio_stream_format, preferred_audio_stream_format);
