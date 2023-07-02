@@ -2,28 +2,27 @@ const process = require('process');
 const url = require('url');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
-const synchronized = require('./synchronized.js');
-const opentelemetry = require('@opentelemetry/api');
 const media = require('./media.js');
 let FormData = require('form-data');
 
 const token = process.env.OPENAI_API_KEY;
-const cost_limit = parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
 const debug = process.env.OPENAI_DEBUG == 'true'
 
-const meter = opentelemetry.metrics.getMeter('openai');
-meter.createObservableGauge('openai.cost.slotted.absolute').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost)));
-meter.createObservableGauge('openai.cost.slotted.relative').addCallback(async (result) => getCurrentCost().then(cost => result.observe(cost / cost_limit)));
-meter.createObservableGauge('openai.cost.slotted.progress').addCallback(async (result) => getCurrentCost().then(cost => result.observe((cost / cost_limit) / computeBillingSlotProgress())));
-const request_counter = meter.createCounter('openai.requests');
-const cost_counter = meter.createCounter('openai.cost');
-
-function compareLanguageModelByCost(cheap_model, expensive_model) {
-  return computeLanguageCost(cheap_model, 1, 1) < computeLanguageCost(expensive_model, 1, 1);
+function getCostLimit() {
+  return parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
 }
 
-function compareLanguageModelByPower(bad_model, good_model) {
-  return getModelPower(bad_model) < getModelPower(good_model);
+function isSameBillingSlot(t1, t2) {
+  return  t1.getUTCFullYear() == t2.getUTCFullYear() && t1.getUTCMonth() == t2.getUTCMonth();
+}
+
+function computeBillingSlotProgress() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const totalDaysInMonth = endOfMonth.getDate() - startOfMonth.getDate() + 1;
+  const millisSinceStartOfMonth = now.getTime() - startOfMonth.getTime();
+  return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
 async function getLanguageModels() {
@@ -38,31 +37,35 @@ async function getLanguageModels() {
   return models;
 }
 
-async function createCompletion(user, prompt, model = undefined, temperature = undefined) {
-  model = model ?? (await getLanguageModels()).slice(-1);
+function compareLanguageModelByCost(cheap_model, expensive_model) {
+  return computeLanguageCost(cheap_model, 1, 1) < computeLanguageCost(expensive_model, 1, 1);
+}
+
+function compareLanguageModelByPower(bad_model, good_model) {
+  return getModelPower(bad_model) < getModelPower(good_model);
+}
+
+async function createCompletion(model, user, prompt, report, temperature = undefined) {
   if (!token) return null;
-  if (!await canCreate()) return null;
   
   if (!model.startsWith('text-')) {
-    return createResponse(user, null, null, `Complete the following text, respond with the completion only:\n${prompt}`, model, temperature);
+    return createResponse(model, user, null, null, `Complete the following text, respond with the completion only:\n${prompt}`, report, temperature);
   }
   
   let response = await HTTP('/v1/completions' , { user: user, "model": model, "prompt": prompt, temperature: temperature });
   let completion = response.choices[0].text.trim();
-  await bill(computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens), response.model, user);
+  await report(response.model, computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens));
   return completion;
 }
 
-async function createResponse(user, history_token, system, message, model = undefined, temperature = undefined) {
-  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(user, history_token, system, message, model, temperature));
-  else return createResponse0(user, history_token, system, message, model, temperature);
+async function createResponse(model, user, history_token, system, message, report, temperature = undefined) {
+  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(model, user, history_token, system, message, report, temperature));
+  else return createResponse0(model, user, history_token, system, message, report, temperature);
 }
 
-async function createResponse0(user, history_token, system, message, model = undefined, temperature = undefined) {
+async function createResponse0(model, user, history_token, system, message, report, temperature = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
-  model = model ?? (await getLanguageModels()).slice(-1);
   if (!token) return null;
-  if (!await canCreate()) return null;
 
   const horizon = 2;
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
@@ -72,13 +75,13 @@ async function createResponse0(user, history_token, system, message, model = und
   
   let output = null;
   if (!model.startsWith('gpt-')) {
-    let completion = await createCompletion(user, `Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', model, temperature);
+    let completion = await createCompletion(model, user, `Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', report, temperature);
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
   } else {
     let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature });
     output = response.choices[0].message;
-    await bill(computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens), response.model, user);
+    await report(response.model, computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens));
   }
   output.content = sanitizeResponse(output.content);
 
@@ -156,20 +159,19 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
   }
 }
 
-async function createBoolean(user, question, model = undefined, temperature = undefined) {
-  model = model ?? (await getLanguageModels()).slice(-1);
+async function createBoolean(model, user, question, report, temperature = undefined) {
   let response = null;
   if (model.startsWith('text-')) {
-    response = await createCompletion(user, `Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, model, temperature);
+    response = await createCompletion(model, user, `Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, report, temperature);
   } else {
-    response = await createResponse(user, null, null, `${question} Respond only with yes or no!`, model, temperature);
+    response = await createResponse(model, user, null, null, `${question} Respond only with yes or no!`, report, temperature);
   }
   if (!response) return null;
   let boolean = response.trim().toLowerCase();
   const match = boolean.match(/^([a-z]+)/);
   boolean = match ? match[0] : boolean;
   if (boolean != 'yes' && boolean != 'no') {
-    let sentiment = await createCompletion(user, `Determine whether the sentiment of the text is positive or negative.\nText: "${response}"\nSentiment: `, model, temperature);
+    let sentiment = await createCompletion(model, user, `Determine whether the sentiment of the text is positive or negative.\nText: "${response}"\nSentiment: `, report, temperature);
     const sentiment_match = sentiment.trim().toLowerCase().match(/^([a-z]+)/);
     if (sentiment_match && sentiment_match[0] == 'positive') boolean = 'yes';
     else if (sentiment_match && sentiment_match[0] == 'negative') boolean = 'no';
@@ -189,18 +191,15 @@ function getImageSizes(model) {
   return IMAGE_SIZES;
 }
 
-async function createImage(user, prompt, model = undefined, size = undefined) {
-  model = model ?? (await getImageModels()).slice(-1);
-  if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
+async function createImage(model, size, user, prompt, report) {
   if (!token) return null;
-  if (!await canCreate()) return null;
   let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
   let pipe = estimated_size > 1024 * 1024;
   try {
     let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', size: size });
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
-    await bill(getImageCost(model, size), model, user);
+    await report(model, getImageCost(model, size));
     return image;
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
@@ -215,11 +214,8 @@ function preprocessImage(image, format, regions) {
   return image;
 }
 
-async function editImage(user, base_image, format, prompt, regions, model = undefined, size = undefined) {
-  model = model ?? (await getImageModels()).slice(-1);
-  if (!size) size = IMAGE_SIZES[IMAGE_SIZES.length - 1];
+async function editImage(model, size, user, base_image, format, prompt, regions, report) {
   if (!token) return null;
-  if (!await canCreate()) return null;
   let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
   let pipe = estimated_size > 1024 * 1024;
   if (!['png'].includes(format)) {
@@ -241,7 +237,7 @@ async function editImage(user, base_image, format, prompt, regions, model = unde
     let response = await HTTP('/v1/images/edits', body, body.getHeaders());
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
-    await bill(getImageCost(model, size), model, user);
+    await report(model, getImageCost(model, size));
     return image;
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
@@ -265,7 +261,7 @@ async function getTranscriptionModels() {
   return getModels().then(models => models.filter(model => model.startsWith('whisper-')));
 }
 
-async function createTranscription(user, prompt, audio_stream, audio_stream_format, audio_stream_length_millis, model = undefined) {
+async function createTranscription(model, user, prompt, audio_stream, audio_stream_format, audio_stream_length_millis, report) {
   model = model ?? (await getTranscriptionModels()).slice(-1);
   if (!token) return null;
   if (!await canCreate()) return null;
@@ -280,7 +276,7 @@ async function createTranscription(user, prompt, audio_stream, audio_stream_form
   body.append('prompt', prompt, { contentType: 'string' });
   body.append('file', audio_stream, { contentType: 'audio/' + audio_stream_format, filename: 'audio.' + audio_stream_format });
   let response = await HTTP('/v1/audio/transcriptions', body, body.getHeaders());
-  await bill(getTranscriptionCost(model, response.duration ? response.duration * 1000 : audio_stream_length_millis), model, user);  
+  await report(model, getTranscriptionCost(model, response.duration ? response.duration * 1000 : audio_stream_length_millis));
   const max_no_speech_probability = 0.05;
   return response.segments ?
     response.segments.filter(segment => segment.no_speech_prob < max_no_speech_probability).map(segment => segment.text.trim()).filter(segment => segment.length > 0).join(' ') :
@@ -308,50 +304,6 @@ async function HTTP(endpoint, body, headers = {}) {
   return result;
 }
 
-async function bill(cost, model, user) {
-  const attributes = { 'openai.model': model, 'openai.user': user };
-  request_counter.add(1, attributes);
-  cost_counter.add(cost, attributes);
-  return synchronized.locked('openai.billing', () => {
-    let now = Date.now(); // we need to get the time first because we may be just at the limit of a billing slot (this way we may lose a single entry worst case, but we wont carry over all the cost to the next)
-    return getCurrentCost(now).then(current_cost => memory.set(costkey(), { value: current_cost + cost, timestamp: now }, 60 * 60 * 24 * 31));
-  });
-  
-}
-
-async function getCurrentCost() {
-  let now = new Date();
-  let backup = { value: 0, timestamp: now };
-  let cost = await memory.get(costkey(), backup);
-  if (!(new Date(cost.timestamp).getUTCFullYear() == now.getUTCFullYear() && new Date(cost.timestamp).getUTCMonth() == now.getUTCMonth())) cost = backup;
-  return cost.value;
-}
-
-function costkey() {
-  return 'openai:cost';
-}
-
-async function canCreate() {
-  return (await computeCostProgress()) < 1;
-}
-
-async function shouldCreate(threshold = 0.8) {
-  return (await computeCostProgress()) / computeBillingSlotProgress() < threshold;
-}
-
-async function computeCostProgress() {
-   return (await getCurrentCost()) / cost_limit;
-}
-
-function computeBillingSlotProgress() {
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const totalDaysInMonth = endOfMonth.getDate() - startOfMonth.getDate() + 1;
-  const millisSinceStartOfMonth = now.getTime() - startOfMonth.getTime();
-  return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
-}
-
 async function getModels() {
   return curl.request({ method: 'GET', hostname: 'api.openai.com', path: '/v1/models', headers: { 'Authorization': 'Bearer ' + token }, cache: 60 * 60 * 24 })
     .then(result => result.data.map(model => model.id.replace(/:/, '-')))
@@ -362,20 +314,23 @@ function getModelPower(model) {
   return parseFloat(model.match(/\d+(\.\d+)?/g).join(''));
 }
 
-const DEFAULT_DYNAMIC_MODEL_SAFETY = 0.5;
+module.exports = { 
+  getCostLimit,
+  isSameBillingSlot,
+  computeBillingSlotProgress,
 
-function getDefaultDynamicModelSafety() {
-  return DEFAULT_DYNAMIC_MODEL_SAFETY;
+  getLanguageModels,
+  compareLanguageModelByCost,
+  compareLanguageModelByPower,
+  createCompletion,
+  createResponse,
+  createBoolean,
+  
+  getImageModels,
+  getImageSizes,
+  createImage,
+  editImage,
+  
+  getTranscriptionModels,
+  createTranscription
 }
-
-async function getDynamicModel(models, safety = DEFAULT_DYNAMIC_MODEL_SAFETY) {
-  let model_index = models.length - 1;
-  let threshold = safety;
-  while (!await shouldCreate(1 - threshold) && model_index > 0) {
-    model_index--;
-    threshold = threshold * safety;
-  }
-  return process.env.OPENAI_DYNAMIC_MODEL_OVERRIDE ?? models[model_index];
-}
-
-module.exports = { getLanguageModels, compareLanguageModelByCost, compareLanguageModelByPower, createCompletion, createResponse, createBoolean, getImageModels, getImageSizes, createImage, editImage, getTranscriptionModels, createTranscription, canCreate, shouldCreate, getDynamicModel, getDefaultDynamicModelSafety  }

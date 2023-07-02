@@ -18,7 +18,7 @@ const permissions = require('../../../shared/permissions.js');
 const raid_protection = require('../../../shared/raid_protection.js');
 const subscriptions = require('../../../shared/subscriptions.js');
 const role_management = require('../../../shared/role_management.js');
-const chatgpt = require('../../../shared/openai.js');
+const ai = require('../../../shared/ai.js');
 const translator = require('../../../shared/translator.js');
 const mirror = require('../../../shared/mirror.js');
 
@@ -95,7 +95,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
 }
 
 async function transcribeAttachment(user_id, attachment, transcription_instructions, try_baseline) {
-  let model = await chatgpt.getDynamicModel(await chatgpt.getTranscriptionModels());
+  let model = await ai.getDynamicModel(await ai.getTranscriptionModels());
   const baseline_key = `transcript:baseline:user:${user_id}`;
   let content_type = attachment.content_type;
   let duration_secs = attachment.duration_secs;
@@ -112,7 +112,7 @@ async function transcribeAttachment(user_id, attachment, transcription_instructi
       return transcribeAttachment(user_id, attachment, transcription_instructions, false);
     }
   }
-  let transcription = await chatgpt.createTranscription(user_id, transcription_instructions, attachment_audio, content_type.split('/')[1], duration_secs * 1000, model);
+  let transcription = await ai.createTranscription(model, user_id, transcription_instructions, attachment_audio, content_type.split('/')[1], duration_secs * 1000);
   if (!transcription) transcription = "";
   if (baseline) {
     if (!transcription.startsWith(baseline.text)) return transcribeAttachment(user_id, attachment, transcription_instructions, false);
@@ -203,36 +203,35 @@ async function resolveMembersForSpecialActivityMentions(guild_id, user_id, messa
 async function handleMessageForFunReplies(channel_id, event_id, user_id, message) {
   const PROBABILITY = 0.01;
   if (Math.random() >= PROBABILITY) return;
-  let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
+  let model = await ai.getDynamicModel(await ai.getLanguageModels());
   if (!model) return;
   switch (Math.floor(Math.random() * 4)) {
     case 0:
       if (5 < message.length && message.length < 150) break;
-      if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
-      if (!await chatgpt.createBoolean(user_id, `Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`, model)) break;
+      if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
+      if (!await ai.createBoolean(model, user_id, `Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`)) break;
       await discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`);
       break;
     case 1:
       if (5 < message.length && message.length < 150) break;
-      if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
-      if (!await chatgpt.createBoolean(user_id, `Is "${message}" a typical boomer statement?`, model)) break;
+      if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
+      if (!await ai.createBoolean(model, user_id, `Is "${message}" a typical boomer statement?`)) break;
       await discord.respond(channel_id, event_id, boomer.encode('ok boomer'));
       break;
     case 2:
       if (25 < message.length && message.length < 250) break;
       const dummy_token = 'NULL';
-      let extraction = await chatgpt.createCompletion(user_id, `Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `, model);
+      let extraction = await ai.createCompletion(model, user_id, `Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `);
       if (!extraction || extraction == dummy_token || extraction.startsWith(dummy_token) || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
-      let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
+      let image_model = await ai.getDynamicModel(await ai.getImageModels());
       if (!image_model) break;
-      let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
-      let file = await chatgpt.createImage(user_id, extraction, image_model, image_size);
+      let file = await ai.createImage(image_model, user_id, extraction);
       await discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
       break;
     case 3:
       if (25 < message.length && message.length < 250) break;
-      if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) break;
-      let comeback = await chatgpt.createCompletion(user_id, `Write a clever comeback for a text.\nText: ${message}\nComeback:`, model);
+      if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
+      let comeback = await ai.createCompletion(model, user_id, `Write a clever comeback for a text.\nText: ${message}\nComeback:`);
       await discord.respond(channel_id, event_id, comeback);
       break;
     default:
@@ -875,18 +874,17 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (!split || split < 0) return reactNotOK(channel_id, event_id);
     let language = message.substring(0, split).trim();
     let text = message.substring(split + 1).trim();
-    return handleLongResponse(channel_id, () => chatgpt.getLanguageModels()
-      .then(models => chatgpt.getDynamicModel(models))
-      .then(model => model ? translator.translate(user_id, language, text, model) : null)
+    return handleLongResponse(channel_id, () => ai.getLanguageModels()
+      .then(models => ai.getDynamicModel(models))
+      .then(model => model ? translator.translate(model, user_id, language, text) : null)
       .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
     );
   
   } else if (message.toLowerCase().startsWith('draw ')) {
     message = message.split(' ').slice(1).join(' ');
-    let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
-    if (!image_model) return reactNotOK(channel_id, event_id);
-    let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
-    return handleLongResponse(channel_id, () => chatgpt.createImage(user_id, message, image_model, image_size)
+    let model = await ai.getDynamicModel(await ai.getImageModels());
+    if (!model) return reactNotOK(channel_id, event_id);
+    return handleLongResponse(channel_id, () => ai.createImage(model, user_id, message)
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
       .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
@@ -909,10 +907,8 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     message = tokens.slice(4).join(' ');
     let image = await streamAttachment(attachment);
     let format = attachment.content_type.split('/')[1];
-    let image_model = await chatgpt.getDynamicModel(await chatgpt.getImageModels());
-    if (!image_model) return reactNotOK(channel_id, event_id);
-    let image_size = await chatgpt.getDynamicModel(chatgpt.getImageSizes(image_model));
-    return handleLongResponse(channel_id, () => chatgpt.editImage(user_id, image, format, message, regions, image_model, image_size)
+    let model = await ai.getDynamicModel(await ai.getImageModels());
+    return handleLongResponse(channel_id, () => ai.editImage(model, user_id, image, format, message, regions)
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
       .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
@@ -996,21 +992,21 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
 }
 
 async function fixCommand(guild_id, user_id, message) {
-  let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels());
-  if (chatgpt.compareLanguageModelByPower(model, 'gpt-3.5-turbo')) return null;
+  let model = await ai.getDynamicModel(await ai.getLanguageModels());
+  if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) return null;
   if (!model) return null;
   let context = await createHelpString(guild_id, discord.mention_user((await discord.me()).id));
   const dummy_token = 'NULL';
-  let command = await chatgpt.createResponse(user_id, null, context, `Fix the command "${message}". Respond with the command only. Respond with "${dummy_token}" if it is not a valid command.`, model);
+  let command = await ai.createResponse(model, user_id, null, context, `Fix the command "${message}". Respond with the command only. Respond with "${dummy_token}" if it is not a valid command.`);
   if (command == dummy_token || command.startsWith(dummy_token)) return null;
   return command.trim();
 }
 
 async function createAIResponse(guild_id, channel_id, user_id, message) {
-  let model = await chatgpt.getDynamicModel(await chatgpt.getLanguageModels(), chatgpt.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
+  let model = await ai.getDynamicModel(await ai.getLanguageModels(), ai.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
   if (!model) return null;
   let system_message = await createAIContext(guild_id, channel_id, user_id, message, model);
-  return chatgpt.createResponse(user_id, `channel:${channel_id}:user:${user_id}`, system_message, message, model);
+  return ai.createResponse(model, user_id, `channel:${channel_id}:user:${user_id}`, system_message, message);
 }
 
 async function createAIContext(guild_id, channel_id, user_id, message, model) {
@@ -1059,7 +1055,7 @@ async function createAIContext(guild_id, channel_id, user_id, message, model) {
   // complex information about how myself
   const help_prompt = `Assuming I am a Discord bot, is "${message}" a question about me, my capabilities, or how to interact with me?`;
   let about_me = (await createHelpString(guild_id, discord.mention_user(me.id))) + '\n' + (await createAboutString(discord.mention_user(me.id)));
-  if (help_prompt.length > about_me.length || await chatgpt.createBoolean(user_id, help_prompt, model)) {
+  if (help_prompt.length > about_me.length || await ai.createBoolean(model, user_id, help_prompt)) {
     system_message += ' ' + about_me;
   }
 
