@@ -1,6 +1,7 @@
 const process = require('process');
 const url = require('url');
 const memory = require('./memory.js');
+const synchronized = require('./synchronized.js');
 const curl = require('./curl.js');
 const media = require('./media.js');
 let FormData = require('form-data');
