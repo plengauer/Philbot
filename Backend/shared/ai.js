@@ -2,15 +2,16 @@
 const memory = require('./memory.js');
 const opentelemetry = require('@opentelemetry/api');
 
+const synchronized = require('./synchronized.js');
 const openai = require('./openai.js');
 const googleai = require('./googleai.js')
 
 const VENDORS = ['openai', 'google'];
 
 const meter = opentelemetry.metrics.getMeter('ai');
-meter.createObservableGauge('ai.cost.slotted.absolute').addCallback(async (result) => Promise.all(VENDORS.forEach(vendor => getCurrentCost(vendor).then(cost => result.observe(cost, {'ai.vendor': vendor})))));
-meter.createObservableGauge('ai.cost.slotted.relative').addCallback(async (result) => Promise.all(VENDORS.forEach(vendor => getCurrentCost(vendor).then(cost => result.observe(cost / getCostLimit(vendor), {'ai.vendor': vendor})))));
-meter.createObservableGauge('ai.cost.slotted.progress').addCallback(async (result) => Promise.all(VENDORS.forEach(vendor => getCurrentCost(vendor).then(cost => result.observe((cost / getCostLimit(vendor)) / computeBillingSlotProgress(vendor), {'ai.vendor': vendor})))));
+meter.createObservableGauge('ai.cost.slotted.absolute').addCallback(async (result) => Promise.all(VENDORS.map(vendor => getCurrentCost(vendor).then(cost => result.observe(cost, {'ai.vendor': vendor})))));
+meter.createObservableGauge('ai.cost.slotted.relative').addCallback(async (result) => Promise.all(VENDORS.map(vendor => getCurrentCost(vendor).then(cost => result.observe(getCostLimit(vendor) > 0 ? cost / getCostLimit(vendor) : 0, {'ai.vendor': vendor})))));
+meter.createObservableGauge('ai.cost.slotted.progress').addCallback(async (result) => Promise.all(VENDORS.map(vendor => getCurrentCost(vendor).then(cost => result.observe((getCostLimit(vendor) > 0 ? cost / getCostLimit(vendor) : 0) / computeBillingSlotProgress(vendor), {'ai.vendor': vendor})))));
 const request_counter = meter.createCounter('ai.requests');
 const cost_counter = meter.createCounter('ai.cost');
 
@@ -35,7 +36,8 @@ async function shouldCreate(vendor, threshold = 0.8) {
 }
 
 async function computeCostProgress(vendor) {
-    return (await getCurrentCost(vendor)) / getCostLimit(vendor);
+    let limit = getCostLimit(vendor);
+    return limit > 0 ? (await getCurrentCost(vendor)) / getCostLimit(vendor) : 0;
 }
 
 async function getLanguageModels() {
