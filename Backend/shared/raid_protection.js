@@ -31,8 +31,8 @@ async function on_guild_message_create_for_raid_protection_0(guild_id, user_id) 
   let suspects = members.filter(member => new Date(member.joined_at) > new Date(Date.now() - 1000 * GUILD_MEMBER_SUSPECT_TIMEFRAME));
   if (!suspects.some(suspect => suspect.user.id == user_id)) return;
   const key = `raid_protection:detection:guild.message.create:guild:${guild_id}`;
-  let counter = await memory.get(key, 0, GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME);
-  if (counter < GUILD_MESSAGE_CREATE_THRESHOLD) return memory.set(key, counter + 1, GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME * 1000 - Date.now() % (GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME * 1000));
+  let counter = await memory.get(key, 0);
+  if (counter < GUILD_MESSAGE_CREATE_THRESHOLD) return memory.set(key, counter + 1, GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME - Math.floor((Date.now() % (1000 * GUILD_MESSAGE_CREATE_THRESHOLD_TIMEFRAME)) / 1000));
   return lockdown(guild_id);
 }
 
