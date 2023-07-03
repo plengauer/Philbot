@@ -2,6 +2,7 @@
 const memory = require('./memory.js');
 const opentelemetry = require('@opentelemetry/api');
 
+const synchronized = require('./synchronized.js');
 const openai = require('./openai.js');
 const googleai = require('./googleai.js')
 
