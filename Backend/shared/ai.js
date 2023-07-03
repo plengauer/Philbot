@@ -9,9 +9,9 @@ const googleai = require('./googleai.js')
 const VENDORS = ['openai', 'google'];
 
 const meter = opentelemetry.metrics.getMeter('ai');
-meter.createObservableGauge('ai.cost.slotted.absolute').addCallback(async (result) => Promise.all(VENDORS.forEach(vendor => getCurrentCost(vendor).then(cost => result.observe(cost, {'ai.vendor': vendor})))));
-meter.createObservableGauge('ai.cost.slotted.relative').addCallback(async (result) => Promise.all(VENDORS.forEach(vendor => getCurrentCost(vendor).then(cost => result.observe(cost / getCostLimit(vendor), {'ai.vendor': vendor})))));
-meter.createObservableGauge('ai.cost.slotted.progress').addCallback(async (result) => Promise.all(VENDORS.forEach(vendor => getCurrentCost(vendor).then(cost => result.observe((cost / getCostLimit(vendor)) / computeBillingSlotProgress(vendor), {'ai.vendor': vendor})))));
+meter.createObservableGauge('ai.cost.slotted.absolute').addCallback(async (result) => Promise.all(VENDORS.map(vendor => getCurrentCost(vendor).then(cost => result.observe(cost, {'ai.vendor': vendor})))));
+meter.createObservableGauge('ai.cost.slotted.relative').addCallback(async (result) => Promise.all(VENDORS.map(vendor => getCurrentCost(vendor).then(cost => result.observe(cost / getCostLimit(vendor), {'ai.vendor': vendor})))));
+meter.createObservableGauge('ai.cost.slotted.progress').addCallback(async (result) => Promise.all(VENDORS.map(vendor => getCurrentCost(vendor).then(cost => result.observe((cost / getCostLimit(vendor)) / computeBillingSlotProgress(vendor), {'ai.vendor': vendor})))));
 const request_counter = meter.createCounter('ai.requests');
 const cost_counter = meter.createCounter('ai.cost');
 
