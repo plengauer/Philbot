@@ -826,7 +826,7 @@ class Context:
     
     def is_connecting(self):
         with self.lock:
-            return self.channel_id is not None and self.session_id is not None and self.endpoint is not None
+            return self.channel_id is not None and self.session_id is not None and self.endpoint is not None and self.ws is not None
     
     def is_connected(self):
         with self.lock:
@@ -935,15 +935,14 @@ def voice_resume(guild_id):
 def voice_is_connected(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    context = get_context(guild_id)
-    if not context or not context.is_connecting():
-        return Response('Not found', status=404)
-    end = time_millis() + 1000 * 5
+    end = time_millis() + 1000 * 30
     tryy = 100
     while time_millis() < end:
         context = get_context(guild_id)
         if context and context.is_connected():
             return Response(context.channel_id, status=200)
+        if context and not context.is_connecting():
+            return Response('Not found', status=404)
         time.sleep(tryy / 1000.0)
         tryy = tryy * 2
     return Response('Not found', status=404)
