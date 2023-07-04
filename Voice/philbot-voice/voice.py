@@ -778,8 +778,7 @@ class Context:
         self.__try_start()
 
     def on_state_update(self, channel_id, user_id, session_id, callback_url):
-        if not self.channel_id:
-            self.__stop()
+        self.__stop()
         with self.lock:
             self.channel_id = channel_id
             self.user_id = user_id
