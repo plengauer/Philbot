@@ -2,15 +2,16 @@ const process = require('process');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
 const synchronized = require('./synchronized.js');
+const media = require('./media.js');
 
 const token = process.env.GCP_API_KEY;
 
 function getCostLimit() {
-  return 0.00;
+  return 1.00;
 }
 
 function isSameBillingSlot(t1, t2) {
-  return  t1.getUTCFullYear() == t2.getUTCFullYear() && t1.getUTCMonth() == t2.getUTCMonth();
+  return t1.getUTCFullYear() == t2.getUTCFullYear() && t1.getUTCMonth() == t2.getUTCMonth();
 }
 
 function computeBillingSlotProgress() {
@@ -26,22 +27,24 @@ async function getVoiceModels() {
   return [ "Standard", "Wavenet", "Neural2", "Polyglot", "Studio" ];
 }
 
-async function createVoice(model, text, language) {
+async function createVoice(model, text, language, format) {
   if (!token) return null;
   let voice = getVoice(model, language);
-  return HTTP({
+  // https://cloud.google.com/text-to-speech/docs/reference/rest
+  let response = await HTTP({
     "audioConfig": {
-      "audioEncoding": "LINEAR16",
+      "audioEncoding": "MP3",
       "effectsProfileId": [ "headphone-class-device" ],
       "pitch": 0,
       "speakingRate": 1
     },
-    "input": { "text": text },
-    "voice": { "languageCode": language, "name": `${language}-${model}-${voice}` }
+    "voice": { "languageCode": language, "name": `${language}-${model}-${voice}` },
+    "input": { "text": text }
   });
+  return media.convert(Buffer.from(response.audioContent, 'base64'), "mp3", format);
 }
 
-function getVoice(model, language) {
+function getVoice(model, language) { // TODO we could use https://cloud.google.com/text-to-speech/docs/reference/rest/v1/voices
   if (language != 'en-US') throw new Error(); // TODO
   switch (model) {
     case 'Standard': return 'A';
@@ -61,8 +64,8 @@ function getVoiceCost(model, text) {
 
 async function HTTP(body) {
   let result = await curl.request({
-    hostname: 'us-central1-texttospeech.googleapis.com',
-    path: '/v1beta1/text:synthesize',
+    hostname: 'texttospeech.googleapis.com',
+    path: '/v1/text:synthesize',
     headers: { 'Authorization': token }, //TODO bearer?
     method: 'POST',
     body: body,
@@ -70,12 +73,6 @@ async function HTTP(body) {
   });
   if (debug) console.log('DEBUG GOOGLEAI ' + JSON.stringify(body) + ' => ' + JSON.stringify(result));
   return result;
-}
-
-async function bill(cost, model, user) {
-  return synchronized.locked('googleai.billing', () => {
-    throw new Error('Implement me!');
-  });
 }
 
 module.exports = {

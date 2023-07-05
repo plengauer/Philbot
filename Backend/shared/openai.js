@@ -192,16 +192,16 @@ function getImageSizes(model) {
   return IMAGE_SIZES;
 }
 
-async function createImage(model, size, user, prompt, report) {
+async function createImage(model, size, user, prompt, format, report) {
   if (!token) return null;
   let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
   let pipe = estimated_size > 1024 * 1024;
   try {
     let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', size: size });
+    await report(model, getImageCost(model, size));
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
-    await report(model, getImageCost(model, size));
-    return image;
+    return media.convert(image, 'png', format);
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
   }
@@ -217,6 +217,7 @@ function preprocessImage(image, format, regions) {
 
 async function editImage(model, size, user, base_image, format, prompt, regions, report) {
   if (!token) return null;
+  let output_format = format;
   let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
   let pipe = estimated_size > 1024 * 1024;
   if (!['png'].includes(format)) {
@@ -224,7 +225,6 @@ async function editImage(model, size, user, base_image, format, prompt, regions,
     base_image = media.convert(base_image, format, preferred_format);
     format = preferred_format;
   }
-  // base_image = media.convert(base_image, format, format, ['-vf', 'crop=min(iw\\,ih):min(iw\\,ih):iw/2-min(iw\\,ih)/2:ih/2-min(iw\\,ih)/2']);
   base_image = preprocessImage(base_image, format, regions);
   base_image = media.convert(base_image, format, format, ['-vf', 'pad=width=max(iw\\,ih):height=max(iw\\,ih):x=(ow-iw)/2:y=(oh-ih)/2']);
   base_image = media.convert(base_image, format, format, ['-vf', 'scale=' + size.replace('x', ':')])
@@ -236,10 +236,10 @@ async function editImage(model, size, user, base_image, format, prompt, regions,
     body.append('size', size, { contentType: 'string' });
     body.append('image', base_image, { contentType: 'image/' + format, filename: 'image.' + format });
     let response = await HTTP('/v1/images/edits', body, body.getHeaders());
+    await report(model, getImageCost(model, size));
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
-    await report(model, getImageCost(model, size));
-    return image;
+    return media.convert(image, format, output_format);
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
   }

@@ -225,7 +225,7 @@ async function handleMessageForFunReplies(channel_id, event_id, user_id, message
       if (!extraction || extraction == dummy_token || extraction.startsWith(dummy_token) || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
       let image_model = await ai.getDynamicModel(await ai.getImageModels());
       if (!image_model) break;
-      let file = await ai.createImage(image_model, user_id, extraction);
+      let file = await ai.createImage(image_model, user_id, extraction, 'png');
       await discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
       break;
     case 3:
@@ -884,7 +884,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     message = message.split(' ').slice(1).join(' ');
     let model = await ai.getDynamicModel(await ai.getImageModels());
     if (!model) return reactNotOK(channel_id, event_id);
-    return handleLongResponse(channel_id, () => ai.createImage(model, user_id, message)
+    return handleLongResponse(channel_id, () => ai.createImage(model, user_id, message, 'png')
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
       .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
@@ -910,7 +910,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let model = await ai.getDynamicModel(await ai.getImageModels());
     return handleLongResponse(channel_id, () => ai.editImage(model, user_id, image, format, message, regions)
       .then(image => image ? image : Promise.reject())
-      .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
+      .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.' + format } }], [], [{ filename: 'image.' + format, description: message, content: file }]))
       .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
     );
 

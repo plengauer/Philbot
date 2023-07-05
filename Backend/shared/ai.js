@@ -75,8 +75,8 @@ async function getImageModels() {
     return models;
 }
 
-async function createImage(model, user, prompt) {
-    return openai.createImage(model.name, model.size, user, prompt, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
+async function createImage(model, user, prompt, format) {
+    return openai.createImage(model.name, model.size, user, prompt, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
 }
 
 async function editImage(model, user, base_image, format, prompt, regions) {
@@ -95,8 +95,8 @@ async function getVoiceModels() {
     return googleai.getVoiceModels().then(models => wrapModels('google', models));
 }
 
-async function createVoice(model, user, text, language) {
-    return googleai.createVoice(model.name, text, language, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
+async function createVoice(model, user, text, language, format) {
+    return googleai.createVoice(model.name, text, language, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
 }
 
 function wrapModels(vendor, models) {
