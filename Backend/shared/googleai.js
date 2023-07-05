@@ -27,7 +27,7 @@ async function getVoiceModels() {
   return [ "Standard", "Wavenet", "Neural2", "Polyglot", "Studio" ];
 }
 
-async function createVoice(model, text, language, format) {
+async function createVoice(model, text, language, format, report) {
   if (!token) return null;
   let voice = getVoice(model, language);
   // https://cloud.google.com/text-to-speech/docs/reference/rest
@@ -41,6 +41,7 @@ async function createVoice(model, text, language, format) {
     "voice": { "languageCode": language, "name": `${language}-${model}-${voice}` },
     "input": { "text": text }
   });
+  await report(model, getVoiceCost(model, text));
   return media.convert(Buffer.from(response.audioContent, 'base64'), "mp3", format);
 }
 
@@ -57,7 +58,47 @@ function getVoice(model, language) { // TODO we could use https://cloud.google.c
 }
 
 function getVoiceCost(model, text) {
+  return synchronized.locked('googleai.cost:model:' + model, () => getVoiceCost0(model, text));
+}
+
+function getVoiceCost0(model, text) {
+  let used = await getVoiceModelUsedCharacters(model);
+  let max_free = getVoiceModelFreeCharacters(model);
+  let non_free = used > max_free ? text.length : Math.max(0, used + text.length - max_free);
+  await memory.set(voiceusedkey(model), { value: used, timestamp: Date.now() }, 60 * 60 * 24 * 31);
+  return getVoiceModelCharacterCost(model) * non_free;
+}
+
+async function getVoiceModelUsedCharacters(model) {
+    let now = new Date();
+    let backup = { value: 0, timestamp: now };
+    let used = await memory.get(voiceusedkey(model), backup);
+    if (!isSameBillingSlot(new Date(used.timestamp), now)) used = backup;
+    return used.value;
+}
+
+function voiceusedkey(model) {
+    return 'googleai:used:model:' + model;
+}
+
+function getVoiceModelCharacterCost(model) {
   switch (model) {
+    case 'Standard': return 0.000004;
+    case  'Wavenet': return 0.000016;
+    case  'Neural2': return 0.000016;
+    case 'Polyglot': return 0.000016;
+    case   'Studio': return 0.000160;
+    default: throw new Error('Unknown model: ' + model);
+  }
+}
+
+function getVoiceModelFreeCharacters(model) {
+  switch (model) {
+    case 'Standard': return 4 * 1000 * 1000;
+    case  'Wavenet': return 1 * 1000 * 1000;
+    case  'Neural2': return 1 * 1000 * 1000;
+    case 'Polyglot': return 1 * 1000 * 1000;
+    case   'Studio': return      100 * 1000;
     default: throw new Error('Unknown model: ' + model);
   }
 }
