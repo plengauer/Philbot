@@ -784,9 +784,6 @@ class Context:
             self.user_id = user_id
             self.session_id = session_id
             self.callback_url = callback_url
-            #if not self.channel_id:
-            #    self.endpoint = None
-            #    self.token = None
         self.__save()
         self.__try_start()
 
