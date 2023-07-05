@@ -41,7 +41,7 @@ async function createVoice(model, text, language, format, report) {
     "voice": { "languageCode": language, "name": `${language}-${model}-${voice}` },
     "input": { "text": text }
   });
-  await report(model, getVoiceCost(model, text));
+  await report(model, await getVoiceCost(model, text));
   return media.convert(Buffer.from(response.audioContent, 'base64'), "mp3", format);
 }
 
@@ -57,11 +57,11 @@ function getVoice(model, language) { // TODO we could use https://cloud.google.c
   }
 }
 
-function getVoiceCost(model, text) {
-  return synchronized.locked('googleai.cost:model:' + model, () => getVoiceCost0(model, text));
+async function getVoiceCost(model, text) {
+  return synchronized.locked('googleai.cost:model:' + model, async () => getVoiceCost0(model, text));
 }
 
-function getVoiceCost0(model, text) {
+async function getVoiceCost0(model, text) {
   let used = await getVoiceModelUsedCharacters(model);
   let max_free = getVoiceModelFreeCharacters(model);
   let non_free = used > max_free ? text.length : Math.max(0, used + text.length - max_free);
