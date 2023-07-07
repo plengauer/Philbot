@@ -38,6 +38,14 @@ async function getLanguageModels() {
   return models;
 }
 
+function isLanguageCompletionModel(model) {
+  return !isLanguageChatModel(model);
+}
+
+function isLanguageChatModel(model) {
+  return model.startsWith('gpt-') && !model.endsWith('-instruct')
+}
+
 function compareLanguageModelByCost(cheap_model, expensive_model) {
   return computeLanguageCost(cheap_model, 1, 1) < computeLanguageCost(expensive_model, 1, 1);
 }
@@ -49,7 +57,7 @@ function compareLanguageModelByPower(bad_model, good_model) {
 async function createCompletion(model, user, prompt, report, temperature = undefined) {
   if (!token) return null;
   
-  if (!model.startsWith('text-')) {
+  if (!isLanguageCompletionModel(model)) {
     return createResponse(model, user, null, null, `Complete the following text, respond with the completion only:\n${prompt}`, report, temperature);
   }
   
@@ -75,7 +83,7 @@ async function createResponse0(model, user, history_token, system, message, repo
   conversation.push(input);
   
   let output = null;
-  if (!model.startsWith('gpt-')) {
+  if (!isLanguageChatModel(model)) {
     let completion = await createCompletion(model, user, `Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', report, temperature);
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
@@ -148,8 +156,10 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "text-davinci-003":
       return (tokens_prompt + tokens_completion) / 1000 * 0.02;
     case "gpt-3.5-turbo":
+    case "gpt-3.5-turbo-instruct":
       return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.002;
     case "gpt-3.5-turbo-16k":
+    case "gpt-3.5-turbo-instruct-16k":
       return tokens_prompt / 1000 * 0.003 + tokens_completion / 1000 * 0.004;
     case "gpt-4":
       return tokens_prompt / 1000 * 0.03 + tokens_completion / 1000 * 0.06;
@@ -162,7 +172,7 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
 
 async function createBoolean(model, user, question, report, temperature = undefined) {
   let response = null;
-  if (model.startsWith('text-')) {
+  if (isLanguageCompletionModel(model)) {
     response = await createCompletion(model, user, `Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, report, temperature);
   } else {
     response = await createResponse(model, user, null, null, `${question} Respond only with yes or no!`, report, temperature);
