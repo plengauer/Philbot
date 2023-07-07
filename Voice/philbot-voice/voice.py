@@ -143,7 +143,7 @@ def download_from_youtube(guild_id, url):
             ydl.download([url])
             dl_path = next(((os.path.join(STORAGE_DIRECTORY, file)) for file in os.listdir(STORAGE_DIRECTORY) if file.startswith(filename)), None)
             os.utime(dl_path)
-            subprocess.run(['ffmpeg', '-i', dl_path, '-f', codec, '-y', path]).check_returncode()
+            subprocess.run(['ffmpeg', '-i', dl_path, '-f', codec, '-y', path], kwargs={'stdout': subprocess.DEVNULL, 'stderr': subprocess.DEVNULL}).check_returncode()
             os.remove(dl_path)
             return path
     finally:
@@ -269,7 +269,7 @@ class Stream:
             self.file = None
             from_path = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'wav')
             to_path = generate_audio_file_path(self.guild_id, self.channel_id, self.user_id, self.nonce, 'mp3')
-            subprocess.run(['ffmpeg', '-i', from_path, '-y', to_path]).check_returncode()
+            subprocess.run(['ffmpeg', '-i', from_path, '-y', to_path], kwargs={'stdout': subprocess.DEVNULL, 'stderr': subprocess.DEVNULL}).check_returncode()
             os.remove(from_path)
         return do_flush
 
@@ -795,7 +795,7 @@ class Context:
 
     def on_content_update(self, path):
         def convert(file_from, file_to):
-            subprocess.run(['ffmpeg', '-i', file_from, '-ar', str(frame_rate), '-ac', str(channels), '-sample_fmt', 's' + str(sample_width * 8), '-y', file_to]).check_returncode()
+            subprocess.run(['ffmpeg', '-i', file_from, '-ar', str(frame_rate), '-ac', str(channels), '-sample_fmt', 's' + str(sample_width * 8), '-y', file_to], kwargs={'stdout': subprocess.DEVNULL, 'stderr': subprocess.DEVNULL}).check_returncode()
         if path.endswith('.wav'):
             file = wave.open(path, "rb")
             all_ok = file.getframerate() == frame_rate and file.getnchannels() == channels and file.getsampwidth() == sample_width
