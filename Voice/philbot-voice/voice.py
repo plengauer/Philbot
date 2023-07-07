@@ -766,7 +766,9 @@ class Context:
             self.port = None
             self.ssrc = None
             self.secret_key = None
+            self.mode = None
             self.ws = None
+            self.ssrc_to_client_user_id.clear()
         print('VOICE GATEWAY ' + self.guild_id + ' connection shut down')
 
     def on_server_update(self, endpoint, token):
@@ -784,6 +786,10 @@ class Context:
             self.user_id = user_id
             self.session_id = session_id
             self.callback_url = callback_url
+            if not self.channel_id:
+                self.session_id = None
+                self.endpoint = None
+                self.token = None
         self.__save()
         self.__try_start()
 
