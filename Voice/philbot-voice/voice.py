@@ -125,8 +125,26 @@ def download_from_youtube(url, filename_prefix):
         ydl.download([url])
         return next(((os.path.join(STORAGE_DIRECTORY, file)) for file in os.listdir(STORAGE_DIRECTORY) if file.startswith(filename_prefix)), None)
 
+def download_url(url, filename_prefix):
+    response = requests.get(url)
+    if response.status_code == 200:
+        codec = None
+        content_type = response.headers['content-type']
+        if content_type.startswith('audio/') or content_type.startswith('video/'):
+            codec = content_type.split('/', 1)[1]
+        else:
+            codec = url.rsplit('.', 1)[1]
+            if len(codec) > 5:
+                raise RuntimeError
+        path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + str(hash(url)) + '.' + codec
+        with open(path, 'wb') as file:
+            file.write(response.content)
+        return path
+    else:
+        raise RuntimeError
+
 def resolve_url(guild_id, url):
-    filename_prefix = 'audio.out.' + guild_id + '.'
+    filename_prefix = 'audio.out.' + guild_id
     path = None
 
     event = None
@@ -147,7 +165,7 @@ def resolve_url(guild_id, url):
                 filename_prefix = filename_prefix[:filename_prefix.index('&')]
             path = download_from_youtube(url, filename_prefix)
         elif url.startswith('http://') or url.startswith('https://'):
-            raise RuntimeError
+            path = download_url(url, filename_prefix)
         else:
             raise RuntimeError
         os.utime(path)
@@ -899,6 +917,8 @@ def voice_content_update(guild_id):
             return Response('Video not found', status = 404)
         else:
             return Response('Video not found', status = 404)
+    except e:
+        return Response('Internal Error', status = 500)
     return 'Success'
 
 @app.route('/guilds/<guild_id>/voice/lookahead', methods=['POST'])

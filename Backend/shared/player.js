@@ -43,6 +43,8 @@ async function resolve_search_string(search_string) {
       youtube_links.push('https://www.youtube.com/watch?v=' + items[index].snippet.resourceId.videoId);
     }
     return youtube_links;
+  } else if (search_string.startsWith(search_string.startsWith('http://')) || search_string.startsWith('https://')) {
+    return [ search_string ];
   } else {
     // alternative orderings are "rating" (but thats a relative number where unimportant videos show up first) or "viewCount"
     let result = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'relevance', maxResults: 1, q: search_string })
@@ -96,7 +98,11 @@ async function HTTP_VOICE(operation, payload, method = 'POST') {
 }
 
 async function resolveTitle(link) {
-  return HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => result.items[0].snippet.title);
+  if (link.startsWith('https://www.youtube.com')) {
+    return HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => result.items[0].snippet.title);
+  } else {
+    return link.split('/').slice(-1);
+  }
 }
 
 async function stop(guild_id) {
