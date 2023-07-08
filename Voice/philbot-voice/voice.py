@@ -939,6 +939,8 @@ def voice_content_lookahead(guild_id):
             return Response('Video not found', status = 404)
         else:
             return Response('Video not found', status = 404)
+    except e:
+        return Response('Internal Error', status = 500)
     return 'Success'
 
 @app.route('/guilds/<guild_id>/voice/pause', methods=['POST'])
