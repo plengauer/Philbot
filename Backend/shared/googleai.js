@@ -33,20 +33,31 @@ async function createVoice(model, text, language, format, report) {
   if (!token) return null;
   let voice = getVoice(model, language);
   // https://cloud.google.com/text-to-speech/docs/reference/rest
-  let response = await HTTP({
-    "audioConfig": {
-      "audioEncoding": "MP3",
-      "effectsProfileId": [ "headphone-class-device" ],
-      "pitch": 0,
-      "speakingRate": 1
-    },
-    "voice": { "languageCode": language, "name": `${language}-${model}-${voice}` },
-    "input": { "text": text }
-  });
-  await report(model, await getVoiceCost(model, text));
-  let audio = new stream.PassThrough();
-  audio.end(Buffer.from(response.audioContent, 'base64'));
-  return media.convert(audio, "mp3", format);
+  try {
+    let response = await HTTP({
+      "audioConfig": {
+        "audioEncoding": "MP3",
+        "effectsProfileId": [ "headphone-class-device" ],
+        "pitch": 0,
+        "speakingRate": 1
+      },
+      "voice": { "languageCode": language, "name": `${language}-${model}-${voice}` },
+      "input": { "text": text }
+    });
+    await report(model, await getVoiceCost(model, text));
+    let audio = new stream.PassThrough();
+    audio.end(Buffer.from(response.audioContent, 'base64'));
+    return media.convert(audio, "mp3", format);
+  } catch (error) {
+    if (error.message.startsWith('HTTP error 400') && error.stack.includes('Input size limit exceeded')) {
+      let models = await getVoiceModels();
+      let index = models.indexOf(model);
+      if (index <= 0) throw error;
+      return createVoice(models[index - 1], text, language, format, report);
+    } else {
+      throw error;
+    }
+  }
 }
 
 function getVoice(model, language) { // TODO we could use https://cloud.google.com/text-to-speech/docs/reference/rest/v1/voices
