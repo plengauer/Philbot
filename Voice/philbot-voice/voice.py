@@ -111,55 +111,57 @@ def generate_audio_file_path(guild_id, channel_id, user_id, nonce, extension = '
 download_lock = threading.Lock()
 downloads = {}
 
-def download_from_youtube(guild_id, url):
-    codec = 'mp3'
-    filename = 'audio.out.' + guild_id + '.' + url[url.index('v=') + 2:]
-    if '&' in filename:
-        filename = filename[:filename.index('&')]
-    path = STORAGE_DIRECTORY + '/' + filename + '.' + codec
-    if os.path.exists(path):
-        return path
+def download_from_youtube(url, filename_prefix):
+    options = {
+        'quiet': True,
+        'no_warnings': True,
+        'geo_bypass': True,
+        'format': 'bestaudio',
+        'outtmpl': STORAGE_DIRECTORY + '/' + filename_prefix + '.%(ext)s',
+        'nooverwrites': False,
+        'updatetime': False
+    }
+    with yt_dlp.YoutubeDL(options) as ydl:
+        ydl.download([url])
+        return next(((os.path.join(STORAGE_DIRECTORY, file)) for file in os.listdir(STORAGE_DIRECTORY) if file.startswith(filename_prefix)), None)
+
+def resolve_url(guild_id, url):
+    filename_prefix = 'audio.out.' + guild_id + '.'
+    path = None
+
     event = None
     download_in_progress = False
     with download_lock:
-        download_in_progress = downloads.get(filename) and not downloads[filename].is_set()
-        if not downloads.get(filename):
-            downloads[filename] = threading.Event()
-        event = downloads[filename]
+        download_in_progress = downloads.get(url) and not downloads[url].is_set()
+        if not downloads.get(url):
+            downloads[url] = threading.Event()
+        event = downloads[url]
     if download_in_progress:
         event.wait()
-        return download_from_youtube(guild_id, url)
+        return resolve_url(guild_id, url)
+    
     try:
-        options = {
-            'quiet': True,
-            'no_warnings': True,
-            'geo_bypass': True,
-            'format': 'bestaudio',
-            'outtmpl': STORAGE_DIRECTORY + '/' + filename + '.%(ext)s',
-            'nooverwrites': False,
-            'updatetime': False
-        }
-        with yt_dlp.YoutubeDL(options) as ydl:
-            ydl.download([url])
-            dl_path = next(((os.path.join(STORAGE_DIRECTORY, file)) for file in os.listdir(STORAGE_DIRECTORY) if file.startswith(filename)), None)
-            os.utime(dl_path)
-            subprocess.run(['ffmpeg', '-i', dl_path, '-f', codec, '-y', path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).check_returncode()
-            os.remove(dl_path)
-            return path
+        if url.startswith('https://www.youtube.com/watch?v='):
+            filename_prefix += url[url.index('v=') + 2:]
+            if '&' in filename_prefix:
+                filename_prefix = filename_prefix[:filename_prefix.index('&')]
+            path = download_from_youtube(url, filename_prefix)
+        elif url.startswith('http://') or url.startswith('https://'):
+            raise RuntimeError
+        else:
+            raise RuntimeError
+        os.utime(path)
     finally:
         with download_lock:
             downloads[event] = None
         event.set()
 
-def resolve_url(guild_id, url):
-    path = None
-    if url.startswith('https://www.youtube.com/watch?v='):
-        path = download_from_youtube(guild_id, url)
-    elif url.startswith('http://') or url.startswith('https://'):
-        raise RuntimeError
-    else:
-        raise RuntimeError
-    os.utime(path)
+    codec = 'mp3'
+    if not path.endswith('.' + codec): # to optimize for space, not functionally necessary
+        old_path = path
+        path = old_path.rsplit('.', 1)[0] + '.' + codec
+        subprocess.run(['ffmpeg', '-i', old_path, '-f', codec, '-y', path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).check_returncode()
+        os.remove(old_path)
     return path
 
 frame_duration = 20
