@@ -136,7 +136,7 @@ def download_url(url, filename_prefix):
             codec = url.rsplit('.', 1)[1]
             if len(codec) > 5:
                 raise RuntimeError
-        path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + str(hash(url)) + '.' + codec
+        path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + codec
         with open(path, 'wb') as file:
             file.write(response.content)
         return path
@@ -144,8 +144,12 @@ def download_url(url, filename_prefix):
         raise RuntimeError
 
 def resolve_url(guild_id, url):
-    filename_prefix = 'audio.out.' + guild_id
-    path = None
+    codec = 'mp3'
+    filename_prefix = 'audio.out.' + guild_id + '.' + str(hash(url))
+    path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + codec
+    if os.path.exists(path):
+        os.utime(path)
+        return path
 
     event = None
     download_in_progress = False
@@ -160,9 +164,6 @@ def resolve_url(guild_id, url):
     
     try:
         if url.startswith('https://www.youtube.com/watch?v='):
-            filename_prefix += url[url.index('v=') + 2:]
-            if '&' in filename_prefix:
-                filename_prefix = filename_prefix[:filename_prefix.index('&')]
             path = download_from_youtube(url, filename_prefix)
         elif url.startswith('http://') or url.startswith('https://'):
             path = download_url(url, filename_prefix)
@@ -174,7 +175,6 @@ def resolve_url(guild_id, url):
             downloads[event] = None
         event.set()
 
-    codec = 'mp3'
     if not path.endswith('.' + codec): # to optimize for space, not functionally necessary
         old_path = path
         path = old_path.rsplit('.', 1)[0] + '.' + codec
