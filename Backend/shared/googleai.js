@@ -6,7 +6,7 @@ const synchronized = require('./synchronized.js');
 const media = require('./media.js');
 
 const token = process.env.GCP_T2S_TOKEN;
-const debug = true;
+const debug = false;
 
 function getCostLimit() {
   return 1.00;
