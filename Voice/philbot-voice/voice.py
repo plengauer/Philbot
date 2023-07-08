@@ -167,6 +167,8 @@ def resolve_url(guild_id, url):
             path = download_from_youtube(url, filename_prefix)
         elif url.startswith('http://') or url.startswith('https://'):
             path = download_url(url, filename_prefix)
+        elif url.startswith('file://'):
+            os.rename(url[len('file://'):], STORAGE_DIRECTORY + '/' + filename_prefix + url.rsplit('.', 1)[1])
         else:
             raise RuntimeError
         os.utime(path)
@@ -902,24 +904,36 @@ def voice_server_update():
 def voice_content_update(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    body = request.json
-    context = get_context(guild_id)
-    try:
-        context.on_content_update(resolve_url(guild_id, body['url']))
-    except yt_dlp.utils.DownloadError as e:
-        if 'Private video' in str(e):
-            return Response('Private video', status = 403)
-        elif 'blocked' in str(e) or 'copyright' in str(e) or "in your country" in str(e):
-            return Response('Blocked video', status = 451)
-        elif 'inappropriate' in str(e) or 'confirm your age' in str(e):
-            return Response('Age-restricted video', status = 451)
-        elif 'account' in str(e) and 'terminated' in str(e):
-            return Response('Video not found', status = 404)
-        else:
-            return Response('Video not found', status = 404)
-    except e:
-        return Response('Internal Error', status = 500)
-    return 'Success'
+    if request.headers['content-type'] == 'multipart/form-data':
+        file = request.files['file']
+        temporary = STORAGE_DIRECTORY + '/temporary.' + random.randint(0, 1000000) + file.content_type.split('/')[1]
+        file.save(temporary)
+        context = get_context(guild_id)
+        context.on_content_update(resolve_url(guild_id, 'file://' + temporary))
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    elif request.headers['content-type'] == 'application/json':
+        body = request.json
+        context = get_context(guild_id)
+        try:
+            context.on_content_update(resolve_url(guild_id, body['url']))
+        except yt_dlp.utils.DownloadError as e:
+            if 'Private video' in str(e):
+                return Response('Private video', status = 403)
+            elif 'blocked' in str(e) or 'copyright' in str(e) or "in your country" in str(e):
+                return Response('Blocked video', status = 451)
+            elif 'inappropriate' in str(e) or 'confirm your age' in str(e):
+                return Response('Age-restricted video', status = 451)
+            elif 'account' in str(e) and 'terminated' in str(e):
+                return Response('Video not found', status = 404)
+            else:
+                return Response('Video not found', status = 404)
+        except e:
+            return Response('Internal Error', status = 500)
+        return 'Success'
+    else:
+        return Response('Invalid Request', status=400)
+    
 
 @app.route('/guilds/<guild_id>/voice/lookahead', methods=['POST'])
 def voice_content_lookahead(guild_id):
