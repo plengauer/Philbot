@@ -1,14 +1,13 @@
 import propertiesReader from 'properties-reader';
 import opentelemetry_api from '@opentelemetry/api';
 import opentelemetry_sdk from "@opentelemetry/sdk-node";
+import opentelemetry_metrics from '@opentelemetry/sdk-metrics';
 import opentelemetry_tracing from "@opentelemetry/sdk-trace-base";
 import opentelemetry_resources from "@opentelemetry/resources";
 import opentelemetry_semantic_conventions from "@opentelemetry/semantic-conventions";
-
-import { PeriodicExportingMetricReader, AggregationTemporality} from '@opentelemetry/sdk-metrics';
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
-import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import opentelemetry_metrics_otlp from '@opentelemetry/exporter-metrics-otlp-proto';
+import opentelemetry_traces_otlp from '@opentelemetry/exporter-trace-otlp-proto';
+import opentelemetry_auto_instrumentations from "@opentelemetry/auto-instrumentations-node";
 
 class ShutdownAwareSpanProcessor {
   processor;
@@ -61,21 +60,21 @@ function create() {
     sampler: (name && version) ? new opentelemetry_tracing.AlwaysOnSampler() : new opentelemetry_tracing.AlwaysOffSampler(),
     spanProcessor: new ShutdownAwareSpanProcessor(
       new opentelemetry_tracing.BatchSpanProcessor(
-        new OTLPTraceExporter({
+        new opentelemetry_traces_otlp.OTLPTraceExporter({
           url: process.env.OPENTELEMETRY_TRACES_API_ENDPOINT,
           headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_TRACES_API_TOKEN },
         }),
       )
     ),
-    metricReader: new PeriodicExportingMetricReader({
-      exporter: new OTLPMetricExporter({
+    metricReader: new opentelemetry_metrics.PeriodicExportingMetricReader({
+      exporter: new opentelemetry_metrics_otlp.OTLPMetricExporter({
         url: process.env.OPENTELEMETRY_METRICS_API_ENDPOINT,
         headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_METRICS_API_TOKEN },
-        temporalityPreference: AggregationTemporality.DELTA
+        temporalityPreference: opentelemetry_metrics.AggregationTemporality.DELTA
       }),
       exportIntervalMillis: 5000,
     }),
-    instrumentations: [getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }})],
+    instrumentations: [opentelemetry_auto_instrumentations.getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }})],
     resource: new opentelemetry_resources.Resource({
         [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAME]: name,
         [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_VERSION]: version,
