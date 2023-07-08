@@ -906,7 +906,7 @@ def voice_content_update(guild_id):
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     if request.headers['content-type'] == 'multipart/form-data':
         file = request.files['file']
-        temporary = STORAGE_DIRECTORY + '/temporary.' + random.randint(0, 1000000) + file.content_type.split('/')[1]
+        temporary = STORAGE_DIRECTORY + '/temporary.' + random.randint(0, 1000000) + '.' + file.content_type.split('/')[1]
         file.save(temporary)
         context = get_context(guild_id)
         context.on_content_update(resolve_url(guild_id, 'file://' + temporary))
