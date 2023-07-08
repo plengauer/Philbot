@@ -1,5 +1,6 @@
 const process = require('process');
 const url = require('url');
+const FormData = require('form-data');
 const memory = require('./memory.js');
 const discord = require('./discord.js');
 const curl = require('./curl.js');
@@ -16,12 +17,22 @@ async function on_voice_server_update(guild_id, endpoint, token) {
     .then(() => updateInteractions(guild_id));
 }
 
-async function play(guild_id, channel_id, search_string) {
+async function play(guild_id, channel_id, input) {
+  channel_id = channel_id ?? await memory.get(`player:voice_channel:guild:${guild_id}`, undefined);
+  if (!channel_id) throw new Error('I don\'t know which channel to use!');
+  if (typeof input == 'string') {
+    return resolve_and_play(guild_id, channel_id, input);
+  } else {
+    return upload_and_play(guild_id, channel_id, input);
+  }
+}
+
+async function resolve_and_play(guild_id, channel_id, search_string) {
   let links = await resolve_search_string(search_string);
   if (links.length > 1) {
     await prependAllToQueue(guild_id, links.slice(1));
   }
-  return play0(guild_id, channel_id, links[0]);
+  return resolve_and_play0(guild_id, channel_id, links[0]);
 }
 
 async function resolve_search_string(search_string) {
@@ -62,13 +73,19 @@ async function HTTP_YOUTUBE(endpoint, parameters) {
     });
 }
 
-async function play0(guild_id, channel_id, youtube_link) {
-  channel_id = channel_id ?? await memory.get(`player:voice_channel:guild:${guild_id}`, undefined);
-  if (!channel_id) throw new Error('I don\'t know which channel to use!');
+async function resolve_and_play0(guild_id, channel_id, link) {
   // cant do this in parallel because the error from resolving the link should be the prominent error in case
-  return VOICE_CONTENT(guild_id, youtube_link)
+  return VOICE_CONTENT(guild_id, link)
     .then(() => isConnected(guild_id, channel_id).then(connected => connected ? Promise.resolve() : discord.connect(guild_id, channel_id)))
-    .then(() => resolveTitle(youtube_link).then(title => memory.set(`player:title:guild:${guild_id}`, title, 60 * 60 * 24)).then(() => updateInteractions(guild_id)));
+    .then(() => resolveTitle(link).then(title => memory.set(`player:title:guild:${guild_id}`, title, 60 * 60 * 24)).then(() => updateInteractions(guild_id)));
+}
+
+async function upload_and_play(guild_id, channel_id, audio) {
+  let body = new FormData();
+  body.append('file', audio.content, { filename: `audio.${audio.codec}`, contentType: `audio/${audio.codec}` });
+  return HTTP_VOICE(`/guilds/${guild_id}/voice/content`, body, 'POST', body.getHeaders())
+    .then(() => isConnected(guild_id, channel_id).then(connected => connected ? Promise.resolve() : discord.connect(guild_id, channel_id)))
+    .then(() => memory.set(`player:title:guild:${guild_id}`, `_Speaking_`, 60 * 60 * 24));
 }
 
 async function isConnected(guild_id, channel_id) {
@@ -93,8 +110,9 @@ async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = und
     );
 }
 
-async function HTTP_VOICE(operation, payload, method = 'POST') {
-  return curl.request({ secure: false, method: method, hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: operation, headers: { 'x-authorization': process.env.DISCORD_API_TOKEN }, body: payload, timeout: 1000 * 60 * 60 * 24 });
+async function HTTP_VOICE(operation, payload, method = 'POST', headers = {}) {
+  headers['x-authorization'] = process.env.DISCORD_API_TOKEN;
+  return curl.request({ secure: false, method: method, hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: operation, headers: headers, body: payload, timeout: 1000 * 60 * 60 * 24 });
 }
 
 async function resolveTitle(link) {

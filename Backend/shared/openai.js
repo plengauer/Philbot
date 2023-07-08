@@ -1,4 +1,5 @@
 const process = require('process');
+const stream = require('stream');
 const url = require('url');
 const memory = require('./memory.js');
 const synchronized = require('./synchronized.js');
@@ -210,11 +211,17 @@ async function createImage(model, size, user, prompt, format, report) {
     let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', size: size });
     await report(model, getImageCost(model, size));
     let result = response.data[0];
-    let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
+    let image = pipe ? await pipeImage(url.parse(result.url)) : buffer2stream(Buffer.from(result.b64_json, 'base64'));
     return media.convert(image, 'png', format);
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);
   }
+}
+
+function buffer2stream(input) {
+  let output = new stream.PassThrough();
+  output.end(input);
+  return output;
 }
 
 function preprocessImage(image, format, regions) {
@@ -248,7 +255,7 @@ async function editImage(model, size, user, base_image, format, prompt, regions,
     let response = await HTTP('/v1/images/edits', body, body.getHeaders());
     await report(model, getImageCost(model, size));
     let result = response.data[0];
-    let image = pipe ? await pipeImage(url.parse(result.url)) : Buffer.from(result.b64_json, 'base64');
+    let image = pipe ? await pipeImage(url.parse(result.url)) : buffer2stream(Buffer.from(result.b64_json, 'base64'));
     return media.convert(image, format, output_format);
   } catch (error) {
     throw new Error(JSON.parse(error.message.split(':').slice(1).join(':')).error.message);

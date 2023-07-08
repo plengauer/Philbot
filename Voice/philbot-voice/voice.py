@@ -168,7 +168,8 @@ def resolve_url(guild_id, url):
         elif url.startswith('http://') or url.startswith('https://'):
             path = download_url(url, filename_prefix)
         elif url.startswith('file://'):
-            os.rename(url[len('file://'):], STORAGE_DIRECTORY + '/' + filename_prefix + url.rsplit('.', 1)[1])
+            path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + url.rsplit('.', 1)[1]
+            os.rename(url[len('file://'):], path)
         else:
             raise RuntimeError
         os.utime(path)
@@ -904,14 +905,15 @@ def voice_server_update():
 def voice_content_update(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    if request.headers['content-type'] == 'multipart/form-data':
+    if request.headers['content-type'].startswith('multipart/form-data'):
         file = request.files['file']
-        temporary = STORAGE_DIRECTORY + '/temporary.' + random.randint(0, 1000000) + '.' + file.content_type.split('/')[1]
+        temporary = STORAGE_DIRECTORY + '/temporary.' + str(random.randint(0, 1000000)) + '.' + file.content_type.split('/')[1]
         file.save(temporary)
         context = get_context(guild_id)
         context.on_content_update(resolve_url(guild_id, 'file://' + temporary))
         if os.path.exists(temporary):
             os.unlink(temporary)
+        return 'Success'
     elif request.headers['content-type'] == 'application/json':
         body = request.json
         context = get_context(guild_id)

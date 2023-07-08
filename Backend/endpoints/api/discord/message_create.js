@@ -90,7 +90,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
     features.isActive(guild_id, 'raid protection').then(active => (guild_id && !mentioned && !is_audio && active) ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
     features.isActive(guild_id, 'role management').then(active => (guild_id && !mentioned && !is_audio && active) ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
     (guild_id && !mentioned && can_respond && !is_audio) ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
-    (mentioned && can_respond) ? handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me).catch(ex => discord.respond(channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
+    (mentioned && can_respond) ? handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me).catch(ex => respond(guild_id, channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
   ]);
 }
 
@@ -138,10 +138,10 @@ async function handleMessage(guild_id, channel_id, event_id, user_id, message) {
     handleMessageForSpecificActivityMentions(guild_id, channel_id, event_id, user_id, message),
     handleMessageForGenericActivityMentions(guild_id, channel_id, event_id, user_id, message),
     handleMessageForSOSMentions(guild_id, channel_id, event_id, user_id, message),
-    Math.random() < 0.1 && message.toLowerCase().includes('joke') ? curl.request({ hostname: 'icanhazdadjoke.com', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result)) : Promise.resolve(),
-    Math.random() < 0.5 && message.toLowerCase().includes('chuck norris') ? curl.request({ hostname: 'api.chucknorris.io', path: '/jokes/random', headers: {'accept': 'text/plain'} }).then(result => discord.respond(channel_id, event_id, result)) : Promise.resolve(),
-    Math.random() < 0.5 && message.toLowerCase().includes('ron swanson') ? curl.request({ hostname: 'ron-swanson-quotes.herokuapp.com', path: '/v2/quotes' }).then(result => discord.respond(channel_id, event_id, result[0])) : Promise.resolve(),
-    handleMessageForFunReplies(channel_id, event_id, user_id, message),
+    Math.random() < 0.1 && message.toLowerCase().includes('joke') ? curl.request({ hostname: 'icanhazdadjoke.com', headers: {'accept': 'text/plain'} }).then(result => respond(guild_id, channel_id, event_id, 'Did somebody say \'joke\'? I know a good one: ' + result)) : Promise.resolve(),
+    Math.random() < 0.5 && message.toLowerCase().includes('chuck norris') ? curl.request({ hostname: 'api.chucknorris.io', path: '/jokes/random', headers: {'accept': 'text/plain'} }).then(result => respond(guild_id, channel_id, event_id, result)) : Promise.resolve(),
+    Math.random() < 0.5 && message.toLowerCase().includes('ron swanson') ? curl.request({ hostname: 'ron-swanson-quotes.herokuapp.com', path: '/v2/quotes' }).then(result => respond(guild_id, channel_id, event_id, result[0])) : Promise.resolve(),
+    handleMessageForFunReplies(guild_id, channel_id, event_id, user_id, message),
   ]);
 }
 
@@ -157,7 +157,7 @@ async function handleMessageForSpecificActivityMentions(guild_id, channel_id, ev
   }
   let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
   if (user_ids.length == 0) return;
-  return discord.respond(channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
+  return respond(guild_id, channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
 }
 
 async function handleMessageForGenericActivityMentions(guild_id, channel_id, event_id, user_id, message) {
@@ -166,7 +166,7 @@ async function handleMessageForGenericActivityMentions(guild_id, channel_id, eve
   if (activities.length == 0) return;
   let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
   if (user_ids.length == 0) return;
-  return discord.respond(channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
+  return respond(guild_id, channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
 }
 
 async function handleMessageForSOSMentions(guild_id, channel_id, event_id, user_id, message) {
@@ -175,7 +175,7 @@ async function handleMessageForSOSMentions(guild_id, channel_id, event_id, user_
   if (activities.length == 0) return;
   let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
   if (user_ids.length == 0) return;
-  return discord.respond(channel_id, event_id, `**SOS** by ${discord.mention_user(user_id)} for ` + activities.join(',') + ` ` + user_ids.map(discord.mention_user).join(', '));
+  return respond(guild_id, channel_id, event_id, `**SOS** by ${discord.mention_user(user_id)} for ` + activities.join(',') + ` ` + user_ids.map(discord.mention_user).join(', '));
 }
 
 async function resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities) {
@@ -200,7 +200,7 @@ async function resolveMembersForSpecialActivityMentions(guild_id, user_id, messa
   return user_ids;
 }
 
-async function handleMessageForFunReplies(channel_id, event_id, user_id, message) {
+async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_id, message) {
   const PROBABILITY = 0.01;
   if (Math.random() >= PROBABILITY) return;
   let model = await ai.getDynamicModel(await ai.getLanguageModels());
@@ -210,13 +210,13 @@ async function handleMessageForFunReplies(channel_id, event_id, user_id, message
       if (5 < message.length && message.length < 150) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       if (!await ai.createBoolean(model, user_id, `Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`)) break;
-      await discord.respond(channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`);
+      await respond(guild_id, channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`);
       break;
     case 1:
       if (5 < message.length && message.length < 150) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       if (!await ai.createBoolean(model, user_id, `Is "${message}" a typical boomer statement?`)) break;
-      await discord.respond(channel_id, event_id, boomer.encode('ok boomer'));
+      await respond(guild_id, channel_id, event_id, boomer.encode('ok boomer'));
       break;
     case 2:
       if (25 < message.length && message.length < 250) break;
@@ -232,7 +232,7 @@ async function handleMessageForFunReplies(channel_id, event_id, user_id, message
       if (25 < message.length && message.length < 250) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       let comeback = await ai.createCompletion(model, user_id, `Write a clever comeback for a text.\nText: ${message}\nComeback:`);
-      await discord.respond(channel_id, event_id, comeback);
+      await respond(guild_id, channel_id, event_id, comeback);
       break;
     default:
       throw new Error();
@@ -252,7 +252,7 @@ async function handleMessageForTriggers(guild_id, channel_id, event_id, message)
     .map(entry => entry.value)
     .filter(value => typeof value == 'string' || Math.random() < value.probability)
     .map(value => typeof value == 'string' ? value : value.response)
-    .map(value => discord.respond(channel_id, event_id, value))
+    .map(value => respond(guild_id, channel_id, event_id, value))
   );
 }
 
@@ -264,10 +264,10 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return reactOK(channel_id, event_id);
     
   } else if (message.toLowerCase() == 'ping') {
-    return discord.respond(channel_id, event_id, 'pong');
+    return respond(guild_id, channel_id, event_id, 'pong');
     
   } else if (message.toLowerCase().startsWith('echo ')) {
-    return discord.respond(channel_id, event_id, message.split(' ').slice(1).join(' '));
+    return respond(guild_id, channel_id, event_id, message.split(' ').slice(1).join(' '));
   
   } else if (message.toLowerCase() == 'fail') {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
@@ -302,7 +302,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
         filter.filter(element => !element.startsWith('!')),
         filter.filter(element => element.startsWith('!')).map(element => element.substring(1))
       )
-      .then(result => discord.respond(channel_id, event_id, result));
+      .then(result => respond(guild_id, channel_id, event_id, result));
     
   } else if (message.toLowerCase().startsWith('clear memory')) {
     if (user_id != process.env.OWNER_DISCORD_USER_ID) {
@@ -338,12 +338,12 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     }
     let url = await identity.getPublicURL();
     return createHelpString(guild_id, discord.mention_user(me.id))
-      .then(help => discord.respond(channel_id, event_id, `${help}\nUse ${url}/help to share this information with others outside your discord server.`));
+      .then(help => respond(guild_id, channel_id, event_id, `${help}\nUse ${url}/help to share this information with others outside your discord server.`));
     
   } else if (message.toLowerCase() == 'about') {
     let url = await identity.getPublicURL();
     return createAboutString(discord.mention_user(me.id))
-      .then(about => discord.respond(channel_id, event_id, `${about}\nUse ${url}/about to share this information with others outside your discord server.`));
+      .then(about => respond(guild_id, channel_id, event_id, `${about}\nUse ${url}/about to share this information with others outside your discord server.`));
     
   } else if (message.toLowerCase() == 'good bot') {
     return discord.react(channel_id, event_id, '👍');
@@ -381,7 +381,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase().startsWith('play ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
+    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     message = message.split(' ').slice(1).join(' ');
     let shuffle = message.toLowerCase().startsWith('shuffled ');
     if (shuffle) {
@@ -392,11 +392,11 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (message.toLowerCase().startsWith('in ')) {
       let channel_name = message.split(' ')[1];
       voice_channel_id = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == channel_name)).then(channel => channel?.id); 
-      if (!voice_channel_id) return discord.respond(channel_id, event_id, 'I cannot find the channel ' + channel_name + '!');
+      if (!voice_channel_id) return respond(guild_id, channel_id, event_id, 'I cannot find the channel ' + channel_name + '!');
       search_string = message.split(' ').slice(2).join(' ');
     } else {
       let voice_state = await memory.get(`voice_channel:user:${user_id}`);
-      if (!voice_state || voice_state.guild_id != guild_id) return discord.respond(channel_id, event_id, 'I do not know which channel to use. Either join a voice channel first or tell me explicitly which channel to use!');
+      if (!voice_state || voice_state.guild_id != guild_id) return respond(guild_id, channel_id, event_id, 'I do not know which channel to use. Either join a voice channel first or tell me explicitly which channel to use!');
       voice_channel_id = voice_state.channel_id;
       search_string = message;
     }
@@ -406,7 +406,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => search_string.toLowerCase() == 'next' ? player.playNext(guild_id, voice_channel_id) : player.play(guild_id, voice_channel_id, search_string))
       .then(() => player.openInteraction(guild_id, channel_id))
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message))
+      .catch(error => respond(guild_id, channel_id, event_id, error.message))
       .finally(() => clearInterval(timer));
 
   } else if (message.toLowerCase() == "player") {
@@ -415,46 +415,46 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase() == "stop") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
+    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     return player.stop(guild_id).then(command => reactOK(channel_id, event_id).then(() => command));
     
   } else if (message.toLowerCase() == "pause") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
+    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     return player.pause(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message.toLowerCase() == "resume") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
+    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     return player.resume(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message.toLowerCase().startsWith('queue ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
+    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     return player.appendToQueue(guild_id, message.split(' ').slice(1).join(' ')).then(() => reactOK(channel_id, event_id))
       
   } else if (message.toLowerCase() == 'shuffle queue') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
+    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     return player.shuffleQueue(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message.toLowerCase() == 'clear queue') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
+    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     return player.clearQueue(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message.toLowerCase() == 'show queue') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(channel_id, event_id, 'player', 'play music');
+    if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     let queue = await player.getQueue(guild_id);
     if (queue.length == 0) {
-      return discord.respond(channel_id, event_id, 'The queue is empty');
+      return respond(guild_id, channel_id, event_id, 'The queue is empty');
     }
     let buffer = '';
     for (var index = 0; index < queue.length && index < 5; index++) {
@@ -463,18 +463,18 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       }
       buffer += '**' + queue[index] + '**';
     }
-    return discord.respond(channel_id, event_id, 'The queue consists of ' + buffer + ' and ' + Math.max(0, queue.length - 5) + ' more...');
+    return respond(guild_id, channel_id, event_id, 'The queue consists of ' + buffer + ' and ' + Math.max(0, queue.length - 5) + ' more...');
   
   } else if (message.toLowerCase().startsWith('add repeating event ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) {
-      return discord.respond(channel_id, event_id, 'I can only add a repeating event via a text channel within a guild or while you are in a voice channel. Otherwise I do not know which guild to schedule this event for.');
+      return respond(guild_id, channel_id, event_id, 'I can only add a repeating event via a text channel within a guild or while you are in a voice channel. Otherwise I do not know which guild to schedule this event for.');
     }
     if (!await features.isActive(guild_id, 'repeating events')) {
-      return respondNeedsFeatureActive(channel_id, event_id, 'repeating events', 'add a repeating event');
+      return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'repeating events', 'add a repeating event');
     }
     if (!await discord.guild_member_has_permission(guild_id, null, user_id, 'MANAGE_EVENTS')) {
-      return discord.respond(channel_id, event_id, 'You need the \'Manage Events\' permission to add repeating events.')
+      return respond(guild_id, channel_id, event_id, 'You need the \'Manage Events\' permission to add repeating events.')
     }
     
     let channels = await discord.guild_channels_list(guild_id);
@@ -522,7 +522,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(activities => activities.includes(name));
     
     if (!matchesActivity) {
-      await discord.respond(channel_id, event_id, 'If you choose an event name that is also the same as a game, I will be able to find and notify potentially interested players automatically. I will schedule the event anyway. You can remove and re-create it at any time.');
+      await respond(guild_id, channel_id, event_id, 'If you choose an event name that is also the same as a game, I will be able to find and notify potentially interested players automatically. I will schedule the event anyway. You can remove and re-create it at any time.');
     }
     
     return memory.set(`repeating_events:config:guild:${guild_id}`, event_configs).then(() => reactOK(channel_id, event_id));
@@ -530,13 +530,13 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase().startsWith('remove repeating event ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) {
-      return discord.respond(channel_id, event_id, 'I can only removea repeating event via a text channel within a guild or while you are in a voice channel. Otherwise I do not know which guild to remove this event for.');
+      return respond(guild_id, channel_id, event_id, 'I can only removea repeating event via a text channel within a guild or while you are in a voice channel. Otherwise I do not know which guild to remove this event for.');
     }
     if (!await features.isActive(guild_id, 'repeating events')) {
-      return respondNeedsFeatureActive(channel_id, event_id, 'repeating events', 'remove a repeating event');
+      return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'repeating events', 'remove a repeating event');
     }
     if (!await discord.guild_member_has_permission(guild_id, null, user_id, 'MANAGE_EVENTS')) {
-      return discord.respond(channel_id, event_id, 'You need the \'Manage Events\' permission to add or remove repeating events.')
+      return respond(guild_id, channel_id, event_id, 'You need the \'Manage Events\' permission to add or remove repeating events.')
     }
     message = message.substring('remove repeating event '.length);
     let event_configs = await memory.get(`repeating_events:config:guild:${guild_id}`, []);
@@ -566,31 +566,31 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   /*
   } else if (message.toLowerCase().startsWith('what') || message.toLowerCase().startsWith('how') || message.toLowerCase().startsWith('who') || message.toLowerCase().startsWith('when') || message.toLowerCase().startsWith('where') || message.trim().endsWith('?')) {
     let link = 'https://letmegooglethat.com/?q=' + message.trim().replace(/ /g, '+');
-    return discord.respond(channel_id, event_id, link);
+    return respond(guild_id, channel_id, event_id, link);
   */
     
   } else if (message.toLowerCase().startsWith("hint") || message.toLowerCase().startsWith("info") || message.toLowerCase().startsWith("information")) {
     let activity = message.split(' ').slice(1).join(' ');
     return games.getActivityHint(activity, null, null, user_id)
-      .then(hint => hint != null ? discord.respond(channel_id, event_id, hint.text) : reactNotOK(channel_id, event_id));
+      .then(hint => hint != null ? respond(guild_id, channel_id, event_id, hint.text) : reactNotOK(channel_id, event_id));
       
   } else if (message.toLowerCase().startsWith('remind ')) {
     let tokens = message.split(' ').filter(token => token.length > 0);
     let index = 1;
     let to_name = tokens[index++];
-    // if (to_name != 'me') return discord.respond(channel_id, event_id, 'I can only remind yourself for now.');
+    // if (to_name != 'me') return respond(guild_id, channel_id, event_id, 'I can only remind yourself for now.');
     let to_id;
     if (to_name == 'me') to_id = user_id;
     else {
       guild_id = guild_id ?? await resolveGuildID(user_id);
-      if (!guild_id) return discord.respond(channel_id, event_id, 'I do not know who you mean.');
+      if (!guild_id) return respond(guild_id, channel_id, event_id, 'I do not know who you mean.');
       if (to_name.startsWith('<@') && to_name.endsWith('>')) {
         to_id = discord.parse_mention(to_name);
       } else if (to_name.startsWith('<@&')) {
-        return discord.respond(channel_id, event_id, 'I can only remind individual users, not roles.')
+        return respond(guild_id, channel_id, event_id, 'I can only remind individual users, not roles.')
       } else {
         to_id = await discord.guild_members_list(guild_id).then(members => members.find(member => to_name == discord.member2name(member))?.user?.id);
-        if (!to_id) return discord.respond(channel_id, event_id, 'I do not know ' + to_name + '.');
+        if (!to_id) return respond(guild_id, channel_id, event_id, 'I do not know ' + to_name + '.');
       }
     }
     let next_string = tokens[index++];
@@ -601,7 +601,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       let count_string = tokens[index++];
       let unit_string = tokens[index++];
       let count = count_string == 'a' ? 1 : parseInt(count_string);
-      if (isNaN(count)) return discord.respond(channel_id, event_id, 'I do not know how much ' + count + ' is.');
+      if (isNaN(count)) return respond(guild_id, channel_id, event_id, 'I do not know how much ' + count + ' is.');
       if (!unit_string.endsWith('s')) unit_string += 's';
       switch (unit_string) {
         case 'minutes': next = Date.now() + 1000 * 60 * count; break;
@@ -610,15 +610,15 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
         case 'weeks': next = Date.now() + 1000 * 60 * 60 * 24 * 7 * count; break;
         case 'months': next = Date.now() + 1000 * 60 * 60 * 24 * 30 * count; break;
         case 'years': next = Date.now() + 1000 * 60 * 60 * 24 * 365 * count; break;
-        default: return discord.respond(channel_id, event_id, 'I do not know ' + unit_string + '.');
+        default: return respond(guild_id, channel_id, event_id, 'I do not know ' + unit_string + '.');
       }
     } else if (next_string == 'on') {
       let date_string = tokens[index++];
       let split = date_string.indexOf('.');
-      if (split < 0) return discord.respond(channel_id, event_id, 'I do not understand the date ' + date_string + '.');
+      if (split < 0) return respond(guild_id, channel_id, event_id, 'I do not understand the date ' + date_string + '.');
       let day = parseInt(date_string.substring(0, split));
       let month = parseInt(date_string.substring(split + 1)) - 1;
-      if (isNaN(day) || isNaN(month)) return discord.respond(channel_id, event_id, 'I do not understand the date ' + date_string + '.');
+      if (isNaN(day) || isNaN(month)) return respond(guild_id, channel_id, event_id, 'I do not understand the date ' + date_string + '.');
       let nextdate = new Date();
       if (month < nextdate.getUTCMonth() || (nextdate.getUTCMonth() == month && nextdate < day)) nextdate.setUTCFullYear(nextdate.getFullYear() + 1);
       nextdate.setUTCDate(1); // do this to avoid problems where the day is out of range for a specific month
@@ -646,35 +646,35 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     message = message.split(' ').slice(1).join(' ');
     if (message.includes(';')) {
       let tokens = message.split(';').map(token => token.trim());
-      return discord.respond(channel_id, event_id, tokens[Math.floor(Math.random() * tokens.length)]);
+      return respond(guild_id, channel_id, event_id, tokens[Math.floor(Math.random() * tokens.length)]);
     } else {
       let tokens = message.split(' ');
       if (tokens.length == 1 && !isNaN(tokens[0])) {
-        return discord.respond(channel_id, event_id, '' + Math.floor(Math.random() * parseInt(tokens[0])));
+        return respond(guild_id, channel_id, event_id, '' + Math.floor(Math.random() * parseInt(tokens[0])));
       } else if (tokens.length == 2 && !isNaN(tokens[0]) && !isNaN(tokens[1])) {
-        return discord.respond(channel_id, event_id, '' + Math.floor(parseInt(tokens[0]) + Math.random() * (parseInt(tokens[1]) - parseInt(tokens[0]))));
+        return respond(guild_id, channel_id, event_id, '' + Math.floor(parseInt(tokens[0]) + Math.random() * (parseInt(tokens[1]) - parseInt(tokens[0]))));
       } else {
-        return discord.respond(channel_id, event_id, tokens[Math.floor(Math.random() * tokens.length)]);
+        return respond(guild_id, channel_id, event_id, tokens[Math.floor(Math.random() * tokens.length)]);
       }
     }
   
   } else if (message.toLowerCase().startsWith('create alias ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'create an alias');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'create an alias');
     let name = message.split(' ')[2];
     let command = message.split(' ').slice(3).join(' ');
     return memory.set(`alias:` + memory.mask(name) + `:guild:${guild_id}`, command).then(() => reactOK(channel_id, event_id));
     
   } else if (message.toLowerCase().startsWith('remove alias ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'remove an alias');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'remove an alias');
     let name = message.split(' ')[2];
     return memory.unset(`alias:` + memory.mask(name) + `:guild:${guild_id}`).then(() => reactOK(channel_id, event_id));
 
   } else if (message.toLowerCase().startsWith('tournament create ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id);
-    if (!await features.isActive(guild_id, 'tournament')) return respondNeedsFeatureActive(channel_id, event_id, 'tournament', 'create a tournament');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id);
+    if (!await features.isActive(guild_id, 'tournament')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'tournament', 'create a tournament');
     message = message.split(' ').slice(2).join(' ');
     let tokens = message.split(',');
     let name = tokens[0].trim();
@@ -685,19 +685,19 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let length = parseInt(tokens[5].trim());
     return tournament.create(guild_id, name, date, game_masters, team_size, locations, length)
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message));
+      .catch(error => respond(guild_id, channel_id, event_id, error.message));
 
   } else if (message.toLowerCase().startsWith('tournament define team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     message = message.split(' ').slice(3).join(' ');
     let split = message.indexOf(':');
-    if (split < 0) return discord.respond(channel_id, event_id, 'Team name and list of members must be split by \':\'.');
+    if (split < 0) return respond(guild_id, channel_id, event_id, 'Team name and list of members must be split by \':\'.');
     let name = message.substring(0, split);
     let players = message.substring(split + 1, message.length).split(' ').filter(token => token.length > 0).map(mention => discord.parse_mention(mention));
     if (name.length == 0 || players.some(player => !player)) return reactNotOK(channel_id, event_id);
     return tournament.define_team(guild_id, user_id, name, players)
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message));
+      .catch(error => respond(guild_id, channel_id, event_id, error.message));
     
   } else if (message.toLowerCase().startsWith('tournament dissolve team ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -705,28 +705,28 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let name = message.trim();
     return tournament.dissolve_team(guild_id, user_id, name)
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message));
+      .catch(error => respond(guild_id, channel_id, event_id, error.message));
         
   } else if (message.toLowerCase().startsWith('tournament replace ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     message = message.split(' ').slice(2).join(' ');
     let players = message.split(' ').filter(token => token.length > 0).map(mention => discord.parse_mention(mention));
-    if (players.length != 2) return discord.respond(channel_id, event_id, 'You must specify exactly two players.');
+    if (players.length != 2) return respond(guild_id, channel_id, event_id, 'You must specify exactly two players.');
     return tournament.replace_player(guild_id, user_id, players[0], players[1])
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message));
+      .catch(error => respond(guild_id, channel_id, event_id, error.message));
     
   } else if (message.toLowerCase() == 'tournament prepare') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     return tournament.prepare(guild_id, user_id)
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message));
+      .catch(error => respond(guild_id, channel_id, event_id, error.message));
     
   } else if (message.toLowerCase() == 'tournament start') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     return tournament.start(guild_id, user_id)
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message));
+      .catch(error => respond(guild_id, channel_id, event_id, error.message));
 
   } else if (message.toLowerCase().startsWith('configure ')) {
     message = message.split(' ').slice(1).join(' ');
@@ -748,7 +748,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase().startsWith('add trigger ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'add a trigger');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'add a trigger');
     message = message.substring('add trigger '.length);
     let probability = 1;
     if (message.includes('%') && !isNaN(message.substring(0, message.indexOf('%')))) {
@@ -767,7 +767,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase().startsWith('remove trigger ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'remove a trigger');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'remove a trigger');
     message = message.substring('remove trigger '.length);
     trigger = message.trim().toLowerCase();
     return memory.unset(`trigger:guild:${guild_id}:trigger:` + memory.mask(trigger))
@@ -777,24 +777,24 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     message = message.substring('define '.length).trim();
     if (message.length == 0) return reactNotOK(channel_id, event_id);
     return urban_dictionary.lookup(message)
-      .then(result => discord.respond(channel_id, event_id, result ? `${result.word}: ${result.definition} (${result.permalink})` : `No entry found for ${message}.`));
+      .then(result => respond(guild_id, channel_id, event_id, result ? `${result.word}: ${result.definition} (${result.permalink})` : `No entry found for ${message}.`));
   
   } else if (message.toLowerCase().startsWith('activate ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'activate a feature');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'activate a feature');
     let feature = message.split(' ').slice(1).join(' ');
     if (!features.list().includes(feature)) return reactNotOK(channel_id, event_id);
     let needed_permissions = await Promise.all(permissions.required([ feature ]).map(permission => discord.guild_member_has_permission(guild_id, null, me.id, permission).then(has => has ? null : permission))).then(names => names.filter(name => !!name));
     if (needed_permissions.length > 0) {
-      return discord.respond(channel_id, event_id, `Before I can activate ${feature}, pls grant me the following permissions (via Server Settings -> Roles -> ${me.username} -> Permissions): ` + needed_permissions.map(name => `**${name}**`).join(', ') + '.');
+      return respond(guild_id, channel_id, event_id, `Before I can activate ${feature}, pls grant me the following permissions (via Server Settings -> Roles -> ${me.username} -> Permissions): ` + needed_permissions.map(name => `**${name}**`).join(', ') + '.');
     }
     return features.setActive(guild_id, feature, true).then(() => reactOK(channel_id, event_id));
     
   } else if (message.toLowerCase().startsWith('deactivate ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'deactivate a feature');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'deactivate a feature');
     let feature = message.split(' ').slice(1).join(' ');
     if (!features.list().includes(feature)) return reactNotOK(channel_id, event_id);
     return features.setActive(guild_id, feature, false).then(() => reactOK(channel_id, event_id));
@@ -802,14 +802,14 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase() == 'raid lockdown') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'lock down the server');
-    if (!await features.isActive(guild_id, 'raid protection')) return respondNeedsFeatureActive(channel_id, event_id, 'raid protection', 'lock down the server');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'lock down the server');
+    if (!await features.isActive(guild_id, 'raid protection')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'raid protection', 'lock down the server');
     return raid_protection.lockdown(guild_id).then(() => reactOK(channel_id, event_id));
     
   } else if (message.toLowerCase() == 'raid all clear') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'lift lockdown the server');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'lift lockdown the server');
     return raid_protection.all_clear(guild_id).then(() => reactOK(channel_id, event_id));
 
   } else if (message.toLowerCase().startsWith('subscribe to ')) {
@@ -819,10 +819,10 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!link) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'add subscription');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'add subscription');
     return subscriptions.add(guild_id, channel_id, link, filter)
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message));
+      .catch(error => respond(guild_id, channel_id, event_id, error.message));
 
   } else if (message.toLowerCase().startsWith('unsubscribe from ')) {
     let tokens = message.split(' ').slice(2).filter(token => token.length > 0);
@@ -831,39 +831,39 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!link) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'remove subscription');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'remove subscription');
     return subscriptions.remove(guild_id, channel_id, link, filter)
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message));
+      .catch(error => respond(guild_id, channel_id, event_id, error.message));
 
   } else if (message.toLowerCase() == 'automatic roles list' || message.toLowerCase() == 'automatic roles list rules') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set roles');
-    if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
-    return role_management.to_string(guild_id).then(string => discord.respond(channel_id, event_id, string));
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'auto-set roles');
+    if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'role management', 'auto-manage roles');
+    return role_management.to_string(guild_id).then(string => respond(guild_id, channel_id, event_id, string));
 
   } else if (message.toLowerCase().startsWith('automatic roles create rule ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set roles');
-    if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'auto-set roles');
+    if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'role management', 'auto-manage roles');
     message = message.split(' ').slice(4).join(' ');
     return role_management.add_new_rule(guild_id, message)
       .then(() => reactOK(channel_id, event_id))
-      .catch(error => discord.respond(channel_id, event_id, error.message));
+      .catch(error => respond(guild_id, channel_id, event_id, error.message));
     
   } else if (message.toLowerCase() == 'automatic roles update') {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'auto-set roles');
-    if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(channel_id, event_id, 'role management', 'auto-manage roles');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'auto-set roles');
+    if (!await features.isActive(guild_id, 'role management')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'role management', 'auto-manage roles');
     return role_management.update_all(guild_id).then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase().startsWith('translate automatically to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'enable auto translation');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'enable auto translation');
     let target_language = message.split(' ').slice(3).join(' ').trim().toLowerCase();
     return translator.configure_translate(guild_id, channel_id, target_language == 'nothing' ? null : target_language)
       .then(() => reactOK(channel_id, event_id));
@@ -877,7 +877,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return handleLongResponse(channel_id, () => ai.getLanguageModels()
       .then(models => ai.getDynamicModel(models))
       .then(model => model ? translator.translate(model, user_id, language, text) : null)
-      .then(translation => translation ? discord.respond(channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
+      .then(translation => translation ? respond(guild_id, channel_id, event_id, translation) : reactNotOK(channel_id, event_id))
     );
   
   } else if (message.toLowerCase().startsWith('draw ')) {
@@ -887,12 +887,12 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return handleLongResponse(channel_id, () => ai.createImage(model, user_id, message, 'png')
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]))
-      .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
+      .catch(error => error ? respond(guild_id, channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
     );
   
   } else if (message.toLowerCase().startsWith('edit ')) {
     message = message.split(' ').slice(1).join(' ');
-    if (!referenced_message_id) return discord.respond(channel_id, event_id, 'Please reply to the original image!');
+    if (!referenced_message_id) return respond(guild_id, channel_id, event_id, 'Please reply to the original image!');
     let referenced_message = await discord.message_retrieve(channel_id, referenced_message_id);
     let attachment = referenced_message.attachments && referenced_message.attachments.length == 1 && referenced_message.attachments[0].content_type.startsWith('image/') ? referenced_message.attachments[0] : null;
     if (!attachment) {
@@ -901,7 +901,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
         attachment = { url: embed.url, content_type: 'image/' + embed.url.split('.').slice(-1) };
       }
     }
-    if (!attachment) return discord.respond(channel_id, event_id, 'Referenced message does not contain exactly one image!');
+    if (!attachment) return respond(guild_id, channel_id, event_id, 'Referenced message does not contain exactly one image!');
     let tokens = message.split(' ').filter(token => token.length > 0);
     let regions = [{ x: parseFloat(tokens[0]), y: parseFloat(tokens[1]), w: parseFloat(tokens[2]), h: parseFloat(tokens[3]) }];
     message = tokens.slice(4).join(' ');
@@ -911,15 +911,15 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     return handleLongResponse(channel_id, () => ai.editImage(model, user_id, image, format, message, regions)
       .then(image => image ? image : Promise.reject())
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.' + format } }], [], [{ filename: 'image.' + format, description: message, content: file }]))
-      .catch(error => error ? discord.respond(channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
+      .catch(error => error ? respond(guild_id, channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
     );
 
   } else if (message.toLowerCase() == 'mirror' || message.toLowerCase().startsWith('mirror to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'mirror server');
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'mirror server');
     let mirror_guild_id = message.includes(' ') ? message.split(' ').slice(2).join(' ') : undefined;
-    if (mirror_guild_id && !await features.isActive(mirror_guild_id, 'mirror')) return respondNeedsFeatureActive(channel_id, event_id, 'mirror', 'mirror');
+    if (mirror_guild_id && !await features.isActive(mirror_guild_id, 'mirror')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'mirror', 'mirror');
     return mirror.configure_mirror(guild_id, user_id, mirror_guild_id).then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase().startsWith('personality ')) {
@@ -933,18 +933,18 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     switch(scope) {
       case 'server':
         if (!guild_id) return reactNotOK(channel_id, event_id);
-        if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'define AI personality for server');
+        if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'define AI personality for server');
         key += `guild:${guild_id}`;
         break;
       case 'channel':
-        if (guild_id && !await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(channel_id, event_id, 'define AI personality for channel');
+        if (guild_id && !await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, 'define AI personality for channel');
         key += `channel:${channel_id}`;
         break;
       case 'user':
         key += `user:${user_id}`;
         break;
       default:
-        return discord.respond(channel_id, event_id, 'You need to define the scope of the personality (one of "server", "channel", or "user")!');
+        return respond(guild_id, channel_id, event_id, 'You need to define the scope of the personality (one of "server", "channel", or "user")!');
     }
     return (message.toLowerCase() == 'reset' ? memory.unset(key) : memory.set(key, message))
       .then(() => reactOK(channel_id, event_id));
@@ -987,7 +987,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
 
     return handleLongResponse(channel_id, () => createAIResponse(guild_id, channel_id, user_id, message))
       .then(response => response ?? `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
-      .then(response => discord.respond(channel_id, event_id, response));
+      .then(response => respond(guild_id, channel_id, event_id, response));
   }
 }
 
@@ -1102,6 +1102,18 @@ async function handleLongResponse(channel_id, func) {
     .finally(() => clearInterval(timer));
 }
 
+async function respond(guild_id, channel_id, event_id, message) {
+  if (!event_id && guild_id && ((await discord.guild_channel_retrieve(null, channel_id)).type & 2) != 0) {
+    const codec = 'mp3';
+    let me = await discord.me();
+    let model = await ai.getDynamicModel(await ai.getVoiceModels());
+    let audio = await ai.createVoice(model, me.id, message, 'en-US', codec);
+    return player.play(guild_id, channel_id, { content: audio, codec: codec }); //TODO this should not continue to auto play after that
+  } else {
+    return discord.respond(channel_id, event_id, message);
+  }
+}
+
 async function reactOK(channel_id, event_id) {
   return event_id ? discord.react(channel_id, event_id, '👍') : undefined;
 }
@@ -1114,12 +1126,12 @@ async function hasMasterPermission(guild_id, user_id) {
   return discord.guild_member_has_permission(guild_id, null, user_id, 'MANAGE_SERVER');
 }
 
-async function respondNeedsMasterPermission(channel_id, event_id, action) {
-  return discord.respond(channel_id, event_id, `You need the permission 'Manage Server' to ${action}.`);
+async function respondNeedsMasterPermission(guild_id, guild_id, channel_id, event_id, action) {
+  return respond(guild_id, channel_id, event_id, `You need the permission 'Manage Server' to ${action}.`);
 }
 
-async function respondNeedsFeatureActive(channel_id, event_id, feature, action) {
-  return discord.me().then(me => discord.respond(channel_id, event_id, `The feature ${feature} needs to be active to ${action}. Use '<@${me.id}> activate ${feature}' to turn it on.`));
+async function respondNeedsFeatureActive(guild_id, guild_id, channel_id, event_id, feature, action) {
+  return discord.me().then(me => respond(guild_id, channel_id, event_id, `The feature ${feature} needs to be active to ${action}. Use '<@${me.id}> activate ${feature}' to turn it on.`));
 }
 
 async function resolveGuildID(user_id) {

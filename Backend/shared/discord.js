@@ -3,7 +3,7 @@ const process = require('process');
 const permissions = require('./permissions.js');
 const curl = require('./curl.js');
 const { retry } = require('./retry.js');
-let FormData = require('form-data');
+const FormData = require('form-data');
 
 var callbacks = {};
 

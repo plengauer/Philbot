@@ -1,10 +1,12 @@
 const process = require('process');
+const stream = require('stream');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
 const synchronized = require('./synchronized.js');
 const media = require('./media.js');
 
-const token = process.env.GCP_API_KEY;
+const token = process.env.GCP_T2S_TOKEN;
+const debug = true;
 
 function getCostLimit() {
   return 1.00;
@@ -42,7 +44,9 @@ async function createVoice(model, text, language, format, report) {
     "input": { "text": text }
   });
   await report(model, await getVoiceCost(model, text));
-  return media.convert(Buffer.from(response.audioContent, 'base64'), "mp3", format);
+  let audio = new stream.PassThrough();
+  audio.end(Buffer.from(response.audioContent, 'base64'));
+  return media.convert(audio, "mp3", format);
 }
 
 function getVoice(model, language) { // TODO we could use https://cloud.google.com/text-to-speech/docs/reference/rest/v1/voices
@@ -65,7 +69,7 @@ async function getVoiceCost0(model, text) {
   let used = await getVoiceModelUsedCharacters(model);
   let max_free = getVoiceModelFreeCharacters(model);
   let non_free = used > max_free ? text.length : Math.max(0, used + text.length - max_free);
-  await memory.set(voiceusedkey(model), { value: used, timestamp: Date.now() }, 60 * 60 * 24 * 31);
+  await memory.set(voiceusedkey(model), { value: used + text.length, timestamp: Date.now() }, 60 * 60 * 24 * 31);
   return getVoiceModelCharacterCost(model) * non_free;
 }
 
@@ -106,8 +110,8 @@ function getVoiceModelFreeCharacters(model) {
 async function HTTP(body) {
   let result = await curl.request({
     hostname: 'texttospeech.googleapis.com',
-    path: '/v1/text:synthesize',
-    headers: { 'Authorization': token }, //TODO bearer?
+    path: '/v1/text:synthesize' + '?key=' + token,
+    headers: {},
     method: 'POST',
     body: body,
     timeout: 1000 * 60 * 15
