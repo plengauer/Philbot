@@ -29,10 +29,9 @@ async function getVoiceModels() {
   return [ "Standard", "Wavenet", "Neural2", "Polyglot", "Studio" ];
 }
 
-async function createVoice(model, text, language, format, report) {
+async function createVoice(model, text, language, gender, format, report) {
   if (!token) return null;
-  let voice = getVoice(model, language);
-  // https://cloud.google.com/text-to-speech/docs/reference/rest
+  let voice = await selectVoice(model, language, gender);
   try {
     let response = await HTTP({
       "audioConfig": {
@@ -41,7 +40,7 @@ async function createVoice(model, text, language, format, report) {
         "pitch": 0,
         "speakingRate": 1
       },
-      "voice": { "languageCode": language, "name": `${language}-${model}-${voice}` },
+      "voice": { "languageCode": voice.languageCodes.find(languageCode => languageCode.includes(language)) ?? voice.languageCodes[0], "name": voice.name },
       "input": { "text": text }
     });
     await report(model, await getVoiceCost(model, text));
@@ -60,8 +59,56 @@ async function createVoice(model, text, language, format, report) {
   }
 }
 
-function getVoice(model, language) { // TODO we could use https://cloud.google.com/text-to-speech/docs/reference/rest/v1/voices
-  if (language != 'en-US') throw new Error(); // TODO
+async function selectVoice(model, language, gender) {
+  if (gender == 'neutral') gender = 'male';
+  let models = await getVoiceModels();
+  // preferences language -> gender -> model
+  let voices = await getVoices(model, language, gender);
+  if (voices.length > 0) return voices[0];
+  for (let m of models.filter(m => models.indexOf(m) <= models.indexOf(model)).reverse()) {
+    voices = await getVoices(m, language, gender);
+    if (voices.length > 0) return voices[0];
+  }
+  for (let m of models.filter(m => models.indexOf(m) <= models.indexOf(model)).reverse()) {
+    voices = await getVoices(m, language, false);
+    if (voices.length > 0) return voices[0];
+  }
+  for (let m of models.filter(m => models.indexOf(m) <= models.indexOf(model)).reverse()) {
+    voices = await getVoices(m, 'en', false);
+    if (voices.length > 0) return voices[0];
+  }
+  throw new Error('No voice found!');
+}
+
+async function getVoices(model, language, gender) {
+  return curl.request({
+    hostname: 'texttospeech.googleapis.com',
+    path: '/v1/voices' + '?key=' + token,
+    headers: {},
+    method: 'GET',
+    timeout: 1000 * 10,
+    cache: 1000 * 60 * 60 * 24
+  }).then(result => result.voices)
+  .then(voices => voices.filter(voice => !language || expandLanguageCodes(voice.languageCodes).includes(language)))
+  .then(voices => voices.filter(voice => !model || voice.name.includes(model)))
+  .then(voices => voices.filter(voice => !gender || voice.ssmlGender.toLowerCase() == gender.toLowerCase()));
+}
+
+function expandLanguageCodes(languageCodes) {
+  return Array.from(new Set(languageCodes.map(languageCode => expandLanguageCode(languageCode)).reduce((a1, a2) => a1.concat(a2), [])));
+}
+
+function expandLanguageCode(languageCode) {
+  let tags = languageCode.split('-');
+  let result = [];
+  for (let end = 1; end <= tags.length; end++) {
+    result.push(tags.slice(0, end).join('-'));
+  }
+  return result;
+}
+
+function getVoice(model, language) {
+  if (language != 'en-US') throw new Error();
   switch (model) {
     case 'Standard': return 'A';
     case  'Wavenet': return 'A';

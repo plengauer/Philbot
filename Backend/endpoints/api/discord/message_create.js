@@ -1106,8 +1106,12 @@ async function respond(guild_id, channel_id, event_id, message) {
   if (!event_id && guild_id && ((await discord.guild_channel_retrieve(null, channel_id)).type & 2) != 0) {
     const codec = 'mp3';
     let me = await discord.me();
-    let model = await ai.getDynamicModel(await ai.getVoiceModels());
-    let audio = await ai.createVoice(model, me.id, message, 'en-US', codec);
+    const dummy_token = 'NULL';
+    let languageCode = await ai.createCompletion(await ai.getDynamicModel(await ai.getLanguageModels()), me.id,
+      `Determine the BCP 47 language tag of the language of the given text. Ignore typos. Respond with ${dummy_token} if no clear language can be determined.\nText: ${message}\nBCP 47 language tag: `
+    );
+    if (!languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
+    let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), me.id, message, languageCode, 'neutral', codec);
     return player.play(guild_id, channel_id, { content: audio, codec: codec }); //TODO this should not continue to auto play after that
   } else {
     return discord.respond(channel_id, event_id, message);
