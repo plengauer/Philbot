@@ -7,7 +7,10 @@ async function getUserAccount(user_id, activity, servers) {
   if (accounts) return accounts;
   let user = await discord.user_retrieve(user_id);
   let name = discord.user2name(user);
-  if (name.match(/#d+$/)) name = name.split('#').slice(-1).join('#');
+  if (name.match(/#\d+$/)) {
+    let tokens = name.split('#');
+    name = tokens.slice(0, tokens.length - 1).join('#');
+  }
   return servers.length > 0 ? servers.map(server => { return { server: server, name: name }; }) : [{ server: null, name: name }];
 }
 

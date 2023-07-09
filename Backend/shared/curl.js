@@ -310,7 +310,6 @@ function lookup(options) {
   // evict all timed out entries
   for (let k of Object.keys(cache).filter(k => cache[k].timestamp + (key == k ? Math.min(options.cache, cache[k].ttl) : cache[k].ttl) * 1000 < Date.now())) delete cache[k];
   // lookup
-  let counter_dimensions = { 'http.flavor': options.secure ? 'https' : 'http', 'http.host': options.hostname, 'http.path': options.path };
   let entry = cache[key];
   if (!entry) {
     cache_miss_counter.add(1, counter_attributes(options));
@@ -323,22 +322,24 @@ function lookup(options) {
 
 function remember(options, response) {
   // is the current response eligable to be cached?
-  if (!response.body || response.body.length > CACHE_SIZE) return;
+  if (!response.body || typeof response.body != 'string' || response.body.length > CACHE_SIZE) return;
   // make entry
   let key = cachekey(options);
   cache[key] = cache[key] ?? { value: null, hits: 0, timestamp: Date.now(), ttl: options.cache };
   // find entries that this new one would supercede and see if it would be enough to store the new entry
-  let to_evict = Object.keys(cache).filter(k => cache[k].value).filter(k => cache[k].hits < cache[key].hits); 
-  if (cachesize() + response.body.length > CACHE_SIZE && to_evict.map(k => cache[k].value.length).reduce((l1, l2) => l1 + l2, 0) < response.body.length) return;
+  let to_evict = Object.keys(cache).filter(k => !!cache[k].value).filter(k => cache[k].hits < cache[key].hits); 
+  if (cachesize() + response.body.length > CACHE_SIZE && to_evict.map(k => cache[k].value.body.length).reduce((l1, l2) => l1 + l2, 0) < response.body.length) return;
   // as long as cache is too big, throw away the one with lowest hits
+  let DEBUG_COUNTER = 0;
   while (cachesize() + response.body.length > CACHE_SIZE) {
-    let keys = to_evict.filter(k => cache[k].value);
+    let keys = to_evict.filter(k => !!cache[k].value);
     if (keys.length == 0) throw new Error('Here be dragons!');
     let lowest = 0;
     for (let i = 1; i < keys.length; i++) {
       lowest = cache[keys[i]].hits < cache[keys[lowest]].hits ? i : lowest;
     }
     cache[keys[lowest]].value = undefined;
+    DEBUG_COUNTER++;
   }
   // cache!
   cache[key].value = response;
