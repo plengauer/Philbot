@@ -917,9 +917,12 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase().startsWith('say ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
-    let text = (await discord.guild_member_retrieve(guild_id, user_id).then(member => discord.member2name(member))) + ' says: ' + message.split(' ').slice(1).join(' ');
+    let connection = await memory.get(`voice_channel:user:${user_id}`, null);
+    if (!connection || connection.guild_id != guild_id || !connection.channel_id) return reactNotOK(channel_id, event_id);
+    let member = await discord.guild_member_retrieve(guild_id, user_id);
+    let text = discord.member2name(member) + ' says: ' + message.split(' ').slice(1).join(' ');
     let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), user_id, text, 'en', 'neutral', 'mp3');
-    return player.play(guild_id, undefined, {content: audio, codec: 'mp3'}, false).then(() => reactOK(channel_id, event_id));
+    return player.play(connection.guild_id, connection.channel_id, { content: audio, codec: 'mp3' }, false).then(() => reactOK(channel_id, event_id));
 
   } else if (message.toLowerCase() == 'mirror' || message.toLowerCase().startsWith('mirror to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
