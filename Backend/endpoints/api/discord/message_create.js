@@ -913,6 +913,13 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(file => discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.' + format } }], [], [{ filename: 'image.' + format, description: message, content: file }]))
       .catch(error => error ? respond(guild_id, channel_id, event_id, error.message) : reactNotOK(channel_id, event_id))
     );
+  
+  } else if (message.toLowerCase().startsWith('say ')) {
+    guild_id = guild_id ?? await resolveGuildID(user_id);
+    if (!guild_id) return reactNotOK(channel_id, event_id);
+    let text = message.split(' ').slice(1).join(' ');
+    let audio = await ai.createVoice(await ai.createDynamicModel(await ai.getVoiceModels()), user_id, text, 'en', 'neutral', 'mp3');
+    return player.play(guild_id, undefined, audio, false).then(() => reactOK(channel_id, event_id));
 
   } else if (message.toLowerCase() == 'mirror' || message.toLowerCase().startsWith('mirror to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
