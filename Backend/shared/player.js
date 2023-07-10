@@ -129,7 +129,8 @@ async function stop(guild_id) {
   return discord.disconnect(guild_id)
     .then(() => memory.unset(`player:title:guild:${guild_id}`))
     .then(() => memory.unset(`player:paused:guild:${guild_id}`))
-    .then(() => closeInteractions(guild_id));
+    .then(() => closeInteractions(guild_id))
+    .then(() => memory.unset(`player:manual:guild:${guild_id}`));
 }
 
 async function pause(guild_id) {
