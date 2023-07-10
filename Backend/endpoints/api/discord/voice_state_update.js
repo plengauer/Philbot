@@ -40,9 +40,9 @@ async function playGreeting(guild_id, channel_id, user_id) {
   let birthday_track = await memory.get('track:birthday', null);
   let intro_track = await memory.get(`track:intro:user:${user_id}:guild:${guild_id}`, null);
   if (birthday_track && birthday && birthday.month == now.getUTCMonth() + 1 && birthday.day == now.getUTCDate()) {
-    return player.play(guild_id, channel_id, birthday_track);
+    return player.play(guild_id, channel_id, birthday_track, false);
   } else if (intro_track) {
-    return player.play(guild_id, channel_id, intro_track).then(() => discord.dms_channel_retrieve(user_id).then(channel => player.openInteraction(guild_id, channel.id)));
+    return player.play(guild_id, channel_id, intro_track, false).then(() => discord.dms_channel_retrieve(user_id).then(channel => player.openInteraction(guild_id, channel.id)));
   }
 }
 

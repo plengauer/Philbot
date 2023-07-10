@@ -17,9 +17,11 @@ async function on_voice_server_update(guild_id, endpoint, token) {
     .then(() => updateInteractions(guild_id));
 }
 
-async function play(guild_id, channel_id, input) {
+async function play(guild_id, channel_id, input, autoplay = false) {
   channel_id = channel_id ?? await memory.get(`player:voice_channel:guild:${guild_id}`, undefined);
   if (!channel_id) throw new Error('I don\'t know which channel to use!');
+  let prev_autoplay = await memory.get(`player:autoplay:guild:${guild_id}`, false);
+  await memory.set(`player:autoplay:guild:${guild_id}`, autoplay || prev_autoplay, 60 * 60 * 3);
   if (typeof input == 'string') {
     return resolve_and_play(guild_id, channel_id, input);
   } else {
@@ -150,16 +152,20 @@ async function popFromQueue(guild_id) {
   return item;
 }
 
-async function playNext(guild_id, channel_id) {
+async function playNext(guild_id, channel_id, ifAutoplay = false) {
+  if (ifAutoplay && !await memory.get(`player:autoplay:guild:${guild_id}`, false)) {
+    if (await memory.get(`player:manual:guild:${guild_id}`, false)) return;
+    else return stop(guild_id).catch(ex => {/* just swallow exception */});
+  }
   let next = await popFromQueue(guild_id);
   if (!next) {
     if (await memory.get(`player:manual:guild:${guild_id}`, false)) return;
     else return stop(guild_id).catch(ex => {/* just swallow exception */});
   }
   try {
-    await play(guild_id, channel_id, next);
+    await play(guild_id, channel_id, next, true);
   } catch (error) {
-    if (error.message.includes('video is unavailable')) return playNext(guild_id, channel_id);
+    if (error.message.includes('video is unavailable')) return playNext(guild_id, channel_id, ifAutoplay);
     else throw error;
   }
 
@@ -229,7 +235,7 @@ async function onInteraction(guild_id, channel_id, message_id, interaction_id, i
     case 'player.pause': return pause(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.stop': return stop(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.toggle': return memory.get(`player:paused:guild:${guild_id}`, false).then(paused => paused ? resume(guild_id) : pause(guild_id)).then(() => discord.interact(interaction_id, interaction_token));
-    case 'player.next': return discord.interact(interaction_id, interaction_token).then(() => playNext(guild_id, undefined));
+    case 'player.next': return discord.interact(interaction_id, interaction_token).then(() => playNext(guild_id, undefined, false));
     case 'player.play.modal': return discord.interact(interaction_id, interaction_token, {
       type: 9,
       data: {
@@ -250,7 +256,7 @@ async function onInteraction(guild_id, channel_id, message_id, interaction_id, i
         }]
       }
     });
-    case 'player.play': return discord.interact(interaction_id, interaction_token).then(() => play(guild_id, undefined, data.components[0].components[0].value));
+    case 'player.play': return discord.interact(interaction_id, interaction_token).then(() => play(guild_id, undefined, data.components[0].components[0].value, true));
     case 'player.shuffle': return shuffleQueue(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.repeat': return discord.interact(interaction_id, interaction_token); //TODO implement me
     case 'player.append.modal': return discord.interact(interaction_id, interaction_token, {

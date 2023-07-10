@@ -403,7 +403,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
 
     let timer = setInterval(() => discord.trigger_typing_indicator(channel_id), 1000 * 10);
     return discord.trigger_typing_indicator(channel_id)
-      .then(() => search_string.toLowerCase() == 'next' ? player.playNext(guild_id, voice_channel_id) : player.play(guild_id, voice_channel_id, search_string))
+      .then(() => search_string.toLowerCase() == 'next' ? player.playNext(guild_id, voice_channel_id, false) : player.play(guild_id, voice_channel_id, search_string, true))
       .then(() => player.openInteraction(guild_id, channel_id))
       .then(() => reactOK(channel_id, event_id))
       .catch(error => respond(guild_id, channel_id, event_id, error.message))
@@ -1112,7 +1112,7 @@ async function respond(guild_id, channel_id, event_id, message) {
     );
     if (!languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
     let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), me.id, message, languageCode, 'neutral', codec);
-    return player.play(guild_id, channel_id, { content: audio, codec: codec }); //TODO this should not continue to auto play after that
+    return player.play(guild_id, channel_id, { content: audio, codec: codec }, false); //TODO this should not continue to auto play after that
   } else {
     return discord.respond(channel_id, event_id, message);
   }
