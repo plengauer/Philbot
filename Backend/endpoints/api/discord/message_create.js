@@ -1112,7 +1112,7 @@ async function respond(guild_id, channel_id, event_id, message) {
     );
     if (!languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
     let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), me.id, message, languageCode, 'neutral', codec);
-    return player.play(guild_id, channel_id, { content: audio, codec: codec }, false); //TODO this should not continue to auto play after that
+    return player.play(guild_id, channel_id, { content: audio, codec: codec }, false);
   } else {
     return discord.respond(channel_id, event_id, message);
   }

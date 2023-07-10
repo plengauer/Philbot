@@ -153,12 +153,13 @@ async function popFromQueue(guild_id) {
 }
 
 async function playNext(guild_id, channel_id, ifAutoplay = false) {
-  if (ifAutoplay && !await memory.get(`player:autoplay:guild:${guild_id}`, false)) {
+  if (ifAutoplay && await memory.get(`player:autoplay:guild:${guild_id}`, false)) {
     if (await memory.get(`player:manual:guild:${guild_id}`, false)) return;
     else return stop(guild_id).catch(ex => {/* just swallow exception */});
   }
   let next = await popFromQueue(guild_id);
   if (!next) {
+    await memory.unset(`player:autoplay:guild:${guild_id}`);
     if (await memory.get(`player:manual:guild:${guild_id}`, false)) return;
     else return stop(guild_id).catch(ex => {/* just swallow exception */});
   }
