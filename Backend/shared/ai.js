@@ -150,6 +150,7 @@ function costkey(vendor) {
 }
 
 module.exports = {
+    shouldCreate,
     getDynamicModel,
     getDefaultDynamicModelSafety,
 
