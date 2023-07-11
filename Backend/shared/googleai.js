@@ -52,7 +52,7 @@ async function createVoice(model, text, language, gender, format, report) {
       let models = await getVoiceModels();
       let index = models.indexOf(model);
       if (index <= 0) throw error;
-      return createVoice(models[index - 1], text, language, format, report);
+      return createVoice(models[index - 1], text, language, gender, format, report);
     } else {
       throw error;
     }
