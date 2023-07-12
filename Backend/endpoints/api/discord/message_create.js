@@ -922,8 +922,6 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let member = await discord.guild_member_retrieve(guild_id, user_id);
     let text = discord.member2name(member) + ' says: ' + message.split(' ').slice(1).join(' ');
     return respond(connection.guild_id, connection.channel_id, undefined, text);
-    let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), user_id, text, 'en', 'neutral', 'mp3');
-    return player.play(connection.guild_id, connection.channel_id, { content: audio, codec: 'mp3' }, false).then(() => reactOK(channel_id, event_id));
 
   } else if (message.toLowerCase() == 'mirror' || message.toLowerCase().startsWith('mirror to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
