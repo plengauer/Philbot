@@ -9,7 +9,6 @@ const discord = require('../../../shared/discord.js');
 const media = require('../../../shared/media.js');
 const player = require('../../../shared/player.js');
 const games = require('../../../shared/games/games.js');
-const lol = require('../../../shared/games/lol.js');
 const urban_dictionary = require('../../../shared/urban_dictionary.js');
 const tournament = require('../../../shared/tournament.js');
 const identity = require('../../../shared/identity.js');
@@ -100,7 +99,7 @@ async function transcribeAttachment(user_id, attachment, transcription_instructi
   let content_type = attachment.content_type;
   let duration_secs = attachment.duration_secs;
   let attachment_audio = await streamAttachment(attachment);
-  let baseline = (try_baseline && await ai.shouldCreate(model.vendor, (1 + ai.getDefaultDynamicModelSafety()) / 2)) ? await memory.get(baseline_key) : null;
+  let baseline = (try_baseline && await ai.shouldCreate(model.vendor, ai.getDefaultDynamicModelSafety() / 2)) ? await memory.get(baseline_key) : null;
   if (baseline) {
     try {
       let baseline_audio = await streamAttachment(baseline);
