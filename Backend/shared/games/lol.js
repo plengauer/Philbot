@@ -28,7 +28,7 @@ async function getInformationClassic(details, state, user_id) {
   if (games.length == 0) return null;
   
   let game = games[0];
-  let summoner = summoners.filter(summoner => game.participants.some(participant => participant.summonerId == summoner.id))[0];
+  let summoner = summoners.filter(summoner => game.participants.some(participant => game.server == summoner.server && participant.summonerId == summoner.id))[0];
   
   let team_id = game.participants.filter(participant => participant.summonerId == summoner.id)[0].teamId;
   let enemies = game.participants.filter(participant => participant.teamId != team_id);
@@ -114,7 +114,7 @@ async function getInformationClassic(details, state, user_id) {
   return {
     text: text,
     ttl: 60 * 60 * 3,
-    ttl_key: summoner.server.toUpperCase() + '_' + game.gameId
+    ttl_key: game.server.toUpperCase() + '_' + game.gameId
   };
 }
 
@@ -184,7 +184,10 @@ async function getTFTSummoner(server, summonerName) {
 
 async function getActiveGame(server, summonerId) {
   return http_get(server, '/lol/spectator/v4/active-games/by-summoner/' + summonerId)
-    .catch(e => {
+    .then(game => {
+      game.server = server;
+      return game;
+    }).catch(e => {
       if (e.message.includes('HTTP error 404')) return null;
       else throw e;
     });
