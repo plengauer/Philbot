@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "philbot-voice"
-version = "1.14.1"
+version = "1.15.0"
 description = ""
 authors = ["philipp.lengauer <p.lengauer@gmail.com>"]
 packages = [{include = "philbot-voice"}]
@@ -16,6 +16,7 @@ opentelemetry-sdk = "*"
 opentelemetry-exporter-otlp-proto-http = "*"
 opentelemetry-instrumentation = "*"
 opentelemetry-instrumentation-flask = "*"
+opentelemetry-instrumentation-urllib = "*"
 
 [build-system]
 requires = ["poetry-core"]
