@@ -514,7 +514,7 @@ class Context:
                             threading.Thread(target=self.__callback_playback_finished).start()
                         else:
                             print('VOICE CONNECTION ' + self.guild_id + ' streaming ' + path + ' (' + str(file.getnframes() / file.getframerate() / 60) + 'mins)')
-                            counter_streams.add(1, { "guild_id": self.guild_id })
+                            counter_streams.add(1, { "discord.guild.id": self.guild_id })
                 elif path and self.path and path != self.path:
                     file.close()
                     try:
@@ -555,11 +555,11 @@ class Context:
                     pass
                 last_heartbeat = heartbeat
                 counter_streaming.add((sequence - last_heartbeat_sequence) * frame_duration, {
-                    "guild_id": self.guild_id,
-                    "server": self.endpoint if self.endpoint else "",
-                    "ip": self.ip if self.ip else "",
-                    "port": self.port if self.port else 0,
-                    "mode": self.mode if self.mode else ""
+                    "discord.guild.id": self.guild_id,
+                    "discord.voicegateway.server": self.endpoint if self.endpoint else "",
+                    "discord.voicegateway.ip": self.ip if self.ip else "",
+                    "discord.voicegateway.port": self.port if self.port else 0,
+                    "discord.voicegateway.mode": self.mode if self.mode else ""
                 })
                 last_heartbeat_sequence = sequence
             # sleep
