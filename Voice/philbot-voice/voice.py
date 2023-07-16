@@ -171,7 +171,7 @@ def resolve_url(guild_id, url):
             path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + url.rsplit('.', 1)[1]
             os.rename(url[len('file://'):], path)
         else:
-            raise RuntimeError
+            raise RuntimeError(url)
         os.utime(path)
     finally:
         with download_lock:
