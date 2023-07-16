@@ -163,7 +163,7 @@ def resolve_url(guild_id, url):
         return resolve_url(guild_id, url)
     
     try:
-        if url.startswith('https://www.youtube.com/watch?v='):
+        if url.startswith('https://www.youtube.com/watch?v=') or url.startswith('https://youtu.be/'):
             path = download_from_youtube(url, filename_prefix)
         elif url.startswith('http://') or url.startswith('https://'):
             path = download_url(url, filename_prefix)

@@ -38,9 +38,11 @@ async function resolve_and_play(guild_id, channel_id, search_string) {
 }
 
 async function resolve_search_string(search_string) {
-  if (search_string.includes('youtube.com/watch?v=')) {
+  if (search_string.startsWith('https://youtu.be/')) {
+    return resolve_search_string('https://www.youtube.com/watch?v=' + search_string.substring('https://youtu.be/'.length));
+  } else if (search_string.startsWith('https://youtube.com/watch?v=') || search_string.startsWith('https://youtu.be/')) {
     return [ search_string ];
-  } else if (search_string.includes('youtube.com/playlist?list=')) {
+  } else if (search_string.includes('https://youtube.com/playlist?list=')) {
     let items = [];
     let pageToken = null;
     do {
@@ -62,7 +64,7 @@ async function resolve_search_string(search_string) {
     // alternative orderings are "rating" (but thats a relative number where unimportant videos show up first) or "viewCount"
     let result = await HTTP_YOUTUBE('/search', { part: 'snippet', type: 'video', order: 'relevance', maxResults: 1, q: search_string })
     if (result.length == 0) throw new Error('No video found!');
-    return [ 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId ];
+    return resolve_search_string('https://www.youtube.com/watch?v=' + result.items[0].id.videoId);
   }
 }
 
