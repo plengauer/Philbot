@@ -35,7 +35,7 @@ async function on_message_create(guild_id, channel_id, message_id, user_id, cont
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${is_target_language}`);
     if (is_target_language) return;
   } else {
-    let target_language_percentage = await ai.createResponse(model_fast, user_id, `What percentage of "${content}" is ${target_language}? Respond only with the percentage.`, 0);
+    let target_language_percentage = await ai.createResponse(model_fast, user_id, null, `I determine the percentage of how much of a given text is ${target_language}. I respond only with the percentage.`, content, 0);
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${target_language_percentage}`);
     if (!target_language_percentage) return;
     if (!target_language_percentage.endsWith('%')) throw new Error();
@@ -46,11 +46,10 @@ async function on_message_create(guild_id, channel_id, message_id, user_id, cont
   
   // gpt-3.5-turbo seems really bad at answering with exactly only the language, worse then older generation completion models!
   const dummy_token = 'NULL';
-  let source_language = await ai.createCompletion(
-    model.name != 'gpt-3.5-turbo' ? model : models[models.findIndex(m => m.name == 'gpt-3.5-turbo') - 1],
-    user_id,
-    `Determine the language of the text. Ignore typos. Respond with ${dummy_token} if no clear language can be determined.\nText: ${content}\nLanguage: `,
-    0
+  let source_language = await ai.createResponse(
+    model.name != 'gpt-3.5-turbo' ? model : models[models.findIndex(m => m.name == 'gpt-3.5-turbo') - 1], user_id, null,
+    `I determine the language of a text. I ignore typos. I respond with the language only. I respond with ${dummy_token} if no clear language can be determined.`,
+    content
   );
   //console.log(`DEBUG TRANSLATOR v2 #2 "${content}" is ${source_language}`);
   if (!source_language) return;
@@ -69,12 +68,10 @@ async function on_message_create(guild_id, channel_id, message_id, user_id, cont
 
 async function translate(model, user, target_language, source) {
   const dummy_token = 'NULL';
-  let prompt = `Translate the text to ${target_language}. `
-    + `Do not translate emojis, hyperlinks, discord mentions, or any parts that are surrounded by : < or >. `
-    + `Translate the text as ${dummy_token} if it is untranslatable or unnecessary to translate.\n`
-    + `Text: "${source}"\n`
-    + `Translation: `;
-  let translation = await ai.createCompletion(model, user, prompt, 0);
+  let prompt = `I translate a given text to ${target_language}. `
+    + `I do not translate emojis, hyperlinks, discord mentions, or any parts that are surrounded by : < or >. `
+    + `I translate the text as ${dummy_token} if it is untranslatable or unnecessary to translate.`;
+  let translation = await ai.createResponse(model, user, null, prompt, source);
   //console.log(`DEBUG TRANSLATOR v2 #3 "${source}" => "${translation}"`);
   if (!translation || translation.length == 0) return;
   if (translation.startsWith('"') && translation.endsWith('"')) translation = translation.substring(1, translation.length - 1).trim();

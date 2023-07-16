@@ -176,14 +176,14 @@ async function createBoolean(model, user, question, report, temperature = undefi
   if (isLanguageCompletionModel(model)) {
     response = await createCompletion(model, user, `Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, report, temperature);
   } else {
-    response = await createResponse(model, user, null, null, `${question} Respond only with yes or no!`, report, temperature);
+    response = await createResponse(model, user, null, 'I respond only with yes or no!', question, report, temperature);
   }
   if (!response) return null;
   let boolean = response.trim().toLowerCase();
   const match = boolean.match(/^([a-z]+)/);
   boolean = match ? match[0] : boolean;
   if (boolean != 'yes' && boolean != 'no') {
-    let sentiment = await createCompletion(model, user, `Determine whether the sentiment of the text is positive or negative.\nText: "${response}"\nSentiment: `, report, temperature);
+    let sentiment = await createResponse(model, user, null, `I determine whether the sentiment of the text is positive or negative.`, boolean, report, temperature);
     const sentiment_match = sentiment.trim().toLowerCase().match(/^([a-z]+)/);
     if (sentiment_match && sentiment_match[0] == 'positive') boolean = 'yes';
     else if (sentiment_match && sentiment_match[0] == 'negative') boolean = 'no';

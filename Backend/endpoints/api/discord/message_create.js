@@ -206,21 +206,21 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
   if (!model) return;
   switch (Math.floor(Math.random() * 4)) {
     case 0:
-      if (5 < message.length && message.length < 150) break;
+      if (message.length < 5 || 150 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       if (!await ai.createBoolean(model, user_id, `Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`)) break;
       await respond(guild_id, channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`);
       break;
     case 1:
-      if (5 < message.length && message.length < 150) break;
+      if (message.length < 5 || 150 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       if (!await ai.createBoolean(model, user_id, `Is "${message}" a typical boomer statement?`)) break;
       await respond(guild_id, channel_id, event_id, boomer.encode('ok boomer'));
       break;
     case 2:
-      if (25 < message.length && message.length < 250) break;
+      if (message.length < 25 || 250 < message.length) break;
       const dummy_token = 'NULL';
-      let extraction = await ai.createCompletion(model, user_id, `Extract the person, animal, place, or object the text describes or ${dummy_token}.\nText: "${message}"\nExtraction: `);
+      let extraction = await ai.createResponse(model, user_id, null, `I extract the person, animal, place, or object the input describes. I respond with ${dummy_token} if nothing can be extracted.`, message);
       if (!extraction || extraction == dummy_token || extraction.startsWith(dummy_token) || extraction.length < 10 || (extraction.match(/\p{L}/gu) ?? []).length < extraction.length * 0.5) break;
       let image_model = await ai.getDynamicModel(await ai.getImageModels());
       if (!image_model) break;
@@ -228,9 +228,9 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
       await discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
       break;
     case 3:
-      if (25 < message.length && message.length < 250) break;
+      if (message.length < 25 || 250 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
-      let comeback = await ai.createCompletion(model, user_id, `Write a clever comeback for a text.\nText: ${message}\nComeback:`);
+      let comeback = await ai.createResponse(model, user_id, null, 'I respond with clever comebacks.', message);
       await respond(guild_id, channel_id, event_id, comeback);
       break;
     default:
@@ -1115,8 +1115,10 @@ async function respond(guild_id, channel_id, event_id, message) {
     const codec = 'mp3';
     let me = await discord.me();
     const dummy_token = 'NULL';
-    let languageCode = await ai.createCompletion(await ai.getDynamicModel(await ai.getLanguageModels()), me.id,
-      `Determine the BCP 47 language tag of the language of the given text. Ignore typos. Respond with ${dummy_token} if no clear language can be determined.\nText: ${message}\nBCP 47 language tag: `
+    let languageCode = await ai.createResponse(
+      await ai.getDynamicModel(await ai.getLanguageModels()), me.id, null,
+      `I determine the BCP 47 language tag representing the language of a given text. I ignore typos. I respond with the language tag only. I respond with ${dummy_token} if no clear language can be determined.`,
+      message
     );
     if (!languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
     let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), me.id, message, languageCode, 'neutral', codec);
