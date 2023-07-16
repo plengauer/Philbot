@@ -930,7 +930,7 @@ def voice_content_update(guild_id):
                 return Response('Video not found', status = 404)
             else:
                 return Response('Video not found', status = 404)
-        except e:
+        except Exception:
             return Response('Internal Error', status = 500)
         return 'Success'
     else:
@@ -955,7 +955,7 @@ def voice_content_lookahead(guild_id):
             return Response('Video not found', status = 404)
         else:
             return Response('Video not found', status = 404)
-    except e:
+    except Exception:
         return Response('Internal Error', status = 500)
     return 'Success'
 
