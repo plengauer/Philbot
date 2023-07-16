@@ -918,8 +918,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (!guild_id) return reactNotOK(channel_id, event_id);
     let connection = await memory.get(`voice_channel:user:${user_id}`, null);
     if (!connection || connection.guild_id != guild_id || !connection.channel_id) return reactNotOK(channel_id, event_id);
-    let member = await discord.guild_member_retrieve(guild_id, user_id);
-    let text = discord.member2name(member) + ' says: ' + message.split(' ').slice(1).join(' ');
+    let text = discord.mention_user(user_id) + ' says: ' + message.split(' ').slice(1).join(' ');
     return respond(connection.guild_id, connection.channel_id, undefined, text);
 
   } else if (message.toLowerCase() == 'mirror' || message.toLowerCase().startsWith('mirror to ')) {
@@ -1112,6 +1111,19 @@ async function handleLongResponse(channel_id, func) {
 
 async function respond(guild_id, channel_id, event_id, message) {
   if (!event_id && guild_id && ((await discord.guild_channel_retrieve(null, channel_id)).type & 2) != 0) {
+    let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
+    for (let mentioned_member of mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention))) { 
+      let member = await discord.guild_member_retrieve(guild_id, mentioned_member);
+      while (message.includes(discord.mention_user(mentioned_member))) {
+        message = message.replace(discord.mention_user(mentioned_member), discord.member2name(member));
+      }
+    }
+    for (let mentioned_role of mentioned_entities.filter(mention => mention.startsWith('<@&')).map(mention => discord.parse_role(mention))) { 
+      let role = await discord.guild_role_retrieve(guild_id, mentioned_role);
+      while (message.includes(discord.mention_role(mentioned_role))) {
+        message = message.replace(discord.mention_role(mentioned_role), role.name);
+      }
+    }
     const codec = 'mp3';
     let me = await discord.me();
     const dummy_token = 'NULL';
