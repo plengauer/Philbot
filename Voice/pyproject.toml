@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "philbot-voice"
-version = "1.14.0"
+version = "1.14.1"
 description = ""
 authors = ["philipp.lengauer <p.lengauer@gmail.com>"]
 packages = [{include = "philbot-voice"}]
@@ -11,11 +11,11 @@ Flask = "^2.2.2"
 websocket-client = "^1.4.2"
 PyNaCl = "^1.5.0"
 PyOgg = "0.6.14a1"
-yt_dlp = "^2023.02.17"
-opentelemetry-sdk = "^1.15.0"
-opentelemetry-exporter-otlp-proto-http = "^1.15.0"
-opentelemetry-instrumentation = "^0.36b0"
-opentelemetry-instrumentation-flask = "^0.36b0"
+yt_dlp = "*"
+opentelemetry-sdk = "*"
+opentelemetry-exporter-otlp-proto-http = "*"
+opentelemetry-instrumentation = "*"
+opentelemetry-instrumentation-flask = "*"
 
 [build-system]
 requires = ["poetry-core"]
