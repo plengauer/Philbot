@@ -40,7 +40,7 @@ async function resolve_and_play(guild_id, channel_id, search_string) {
 async function resolve_search_string(search_string) {
   if (search_string.startsWith('https://youtu.be/')) {
     return resolve_search_string('https://www.youtube.com/watch?v=' + search_string.substring('https://youtu.be/'.length));
-  } else if (search_string.startsWith('https://youtube.com/watch?v=') || search_string.startsWith('https://youtu.be/')) {
+  } else if (search_string.startsWith('https://youtube.com/watch?v=')) {
     return [ search_string ];
   } else if (search_string.includes('https://youtube.com/playlist?list=')) {
     let items = [];
