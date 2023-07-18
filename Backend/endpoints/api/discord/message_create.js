@@ -204,7 +204,7 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
   if (Math.random() >= PROBABILITY) return;
   let model = await ai.getDynamicModel(await ai.getLanguageModels());
   if (!model) return;
-  switch (Math.floor(Math.random() * 4)) {
+  switch (Math.floor(Math.random() * 5)) {
     case 0:
       if (message.length < 5 || 150 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
@@ -232,6 +232,12 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       let comeback = await ai.createResponse(model, user_id, null, 'I respond with clever comebacks.', message);
       await respond(guild_id, channel_id, event_id, comeback);
+      break;
+    case 4:
+      if (message.length < 5 || 35 < message.length) break;
+      if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
+      let poem = await ai.createResponse(model, user_id, null, 'I write "roses are red" single-verse poems in reference to the input.', message);
+      await respond(guild_id, channel_id, event_id, poem);
       break;
     default:
       throw new Error();
