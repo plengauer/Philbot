@@ -239,6 +239,8 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
       let poem = await ai.createResponse(model, user_id, null, 'I write "roses are red" single-verse poems in reference to the input.', message);
       await respond(guild_id, channel_id, event_id, poem);
       break;
+    case 5:
+      // TODO help me im stuck stepdiscorduser
     default:
       throw new Error();
   }
