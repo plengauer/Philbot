@@ -38,7 +38,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
     if (guild_id) {
       for (let member of await discord.guild_members_list(guild_id)) {
         for (let name of [ discord.member2name(member), discord.user2name(member.user), member.user.username ]) {
-          while (message.includes(name)) message = message.replace(name, discord.mention_user(member.user.id));
+          while (message.includes(name)) message = message.replace(name, discord.mention_user(member.user.id)); //TODO this is a problem, because it replaces names that are parts of other words
         }
       }
     }
@@ -422,13 +422,13 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase() == "player") {
     return player.openInteraction(guild_id ?? await resolveGuildID(user_id), channel_id).then(() => reactOK(channel_id, event_id));
 
-  } else if (message.toLowerCase() == "stop") {
+  } else if (message.toLowerCase() == "stop" || message.toLowerCase() == "leave" || message.toLowerCase() == "disconnect") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     return player.stop(guild_id).then(command => reactOK(channel_id, event_id).then(() => command));
     
-  } else if (message.toLowerCase() == "pause") {
+  } else if (message.toLowerCase() == "pause" || message.toLowerCase() == "chill") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
