@@ -610,7 +610,9 @@ class Context:
                     }))
                 case 6:
                     # print('VOICE GATEWAY heartbeat acknowledge') # this is quite spammy
-                    pass
+                    if (self.streamer and not self.streamer.is_alive()) or (self.listener and not self.listener.is_alive()):
+                        self.__stop()
+                        self.__try_start()
                 case 2:
                     print('VOICE GATEWAY ' + self.guild_id + ' received voice ready')
                     self.ssrc = payload['d']['ssrc']
