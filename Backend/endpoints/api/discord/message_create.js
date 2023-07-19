@@ -388,6 +388,9 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => player.registerManualJoin(guild_id))
       .then(() => reactOK(channel_id, event_id));
   
+  } else if (message.toLowerCase() == 'next') {
+    return handleCommand(guild_id, channel_id, event_id, user_id, 'play next', referenced_message_id, me, pure_command_handling);
+
   } else if (message.toLowerCase().startsWith('play ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
@@ -434,7 +437,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
     return player.pause(guild_id).then(() => reactOK(channel_id, event_id));
     
-  } else if (message.toLowerCase() == "resume") {
+  } else if (message.toLowerCase() == "resume" || message.toLowerCase() == "continue") {
     guild_id = guild_id ?? await resolveGuildID(user_id);
     if (!guild_id) return reactNotOK(channel_id, event_id);
     if (!await features.isActive(guild_id, 'player')) return respondNeedsFeatureActive(guild_id, channel_id, event_id, 'player', 'play music');
