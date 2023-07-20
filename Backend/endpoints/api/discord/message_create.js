@@ -242,7 +242,7 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
     case 5:
       if (message.length < 5 || 150 < message.length) break;
       if (!await ai.createBoolean(model, user_id, `Assuming people enjoy innuendo, is it funny to respond with "Help me stepdiscorduser" to "${message}"?`)) break;
-      await respond(guild_id, channel_id, event_id, 'Help him stepdiscordusers!');
+      await respond(guild_id, channel_id, event_id, 'Help ' + discord.mention_user(user_id) + ', stepdiscordusers!');
       break;
     default:
       throw new Error();
