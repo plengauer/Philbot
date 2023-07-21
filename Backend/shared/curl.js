@@ -286,15 +286,18 @@ async function request_cached(options, request) {
   if (options.cache && !options.headers) options.headers = {};
   if (options.cache && options.method == 'GET' && options.body) throw new Error('Cannot cache GET requests with body!'); // https://stackoverflow.com/questions/978061/http-get-with-request-body
   let can_cache = options.cache && options.method == 'GET' && !options.stream;
-  if (can_cache) {
-    let cached = lookup(options);
-    if (cached) return cached;
-  } else if (options.cache && !options.stream && options.method != 'GET') {
-    invalidate(options);
-  }
-  let response = await (can_cache ? synchronized(cachekey(options), () => request(options)) : request(options));
-  if (can_cache) remember(options, response);
-  return response;
+  let func = async () => {
+    if (can_cache) {
+      let cached = lookup(options);
+      if (cached) return cached;
+    } else if (options.cache && !options.stream && options.method != 'GET') {
+      invalidate(options);
+    }
+    let response = await request(options);
+    if (can_cache) remember(options, response);
+    return response;
+  };
+  return can_cache ? synchronized(cachekey(options), func) : func();
 }
 
 const CACHE_SIZE = process.env.HTTP_CACHE_SIZE ? parseInt(process.env.HTTP_CACHE_SIZE) : (1024 * 1024 * 10);
