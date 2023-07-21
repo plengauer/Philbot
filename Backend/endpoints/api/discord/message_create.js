@@ -967,7 +967,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       default:
         return respond(guild_id, channel_id, event_id, 'You need to define the scope of the personality (one of "server", "channel", or "user")!');
     }
-    return (message.toLowerCase() == 'reset' ? memory.unset(key) : memory.set(key, message))
+    return (message.toLowerCase() == 'reset' ? memory.unset(key) : memory.set(key, personality))
       .then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase() == 'mute for me') {
