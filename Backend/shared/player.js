@@ -239,7 +239,7 @@ async function onInteraction(guild_id, channel_id, message_id, interaction_id, i
     case 'player.pause': return pause(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.stop': return stop(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.toggle': return memory.get(`player:paused:guild:${guild_id}`, false).then(paused => paused ? resume(guild_id) : pause(guild_id)).then(() => discord.interact(interaction_id, interaction_token));
-    case 'player.next': return discord.interact(interaction_id, interaction_token).then(() => playNext(guild_id, undefined, false));
+    case 'player.next': return  pause(guild_id).then(() => discord.interact(interaction_id, interaction_token)).then(() => playNext(guild_id, undefined, false));
     case 'player.play.modal': return discord.interact(interaction_id, interaction_token, {
       type: 9,
       data: {
@@ -260,7 +260,7 @@ async function onInteraction(guild_id, channel_id, message_id, interaction_id, i
         }]
       }
     });
-    case 'player.play': return discord.interact(interaction_id, interaction_token).then(() => play(guild_id, undefined, data.components[0].components[0].value, true));
+    case 'player.play': return pause(guild_id).then(() => discord.interact(interaction_id, interaction_token)).then(() => play(guild_id, undefined, data.components[0].components[0].value, true));
     case 'player.shuffle': return shuffleQueue(guild_id).then(() => discord.interact(interaction_id, interaction_token));
     case 'player.repeat': return discord.interact(interaction_id, interaction_token); //TODO implement me
     case 'player.append.modal': return discord.interact(interaction_id, interaction_token, {
