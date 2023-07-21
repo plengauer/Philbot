@@ -27,17 +27,18 @@ async function verifyPermissions(guild_id) {
   let roles = await discord.guild_roles_list(guild_id);
   
   let my_role_ids = Array.from(new Set(members.filter(member => member.user.id == me.id).map(member => member.roles)[0].concat([ guild_id ])));
-  let my_roles = roles.filter(role => my_role_ids.includes(role.id));
+  let my_roles = roles.filter(role => role.id == guild_id || my_role_ids.includes(role.id));
   let my_role = roles.filter(role => role.name == me.username)[0];
   
   let missing = [];
   let unnecessary = [];
   for (let permission of permissions.all()) {
     let needs = required.includes(permission);
-    let has = permissions.decompile(my_role.permissions).includes(permission);
-    if (needs && has) ; // nothing to do
-    else if (needs && !has) missing.push(permission);
-    else if (!needs && has) unnecessary.push(permission);
+    let has_self = permissions.decompile(my_role.permissions).includes(permission);
+    let has_wide = my_roles.some(my_role => permissions.decompile(my_role.permissions).includes(permission));
+    if (needs && has_wide) ; // nothing to do
+    else if (needs && !has_wide) missing.push(permission);
+    else if (!needs && has_self) unnecessary.push(permission);
     else ; // nothing to do
   }
   
