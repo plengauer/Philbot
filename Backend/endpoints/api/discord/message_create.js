@@ -947,7 +947,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     message = message.split(' ').slice(1).join(' ').trim();
     if (!message.includes(':')) return reactNotOK(channel_id, event_id);    
     let scope = message.substring(0, message.indexOf(':'));
-    let personality = message.substring(messge.indexOf(':') + 1, message.length);
+    let personality = message.substring(message.indexOf(':') + 1, message.length);
     if (personality.length == 0) return reactNotOK(channel_id, event_id);
     guild_id = guild_id ?? await resolveGuildID(user_id);
     let key = 'ai:personality:';
