@@ -204,7 +204,7 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
   if (Math.random() >= PROBABILITY) return;
   let model = await ai.getDynamicModel(await ai.getLanguageModels());
   if (!model) return;
-  switch (Math.floor(Math.random() * 6)) {
+  switch (Math.floor(Math.random() * 7)) {
     case 0:
       if (message.length < 5 || 150 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
@@ -243,6 +243,12 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
       if (message.length < 5 || 150 < message.length) break;
       if (!await ai.createBoolean(model, user_id, `Assuming people enjoy innuendo, is it funny to respond with "Help me stepdiscorduser" to "${message}"?`)) break;
       await respond(guild_id, channel_id, event_id, 'Help ' + discord.mention_user(user_id) + ', stepdiscordusers!');
+      break;
+    case 6:
+      if (message.length < 25 || 250 < message.length) break;
+      if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
+      let joke = await ai.createResponse(model, user_id, null, 'I write "yo mama" jokes in reference to the input.', message);
+      await respond(guild_id, channel_id, event_id, joke);
       break;
     default:
       throw new Error();
