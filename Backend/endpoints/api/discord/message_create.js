@@ -252,6 +252,7 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
       break;
     case 7:
       if (message.length < 5 || 50 < message.length) break;
+      if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       if (!await ai.createBoolean(model, user_id, `Is it funny to respond with "weird flex but ok" to "${message}?`)) break;
       await respond(guild_id, channel_id, event_id, 'Weird flex but ok.');
       break;
