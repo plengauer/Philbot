@@ -237,6 +237,7 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
       if (message.length < 5 || 35 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       response = await ai.createResponse(model, user_id, null, 'I write "roses are red" single-verse poems in reference to the input.', message);
+      if (!response.toLowerCase().trim().startsWith('roses are red')) response = null;
       break;
     case 5:
       if (message.length < 5 || 150 < message.length) break;
