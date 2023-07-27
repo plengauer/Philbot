@@ -200,7 +200,7 @@ async function resolveMembersForSpecialActivityMentions(guild_id, user_id, messa
 }
 
 async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_id, message) {
-  const DEBUG = process.env.DEBUG_FUN_REPLIES;
+  const DEBUG = process.env.DEBUG_FUN_REPLIES == 'true';
   const PROBABILITY = 0.05;
   if (Math.random() >= PROBABILITY) return;
   let model = await ai.getDynamicModel(await ai.getLanguageModels());
