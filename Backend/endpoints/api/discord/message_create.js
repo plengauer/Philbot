@@ -200,22 +200,24 @@ async function resolveMembersForSpecialActivityMentions(guild_id, user_id, messa
 }
 
 async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_id, message) {
+  const DEBUG = process.env.DEBUG_FUN_REPLIES;
   const PROBABILITY = 0.05;
   if (Math.random() >= PROBABILITY) return;
   let model = await ai.getDynamicModel(await ai.getLanguageModels());
   if (!model) return;
+  let response = null;
   switch (Math.floor(Math.random() * 8)) {
     case 0:
       if (message.length < 5 || 150 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       if (!await ai.createBoolean(model, user_id, `Assuming people enjoy innuendo, is it funny to respond with "That's what she said" to "${message}"?`)) break;
-      await respond(guild_id, channel_id, event_id, Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`);
+      response = Math.random() < 0.5 ? 'That\'s what she said!' : `"${message}", the title of ${discord.mention_user(user_id)}s sex tape!`;
       break;
     case 1:
       if (message.length < 5 || 150 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       if (!await ai.createBoolean(model, user_id, `Is "${message}" a typical boomer statement?`)) break;
-      await respond(guild_id, channel_id, event_id, boomer.encode('ok boomer'));
+      response = boomer.encode('ok boomer');
       break;
     case 2:
       if (message.length < 25 || 250 < message.length) break;
@@ -225,39 +227,41 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
       let image_model = await ai.getDynamicModel(await ai.getImageModels());
       if (!image_model) break;
       let file = await ai.createImage(image_model, user_id, extraction, 'png');
-      await discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
-      break;
+      return discord.post(channel_id, '', event_id, true, [{ image: { url: 'attachment://image.png' } }], [], [{ filename: 'image.png', description: message, content: file }]);
     case 3:
       if (message.length < 25 || 250 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
-      let comeback = await ai.createResponse(model, user_id, null, 'I respond with clever comebacks.', message);
-      await respond(guild_id, channel_id, event_id, comeback);
+      response = await ai.createResponse(model, user_id, null, 'I respond with clever comebacks.', message);
       break;
     case 4:
       if (message.length < 5 || 35 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
-      let poem = await ai.createResponse(model, user_id, null, 'I write "roses are red" single-verse poems in reference to the input.', message);
-      await respond(guild_id, channel_id, event_id, poem);
+      response = await ai.createResponse(model, user_id, null, 'I write "roses are red" single-verse poems in reference to the input.', message);
       break;
     case 5:
       if (message.length < 5 || 150 < message.length) break;
       if (!await ai.createBoolean(model, user_id, `Assuming people enjoy innuendo, is it funny to respond with "Help me stepdiscorduser" to "${message}"?`)) break;
-      await respond(guild_id, channel_id, event_id, 'Help ' + discord.mention_user(user_id) + ', stepdiscordusers!');
+      response = 'Help ' + discord.mention_user(user_id) + ', stepdiscordusers!';
       break;
     case 6:
       if (message.length < 25 || 250 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
-      let joke = await ai.createResponse(model, user_id, null, 'I write "yo mama" jokes in reference to the input.', message);
-      await respond(guild_id, channel_id, event_id, joke);
+      response = await ai.createResponse(model, user_id, null, 'I write "yo mama" jokes in reference to the input.', message);
       break;
     case 7:
       if (message.length < 5 || 50 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
       if (!await ai.createBoolean(model, user_id, `Is it funny to respond with "weird flex but ok" to "${message}?`)) break;
-      await respond(guild_id, channel_id, event_id, 'Weird flex but ok.');
+      response = 'Weird flex but ok.';
       break;
     default:
       throw new Error();
+  }
+  if (response) {
+    if (DEBUG) {
+      console.log('DEBUG FUN REPLY: ' + message + ' => ' + response);
+    }
+    return respond(guild_id, channel_id, event_id, response);
   }
 }
 
