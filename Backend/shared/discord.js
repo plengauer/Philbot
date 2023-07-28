@@ -417,10 +417,10 @@ function guild_member_has_permission_0(guild, channel, roles, member, permission
     if (permission_overwrite.type == 1 && permission_overwrite.id == member.user.id && permissions.decompile(permission_overwrite.deny).includes(permission)) return false;
   }
   for (let permission_overwrite of channel?.permission_overwrites ?? []) {
-    if (permission_overwrite.type == 0 && member.roles.includes(permission_overwrite.id) && permissions.decompile(permission_overwrite.allow).includes(permission)) return true;
+    if (permission_overwrite.type == 0 && (member.roles.includes(permission_overwrite.id) || permission_overwrite.id == guild.id) && permissions.decompile(permission_overwrite.allow).includes(permission)) return true;
   }
   for (let permission_overwrite of channel?.permission_overwrites ?? []) {
-    if (permission_overwrite.type == 0 && member.roles.includes(permission_overwrite.id) && permissions.decompile(permission_overwrite.deny).includes(permission)) return false;
+    if (permission_overwrite.type == 0 && (member.roles.includes(permission_overwrite.id) || permission_overwrite.id == guild.id) && permissions.decompile(permission_overwrite.deny).includes(permission)) return false;
   }
   return member_permissions.includes(permission);
 }
