@@ -202,6 +202,7 @@ async function resolveMembersForSpecialActivityMentions(guild_id, user_id, messa
 async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_id, message) {
   const DEBUG = process.env.DEBUG_FUN_REPLIES == 'true';
   const PROBABILITY = 0.05;
+  if (message.trim().length == 0 || message.split(' ').filter(token => token.length > 0).every(token => token.startsWith('http://') || token.startsWith('http://') || token.startsWith('<@'))) return;
   if (Math.random() >= PROBABILITY) return;
   let model = await ai.getDynamicModel(await ai.getLanguageModels());
   if (!model) return;
@@ -252,7 +253,7 @@ async function handleMessageForFunReplies(guild_id, channel_id, event_id, user_i
     case 7:
       if (message.length < 5 || 50 < message.length) break;
       if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) break;
-      if (!await ai.createBoolean(model, user_id, `Is it funny to respond with "weird flex but ok" to "${message}?`)) break;
+      if (!await ai.createBoolean(model, user_id, `Is it funny to respond with "weird flex but ok" to "${message}"?`)) break;
       response = 'Weird flex but ok.';
       break;
     default:
