@@ -357,7 +357,8 @@ async function getLeagues(accounts) {
   */
   return Promise.all(summoners.map(summoner => getLeague(summoner)))
     .then(leagues => leagues.reduce((a1, a2) => a1.concat(a2), []))
-    .then(leagues => leagues.map(league => parseLeague(league)));
+    .then(leagues => leagues.map(league => parseLeague(league)))
+    .then(leagues => leagues.filter(league => !!league));
 }
 
 async function getLeague(summoner) {
@@ -370,6 +371,7 @@ async function getLeague(summoner) {
 
 function parseLeague(league){
   let tier = league.tier ?? league.ratedTier;
+  if (!tier) return null;
   return {
     mode: prettifyQueueType(league.queueType),
     name: tier.substring(0, 1).toUpperCase() + tier.substring(1).toLowerCase()
