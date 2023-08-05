@@ -99,7 +99,7 @@ async function transcribeAttachment(user_id, attachment, transcription_instructi
   let content_type = attachment.content_type;
   let duration_secs = attachment.duration_secs;
   let attachment_audio = await streamAttachment(attachment);
-  let baseline = (try_baseline && await ai.shouldCreate(model.vendor, ai.getDefaultDynamicModelSafety() / 2)) ? await memory.get(baseline_key) : null;
+  let baseline = (try_baseline && await ai.shouldCreate(model.vendor, ai.getDefaultDynamicModelSafety() + (1 - ai.getDefaultDynamicModelSafety()) / 2)) ? await memory.get(baseline_key) : null;
   if (baseline) {
     try {
       let baseline_audio = await streamAttachment(baseline);
@@ -1010,7 +1010,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       throw new Error('Unknown command: ' + message);
     }
 
-    const try_fix_command = false;
+    const try_fix_command = true;
     let command = try_fix_command ? await fixCommand(guild_id, user_id, message) : null;
     if (command) {
       try {
@@ -1031,12 +1031,12 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
 }
 
 async function fixCommand(guild_id, user_id, message) {
-  let model = await ai.getDynamicModel(await ai.getLanguageModels());
+  let model = await ai.getDynamicModel(await ai.getLanguageModels(), ai.getDefaultDynamicModelSafety() + (1 - ai.getDefaultDynamicModelSafety()) / 2);
   if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) return null;
-  if (!model) return null;
-  let context = await createHelpString(guild_id, discord.mention_user((await discord.me()).id));
+  let context = await createHelpString(guild_id, '' /*discord.mention_user((await discord.me()).id)*/);
   const dummy_token = 'NULL';
-  let command = await ai.createResponse(model, user_id, null, context, `Fix the command "${message}". Respond with the command only. Respond with "${dummy_token}" if it is not a valid command.`);
+  let command = await ai.createResponse(model, user_id, null, context, `Fix the command "${message}". Respond with the fixed command only. Respond with "${dummy_token}" if it is not a valid command.`);
+  if (command && ((command.startsWith('\'') && command.endsWith('\'')) || (command.startsWith('"') && command.endsWith('"')))) command = command.substring(1, command.length - 1);
   if (command == dummy_token || command.startsWith(dummy_token)) return null;
   return command.trim();
 }
