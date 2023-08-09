@@ -54,7 +54,8 @@ async function getRanks(account) {
 
 async function http_algs_api(player) {
   // api responds with content-type 'application/json' but does not allow the same value in the accept request header
-  return curl.request({ hostname: 'api.mozambiquehe.re', path: '/bridge?player=' + encodeURIComponent(player) + '&platform=PC', headers: { 'authorization': process.env.APEX_LEGENDS_API_TOKEN, 'accept': '*/*' } });
+  let selector = (/^\d+$/.test(player) ? 'uid' : 'player') + '=' + encodeURIComponent(player);
+  return curl.request({ hostname: 'api.mozambiquehe.re', path: '/bridge?' + selector + '&platform=PC', headers: { 'authorization': process.env.APEX_LEGENDS_API_TOKEN, 'accept': '*/*' } });
 }
 
 async function http_tracker(player) {
