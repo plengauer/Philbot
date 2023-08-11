@@ -8,7 +8,7 @@ const curl = require('./curl.js');
 async function on_voice_state_update(guild_id, channel_id, session_id) {
   if (channel_id) await memory.set(`player:voice_channel:guild:${guild_id}`, channel_id, 60 * 60 * 24);
   let me = await discord.me();
-  return HTTP_VOICE('/events/voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: 'http://127.0.0.1:8080/voice_callback' })
+  return HTTP_VOICE('/events/voice_state_update', { guild_id: guild_id, channel_id: channel_id, user_id: me.id, session_id: session_id, callback_url: 'http://127.0.0.1:' + process.env.PORT + '/voice_callback' })
     .then(() => channel_id ? updateInteractions(guild_id) : closeInteractions(guild_id));
 }
 
@@ -116,7 +116,7 @@ async function VOICE_CONTENT(guild_id, link, lookahead_only = false, title = und
 
 async function HTTP_VOICE(operation, payload, method = 'POST', headers = {}) {
   headers['x-authorization'] = process.env.DISCORD_API_TOKEN;
-  return curl.request({ secure: false, method: method, hostname: `127.0.0.1`, port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: operation, headers: headers, body: payload, timeout: 1000 * 60 * 60 * 24 });
+  return curl.request({ secure: false, method: method, hostname: process.env.VOICE_HOST ?? '127.0.0.1', port: process.env.VOICE_PORT ? parseInt(process.env.VOICE_PORT) : 12345, path: operation, headers: headers, body: payload, timeout: 1000 * 60 * 60 * 24 });
 }
 
 async function resolveTitle(link) {

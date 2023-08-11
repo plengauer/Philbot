@@ -23,7 +23,7 @@ async function connect(prev_state = {}) {
         sequence: prev_state.sequence,
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
     };
-    state.callback_port = parseInt(process.env.PORT ?? "8081") + SHARD_INDEX;
+    state.callback_port = process.env.PORT ? parseInt(process.env.PORT) : (parseInt(process.env.BASE_PORT ?? "8081") + SHARD_INDEX);
     /*
     const options = {
         key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),
@@ -244,7 +244,7 @@ async function HTTP(event, payload, delay = undefined) {
     if (delay && delay > 1000 * 60 * 15) throw new Error('HTTP RETRIES EXCEEDED')
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
     let body = JSON.stringify(payload);
-    let url = 'http://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
+    let url = 'http://' + (process.env.FORWARD_HOST ?? '127.0.0.1') + ':' + (process.env.FORWARD_PORT ?? '8080') + (process.env.FORWARD_PATH ?? '/discord') + '/' + event.toLowerCase();
     let time = Date.now();
     return new Promise((resolve, reject) => request.post({ url: url, headers: { 'content-encoding': 'identity', 'content-type': 'application/json', 'x-authorization': process.env.DISCORD_API_TOKEN }, body: body }, (error, response, body) => {
         if (error) {
