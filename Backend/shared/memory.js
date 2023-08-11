@@ -7,7 +7,7 @@ const directory = process.env.MEMORY_DIRECTORY;
 
 async function clean() {
   for (let keys of chunkify(await ls(), 100)) {
-    await Promise.all(keys.map(key => read(key).catch(error => remove(key))));
+    await Promise.all(keys.map(key => read(key).catch(error => remove(key).catch(error2 => {}))));
   }
 }
 

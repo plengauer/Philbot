@@ -175,8 +175,8 @@ async function clean() {
               await discord.guild_channel_rename(mirror.guild_id, mirrored_channel.id, channel.name);
             }
           } else {
-            let mirrored_channel = await discord.guild_channel_create(mirror_info.guild_id, channel.name, channel.parent_id ? mirror_info.channel_ids[channel.parent_id] : undefined, channel.type);
-            mirror_info.channel_ids[channel.id] = mirrored_channel.id;  
+            let mirrored_channel = await discord.guild_channel_create(mirror.guild_id, channel.name, channel.parent_id ? mirror.channel_ids[channel.parent_id] : undefined, channel.type);
+            mirror.channel_ids[channel.id] = mirrored_channel.id;  
           }
         }
         for (let channel_id in mirror.channel_ids) {
