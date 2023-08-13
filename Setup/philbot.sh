@@ -118,7 +118,7 @@ uninstall_discordgateway2http() {
 }
 
 install_voice() {
-    sudo apt-get -y install python3 python3-pip ffmpeg libopusfile0 &&
+    sudo apt-get -y install python3 python3-pip python3-venv ffmpeg libopusfile0 &&
     wget -O libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2 &&
     mkdir -p voice_storage &&
     install voice voice python &&

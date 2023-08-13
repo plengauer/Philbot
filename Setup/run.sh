@@ -25,10 +25,12 @@ then
 elif [ $technology = "python" ]
 then
     package=$module
+    python3 -m venv venv
+    source venv/bin/activate &&
     flock -F $lock_file pip3 install $package --upgrade &&
-    export PYTHONPATH=$(find ~/.local/lib/python*/site-packages/$package -prune | tr '\n' ':') &&
+    export PYTHONPATH=$(find venv/lib/python*/site-packages/$package -prune | tr '\n' ':') &&
     export SERVICE_VERSION=$(pip show $package | grep Version | cut -d':' -f2 | sed 's/ //g') &&
-    exec ~/.local/bin/opentelemetry-instrument python3 -u -m $package
+    exec venv/bin/opentelemetry-instrument python3 -u -m $package
 else
     exit 1
 fi
