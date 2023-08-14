@@ -31,6 +31,12 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
 
   let is_voice_message = (flags & (1 << 13)) != 0;
   let is_audio = (flags & (1 << 31)) != 0;
+
+  if (is_voice_message && await memory.consume(`voice_clone:in_progress:user:${user_id}`, false)) {
+    if (attachments[0].duration_secs < 60) return respond(guild_id, channel_id, event_id, 'The voice sample is too short!');
+    return memory.set(`voice_clone:sample:user:${user_id}`, attachments[0]).then(() => reactOK(channel_id, event_id));
+  }
+
   if (is_voice_message || is_audio) {
     let instructions = (await createBasicAIContext(guild_id, me)) + ' This is a transcript of a Discord ' + (is_audio ? 'conversation' : 'voice message') + '.';
     message = await transcribeAttachment(user_id, attachments[0], instructions, is_audio);
@@ -950,8 +956,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (!guild_id) return reactNotOK(channel_id, event_id);
     let connection = await memory.get(`voice_channel:user:${user_id}`, null);
     if (!connection || connection.guild_id != guild_id || !connection.channel_id) return reactNotOK(channel_id, event_id);
-    let text = discord.mention_user(user_id) + ' says: ' + message.split(' ').slice(1).join(' ');
-    return respond(connection.guild_id, connection.channel_id, undefined, text);
+    return respond(connection.guild_id, connection.channel_id, undefined, message.split(' ').slice(1).join(' '), user_id);
 
   } else if (message.toLowerCase() == 'mirror' || message.toLowerCase().startsWith('mirror to ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -987,6 +992,23 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     }
     return (message.toLowerCase() == 'reset' ? memory.unset(key) : memory.set(key, personality))
       .then(() => reactOK(channel_id, event_id));
+  
+  } else if (message.toLowerCase() == 'configure voice' || message.toLowerCase() == 'clone voice') {
+    let poem = 'The pleasure of Shawn’s company' + '\n' +
+      'Is what I most enjoy.' + '\n' +
+      'He put a tack on Ms. Yancey’s chair' + '\n' +
+      'When she called him a horrible boy.' + '\n' +
+      'At the end of the month he was flinging two kittens' + '\n' +
+      'Across the width of the room.' + '\n' +
+      'I count on his schemes to show me a way now' + '\n' +
+      'Of getting away from my gloom.';
+    await memory.set(`voice_clone:in_progress:user:${user_id}`, true, 60 * 5);
+    return respond(guild_id, channel_id, event_id,
+      'To clone your voice, I need you to record sample. It should be about a minute long, and of good quality. Try to avoid background noise. ' + 
+      'Please send me a voice message (only works from Discord mobile client) repeating the following poem again and again until the message is at least a minute long:' + '\n\n'
+      + poem + '\n\n'
+      + 'You have five minutes to send me a voice message. You can restart the process with the same command any time.'
+    );
   
   } else if (message.toLowerCase() == 'mute for me') {
     return memory.set(`mute:user:${user_id}`, true, 60 * 60 * 24 * 7 * 4)
@@ -1141,8 +1163,20 @@ async function handleLongResponse(channel_id, func) {
     .finally(() => clearInterval(timer));
 }
 
-async function respond(guild_id, channel_id, event_id, message) {
+async function respond(guild_id, channel_id, event_id, message, sender_user_id = undefined) {
   if (!event_id && guild_id && ((await discord.guild_channel_retrieve(null, channel_id)).type & 2) != 0) {
+    const codec = 'mp3';
+    let me = await discord.me();
+    const dummy_token = 'NULL';
+    let languageCode = await ai.createResponse(
+      await ai.getDynamicModel(await ai.getLanguageModels()), me.id, null,
+      `I determine the BCP 47 language tag representing the language of a given text. I ignore typos. I respond with the language tag only. I respond with ${dummy_token} if no clear language can be determined.`,
+      message
+    );
+    if (!languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
+    let sample = await memory.get(`voice_clone:sample:user:${sender_user_id}`, null);
+    let seed = sample ? media.convert(await streamAttachment(sample), sample.content_type.split('/')[1], codec) : null;
+    if (sender_user_id && !seed) message = discord.mention_user(sender_user_id) + ' says: ' + message.split(' ').slice(1).join(' ');
     let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
     for (let mentioned_member of mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention))) { 
       let member = await discord.guild_member_retrieve(guild_id, mentioned_member);
@@ -1156,16 +1190,7 @@ async function respond(guild_id, channel_id, event_id, message) {
         message = message.replace(discord.mention_role(mentioned_role), role.name);
       }
     }
-    const codec = 'mp3';
-    let me = await discord.me();
-    const dummy_token = 'NULL';
-    let languageCode = await ai.createResponse(
-      await ai.getDynamicModel(await ai.getLanguageModels()), me.id, null,
-      `I determine the BCP 47 language tag representing the language of a given text. I ignore typos. I respond with the language tag only. I respond with ${dummy_token} if no clear language can be determined.`,
-      message
-    );
-    if (!languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
-    let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), me.id, message, languageCode, 'neutral', codec);
+    let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), me.id, message, languageCode, 'neutral', seed, codec);
     return player.play(guild_id, channel_id, { content: audio, codec: codec }, false);
   } else {
     return discord.respond(channel_id, event_id, message);

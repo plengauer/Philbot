@@ -4,9 +4,10 @@ const opentelemetry = require('@opentelemetry/api');
 
 const synchronized = require('./synchronized.js');
 const openai = require('./openai.js');
-const googleai = require('./googleai.js')
+const googleai = require('./googleai.js');
+const speechify = require('./speechify.js');
 
-const VENDORS = ['openai', 'google'];
+const VENDORS = ['openai', 'google', 'speechify'];
 
 const meter = opentelemetry.metrics.getMeter('ai');
 meter.createObservableGauge('ai.cost.slotted.absolute').addCallback(async (result) => Promise.all(VENDORS.map(vendor => getCurrentCost(vendor).then(cost => result.observe(cost, {'ai.vendor': vendor})))));
@@ -15,7 +16,7 @@ meter.createObservableGauge('ai.cost.slotted.progress').addCallback(async (resul
 const request_counter = meter.createCounter('ai.requests');
 const cost_counter = meter.createCounter('ai.cost');
 
-const DEFAULT_DYNAMIC_MODEL_SAFETY = 0.5;
+const DEFAULT_DYNAMIC_MODEL_SAFETY = 0.75;
 
 function getDefaultDynamicModelSafety() {
     return DEFAULT_DYNAMIC_MODEL_SAFETY;
@@ -37,7 +38,7 @@ async function shouldCreate(vendor, threshold = 0.8) {
 
 async function computeCostProgress(vendor) {
     let limit = getCostLimit(vendor);
-    return limit > 0 ? (await getCurrentCost(vendor)) / getCostLimit(vendor) : 0;
+    return limit > 0 ? (await getCurrentCost(vendor)) / getCostLimit(vendor) : 1;
 }
 
 async function getLanguageModels() {
@@ -92,11 +93,16 @@ async function createTranscription(model, user, prompt, audio_stream, audio_stre
 }
 
 async function getVoiceModels() {
-    return googleai.getVoiceModels().then(models => wrapModels('google', models));
+    let models_speechify = await speechify.getVoiceModels().then(models => wrapModels('speechify', models));
+    let models_google = await googleai.getVoiceModels().then(models => wrapModels('google', models));
+    return models_google.concat(models_speechify);
 }
 
-async function createVoice(model, user, text, language, gender, format) {
-    return googleai.createVoice(model.name, text, language, gender, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
+async function createVoice(model, user, text, language, gender, seed, format) {
+    switch(model.vendor) {
+        case 'speechify': return speechify.createVoice(model, text, seed, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
+        case 'google': return googleai.createVoice(model.name, text, language, gender, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost)); 
+    }
 }
 
 function wrapModels(vendor, models) {
@@ -125,6 +131,7 @@ function getCostLimit(vendor) {
     switch(vendor) {
         case 'openai': return openai.getCostLimit();
         case 'google': return googleai.getCostLimit();
+        case 'speechify': return speechify.getCostLimit();
         default: throw new Error('Unknown vendor: ' + vendor);
     }
 }
@@ -133,6 +140,7 @@ function isSameBillingSlot(vendor, timestamp, now) {
     switch(vendor) {
         case 'openai': return openai.isSameBillingSlot(timestamp, now);
         case 'google': return googleai.isSameBillingSlot(timestamp, now);
+        case 'speechify': return speechify.isSameBillingSlot(timestamp, now);
         default: throw new Error('Unknown vendor: ' + vendor);
     }
 }
@@ -141,6 +149,7 @@ function computeBillingSlotProgress(vendor) {
     switch(vendor) {
         case 'openai': return openai.computeBillingSlotProgress();
         case 'google': return googleai.computeBillingSlotProgress();
+        case 'speechify': return speechify.computeBillingSlotProgress();
         default: throw new Error('Unknown vendor: ' + vendor);
     }
 }

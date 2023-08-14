@@ -1,11 +1,11 @@
 const process = require('process');
-const stream = require('stream');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
 const synchronized = require('./synchronized.js');
+const FormData = require('form-data');
 const media = require('./media.js');
 
-const token = process.env.SPEECHIFY_TOKEN;
+const token = process.env.SPEECHIFY_API_TOKEN;
 const debug = false;
 
 function getCostLimit() {
@@ -34,9 +34,9 @@ async function createVoice(model, text, seed, format, report) {
   let body = new FormData();
   body.append('text', text, { contentType: 'string' });
   body.append('files', seed, { contentType: 'audio/' + format });
-  let response = await HTTP('POST', body.getHeaders(), '/tts/clone', body);
+  let response = await HTTP('GET', body.getHeaders(), '/tts/clone', body);
   await report(model, await getVoiceCost(text));
-  return response; // TODO do we get a json or a stream? if so, which format? the correct one?
+  return response;
 }
 
 async function getVoiceCost(text) {
