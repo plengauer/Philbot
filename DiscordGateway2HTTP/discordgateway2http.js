@@ -23,7 +23,7 @@ async function connect(prev_state = {}) {
         sequence: prev_state.sequence,
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
     };
-    state.callback_port = process.env.PORT ? parseInt(process.env.PORT) : (parseInt(process.env.BASE_PORT ?? "8081") + SHARD_INDEX);
+    state.callback_port = process.env.BASE_PORT ? (parseInt(process.env.BASE_PORT ?? "8081") + SHARD_INDEX) : parseInt(process.env.PORT ?? '8080');
     /*
     const options = {
         key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),

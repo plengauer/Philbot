@@ -10,9 +10,10 @@ COPY package.json ./
 RUN npm install
 COPY . .
 
+ENV PORT=8080
+
 ENV SERVICE_NAME="Philbot Backend"
 ENV SERVICE_VERSION=""
 CMD exec npm start
 
-EXPOSE 443
 EXPOSE 8080

@@ -59,7 +59,7 @@ tracer_provider.add_span_processor(
 opentelemetry.trace.set_tracer_provider(tracer_provider)
 
 UDP_MAX_PAYLOAD = 65507
-HTTP_PORT = int(os.environ.get('PORT', str(12345)))
+HTTP_PORT = int(os.environ.get('PORT', str(8080)))
 UDP_PORT_MIN = int(os.environ.get('UDP_PORT_MIN', str(12346)))
 UDP_PORT_MAX = int(os.environ.get('UDP_PORT_MAX', str(65535)))
 STORAGE_DIRECTORY = os.environ['CACHE_DIRECTORY']
