@@ -2,7 +2,7 @@ FROM node:18-alpine
 WORKDIR /application
 
 COPY package.json ./
-npm install
+RUN npm install
 COPY . .
 
 ENV SHARD_INDEX=0

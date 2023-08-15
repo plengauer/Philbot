@@ -7,7 +7,7 @@ ENV MEMORY_DIRECTORY=/memory
 RUN mkdir $MEMORY_DIRECTORY
 
 COPY package.json ./
-npm install
+RUN npm install
 COPY . .
 
 ENV SERVICE_NAME="Philbot Backend"
