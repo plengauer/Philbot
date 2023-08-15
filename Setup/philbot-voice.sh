@@ -5,3 +5,5 @@ sudo exec docker run -d philipplengauer/philbot-scheduler:latest \
     -env-file environment.properties.voice \
     --env CACHE_DIRECTORY=$CONTAINER_CACHE_DIRECTORY \
     --mount type=bind,source=$HOST_CACHE_DIRECTORY,target=$CONTAINER_CACHE_DIRECTORY
+    --env PORT=12345
+    -p 127.0.0.1:12345:12345

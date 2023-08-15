@@ -4,3 +4,5 @@ mkdir -p $HOST_MEMORY_DIRECTORY &&
 sudo exec docker run -d philipplengauer/philbot-backend:latest \
     -env-file environment.properties.backend \
     --mount type=bind,source=$HOST_MEMORY_DIRECTORY,target=$CONTAINER_MEMORY_DIRECTORY
+    --env PORT=8080
+    -p 8080:8080
