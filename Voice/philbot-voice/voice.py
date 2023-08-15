@@ -62,7 +62,7 @@ UDP_MAX_PAYLOAD = 65507
 HTTP_PORT = int(os.environ.get('PORT', str(12345)))
 UDP_PORT_MIN = int(os.environ.get('UDP_PORT_MIN', str(12346)))
 UDP_PORT_MAX = int(os.environ.get('UDP_PORT_MAX', str(65535)))
-STORAGE_DIRECTORY = os.environ['STORAGE_DIRECTORY']
+STORAGE_DIRECTORY = os.environ['CACHE_DIRECTORY']
 
 meter = opentelemetry.metrics.get_meter_provider().get_meter('voice', '1.0.0')
 app = Flask(__name__)

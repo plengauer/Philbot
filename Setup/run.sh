@@ -31,6 +31,9 @@ then
     export PYTHONPATH=$(find venv/lib/python*/site-packages/$package -prune | tr '\n' ':') &&
     export SERVICE_VERSION=$(pip show $package | grep Version | cut -d':' -f2 | sed 's/ //g') &&
     exec venv/bin/opentelemetry-instrument python3 -u -m $package
+elif [ $technology = "bash" ]
+then
+    exec bash $module.sh
 else
     exit 1
 fi
