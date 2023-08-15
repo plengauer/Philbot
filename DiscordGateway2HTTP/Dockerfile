@@ -1,0 +1,17 @@
+FROM node:18-alpine
+WORKDIR /application
+
+COPY package.json ./
+npm install
+COPY . .
+
+ENV SHARD_INDEX=0
+ENV SHARD_COUNT=1
+ENV PORT=8080
+
+ENV SERVICE_NAME="Philbot Discord Gateway 2 HTTP"
+ENV SERVICE_VERSION=""
+CMD exec npm start
+
+EXPOSE 443
+EXPOSE 8080
