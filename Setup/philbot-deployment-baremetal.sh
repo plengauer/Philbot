@@ -112,7 +112,6 @@ install_discordgateway2http() {
         install discordgateway2http_$shard_index discordgateway2http node.js &&
         echo SERVICE_NAME="Philbot Discord Gateway 2 HTTP" >> ./discordgateway2http_$shard_index/environment.properties
         echo SHARD_INDEX=$shard_index >> ./discordgateway2http_$shard_index/environment.properties &&
-        echo SHARD_INDEX=$shard_index >> ./discordgateway2http_$shard_index/environment.properties &&
         echo SHARD_COUNT=$(desired_shard_count) >> ./discordgateway2http_$shard_index/environment.properties &&
         echo PORT=$(($GATEWAY_PORT_BASE + $shard_index)) >> ./discordgateway2http_$shard_index/environment.properties &&
         echo FORWARD_PORT=$BACKEND_PORT >> ./discordgateway2http_$shard_index/environment.properties &&
