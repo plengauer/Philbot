@@ -5,6 +5,7 @@ echo 'hourly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/hourly' >> ./config.prop
 echo 'daily=http://127.0.0.1:'$BACKEND_PORT'/scheduler/daily' >> ./config.properties.scheduler &&
 echo 'monthly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/monthly' >> ./config.properties.scheduler &&
 sudo docker run \
+    --user $(id -u):$(id -g) \
     --network="host" \
     --env-file environment.properties.scheduler \
     --env CONFIG_FILE=/config.properties \

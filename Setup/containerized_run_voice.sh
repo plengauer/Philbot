@@ -2,6 +2,7 @@ CONTAINER_CACHE_DIRECTORY=audio_cache
 HOST_CACHE_DIRECTORY=.philbot_voice_$CONTAINER_CACHE_DIRECTORY
 mkdir -p $HOST_CACHE_DIRECTORY &&
 sudo docker run \
+    --user $(id -u):$(id -g) \
     --network="host" \
     --env-file environment.properties.voice \
     --env CACHE_DIRECTORY=/$CONTAINER_CACHE_DIRECTORY \
