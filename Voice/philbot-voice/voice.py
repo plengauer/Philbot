@@ -1030,4 +1030,3 @@ def main():
     print('VOICE ready')
     # app.run(port=HTTP_PORT, ssl_context='adhoc', threaded=True)
     app.run(port=HTTP_PORT, threaded=True)
-
