@@ -9,7 +9,7 @@ const token = process.env.SPEECHIFY_API_TOKEN;
 const debug = false;
 
 function getCostLimit() {
-  return 1.00;
+  return 0.00;
 }
 
 function isSameBillingSlot(t1, t2) {
