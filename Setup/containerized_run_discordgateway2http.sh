@@ -1,7 +1,7 @@
 CONTAINER_SESSIONS_DIRECTORY=sessions
 HOST_SESSIONS_DIRECTORY=.philbot_discordgateway2http_$CONTAINER_SESSIONS_DIRECTORY
 mkdir -p $HOST_SESSIONS_DIRECTORY &&
-sudo docker run \
+exec sudo docker run \
     --user $(id -u):$(id -g) \
     --network="host" \
     --env-file environment.properties.discordgateway2http \
