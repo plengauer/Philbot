@@ -1,9 +1,10 @@
 CONTAINER_CACHE_DIRECTORY=audio_cache
 HOST_CACHE_DIRECTORY=.philbot_voice_$CONTAINER_CACHE_DIRECTORY
 mkdir -p $HOST_CACHE_DIRECTORY &&
-sudo docker run -d philipplengauer/philbot-scheduler:latest \
+sudo docker run \
     -env-file environment.properties.voice \
     --env CACHE_DIRECTORY=$CONTAINER_CACHE_DIRECTORY \
     --mount type=bind,source=$HOST_CACHE_DIRECTORY,target=$CONTAINER_CACHE_DIRECTORY \
     -p 127.0.0.1:12345:8080 \
-    -p 1-65535:1-65535/udp
+    -p 1-65535:1-65535/udp \
+    philipplengauer/philbot-scheduler:latest
