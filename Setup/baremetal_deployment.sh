@@ -75,7 +75,7 @@ install() {
     technology=$3
     mkdir -p $folder &&
     cp -f -T environment.properties.$package ./$folder/environment.properties &&
-    cat service.template | sed 's~$directory~'$(pwd)'\/'$folder'~g' | sed 's/$technology/'$technology'/g' | sed 's/$module/philbot-'$package'/g' > philbot_$name.service &&
+    cat service.template | sed 's~$command~\/usr\/bin\/bash '$folder'\/..\/baremetal_run.sh '$folder' '$technology' philbot-'$package'~g' > philbot_$name.service &&
     sudo mv philbot_$name.service /etc/systemd/system/ &&
     sudo systemctl daemon-reload
 }
