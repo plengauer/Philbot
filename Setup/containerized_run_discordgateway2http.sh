@@ -3,8 +3,8 @@ HOST_SESSIONS_DIRECTORY=.philbot_discordgateway2http_$CONTAINER_SESSIONS_DIRECTO
 mkdir -p $HOST_SESSIONS_DIRECTORY &&
 sudo docker run \
     --env-file environment.properties.discordgateway2http \
-    --mount type=bind,source=$(pwd)/$HOST_SESSIONS_DIRECTORY,target=$CONTAINER_SESSIONS_DIRECTORY \
-    --env STATE_STORAGE_DIRECTORY=$HOST_SESSIONS_DIRECTORY \
+    --env STATE_STORAGE_DIRECTORY=/$HOST_SESSIONS_DIRECTORY \
+    --mount type=bind,source=$(pwd)/$HOST_SESSIONS_DIRECTORY,target=/$CONTAINER_SESSIONS_DIRECTORY \
     --env SHARD_INDEX=$SHARD_INDEX \
     --env SHARD_COUNT=$SHARD_COUNT \
     --env PORT=8080 \
