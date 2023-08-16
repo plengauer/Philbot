@@ -7,7 +7,7 @@ const curl = require('./curl.js');
 const media = require('./media.js');
 let FormData = require('form-data');
 
-const token = process.env.OPENAI_API_KEY;
+const token = process.env.OPENAI_API_TOKEN;
 const debug = process.env.OPENAI_DEBUG == 'true'
 
 function getCostLimit() {
