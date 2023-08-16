@@ -1,3 +1,7 @@
+BACKEND_PORT=8080
+VOICE_PORT=12345
+GATEWAY_PORT_BASE=8081
+
 current_shards() {
     echo $(ls /etc/systemd/system/philbot_discordgateway2http_*.service | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs)
 }
@@ -87,11 +91,13 @@ uninstall() {
 install_backend() {
     curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&
     sudo apt-get -y install nodejs iptables-persistent ffmpeg &&
-    sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
+    sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port $BACKEND_PORT &&
     sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443 &&
     mkdir -p memory &&
     install backend backend node.js &&
-    echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties
+    echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
+    echo PORT=$BACKEND_PORT >> ./backend/environment.properties &&
+    echo VOICE_PORT=$VOICE_PORT >> ./backend/environment.properties &&
 }
 
 uninstall_backend() { uninstall backend; }
@@ -105,6 +111,7 @@ install_discordgateway2http() {
         install discordgateway2http_$shard_index discordgateway2http node.js &&
         echo SHARD_INDEX=$shard_index >> ./discordgateway2http_$shard_index/environment.properties &&
         echo SHARD_COUNT=$(desired_shard_count) >> ./discordgateway2http_$shard_index/environment.properties &&
+        echo PORT=$(($GATEWAY_PORT_BASE + $shard_index)) &&
         echo STATE_STORAGE_DIRECTORY=$(pwd)/discordgateway2http_$shard_index/ >> ./discordgateway2http_$shard_index/environment.properties ||
         return 1
     done
@@ -120,9 +127,10 @@ uninstall_discordgateway2http() {
 install_voice() {
     sudo apt-get -y install python3 python3-pip python3-venv ffmpeg libopusfile0 &&
     wget -O libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2 &&
-    mkdir -p voice_storage &&
+    mkdir -p audio_cache &&
     install voice voice python &&
-    echo CACHE_DIRECTORY=$(pwd)/voice_storage/ >> ./voice/environment.properties
+    echo PORT=$VOICE_PORT >> ./voice/environment.properties &&
+    echo CACHE_DIRECTORY=$(pwd)/audio_cache/ >> ./voice/environment.properties &&
     tar -xf libopus.tar.bz2 -C voice/ &&
     echo LD_LIBRARY_PATH=$(pwd)/voice/lib/ >> ./voice/environment.properties &&
     rm libopus.tar.bz2
@@ -130,14 +138,19 @@ install_voice() {
 
 uninstall_voice() {
     uninstall voice &&
-    rm -rf voice_storage
+    rm -rf audio_cache
 }
 
 install_scheduler() {
     sudo apt-get -y install ruby ruby-bundler &&
     install scheduler scheduler ruby &&
-    cp -f -T config.properties.scheduler ./scheduler/config.properties &&
-    echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties
+    rm -rf ./scheduler/config.properties &&
+    echo 'minutely=http://127.0.0.1:'$BACKEND_PORT'/scheduler/minutely' >> ./scheduler/config.properties &&
+    echo 'hourly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/hourly' >> ./scheduler/config.properties &&
+    echo 'daily=http://127.0.0.1:'$BACKEND_PORT'/scheduler/daily' >> ./scheduler/config.properties &&
+    echo 'monthly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/monthly' >> ./scheduler/config.properties &&
+    echo PORT=$BACKEND_PORT >> ./scheduler/environment.properties &&
+    echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties 
 }
 
 uninstall_scheduler() { uninstall scheduler; }
