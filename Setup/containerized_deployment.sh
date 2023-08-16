@@ -68,7 +68,7 @@ install() {
     name=$1
     tier=$2
     sudo apt-get -y install docker docker.io &&
-    cat service.template | sed 's~$command~\/usr\/bin\/bash '$(pwd)'\/containerized_run_'$tier'.sh~g' > philbot_$name.service &&
+    cat service.template | sed 's~$directory~'$(pwd)'~g' | sed 's~$command~/usr/bin/bash containerized_run_'$tier'.sh~g' > philbot_$name.service &&
     sudo mv philbot_$name.service /etc/systemd/system/ &&
     sudo systemctl daemon-reload
 }
