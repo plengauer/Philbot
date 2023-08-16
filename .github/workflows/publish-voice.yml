@@ -3,7 +3,8 @@ name: Publish Voice
 on:
   push:
     branches: main
-    paths: ['./Voice/**']
+    paths:
+      - 'Voice/**'
 
 permissions:
   contents: read

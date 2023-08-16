@@ -3,7 +3,8 @@ name: Publish Scheduler
 on:
   push:
     branches: main
-    paths: ['./Scheduler/**']
+    paths:
+      - 'Scheduler/**'
 
 jobs:
   publish-gem:

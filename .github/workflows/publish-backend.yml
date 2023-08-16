@@ -3,7 +3,8 @@ name: Publish Backend
 on:
   push:
     branches: main
-    paths: ['./Backend/**']
+    paths:
+      - 'Backend/**'
 
 jobs:
   publish-npm:
