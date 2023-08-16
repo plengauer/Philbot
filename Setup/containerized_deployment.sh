@@ -67,6 +67,7 @@ stop_scheduler() { stop scheduler; }
 install() {
     name=$1
     tier=$2
+    sudo apt-get -y install docker &&
     cat service.template | sed 's~$command~'$directory'\/containerized_run_'$tier'.sh~g' > philbot_$name.service &&
     sudo mv philbot_$name.service /etc/systemd/system/ &&
     sudo systemctl daemon-reload
