@@ -2,7 +2,8 @@ name: Publish Discord Gateway 2 HTTP
 
 on:
   push:
-    branches:  main
+    branches: main
+    paths: ['./DiscordGateway2HTTP/**']
 
 jobs:
   publish-npm:

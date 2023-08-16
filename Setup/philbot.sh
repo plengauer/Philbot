@@ -122,7 +122,7 @@ install_voice() {
     wget -O libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2 &&
     mkdir -p voice_storage &&
     install voice voice python &&
-    echo STORAGE_DIRECTORY=$(pwd)/voice_storage/ >> ./voice/environment.properties
+    echo CACHE_DIRECTORY=$(pwd)/voice_storage/ >> ./voice/environment.properties
     tar -xf libopus.tar.bz2 -C voice/ &&
     echo LD_LIBRARY_PATH=$(pwd)/voice/lib/ >> ./voice/environment.properties &&
     rm libopus.tar.bz2
