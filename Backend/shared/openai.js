@@ -11,7 +11,7 @@ const token = process.env.OPENAI_API_TOKEN;
 const debug = process.env.OPENAI_DEBUG == 'true'
 
 function getCostLimit() {
-  return parseFloat(process.env.OPENAI_API_COST_LIMIT ?? '1.00');
+  return parseFloat(process.env.OPENAI_COST_LIMIT ?? '1.00');
 }
 
 function isSameBillingSlot(t1, t2) {
