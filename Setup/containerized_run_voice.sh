@@ -4,7 +4,7 @@ mkdir -p $HOST_CACHE_DIRECTORY &&
 sudo docker run \
     --env-file environment.properties.voice \
     --env CACHE_DIRECTORY=$CONTAINER_CACHE_DIRECTORY \
-    --mount type=bind,source=$HOST_CACHE_DIRECTORY,target=$CONTAINER_CACHE_DIRECTORY \
+    --mount type=bind,source=$(pwd)/$HOST_CACHE_DIRECTORY,target=$CONTAINER_CACHE_DIRECTORY \
     -p 127.0.0.1:12345:8080 \
     -p 1-65535:1-65535/udp \
     philipplengauer/philbot-scheduler:latest
