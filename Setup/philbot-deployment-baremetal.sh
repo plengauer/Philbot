@@ -112,6 +112,7 @@ install_discordgateway2http() {
         echo SHARD_INDEX=$shard_index >> ./discordgateway2http_$shard_index/environment.properties &&
         echo SHARD_COUNT=$(desired_shard_count) >> ./discordgateway2http_$shard_index/environment.properties &&
         echo PORT=$(($GATEWAY_PORT_BASE + $shard_index)) &&
+        echo FORWARD_PORT=$BACKEND_PORT &&
         echo STATE_STORAGE_DIRECTORY=$(pwd)/discordgateway2http_$shard_index/ >> ./discordgateway2http_$shard_index/environment.properties ||
         return 1
     done
