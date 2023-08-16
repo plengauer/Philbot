@@ -153,7 +153,6 @@ install_scheduler() {
     echo 'hourly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/hourly' >> ./scheduler/config.properties &&
     echo 'daily=http://127.0.0.1:'$BACKEND_PORT'/scheduler/daily' >> ./scheduler/config.properties &&
     echo 'monthly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/monthly' >> ./scheduler/config.properties &&
-    echo PORT=$BACKEND_PORT >> ./scheduler/environment.properties &&
     echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties  &&
     echo SERVICE_NAME="Philbot Scheduler" >> ./scheduler/environment.properties
 }
