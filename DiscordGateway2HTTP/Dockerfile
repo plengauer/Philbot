@@ -11,6 +11,7 @@ ENV PORT=8080
 
 ENV SERVICE_NAME="Philbot Discord Gateway 2 HTTP"
 ENV SERVICE_VERSION=""
-CMD exec node discordgateway2http.js
+# can't use exec to save a process, see https://github.com/nodejs/node-v0.x-archive/issues/9131
+CMD node discordgateway2http.js
 
 EXPOSE 8080
