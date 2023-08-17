@@ -12,7 +12,7 @@ const meter = opentelemetry.metrics.getMeter('discord.gateway');
 
 const SHARD_INDEX = process.env.SHARD_INDEX ? parseInt(process.env.SHARD_INDEX) : 0;
 const SHARD_COUNT = process.env.SHARD_COUNT ? parseInt(process.env.SHARD_COUNT) : 1;
-const STATE_FILE = (process.env.STATE_STORAGE_DIRECTORY ?? './') + '.state.' + SHARD_INDEX + '.' + SHARD_COUNT + '.json';
+const STATE_FILE = (process.env.STATE_STORAGE_DIRECTORY ?? '.') + '/.state.' + SHARD_INDEX + '.' + SHARD_COUNT + '.json';
 
 connect(restoreState());
 
