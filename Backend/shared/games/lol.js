@@ -167,6 +167,7 @@ async function getSummoner(server, summonerName) {
       return summoner;
     }).catch(e => {
       if (e.message.includes('HTTP error 404')) return null;
+      if (e.message.includes('HTTP error 503')) return null;
       else throw e;
     });
 }
