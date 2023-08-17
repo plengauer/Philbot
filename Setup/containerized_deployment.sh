@@ -67,8 +67,9 @@ stop_scheduler() { stop scheduler; }
 install() {
     name=$1
     tier=$2
+    additional_service_fields=$3
     sudo apt-get -y install docker docker.io &&
-    cat service.template | sed 's~$directory~'$(pwd)'~g' | sed 's~$command~/usr/bin/bash containerized_run_'$tier'.sh~g' > philbot_$name.service &&
+    cat service.template | sed 's~$directory~'$(pwd)'~g' | sed 's~$command~/usr/bin/bash containerized_run_'$tier'.sh~g' | sed 's~[Service]~[Service]\n'$additional_service_fields'~g' > philbot_$name.service &&
     sudo mv philbot_$name.service /etc/systemd/system/ &&
     sudo systemctl daemon-reload
 }
@@ -90,8 +91,8 @@ uninstall_backend() { uninstall backend; }
 
 install_discordgateway2http() {
     for shard_index in $(desired_shards)
-    do #TODO
-        install discordgateway2http_$shard_index discordgateway2http || return 1
+    do
+        install discordgateway2http_$shard_index discordgateway2http 'Environment=SHARD_INDEX='$shard_index'\nEnvironment=SHARD_COUNT='$(desired_shard_count) || return 1
     done
 }
 
