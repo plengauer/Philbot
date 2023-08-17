@@ -3,11 +3,11 @@ VOICE_PORT=12345
 GATEWAY_PORT_BASE=8081
 
 current_shards() {
-    echo $(ls /etc/systemd/system/philbot_discordgateway2http_*.service | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs)
+    echo $(ls sudo docker container ls -a --format {{.Names}} | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs)
 }
 
 current_shard_count() {
-    echo $(cat discordgateway2http_*/environment.properties | grep SHARD_COUNT | sed 's/[^0-9]//g' | sed -n '1p') || echo 0
+    echo $(cat environment.properties.discordgateway2http | grep SHARD_COUNT | sed 's/[^0-9]//g' | sed -n '1p') || echo 0
 }
 
 desired_shards() {
