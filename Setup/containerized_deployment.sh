@@ -110,7 +110,7 @@ install_discordgateway2http() {
         install discordgateway2http_$shard_index discordgateway2http \
             --env SHARD_INDEX=$shard_index \
             --env SHARD_COUNT=$(desired_shard_count) \
-            --env PORT=$((8081 + $shard_index))
+            --env PORT=$((8081 + $shard_index)) \
         || return 1
     done
 }
