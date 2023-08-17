@@ -115,7 +115,7 @@ install_discordgateway2http() {
         echo SHARD_COUNT=$(desired_shard_count) >> ./discordgateway2http_$shard_index/environment.properties &&
         echo PORT=$(($GATEWAY_PORT_BASE + $shard_index)) >> ./discordgateway2http_$shard_index/environment.properties &&
         echo FORWARD_PORT=$BACKEND_PORT >> ./discordgateway2http_$shard_index/environment.properties &&
-        echo STATE_STORAGE_DIRECTORY=$(pwd)/discordgateway2http_$shard_index/ >> ./discordgateway2http_$shard_index/environment.properties ||
+        echo STATE_STORAGE_DIRECTORY=$(pwd)/.philbot_discordgateway2http_sessions/ >> ./discordgateway2http_$shard_index/environment.properties ||
         return 1
     done
 }
@@ -133,7 +133,7 @@ install_voice() {
     mkdir -p audio_cache &&
     install voice voice python &&
     echo PORT=$VOICE_PORT >> ./voice/environment.properties &&
-    echo CACHE_DIRECTORY=$(pwd)/audio_cache/ >> ./voice/environment.properties &&
+    echo CACHE_DIRECTORY=$(pwd)/.philbot_voice_audio_cache/ >> ./voice/environment.properties &&
     tar -xf libopus.tar.bz2 -C voice/ &&
     echo LD_LIBRARY_PATH=$(pwd)/voice/lib/ >> ./voice/environment.properties &&
     rm libopus.tar.bz2 &&
