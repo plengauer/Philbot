@@ -105,6 +105,7 @@ uninstall_backend() { uninstall backend; }
 install_discordgateway2http() {
     CONTAINER_SESSIONS_DIRECTORY=sessions
     HOST_SESSIONS_DIRECTORY=.philbot_discordgateway2http_$CONTAINER_SESSIONS_DIRECTORY
+    mkdir -p $HOST_SESSIONS_DIRECTORY
     for shard_index in $(desired_shards)
     do
         install discordgateway2http_$shard_index discordgateway2http \
@@ -125,10 +126,16 @@ uninstall_discordgateway2http() {
 }
 
 install_voice() {
+    CONTAINER_SESSIONS_DIRECTORY=sessions
+    HOST_SESSIONS_DIRECTORY=.philbot_voice_$CONTAINER_SESSIONS_DIRECTORY
     CONTAINER_CACHE_DIRECTORY=audio_cache
     HOST_CACHE_DIRECTORY=.philbot_voice_$CONTAINER_CACHE_DIRECTORY
+    mkdir -p $HOST_SESSIONS_DIRECTORY
+    mkdir -p $HOST_CACHE_DIRECTORY
     install voice voice \
         --env PORT=$VOICE_PORT \
+        --env STATE_STORAGE_DIRECTORY=/$CONTAINER_SESSIONS_DIRECTORY \
+        --mount type=bind,source=$(pwd)/$HOST_SESSIONS_DIRECTORY,target=/$CONTAINER_SESSIONS_DIRECTORY \
         --env CACHE_DIRECTORY=/$CONTAINER_CACHE_DIRECTORY \
         --mount type=bind,source=$(pwd)/$HOST_CACHE_DIRECTORY,target=/$CONTAINER_CACHE_DIRECTORY
 }

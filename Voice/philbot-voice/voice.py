@@ -63,6 +63,7 @@ HTTP_PORT = int(os.environ.get('PORT', str(8080)))
 UDP_PORT_MIN = int(os.environ.get('UDP_PORT_MIN', str(12346)))
 UDP_PORT_MAX = int(os.environ.get('UDP_PORT_MAX', str(65535)))
 STORAGE_DIRECTORY = os.environ['CACHE_DIRECTORY']
+SESSION_DIRECTORY = os.environ.get('STATE_STORAGE_DIRECTORY', '.')
 
 meter = opentelemetry.metrics.get_meter_provider().get_meter('voice', '1.0.0')
 app = Flask(__name__)
@@ -340,7 +341,7 @@ class Context:
     def __init__(self, guild_id):
         self.guild_id = guild_id
         try:
-            with open('.state.' + self.guild_id + '.json', 'r') as file:
+            with open(SESSION_DIRECTORY + '/.state.' + self.guild_id + '.json', 'r') as file:
                 state = json.loads(file.read())
                 if state['guild_id'] != guild_id:
                     return # silently ignore state file
@@ -358,7 +359,7 @@ class Context:
 
     def __save(self):
         with self.lock:
-            filename = '.state.' + self.guild_id + '.json'
+            filename = SESSION_DIRECTORY + '/.state.' + self.guild_id + '.json'
             if self.channel_id:
                 with open(filename, 'w') as file:
                     file.write(json.dumps({
@@ -1023,7 +1024,7 @@ def cleanup_loop():
         time.sleep(60)
 
 def main():
-    for file in os.listdir('.'):
+    for file in os.listdir(SESSION_DIRECTORY):
         if file.startswith('.state.') and file.endswith('.json'):
             get_context(file[len('.state.'):len(file) - len('.json')])
     threading.Thread(target=cleanup_loop).start()
