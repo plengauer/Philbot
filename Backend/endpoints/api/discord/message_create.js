@@ -1176,7 +1176,7 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
     if (!languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
     let sample = await memory.get(`voice_clone:sample:user:${sender_user_id}`, null);
     let seed = sample ? media.convert(await streamAttachment(sample), sample.content_type.split('/')[1], codec) : null;
-    if (sender_user_id && !seed) message = discord.mention_user(sender_user_id) + ' says: ' + message.split(' ').slice(1).join(' ');
+    if (sender_user_id && !seed) message = discord.mention_user(sender_user_id) + ' says: ' + message;
     let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
     for (let mentioned_member of mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention))) { 
       let member = await discord.guild_member_retrieve(guild_id, mentioned_member);
