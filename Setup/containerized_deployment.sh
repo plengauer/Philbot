@@ -3,7 +3,7 @@ VOICE_PORT=12345
 GATEWAY_PORT_BASE=8081
 
 current_shards() {
-    echo $(ls sudo docker container ls -a --format {{.Names}} | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs)
+    echo $(sudo docker container ls -a --format {{.Names}} | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs)
 }
 
 current_shard_count() {
