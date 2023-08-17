@@ -11,6 +11,6 @@ ENV PORT=8080
 
 ENV SERVICE_NAME="Philbot Discord Gateway 2 HTTP"
 ENV SERVICE_VERSION=""
-CMD exec npm start
+CMD exec node discordgateway2http.js
 
 EXPOSE 8080
