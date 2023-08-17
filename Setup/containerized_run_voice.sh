@@ -8,4 +8,4 @@ exec sudo docker run \
     --env-file environment.properties.voice \
     --env CACHE_DIRECTORY=/$CONTAINER_CACHE_DIRECTORY \
     --mount type=bind,source=$(pwd)/$HOST_CACHE_DIRECTORY,target=/$CONTAINER_CACHE_DIRECTORY \
-    philipplengauer/philbot-voice:latest
+    --init philipplengauer/philbot-voice:latest

@@ -11,4 +11,4 @@ exec sudo docker run \
     --mount type=bind,source=$(pwd)/$HOST_SESSIONS_DIRECTORY,target=/$CONTAINER_SESSIONS_DIRECTORY \
     --env SHARD_INDEX=$SHARD_INDEX \
     --env SHARD_COUNT=$SHARD_COUNT \
-    philipplengauer/philbot-discordgateway2http:latest
+    --init philipplengauer/philbot-discordgateway2http:latest

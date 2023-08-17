@@ -15,6 +15,6 @@ ENV PORT=8080
 ENV SERVICE_NAME="Philbot Backend"
 ENV SERVICE_VERSION=""
 # can't use exec to save a process, see https://github.com/nodejs/node-v0.x-archive/issues/9131
-CMD node backend.js
+CMD exec node backend.js
 
 EXPOSE 8080

@@ -9,4 +9,4 @@ exec sudo docker run \
     --env-file environment.properties.backend \
     --env MEMORY_DIRECTORY=/$CONTAINER_MEMORY_DIRECTORY \
     --mount type=bind,source=$(pwd)/$HOST_MEMORY_DIRECTORY,target=/$CONTAINER_MEMORY_DIRECTORY \
-    philipplengauer/philbot-backend:latest
+    --init philipplengauer/philbot-backend:latest
