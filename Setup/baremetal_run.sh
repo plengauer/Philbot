@@ -1,7 +1,7 @@
 directory=$1
 technology=$2
 module=$3
-lock_file=$directory/../.install_lock
+lock_file=.install_lock
 touch $lock_file &&
 cd $directory &&
 eval $(cat environment.properties | awk '{print "export \"" $0 "\""}') ||
