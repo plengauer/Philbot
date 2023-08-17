@@ -1,3 +1,7 @@
+BACKEND_PORT=8080
+VOICE_PORT=12345
+GATEWAY_PORT_BASE=8081
+
 current_shards() {
     echo $(ls /etc/systemd/system/philbot_discordgateway2http_*.service | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs)
 }
@@ -32,13 +36,12 @@ desired_shard_count() {
 
 start() {
     name=$1
-    sudo systemctl enable philbot_$name &&
-    sudo systemctl start philbot_$name
+    sudo docker start $name
 }
 
 stop() {
     name=$1
-    sudo systemctl stop philbot_$name || return 0
+    sudo docker stop $name
 }
 
 start_backend() { start backend; }
@@ -66,33 +69,49 @@ stop_scheduler() { stop scheduler; }
 
 install() {
     name=$1
-    tier=$2
-    additional_service_fields=$3
+    image=$2
     sudo apt-get -y install docker docker.io &&
-    cat service.template | sed 's~$directory~'$(pwd)'~g' | sed 's~$command~/usr/bin/bash containerized_run_'$tier'.sh~g' | sed 's~\[Service\]~\[Service\]\n'$additional_service_fields'~g' > philbot_$name.service &&
-    sudo mv philbot_$name.service /etc/systemd/system/ &&
-    sudo systemctl daemon-reload
+    sudo docker create \
+        --name $name \
+        --restart unless-stopped \
+        --user $(id -u):$(id -g) \
+        --network=host \
+        --env-file environment.properties.$image \
+        "${@:3}" \
+        --init philipplengauer/philbot-$image:latest
 }
 
 uninstall() {
     name=$1
-    sudo rm /etc/systemd/system/philbot_$name.service &&
-    sudo systemctl daemon-reload
+    sudo docker rm $name
 }
 
 install_backend() {
+    CONTAINER_MEMORY_DIRECTORY=memory
+    HOST_MEMORY_DIRECTORY=.philbot_backend_$CONTAINER_MEMORY_DIRECTORY
+    mkdir -p $HOST_MEMORY_DIRECTORY
     sudo apt-get -y install iptables-persistent &&
     sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
     sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443 &&
-    install backend backend
+    install backend backend \
+        --env PORT=$BACKEND_PORT \
+        --env VOICE_PORT=$VOICE_PORT \
+        --env MEMORY_DIRECTORY=/$CONTAINER_MEMORY_DIRECTORY \
+        --mount type=bind,source=$(pwd)/$HOST_MEMORY_DIRECTORY,target=/$CONTAINER_MEMORY_DIRECTORY
 }
 
 uninstall_backend() { uninstall backend; }
 
 install_discordgateway2http() {
+    CONTAINER_SESSIONS_DIRECTORY=sessions
+    HOST_SESSIONS_DIRECTORY=.philbot_discordgateway2http_$CONTAINER_SESSIONS_DIRECTORY
     for shard_index in $(desired_shards)
     do
-        install discordgateway2http_$shard_index discordgateway2http 'Environment=SHARD_INDEX='$shard_index'\nEnvironment=SHARD_COUNT='$(desired_shard_count) || return 1
+        install discordgateway2http_$shard_index discordgateway2http \
+            --env SHARD_INDEX=$shard_index \
+            --env SHARD_COUNT=$(desired_shard_count) \
+            --env PORT=$((8081 + $shard_index))
+        || return 1
     done
 }
 
@@ -103,10 +122,28 @@ uninstall_discordgateway2http() {
     done
 }
 
-install_voice() { install voice voice; }
+install_voice() {
+    CONTAINER_CACHE_DIRECTORY=audio_cache
+    HOST_CACHE_DIRECTORY=.philbot_voice_$CONTAINER_CACHE_DIRECTORY
+    install voice voice \
+        --env PORT=$VOICE_PORT \
+        --env CACHE_DIRECTORY=/$CONTAINER_CACHE_DIRECTORY \
+        --mount type=bind,source=$(pwd)/$HOST_CACHE_DIRECTORY,target=/$CONTAINER_CACHE_DIRECTORY
+}
+
 uninstall_voice() { uninstall voice; }
 
-install_scheduler() { install scheduler scheduler; }
+install_scheduler() {
+    rm -rf ./config.properties.scheduler &&
+    echo 'minutely=http://127.0.0.1:'$BACKEND_PORT'/scheduler/minutely' >> ./config.properties.scheduler &&
+    echo 'hourly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/hourly' >> ./config.properties.scheduler &&
+    echo 'daily=http://127.0.0.1:'$BACKEND_PORT'/scheduler/daily' >> ./config.properties.scheduler &&
+    echo 'monthly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/monthly' >> ./config.properties.scheduler &&
+    install scheduler scheduler \
+        --env CONFIG_FILE=/config.properties \
+        --mount type=bind,source=$(pwd)/config.properties.scheduler,target=/config.properties,readonly
+}
+
 uninstall_scheduler() { uninstall scheduler; }
 
 command=$1
