@@ -11,7 +11,7 @@ RUN mkdir $STORAGE_DIRECTORY
 
 COPY pyproject.toml ./
 RUN python -m venv venv-build && source venv-build/bin/activate && pip install poetry && poetry export -f requirements.txt --output requirements.txt && deactivate && rm -rf venv-build
-RUN grep -m 1 version pyproject.toml | grep -e '\d+.\d+.\d+' -o > VERSION
+RUN cat pyproject.toml && grep -m 1 version | grep -e '\d+.\d+.\d+' -o > VERSION
 RUN rm *.toml
 
 RUN pip install --no-cache-dir -r requirements.txt
