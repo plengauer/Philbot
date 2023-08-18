@@ -3,8 +3,8 @@ WORKDIR /application
 
 COPY Gemfile ./
 RUN bundle install
-copy ./lib/* ./
+COPY ./lib/* ./
 
 ENV SERVICE_NAME="Philbot Scheduler"
-ENV SERVICE_VERSION=""
+ENV SERVICE_VERSION=unknown
 CMD exec ruby scheduler.rb

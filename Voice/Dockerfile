@@ -10,15 +10,17 @@ ENV STORAGE_DIRECTORY=/audio_cache
 RUN mkdir $STORAGE_DIRECTORY
 
 COPY pyproject.toml ./
-RUN python -m venv venv-build && source venv-build/bin/activate && pip install poetry && poetry export -f requirements.txt --output requirements.txt && deactivate && rm *.toml && rm -rf venv-build
+RUN python -m venv venv-build && source venv-build/bin/activate && pip install poetry && poetry export -f requirements.txt --output requirements.txt && deactivate && rm -rf venv-build
+RUN grep -m 1 version pyproject.toml | grep -e '\d+.\d+.\d+' -o > VERSION
+RUN rm *.toml
+
 RUN pip install --no-cache-dir -r requirements.txt
 COPY philbot-voice/* ./
 
 ENV PORT=8080
 
 ENV SERVICE_NAME="Philbot Voice"
-ENV SERVICE_VERSION=""
-CMD exec opentelemetry-instrument python -u voice.py
+CMD export SERVICE_VERSION=$(cat VERSION) && exec opentelemetry-instrument python -u voice.py
 
 EXPOSE 8080/tcp
 EXPOSE 1-65535/udp
