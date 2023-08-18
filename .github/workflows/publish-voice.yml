@@ -46,5 +46,5 @@ jobs:
         with:
           context: ./Voice/
           build-args: APPLICATION_VERSION=${{ steps.version.outputs.version }}
-          tags: ${{ secrets.DOCKER_USERNAME }}/philbot-voice:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKER_USERNAME }}/philbot-voice:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-voice:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-voice:latest
           push: true

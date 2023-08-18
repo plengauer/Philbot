@@ -47,5 +47,5 @@ jobs:
         with:
           context: ./Scheduler/
           build-args: APPLICATION_VERSION=unknown
-          tags: ${{ secrets.DOCKER_USERNAME }}/philbot-scheduler:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-scheduler:latest
           push: true
