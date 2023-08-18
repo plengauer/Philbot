@@ -7,5 +7,5 @@ RUN bundle install
 COPY ./lib/* ./
 
 ENV SERVICE_NAME="Philbot Scheduler"
-ENV SERVICE_NAME=$APPLICATION_VERSION
+ENV SERVICE_VERSION=$APPLICATION_VERSION
 CMD exec ruby scheduler.rb
