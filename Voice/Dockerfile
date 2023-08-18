@@ -11,9 +11,7 @@ ENV STORAGE_DIRECTORY=/audio_cache
 RUN mkdir $STORAGE_DIRECTORY
 
 COPY pyproject.toml ./
-RUN python -m venv venv-build && source venv-build/bin/activate && pip install poetry && poetry export -f requirements.txt --output requirements.txt && deactivate && rm -rf venv-build
-RUN cat pyproject.toml && grep -m 1 version | grep -e '\d+.\d+.\d+' -o > VERSION
-RUN rm *.toml
+RUN python -m venv venv-build && source venv-build/bin/activate && pip install poetry && poetry export -f requirements.txt --output requirements.txt && deactivate && rm -rf venv-build *.toml
 
 RUN pip install --no-cache-dir -r requirements.txt
 COPY philbot-voice/* ./
