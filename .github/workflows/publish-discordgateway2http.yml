@@ -34,6 +34,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: echo "::set-output name=version::$(node -p "require('./DiscordGateway2HTTP/package.json').version")"
+        id: version
       - uses: docker/build-push-action@v4
         with:
           context: ./DiscordGateway2HTTP/
