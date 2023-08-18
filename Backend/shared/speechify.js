@@ -9,7 +9,7 @@ const token = process.env.SPEECHIFY_API_TOKEN;
 const debug = false;
 
 function getCostLimit() {
-  return 0.00;
+  return token ? parseFloat(process.env.SPEECHIFY_COST_LIMIT ?? '1') : 0;
 }
 
 function isSameBillingSlot(t1, t2) {
@@ -29,14 +29,43 @@ async function getVoiceModels() {
   return [ 'custom-voice-clone' ];
 }
 
-async function createVoice(model, text, seed, format, report) {
+async function createVoice(model, user, text, seed, format, report) {
   if (!token) return null;
-  let body = new FormData();
-  body.append('text', text, { contentType: 'string' });
-  body.append('files', seed, { contentType: 'audio/' + format });
-  let response = await HTTP('GET', body.getHeaders(), '/tts/clone', body);
-  await report(model, await getVoiceCost(text));
-  return response;
+  
+  const buffer = false;
+  if (buffer) {
+    let chunks = [];
+    let stream = seed;
+    seed = await new Promise(resolve => {
+      stream.on('data', chunk => chunks.push(chunk));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+  }
+
+  const inline = true;
+  if (inline) {
+    let body = new FormData();
+    body.append('text', text, { contentType: 'string' });
+    body.append('files', seed, { contentType: 'audio/' + format });
+    let response = await HTTP('POST', body.getHeaders(), '/tts/clone', body);
+    await report(model, await getVoiceCost(text));
+    return response;
+  } else {
+    let body_create = new FormData();
+    body_create.append('name', user, { contentType: 'string' });
+    body_create.append('files', seed, { contentType: 'audio/' + format });
+    let response_create = await HTTP('POST', body_create.getHeaders(), '/voice', body_create);
+    try {
+      let body_clone = new FormData();
+      body_clone.append('text', text, { contentType: 'string' });
+      body_clone.append('voice_id', response_create.id, { contentType: 'string' });
+      let response_clone = await HTTP('POST', body_clone.getHeaders(), '/tts/clone', body_clone);
+      await report(model, await getVoiceCost(text));
+      return response_clone;
+    } finally {
+      await HTTP('DELETE', {}, '/voice/' + response_create.id);
+    }
+  }
 }
 
 async function getVoiceCost(text) {

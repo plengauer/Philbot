@@ -9,7 +9,7 @@ const token = process.env.GCP_T2S_TOKEN;
 const debug = false;
 
 function getCostLimit() {
-  return 1.00;
+  return token ? parseFloat(process.env.GOOGLEAI_COST_LIMIT ?? '1') : 0;
 }
 
 function isSameBillingSlot(t1, t2) {

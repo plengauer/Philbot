@@ -100,7 +100,7 @@ async function getVoiceModels() {
 
 async function createVoice(model, user, text, language, gender, seed, format) {
     switch(model.vendor) {
-        case 'speechify': return speechify.createVoice(model, text, seed, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
+        case 'speechify': return speechify.createVoice(model.name, user, text, seed, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
         case 'google': return googleai.createVoice(model.name, text, language, gender, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost)); 
     }
 }
