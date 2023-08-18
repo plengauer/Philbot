@@ -1174,7 +1174,7 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
       message
     );
     if (!languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
-    let sample = await memory.get(`voice_clone:sample:user:${sender_user_id}`, null);
+    let sample = sender_user_id ? await memory.get(`voice_clone:sample:user:${sender_user_id}`, null) : null;
     let seed = sample ? media.convert(await streamAttachment(sample), sample.content_type.split('/')[1], codec) : null;
     if (sender_user_id && !seed) message = discord.mention_user(sender_user_id) + ' says: ' + message;
     let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
@@ -1190,7 +1190,7 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
         message = message.replace(discord.mention_role(mentioned_role), role.name);
       }
     }
-    let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), me.id, message, languageCode, 'neutral', seed, codec);
+    let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), (sender_user_id && seed) ? sender_user_id : me.id, message, languageCode, 'neutral', seed, codec);
     return player.play(guild_id, channel_id, { content: audio, codec: codec }, false);
   } else {
     return discord.respond(channel_id, event_id, message);
