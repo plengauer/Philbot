@@ -93,6 +93,7 @@ install_backend() {
     sudo apt-get -y install iptables-persistent &&
     sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
     sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443 &&
+    sudo bash -c 'iptables-save > /etc/iptables/rules.v4' &&
     install backend backend \
         --env PORT=$BACKEND_PORT \
         --env VOICE_PORT=$VOICE_PORT \
