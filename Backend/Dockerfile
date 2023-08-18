@@ -1,4 +1,5 @@
 FROM node:18
+ARG APPLICATION_VERSION
 WORKDIR /application
 
 RUN apt-get update && apt-get -y install ffmpeg
@@ -13,6 +14,7 @@ COPY . .
 ENV PORT=8080
 
 ENV SERVICE_NAME="Philbot Backend"
-CMD export SERVICE_VERSION=$(cat package.json | jq -r '.version') && exec node backend.js
+ENV SERVICE_NAME=$APPLICATION_VERSION
+CMD exec node backend.js
 
 EXPOSE 8080

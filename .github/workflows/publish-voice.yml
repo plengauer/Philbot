@@ -40,8 +40,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - run: echo "::set-output name=version::$(cat ./Voice/pyproject.toml && grep -m 1 version | grep -e '\d+.\d+.\d+' -o)"
+        id: version
       - uses: docker/build-push-action@v4
         with:
           context: ./Voice/
+          build-args: APPLICATION_VERSION=${{ steps.version.outputs.version }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/philbot-voice:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKER_USERNAME }}/philbot-voice:latest
           push: true
-          tags: philipplengauer/philbot-voice:latest

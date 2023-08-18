@@ -1,4 +1,5 @@
 FROM python:3
+ARG APPLICATION_VERSION
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
 
@@ -20,7 +21,8 @@ COPY philbot-voice/* ./
 ENV PORT=8080
 
 ENV SERVICE_NAME="Philbot Voice"
-CMD export SERVICE_VERSION=$(cat VERSION) && exec opentelemetry-instrument python -u voice.py
+ENV SERVICE_NAME=$APPLICATION_VERSION
+CMD exec opentelemetry-instrument python -u voice.py
 
 EXPOSE 8080/tcp
 EXPOSE 1-65535/udp

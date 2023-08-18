@@ -1,4 +1,5 @@
 FROM node:18
+ARG APPLICATION_VERSION
 WORKDIR /application
 
 COPY package.json ./
@@ -10,6 +11,7 @@ ENV SHARD_COUNT=1
 ENV PORT=8080
 
 ENV SERVICE_NAME="Philbot Discord Gateway 2 HTTP"
-CMD export SERVICE_VERSION=$(cat package.json | jq -r '.version') && exec node discordgateway2http.js
+ENV SERVICE_NAME=$APPLICATION_VERSION
+CMD exec node discordgateway2http.js
 
 EXPOSE 8080
