@@ -93,6 +93,7 @@ install_backend() {
     sudo apt-get -y install nodejs iptables-persistent ffmpeg &&
     sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port $BACKEND_PORT &&
     sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443 &&
+    sudo bash -c 'iptables-save > /etc/iptables/rules.v4' &&
     mkdir -p memory &&
     install backend backend node.js &&
     echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
