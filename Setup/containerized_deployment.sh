@@ -83,7 +83,7 @@ install() {
 
 uninstall() {
     name=$1
-    sudo docker rm $name && sudo docker image prune --force
+    sudo docker rm $name && sudo docker image prune -a --force
 }
 
 install_backend() {
