@@ -71,6 +71,7 @@ install() {
     name=$1
     image=$2
     sudo apt-get -y install docker docker.io &&
+    sudo docker pull philipplengauer/philbot-$image:latest &&
     sudo docker create \
         --name $name \
         --restart unless-stopped \
