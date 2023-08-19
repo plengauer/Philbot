@@ -16,7 +16,7 @@ meter.createObservableGauge('ai.cost.slotted.progress').addCallback(async (resul
 const request_counter = meter.createCounter('ai.requests');
 const cost_counter = meter.createCounter('ai.cost');
 
-const DEFAULT_DYNAMIC_MODEL_SAFETY = 0.75;
+const DEFAULT_DYNAMIC_MODEL_SAFETY = 0.25;
 
 function getDefaultDynamicModelSafety() {
     return DEFAULT_DYNAMIC_MODEL_SAFETY;
