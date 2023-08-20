@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:latest
 ARG APPLICATION_VERSION
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application

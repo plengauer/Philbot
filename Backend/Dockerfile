@@ -1,4 +1,4 @@
-FROM node:18
+FROM node:latest
 ARG APPLICATION_VERSION
 WORKDIR /application
 

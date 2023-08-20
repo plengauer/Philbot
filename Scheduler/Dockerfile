@@ -1,4 +1,4 @@
-FROM ruby:3.0
+FROM ruby:latest
 ARG APPLICATION_VERSION
 WORKDIR /application
 
