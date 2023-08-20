@@ -5,6 +5,8 @@ on:
     branches: main
     paths:
       - 'DiscordGateway2HTTP/**'
+  schedule:
+    - cron: "0 0 1 * *"
 
 jobs:
   publish-npm:
