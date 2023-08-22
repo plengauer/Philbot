@@ -6,3 +6,7 @@ node_modules
 package-lock.json
 *.pem
 TODO
+Shards/target
+.bsp
+.idea
+Shards/project
