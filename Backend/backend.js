@@ -178,6 +178,7 @@ function redirectSafely(request, response) {
 
 function handleSafely(request, response) {
     try {
+        opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', url.parse(request.url).pathname);
         handle(request, response);
     } catch (error) {
         console.error(`HTTP SERVER handling ${request.url} failed ` + error);
