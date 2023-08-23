@@ -994,18 +994,15 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase() == 'configure voice' || message.toLowerCase() == 'clone voice') {
-    let poem = 'The pleasure of Shawn’s company' + '\n' +
-      'Is what I most enjoy.' + '\n' +
-      'He put a tack on Ms. Yancey’s chair' + '\n' +
-      'When she called him a horrible boy.' + '\n' +
-      'At the end of the month he was flinging two kittens' + '\n' +
-      'Across the width of the room.' + '\n' +
-      'I count on his schemes to show me a way now' + '\n' +
-      'Of getting away from my gloom.';
+    let poem = 'The quick brown fox jumps over the lazy dog.' + '\n'
+      'The pleasure of Shawn’s company is what I most enjoy.' + '\n' +
+      'He put a tack on Ms. Yancey’s chair when she called him a horrible boy.' + '\n' +
+      'At the end of the month he was flinging two kittens across the width of the room.' + '\n' +
+      'I count on his schemes to show me a way now of getting away from my gloom.';
     await memory.set(`voice_clone:in_progress:user:${user_id}`, true, 60 * 5);
     return respond(guild_id, channel_id, event_id,
       'To clone your voice, I need you to record sample. It should be about a minute long, and of good quality. Try to avoid background noise. ' + 
-      'Please send me a voice message (only works from Discord mobile client) repeating the following poem again and again until the message is at least a minute long:' + '\n\n'
+      'Please send me a voice message (only works from Discord mobile app) repeating the following poem again and again until the message is at least a minute long:' + '\n\n'
       + poem + '\n\n'
       + 'You have five minutes to send me a voice message. You can restart the process with the same command any time.'
     );
