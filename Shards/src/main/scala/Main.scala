@@ -18,11 +18,11 @@ var configs : List[(String, Config)] = List()
 class ShardChecker extends Runnable {
   override def run() {
     while(true) {
-    	Thread.sleep(1000 * 60)
     	synchronized {
     	  shard_count = queryDesiredShardCount()
     	  configs = configs.filter(p => p._2.shard_count != shard_count)
     	}
+    	Thread.sleep(1000 * 60)
     }
   }
 }
@@ -67,6 +67,8 @@ def createNewConfig(gateway_id: String): Config = {
 object Main extends App {
   implicit val system = ActorSystem("GatewayActorSystem")
   implicit val executionContext = system.dispatcher
+  
+  new Thread(new ShardChecker()).start()
 
   private val server = Http(system).newServerAt("localhost", 8080)
 
