@@ -1,6 +1,5 @@
 const process = require('process');
 const propertiesReader = require('properties-reader');
-const opentelemetry = require('@opentelemetry/api');
 const opentelemetry_api = require('@opentelemetry/api');
 const opentelemetry_sdk = require("@opentelemetry/sdk-node");
 const { Resource } = require('@opentelemetry/resources');
@@ -269,7 +268,7 @@ async function dispatchAny(path, params, headers, payload, response) {
         return dispatchAPI(path, params, headers, payload)
             .catch(error => {
                 console.error(error.stack);
-                opentelemetry.trace.getSpan(opentelemetry.context.active())?.recordException(error);
+                opentelemetry_api.trace.getSpan(opentelemetry_api.context.active())?.recordException(error);
                 return { status: 500, body: 'An internal error has occurred!' };
             })
             .then(result => {
@@ -290,7 +289,7 @@ async function dispatchAny(path, params, headers, payload, response) {
                     result.headers['content-encoding'] = 'identity';  
                 }
                 if (500 <= result.status && result.status < 600) {
-                    opentelemetry.trace.getSpan(opentelemetry.context.active())?.setStatus({ code: opentelemetry.SpanStatusCode.ERROR });
+                    opentelemetry_api.trace.getSpan(opentelemetry_api.context.active())?.setStatus({ code: opentelemetry_api.SpanStatusCode.ERROR });
                 }
                 response.writeHead(result.status, result.headers);
                 if (result.body) response.write(result.body);
