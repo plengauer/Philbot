@@ -15,30 +15,50 @@ implicit val configFormat: RootJsonFormat[Config] = jsonFormat2(Config.apply)
 var shard_count = 1
 var configs : List[(String, Config)] = List()
 
+class ShardChecker extends Runnable {
+  override def run() {
+    while(true) {
+    	Thread.sleep(1000 * 60)
+    	synchronized {
+    	  shard_count = queryDesiredShardCount()
+    	  configs = configs.filter(p => p._2.shard_count != shard_count)
+    	}
+    }
+  }
+}
+
+def queryDesiredShardCount() {
+  return 1; //TODO
+}
+
 def computeConfig(gateway_id: String, config: Config): Config = {
-  var shard_index = Nil
-  if (config.shard_index == Nil || config.shard_count == Nil) {
-    // first time asking for config
-    createNewConfig(gateway_id)
-  } else if (config.shard_count != shard_count) {
-    // we are asked to confirm the config, but the shard count assumption is incorrect, just completely re-initialize
-    createNewConfig(gateway_id)
-  } else if (config.shard_count == shard_count && configs.exists(p => p._2.shard_index == config.shard_index && p._1 != gateway_id)) {
-    // we are asked to confirm the config, but somebody else claimed that shard, re-initialize
-    createNewConfig(gateway_id)
-  } else {
-    // config seems to be valid -> confirm
-    config
+  synchronized {
+    var shard_index = Nil
+    if (config.shard_index == Nil || config.shard_count == Nil) {
+      // first time asking for config
+      createNewConfig(gateway_id)
+    } else if (config.shard_count != shard_count) {
+      // we are asked to confirm the config, but the shard count assumption is incorrect, just completely re-initialize
+      createNewConfig(gateway_id)
+    } else if (config.shard_count == shard_count && configs.exists(p => p._2.shard_index == config.shard_index && p._1 != gateway_id)) {
+      // we are asked to confirm the config, but somebody else claimed that shard, re-initialize
+      createNewConfig(gateway_id)
+    } else {
+      // config seems to be valid -> confirm
+      config
+    }
   }
 }
 
 def createNewConfig(gateway_id: String): Config = {
-  for (shard_index <- 0 to shard_count) {
-    if (!configs.exists(p => p._2.shard_index == shard_index)) {
-      var config = Config(shard_index, shard_count)
-      configs = configs.filter(p => p._1 != gateway_id)
-      configs += Tuple2(gateway_id, config)
-      config
+  synchronized {
+    for (shard_index <- 0 to shard_count) {
+      if (!configs.exists(p => p._2.shard_index == shard_index)) {
+        var config = Config(shard_index, shard_count)
+        configs = configs.filter(p => p._1 != gateway_id).filter(p => p._2.shard_index != shard_index);
+        configs += Tuple2(gateway_id, config)
+        config
+      }
     }
   }
   Config(null, null)
