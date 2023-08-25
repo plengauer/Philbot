@@ -3,6 +3,9 @@
 node_modules
 package-lock.json
 *.pem
+*.jar
+*.class
+*.so
 .bsp
 .idea
 out

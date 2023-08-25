@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 public class ShardsMaster {
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", Integer.parseInt(System.getenv("PORT"))), 10);
-        server.createContext("/ping", ShardsMaster::servePing);
-        server.createContext("/gateway/update", ShardsMaster::serveUpdate);
-        server.createContext("/gateway/config", ShardsMaster::serveConfig);
+        server.createContext("/ping", ObservableHttpHandler.observe(ShardsMaster::servePing));
+        server.createContext("/gateway/update", ObservableHttpHandler.observe(ShardsMaster::serveUpdate));
+        server.createContext("/gateway/config", ObservableHttpHandler.observe(ShardsMaster::serveConfig));
         server.start();
     }
 
