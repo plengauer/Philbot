@@ -6,7 +6,7 @@ WORKDIR /application
 COPY src/ .
 RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-api/1.29.0/opentelemetry-api-1.29.0.jar
 RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-context/1.9.1/opentelemetry-context-1.9.1.jar
-RUN javac -cp *.jar eu/philbot/*.java && rm eu/philbot/*.java
+RUN javac -cp $(find . -name '*.jar' | paste -sd ":" -) eu/philbot/*.java && rm eu/philbot/*.java
 RUN wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
 
 ENV PORT=8080
@@ -23,6 +23,6 @@ CMD exec java -Xmx25m \
     -Dotel.exporter.otlp.metrics.endpoint=$OPENTELEMETRY_METRICS_API_ENDPOINT \
     -Dotel.exporter.otlp.metrics.headers="Authorization=Api-Token "$OPENTELEMETRY_METRICS_API_TOKEN \
     -javaagent:./opentelemetry-javaagent.jar \
-    -cp . eu.philbot.ShardsMaster
+    -cp $(find . -name '*.jar' | paste -sd ":" -):. eu.philbot.ShardsMaster
 
 EXPOSE 8080/tcp
