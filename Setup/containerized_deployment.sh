@@ -177,13 +177,13 @@ fi
 
 if [ $command = "redeploy" ]
 then
-    bash $0 stop ${tiers[@]} &&
-    bash $0 uninstall ${tiers[@]} &&
+    bash $0 stop ${tiers[@]}
+    bash $0 uninstall ${tiers[@]}
     bash $0 install ${tiers[@]} &&
     bash $0 start ${tiers[@]}
 elif [ $command = "restart" ]
 then
-    bash $0 stop ${tiers[@]} &&
+    bash $0 stop ${tiers[@]}
     bash $0 start ${tiers[@]}
 elif [ $command = "start" ]
 then
