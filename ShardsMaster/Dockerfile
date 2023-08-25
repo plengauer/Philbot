@@ -12,7 +12,7 @@ ENV PORT=8080
 ENV SERVICE_NAME="Philbot ShardsMaster"
 ENV SERVICE_VERSION=$APPLICATION_VERSION
 
-CMD exec java \
+CMD exec java -Xmx100m \
     -Dotel.service.name=$SERVICE_NAME -Dotel.service.version=$SERVICE_VERSION \
     -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.protocol=http/protobuf \
     -Dotel.exporter.otlp.traces.endpoint=$OPENTELEMETRY_TRACES_API_ENDPOINT \
