@@ -10,20 +10,18 @@ import opentelemetry from '@opentelemetry/api';
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 const meter = opentelemetry.metrics.getMeter('discord.gateway');
 
-const SHARD_INDEX = process.env.SHARD_INDEX ? parseInt(process.env.SHARD_INDEX) : 0;
-const SHARD_COUNT = process.env.SHARD_COUNT ? parseInt(process.env.SHARD_COUNT) : 1;
-const STATE_FILE = (process.env.STATE_STORAGE_DIRECTORY ?? '.') + '/.state.' + SHARD_INDEX + '.' + SHARD_COUNT + '.json';
-
-connect(restoreState());
+connect(restoreState(process.env.SHARD_INDEX ? parseInt(process.env.SHARD_INDEX) : 0), process.env.SHARD_COUNT ? parseInt(process.env.SHARD_COUNT) : 1);
 
 async function connect(prev_state = {}) {
     if (prev_state.server) await new Promise(resolve => prev_state.server.close(resolve));
     let state = {
+        shard_index: prev_state.shard_index ?? 0,
+        shard_count: prev_state.shard_count ?? 1,
         session_id: prev_state.session_id,
         sequence: prev_state.sequence,
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
     };
-    state.callback_port = process.env.BASE_PORT ? (parseInt(process.env.BASE_PORT ?? "8081") + SHARD_INDEX) : parseInt(process.env.PORT ?? '8080');
+    state.callback_port = process.env.BASE_PORT ? (parseInt(process.env.BASE_PORT ?? "8081") + state.shard_index) : parseInt(process.env.PORT ?? '8080');
     /*
     const options = {
         key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),
@@ -57,7 +55,7 @@ function handleMessage(state, message) {
     console.log('GATEWAY receive op ' + event.op + ' (' + event.s + ')');
     event_counter.add(1, {
         'discord.gateway.url': state.resume_gateway_url,
-        'discord.gateway.shard': SHARD_INDEX, 
+        'discord.gateway.shard': state.shard_index, 
         'discord.event.op': event.op,
         'discord.event.name': event.t?.toLowerCase().replace(/_/g, ' ') ?? "",
         'discord.guild.id': event.d?.guild_id ?? (event.t?.startsWith('GUILD_') ? event.d.id : ""),
@@ -125,7 +123,7 @@ async function sendIdentify(state) {
             browser: 'Philbot'
         },
         'large_threshold': 250,
-        'shard': [SHARD_INDEX, SHARD_COUNT],
+        'shard': [state.shard_index, state.shard_count],
         'presence': {
             'activities': [{
                 'name': 'You',
@@ -196,7 +194,7 @@ async function handleDispatch(state, sequence, event, payload) {
             const span = tracer.startSpan('Discord ' + event.toLowerCase().replace(/_/g, ' '), { kind: opentelemetry.SpanKind.CONSUMER }, opentelemetry.ROOT_CONTEXT);
             span.setAttribute('discord.gateway.url', state.resume_gateway_url);
             span.setAttribute('discord.gateway.sequence', sequence);
-            span.setAttribute('discord.gateway.shard', SHARD_INDEX);
+            span.setAttribute('discord.gateway.shard', state.shard_index);
             span.setAttribute('discord.guild.id', payload.guild_id ?? (event.startsWith('GUILD_') ? payload.id : undefined));
             span.setAttribute('discord.channel.id', payload.channel_id ?? (event.startsWith('CHANNEL_') ? payload.id : undefined));
             span.setAttribute('discord.role.id', payload.role_id ?? (event.startsWith('ROLE_') ? payload.id : undefined));
@@ -293,7 +291,7 @@ async function handleCallback(state, request, response) {
                 }
             }
             try {
-                if (payload.guild_id && (BigInt(payload.guild_id) >> BigInt(22)) % BigInt(SHARD_COUNT) != BigInt(SHARD_INDEX)) {
+                if (payload.guild_id && (BigInt(payload.guild_id) >> BigInt(22)) % BigInt(state.shard_count) != BigInt(state.shard_count)) {
                     response.writeHead(422, 'Wrong shard', { 'content-type': 'text/plain' });
                     response.end();
                 } else {
@@ -325,15 +323,23 @@ async function handleCallback(state, request, response) {
 }
 
 function saveState(state) {
-    return fs.writeFileSync(STATE_FILE, JSON.stringify({ session_id: state.session_id, resume_gateway_url: state.resume_gateway_url, sequence: state.sequence }));
+    return fs.writeFileSync(getStateFileName(state.shard_index, shard_count), JSON.stringify({ session_id: state.session_id, resume_gateway_url: state.resume_gateway_url, sequence: state.sequence }));
 }
 
-function restoreState() {
+function restoreState(shard_index, shard_count) {
+    let state = null;
     try {
-        return JSON.parse(fs.readFileSync(STATE_FILE));
+        state = JSON.parse(fs.readFileSync(getStateFileName(shard_index, shard_count)));
     } catch {
-        return {};
+        state = {};
     }
+    state.shard_index = shard_index;
+    state.shard_count = shard_count;
+    return state;
+}
+
+function getStateFileName(shard_index, shard_count) {
+    return (process.env.STATE_STORAGE_DIRECTORY ?? '.') + '/.state.' + shard_index + '.' + shard_count + '.json';
 }
 
 function deduplicate(event, payload) {
