@@ -15,7 +15,7 @@ import java.io.OutputStream;
 
 public class ObservableHttpHandler {
 
-    private static final Tracer TRACER = GlobalOpenTelemetry.getTracer("jdk.httpserver", "1.1");
+    private static final Tracer TRACER = GlobalOpenTelemetry.getTracer("jdk.httpserver", "1.2");
 
     private static final TextMapGetter<HttpExchange> GETTER = new TextMapGetter<>() {
         @Override
@@ -34,7 +34,7 @@ public class ObservableHttpHandler {
             Context context = GlobalOpenTelemetry.get().getPropagators().getTextMapPropagator().extract(Context.current(), exchange, GETTER);
             try (Scope __ = context.makeCurrent()) {
                 Span span = TRACER.spanBuilder(exchange.getRequestMethod()).setSpanKind(SpanKind.SERVER).startSpan();
-                span.setAttribute("http.flavor", exchange.getProtocol().split("/")[1]);
+                span.setAttribute("http.flavor", exchange.getProtocol().split("/")[0]);
                 span.setAttribute("http.host", exchange.getLocalAddress().getHostString());
                 span.setAttribute("http.method", exchange.getRequestMethod());
                 span.setAttribute("http.route", exchange.getHttpContext().getPath());
