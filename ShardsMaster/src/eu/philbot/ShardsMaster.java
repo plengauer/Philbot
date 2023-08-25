@@ -14,6 +14,7 @@ public class ShardsMaster {
         new Thread(new ShardUpdater(), "Shard Count Updater").start();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", Integer.parseInt(System.getenv("PORT"))), 10);
         server.createContext("/ping", ShardsMaster::servePing);
+        server.createContext("/gateway/update", ShardsMaster::serveUpdate);
         server.createContext("/gateway/config", ShardsMaster::serveConfig);
     }
 
@@ -30,6 +31,19 @@ public class ShardsMaster {
         exchange.getResponseHeaders().add("content-type", "text/plain");
         exchange.sendResponseHeaders(200, response.length());
         writeResponseBody(exchange, response);
+    }
+
+    private static void serveUpdate(HttpExchange exchange) throws IOException {
+        if (exchange.getRequestMethod() != "POST") {
+            error(exchange, 405);
+            return;
+        }
+        synchronized(LOCK) {
+            SHARD_COUNT = queryDesiredShardCount();
+            CONFIGS = Arrays.stream(CONFIGS).filter(config -> config.shard_count != SHARD_COUNT).toArray(Config[]::new);
+        }
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseBody().close();
     }
 
     private static void serveConfig(HttpExchange exchange) throws IOException {
