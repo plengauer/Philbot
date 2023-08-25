@@ -15,7 +15,7 @@ import java.io.OutputStream;
 
 public class ObservableHttpHandler {
 
-    private static final Tracer TRACER = GlobalOpenTelemetry.getTracer("jdk.httpserver", "1.3");
+    private static final Tracer TRACER = GlobalOpenTelemetry.getTracer("jdk.httpserver", "1.4");
 
     private static final TextMapGetter<HttpExchange> GETTER = new TextMapGetter<>() {
         @Override
@@ -34,13 +34,13 @@ public class ObservableHttpHandler {
             Context context = GlobalOpenTelemetry.get().getPropagators().getTextMapPropagator().extract(Context.current(), exchange, GETTER);
             try (Scope __ = context.makeCurrent()) {
                 Span span = TRACER.spanBuilder(exchange.getRequestMethod()).setSpanKind(SpanKind.SERVER).startSpan();
-                span.setAttribute("http.flavor", exchange.getProtocol().split("/")[0]);
+                span.setAttribute("http.flavor", exchange.getProtocol().split("/")[1]);
                 span.setAttribute("http.host", exchange.getLocalAddress().getHostString());
                 span.setAttribute("http.method", exchange.getRequestMethod());
                 span.setAttribute("http.route", exchange.getHttpContext().getPath());
                 span.setAttribute("http.scheme", exchange.getProtocol().split("/")[0].toLowerCase());
                 span.setAttribute("http.target", exchange.getHttpContext().getPath());
-                span.setAttribute("http.url",  exchange.getProtocol().split("/")[1] + "://" + exchange.getRequestHeaders().getFirst("Host") + exchange.getRequestURI());
+                span.setAttribute("http.url",  exchange.getProtocol().split("/")[0].toLowerCase() + "://" + exchange.getRequestHeaders().getFirst("Host") + exchange.getRequestURI());
                 span.setAttribute("http.user_agent", exchange.getRequestHeaders().getFirst("User-Agent"));
                 span.setAttribute("net.host.ip", exchange.getLocalAddress().getAddress().toString().substring(1));
                 span.setAttribute("net.host.name", exchange.getLocalAddress().getHostName());
