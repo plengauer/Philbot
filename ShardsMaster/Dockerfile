@@ -3,8 +3,7 @@ ARG APPLICATION_VERSION
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
 
-COPY src/* .
-RUN find .
+COPY src/ .
 RUN javac eu/philbot/*.java && rm eu/philbot/*.java
 RUN wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
 
