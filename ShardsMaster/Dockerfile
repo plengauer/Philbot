@@ -4,6 +4,7 @@ SHELL ["/bin/bash", "-c"]
 WORKDIR /application
 
 COPY src/* .
+RUN find .
 RUN javac eu/philbot/*.java && rm eu/philbot/*.java
 RUN wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
 
