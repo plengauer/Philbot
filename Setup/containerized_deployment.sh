@@ -68,6 +68,9 @@ stop_voice() { stop voice; }
 start_scheduler() { start scheduler; }
 stop_scheduler() { stop scheduler; }
 
+start_shardsmaster() { start shardsmaster; }
+stop_shardsmaster() { stop shardsmaster; }
+
 install() {
     name=$1
     image=$2
