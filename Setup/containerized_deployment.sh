@@ -1,6 +1,7 @@
 BACKEND_PORT=8080
 VOICE_PORT=12345
-GATEWAY_PORT_BASE=8081
+GATEWAY_PORT_BASE=8082
+GATEWAY_MASTER_PORT=8081
 
 current_shards() {
     echo $(sudo docker container ls -a --format {{.Names}} | sed 's/discordgateway2http//g' | sed 's/[^0-9]//g' | xargs)
@@ -157,7 +158,7 @@ install_scheduler() {
 uninstall_scheduler() { uninstall scheduler; }
 
 install_shardsmaster() {
-    install shardsmaster shardsmaster
+    install shardsmaster shardsmaster --env PORT=$GATEWAY_MASTER_PORT
 }
 
 uninstall_shardsmaster() { uninstall shardsmaster; }
