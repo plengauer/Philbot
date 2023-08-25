@@ -153,6 +153,7 @@ install_scheduler() {
     echo 'hourly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/hourly' >> ./config.properties.scheduler &&
     echo 'daily=http://127.0.0.1:'$BACKEND_PORT'/scheduler/daily' >> ./config.properties.scheduler &&
     echo 'monthly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/monthly' >> ./config.properties.scheduler &&
+    echo 'minutely=http://127.0.0.1:'$GATEWAY_MASTER_PORT'/gateway/update' >> ./config.properties.scheduler &&
     install scheduler scheduler \
         --env CONFIG_FILE=/config.properties \
         --mount type=bind,source=$(pwd)/config.properties.scheduler,target=/config.properties,readonly

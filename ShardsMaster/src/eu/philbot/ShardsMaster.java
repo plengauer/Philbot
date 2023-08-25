@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 public class ShardsMaster {
     public static void main(String[] args) throws IOException {
-        new Thread(new ShardUpdater(), "Shard Count Updater").start();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", Integer.parseInt(System.getenv("PORT"))), 10);
         server.createContext("/ping", ShardsMaster::servePing);
         server.createContext("/gateway/update", ShardsMaster::serveUpdate);
@@ -86,23 +85,6 @@ public class ShardsMaster {
     private static final Object LOCK = new Object();
     private static volatile int SHARD_COUNT = 0;
     private static volatile Config[] CONFIGS = new Config[0];
-
-    private static class ShardUpdater implements Runnable {
-        public void run() {
-            while (true) {
-                synchronized(LOCK) {
-                    SHARD_COUNT = queryDesiredShardCount();
-                    CONFIGS = Arrays.stream(CONFIGS).filter(config -> config.shard_count != SHARD_COUNT).toArray(Config[]::new);
-                }
-                try {
-                    Thread.sleep(1000 * 60);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-            }
-        }
-    }
 
     private static int queryDesiredShardCount() {
         try {
