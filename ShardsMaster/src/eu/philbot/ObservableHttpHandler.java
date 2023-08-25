@@ -15,7 +15,7 @@ import java.io.OutputStream;
 
 public class ObservableHttpHandler {
 
-    private static final Tracer TRACER = GlobalOpenTelemetry.getTracer("jdk.httpserver", "1.2");
+    private static final Tracer TRACER = GlobalOpenTelemetry.getTracer("jdk.httpserver", "1.3");
 
     private static final TextMapGetter<HttpExchange> GETTER = new TextMapGetter<>() {
         @Override
@@ -80,7 +80,7 @@ public class ObservableHttpHandler {
                     }
                 };
                 exchange.setStreams(in, out);
-                try {
+                try (Scope ___ = span.makeCurrent()) {
                     function.handle(exchange);
                 } catch (Throwable t) {
                     span.recordException(t);
