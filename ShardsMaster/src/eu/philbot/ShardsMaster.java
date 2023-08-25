@@ -95,8 +95,7 @@ public class ShardsMaster {
             URL url = new URL("https://discord.com/api/v10/gateway/bot");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            // connection.setRequestProperty("Authorization", "Bot " + System.getenv("DISCORD_API_TOKEN"));
-            connection.setRequestProperty("Authorization", "Bot OTI4OTI3NjEzMjY5OTg3MzY5.GwgLqg.HcoEjbcw2nbSLnZQqhhW6_BlikBbpMz0V1lnD8");
+            connection.setRequestProperty("Authorization", "Bot " + System.getenv("DISCORD_API_TOKEN"));
             StringBuilder builder = new StringBuilder();
             try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                 for (String line = in.readLine(); line != null; line = in.readLine()) {
