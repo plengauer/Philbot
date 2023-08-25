@@ -10,10 +10,41 @@ import opentelemetry from '@opentelemetry/api';
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 const meter = opentelemetry.metrics.getMeter('discord.gateway');
 
-connect(restoreState(process.env.SHARD_INDEX ? parseInt(process.env.SHARD_INDEX) : 0), process.env.SHARD_COUNT ? parseInt(process.env.SHARD_COUNT) : 1);
+const id = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+
+init();
+
+async function init() {
+    let config = await requestInitialConfig();
+    if (!config) return process.exit(0);
+    return connect(restoreState(config.shard_index, config.shard_count));
+}
+
+async function requestInitialConfig() {
+    return requestConfig(null).catch(_ => requestInitialConfig());
+}
+
+async function requestConfig(config = null) {
+    if (process.env.SHARD_INDEX != 'auto' && process.env.SHARD_COUNT != 'auto') {
+        return { shard_index: process.env.SHARD_INDEX ? parseInt(process.env.SHARD_INDEX) : 0, shard_count: process.env.SHARD_COUNT ? parseInt(process.env.SHARD_COUNT) : 1 };
+    }
+    let body = id + ';' + (config ? config.shard_index : '') + ';' + (config ? config.shard_count : '');
+    return new Promise((resolve, reject) => request.post({ url: 'http://' + (process.env.SHARDS_MASTER_HOST ?? '127.0.0.1') + ':' + (process.env.SHARDS_MASTER_PORT ?? '8080') + '/gateway/config', headers: { 'x-authorization': process.env.DISCORD_API_TOKEN }, body: body }, (error, response, body) => {
+        if (error) return reject(error);
+        if (response.statusCode != 200) return reject(response.statusCode);
+        let tokens = body.split(';');
+        if (tokens.length != 3) return reject();
+        let id = tokens[0];
+        let shard_index = tokens[1];
+        let shard_count = tokens[2];
+        if (shard_index == '' || shard_count == '') return resolve(null);
+        return resolve({ shard_index: parseInt(shard_index), shard_count: parseInt(shard_count) });
+    }))
+}
 
 async function connect(prev_state = {}) {
     if (prev_state.server) await new Promise(resolve => prev_state.server.close(resolve));
+    if (prev_state.timer) clearInterval(prev_state.timer);
     let state = {
         shard_index: prev_state.shard_index ?? 0,
         shard_count: prev_state.shard_count ?? 1,
@@ -22,6 +53,18 @@ async function connect(prev_state = {}) {
         resume_gateway_url: prev_state.resume_gateway_url ?? await getGateway(),
     };
     state.callback_port = process.env.BASE_PORT ? (parseInt(process.env.BASE_PORT ?? "8081") + state.shard_index) : parseInt(process.env.PORT ?? '8080');
+    state.timer = setInterval(async () => {
+        try {
+            let new_config = await requestConfig({ shard_index: state.shard_index, shard_count: state.shard_count });
+            if (!new_config) return process.exit(0);
+            if (new_config.shard_index == state.shard_index || new_config.shard_count == state.shard_count) return;
+            state.shard_index = config.shard_index;
+            state.shard_count = config.shard_count;
+            state.socket?.close();
+        } catch {
+            // just retry again at some point
+        }
+    }, 1000 * 10);
     /*
     const options = {
         key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),

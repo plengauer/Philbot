@@ -113,6 +113,12 @@ public class ShardsMaster {
     }
 
     private static Config computeNewConfig(Config current) {
+        /*
+         * initial boot:
+         * shard count changes:
+         * one crashes
+         * one hangs temporarily (and a new one is spawned)
+         */
         synchronized (LOCK) {
             if (current.shard_index < 0 || current.shard_count < 0) {
                 return createNewConfig(current.id);
@@ -162,7 +168,7 @@ public class ShardsMaster {
 
         @Override
         public String toString() {
-            return id + ";" + (shard_index < 0 ? "null" : shard_index) + ";" + (shard_count < 0 ? "null" : shard_count);
+            return id + ";" + (shard_index < 0 ? "" : shard_index) + ";" + (shard_count < 0 ? "" : shard_count);
         }
     }
 }
