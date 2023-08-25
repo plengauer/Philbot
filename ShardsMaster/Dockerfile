@@ -14,11 +14,11 @@ ENV SERVICE_VERSION=$APPLICATION_VERSION
 
 CMD exec java \
     -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.protocol=http/protobuf \
-    -Dotel.exporter.otlp.traces.endpoint=$(OPENTELEMETRY_TRACES_API_ENDPOINT) \
-    -Dotel.exporter.otlp.traces.headers="Authorization=Api-Token "$(OPENTELEMETRY_TRACES_API_TOKEN) \
+    -Dotel.exporter.otlp.traces.endpoint=$OPENTELEMETRY_TRACES_API_ENDPOINT \
+    -Dotel.exporter.otlp.traces.headers="Authorization=Api-Token "$OPENTELEMETRY_TRACES_API_TOKEN \
     -Dotel.metrics.exporter=otlp -Dotel.exporter.otlp.metrics.protocol=http/protobuf \
-    -Dotel.exporter.otlp.metrics.endpoint=$(OPENTELEMETRY_METRICS_API_ENDPOINT) \
-    -Dotel.exporter.otlp.metrics.headers="Authorization=Api-Token "$(OPENTELEMETRY_METRICS_API_TOKEN) \
+    -Dotel.exporter.otlp.metrics.endpoint=$OPENTELEMETRY_METRICS_API_ENDPOINT \
+    -Dotel.exporter.otlp.metrics.headers="Authorization=Api-Token "$OPENTELEMETRY_METRICS_API_TOKEN \
     -javaagent:./opentelemetry-javaagent.jar \
     -cp . eu.philbot.ShardsMaster
 
