@@ -5,6 +5,7 @@ package-lock.json
 *.pem
 .bsp
 .idea
+out
 
 .memory
 voice_storage

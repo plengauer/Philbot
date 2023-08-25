@@ -25,5 +25,5 @@ jobs:
         with:
           context: ./ShardsMaster/
           build-args: APPLICATION_VERSION=${{ steps.version.outputs.version }}
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-shards-master:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-shards-master:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-shardsmaster:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-shardsmaster:latest
           push: true

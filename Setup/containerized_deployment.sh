@@ -156,6 +156,12 @@ install_scheduler() {
 
 uninstall_scheduler() { uninstall scheduler; }
 
+install_shardsmaster() {
+    install shardsmaster shardsmaster
+}
+
+uninstall_shardsmaster() { uninstall shardsmaster; }
+
 command=$1
 tiers=("${@:2}")
 
@@ -166,7 +172,7 @@ then
 fi
 if [ "0" = "${#tiers[@]}" ]
 then
-    tiers=("backend" "discordgateway2http" "voice" "scheduler")
+    tiers=("backend" "discordgateway2http" "voice" "scheduler" "shardsmaster")
 fi
 
 if [ $command = "redeploy" ]
