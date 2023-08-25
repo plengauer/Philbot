@@ -27,6 +27,7 @@ public class ShardsMaster {
         exchange.getResponseHeaders().add("content-type", "text/plain");
         exchange.sendResponseHeaders(200, response.length());
         writeResponseBody(exchange, response);
+        exchange.close();
     }
 
     private static void serveUpdate(HttpExchange exchange) throws IOException {
@@ -36,7 +37,7 @@ public class ShardsMaster {
         }
         updateDesiredShardCount();
         exchange.sendResponseHeaders(200, 0);
-        exchange.getResponseBody().close();
+        exchange.close();
     }
 
     private static void serveConfig(HttpExchange exchange) throws IOException {
@@ -48,6 +49,7 @@ public class ShardsMaster {
         exchange.getResponseHeaders().add("content-type", "text/plain");
         exchange.sendResponseHeaders(200, response.length());
         writeResponseBody(exchange, response);
+        exchange.close();
     }
 
     private static String readRequestBody(HttpExchange exchange) throws IOException {
