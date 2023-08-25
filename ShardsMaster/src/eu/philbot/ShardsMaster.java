@@ -19,12 +19,8 @@ public class ShardsMaster {
     }
 
     private static void servePing(HttpExchange exchange) throws IOException {
-        if (exchange.getRequestMethod() != "GET") {
+        if (!exchange.getRequestMethod().equals("GET")) {
             error(exchange, 405);
-            return;
-        }
-        if (!exchange.getResponseHeaders().get("accept").contains("text/plain")) {
-            error(exchange, 406);
             return;
         }
         String response = "pong";
@@ -34,7 +30,7 @@ public class ShardsMaster {
     }
 
     private static void serveUpdate(HttpExchange exchange) throws IOException {
-        if (exchange.getRequestMethod() != "POST") {
+        if (!exchange.getRequestMethod().equals("POST")) {
             error(exchange, 405);
             return;
         }
@@ -44,12 +40,8 @@ public class ShardsMaster {
     }
 
     private static void serveConfig(HttpExchange exchange) throws IOException {
-        if (exchange.getRequestMethod() != "POST") {
+        if (!exchange.getRequestMethod().equals("POST")) {
             error(exchange, 405);
-            return;
-        }
-        if (!exchange.getResponseHeaders().get("accept").contains("text/plain")) {
-            error(exchange, 406);
             return;
         }
         String response = computeNewConfig(new Config(readRequestBody(exchange))).toString();
@@ -77,7 +69,7 @@ public class ShardsMaster {
 
     private static void error(HttpExchange exchange, int error) throws IOException {
         exchange.sendResponseHeaders(error, 0);
-        exchange.getResponseBody().close();
+        exchange.close();
     }
 
     private static final Object LOCK = new Object();

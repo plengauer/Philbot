@@ -40,7 +40,7 @@ public class ObservableHttpHandler {
                 span.setAttribute("http.route", exchange.getHttpContext().getPath());
                 span.setAttribute("http.scheme", exchange.getProtocol());
                 span.setAttribute("http.target", exchange.getHttpContext().getPath());
-                span.setAttribute("http.url", exchange.getRequestURI().toURL().toString());
+                //span.setAttribute("http.url", exchange.getRequestURI().toURL().toString());
                 span.setAttribute("http.user_agent", exchange.getRequestHeaders().getFirst("User-Agent"));
                 span.setAttribute("net.host.ip", exchange.getLocalAddress().getAddress().toString());
                 span.setAttribute("net.host.name", exchange.getLocalAddress().getHostName());
