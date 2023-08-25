@@ -15,6 +15,7 @@ public class ShardsMaster {
         server.createContext("/ping", ShardsMaster::servePing);
         server.createContext("/gateway/update", ShardsMaster::serveUpdate);
         server.createContext("/gateway/config", ShardsMaster::serveConfig);
+        server.start();
     }
 
     private static void servePing(HttpExchange exchange) throws IOException {
@@ -37,10 +38,7 @@ public class ShardsMaster {
             error(exchange, 405);
             return;
         }
-        synchronized(LOCK) {
-            SHARD_COUNT = queryDesiredShardCount();
-            CONFIGS = Arrays.stream(CONFIGS).filter(config -> config.shard_count != SHARD_COUNT).toArray(Config[]::new);
-        }
+        updateDesiredShardCount();
         exchange.sendResponseHeaders(200, 0);
         exchange.getResponseBody().close();
     }
@@ -83,8 +81,15 @@ public class ShardsMaster {
     }
 
     private static final Object LOCK = new Object();
-    private static volatile int SHARD_COUNT = 0;
+    private static volatile int SHARD_COUNT = queryDesiredShardCount();
     private static volatile Config[] CONFIGS = new Config[0];
+
+    private static void updateDesiredShardCount() {
+        synchronized(LOCK) {
+            SHARD_COUNT = queryDesiredShardCount();
+            CONFIGS = Arrays.stream(CONFIGS).filter(config -> config.shard_count != SHARD_COUNT).toArray(Config[]::new);
+        }
+    }
 
     private static int queryDesiredShardCount() {
         try {
