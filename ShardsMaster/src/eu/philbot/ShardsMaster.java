@@ -150,8 +150,8 @@ public class ShardsMaster {
             String[] tokens = string.split(";");
             if (tokens.length != 3) throw new IOException();
             this.id = tokens[0];
-            this.shard_index = tokens[1] == "null" ? -1 : Integer.parseInt(tokens[1]);
-            this.shard_count = tokens[2] == "null" ? -1 : Integer.parseInt(tokens[2]);
+            this.shard_index = (tokens[1].equals("") || tokens[1].equals("null") || tokens[1].equals("undefined")) ? -1 : Integer.parseInt(tokens[1]);
+            this.shard_count = (tokens[2].equals("") || tokens[2].equals("null") || tokens[2].equals("undefined")) ? -1 : Integer.parseInt(tokens[2]);
         }
 
         public Config(String id, int shard_index, int shard_count) {
