@@ -1,4 +1,5 @@
-FROM eclipse-temurin:latest
+# FROM eclipse-temurin:latest
+FROM amazoncorretto:20
 ARG APPLICATION_VERSION
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
