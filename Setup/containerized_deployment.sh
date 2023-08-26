@@ -114,8 +114,8 @@ install_discordgateway2http() {
     for shard_index in $(desired_shards)
     do
         install discordgateway2http_$shard_index discordgateway2http \
-            --env SHARD_INDEX=auto \
-            --env SHARD_COUNT=auto \
+            --env SHARD_INDEX=$shard_index \
+            --env SHARD_COUNT=$desired_shard_count \
             --env PORT=$(($GATEWAY_PORT_BASE + $shard_index)) \
             --env STATE_STORAGE_DIRECTORY=/$CONTAINER_SESSIONS_DIRECTORY \
             --mount type=bind,source=$(pwd)/$HOST_SESSIONS_DIRECTORY,target=/$CONTAINER_SESSIONS_DIRECTORY \

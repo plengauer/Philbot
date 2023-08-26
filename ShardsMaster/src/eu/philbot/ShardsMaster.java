@@ -8,6 +8,7 @@ import java.net.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class ShardsMaster {
     public static void main(String[] args) throws IOException {
@@ -114,8 +115,9 @@ public class ShardsMaster {
 
     private static Config computeNewConfig(Config current) {
         /*
-         * initial boot:
-         * shard count changes:
+         * initial boot
+         * shard count changes
+         * one reboots
          * one crashes
          * one hangs temporarily (and a new one is spawned)
          */
@@ -126,7 +128,12 @@ public class ShardsMaster {
                 return createNewConfig(current.id);
             } else if (current.shard_count == SHARD_COUNT && Arrays.stream(CONFIGS).anyMatch(config -> config.id != current.id && current.shard_index == config.shard_index)) {
                 return createNewConfig(current.id);
+            } else if (Arrays.stream(CONFIGS).anyMatch(config -> config.id == current.id && config.shard_index == current.shard_index && config.shard_count == current.shard_count)) {
+                return current;
             } else {
+                List<Config> configs = Arrays.asList(CONFIGS);
+                configs.add(current);
+                CONFIGS = configs.toArray(Config[]::new);
                 return current;
             }
         }
