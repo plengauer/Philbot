@@ -14,7 +14,7 @@ ENV PORT=8080
 ENV SERVICE_NAME="Philbot Discord Gateway 2 HTTP Master"
 ENV SERVICE_VERSION=$APPLICATION_VERSION
 
-CMD exec java -Xmx25m \
+CMD exec java -Xmx50m \
     -Djava.util.logging.config.file=logging.properties \
     -Dotel.service.name="$SERVICE_NAME" -Dotel.service.version=$SERVICE_VERSION \
     -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.protocol=http/protobuf \
