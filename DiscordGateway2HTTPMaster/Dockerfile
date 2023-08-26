@@ -5,7 +5,8 @@ RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-api/1.29.
 RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-context/1.9.1/opentelemetry-context-1.9.1.jar
 RUN wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
 
-FROM amazoncorretto:20
+# FROM amazoncorretto:20
+FROM eclipse-temurin:latest
 ARG APPLICATION_VERSION
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
