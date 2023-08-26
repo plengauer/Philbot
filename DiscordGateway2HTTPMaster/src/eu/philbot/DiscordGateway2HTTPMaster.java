@@ -132,7 +132,7 @@ public class DiscordGateway2HTTPMaster {
         synchronized (LOCK) {
             for (int shard_index = 0; shard_index < SHARD_COUNT; shard_index++) {
                 if (ASSIGNMENTS[shard_index] == null) continue;
-                if (TIMESTAMPS[shard_index] + 1000 * 60 < System.currentTimeMillis()) continue;
+                if (TIMESTAMPS[shard_index] + 1000 * 60 > System.currentTimeMillis()) continue;
                 String id = ASSIGNMENTS[shard_index];
                 ASSIGNMENTS[shard_index] = null;
                 TIMESTAMPS[shard_index] = 0;
