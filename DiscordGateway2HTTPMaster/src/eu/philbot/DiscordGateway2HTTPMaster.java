@@ -160,10 +160,10 @@ public class DiscordGateway2HTTPMaster {
 
         public Config(String string) throws IOException {
             String[] tokens = string.split(";");
-            if (tokens.length != 3) throw new IOException();
+            if (tokens.length < 1) throw new IOException();
             this.id = tokens[0];
-            this.shard_index = (tokens[1].equals("") || tokens[1].equals("null") || tokens[1].equals("undefined")) ? -1 : Integer.parseInt(tokens[1]);
-            this.shard_count = (tokens[2].equals("") || tokens[2].equals("null") || tokens[2].equals("undefined")) ? -1 : Integer.parseInt(tokens[2]);
+            this.shard_index = (tokens.length < 2 || tokens[1].equals("") || tokens[1].equals("null") || tokens[1].equals("undefined")) ? -1 : Integer.parseInt(tokens[1]);
+            this.shard_count = (tokens.length < 3 || tokens[2].equals("") || tokens[2].equals("null") || tokens[2].equals("undefined")) ? -1 : Integer.parseInt(tokens[2]);
         }
 
         public Config(String id, int shard_index, int shard_count) {

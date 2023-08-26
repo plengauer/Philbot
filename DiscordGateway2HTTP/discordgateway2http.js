@@ -29,7 +29,7 @@ async function requestConfig(config = null) {
         return { shard_index: process.env.SHARD_INDEX ? parseInt(process.env.SHARD_INDEX) : 0, shard_count: process.env.SHARD_COUNT ? parseInt(process.env.SHARD_COUNT) : 1 };
     }
     let body = id + ';' + (config ? config.shard_index : '') + ';' + (config ? config.shard_count : '');
-    return new Promise((resolve, reject) => request.post({ url: 'http://' + (process.env.SHARDS_MASTER_HOST ?? '127.0.0.1') + ':' + (process.env.SHARDS_MASTER_PORT ?? '8080') + '/gateway/config', headers: { 'x-authorization': process.env.DISCORD_API_TOKEN }, body: body }, (error, response, body) => {
+    return new Promise((resolve, reject) => request.post({ url: 'http://' + (process.env.SHARDS_MASTER_HOST ?? '127.0.0.1') + ':' + (process.env.SHARDS_MASTER_PORT ?? '8081') + '/gateway/config', headers: { 'x-authorization': process.env.DISCORD_API_TOKEN }, body: body }, (error, response, body) => {
         if (error) return reject(error);
         if (response.statusCode != 200) return reject(response.statusCode);
         let tokens = body.split(';');
@@ -39,7 +39,7 @@ async function requestConfig(config = null) {
         let shard_count = tokens[2];
         if (shard_index == '' || shard_count == '') return resolve(null);
         return resolve({ shard_index: parseInt(shard_index), shard_count: parseInt(shard_count) });
-    }))
+    }));
 }
 
 async function connect(prev_state = {}) {
