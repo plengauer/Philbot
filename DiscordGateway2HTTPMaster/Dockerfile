@@ -11,7 +11,7 @@ RUN wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/re
 
 ENV PORT=8080
 
-ENV SERVICE_NAME="Philbot ShardsMaster"
+ENV SERVICE_NAME="Philbot Discord Gateway 2 HTTP Master"
 ENV SERVICE_VERSION=$APPLICATION_VERSION
 
 CMD exec java -Xmx25m \

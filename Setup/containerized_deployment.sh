@@ -68,8 +68,8 @@ stop_voice() { stop voice; }
 start_scheduler() { start scheduler; }
 stop_scheduler() { stop scheduler; }
 
-start_shardsmaster() { start shardsmaster; }
-stop_shardsmaster() { stop shardsmaster; }
+start_discordgateway2httpmaster() { start discordgateway2httpmaster; }
+stop_discordgateway2httpmaster() { stop discordgateway2httpmaster; }
 
 install() {
     name=$1
@@ -161,11 +161,11 @@ install_scheduler() {
 
 uninstall_scheduler() { uninstall scheduler; }
 
-install_shardsmaster() {
-    install shardsmaster shardsmaster --env PORT=$GATEWAY_MASTER_PORT
+install_discordgateway2httpmaster() {
+    install discordgateway2httpmaster discordgateway2httpmaster --env PORT=$GATEWAY_MASTER_PORT
 }
 
-uninstall_shardsmaster() { uninstall shardsmaster; }
+uninstall_discordgateway2httpmaster() { uninstall discordgateway2httpmaster; }
 
 command=$1
 tiers=("${@:2}")
@@ -177,7 +177,7 @@ then
 fi
 if [ "0" = "${#tiers[@]}" ]
 then
-    tiers=("backend" "discordgateway2http" "voice" "scheduler" "shardsmaster")
+    tiers=("backend" "discordgateway2http" "voice" "scheduler" "discordgateway2httpmaster")
 fi
 
 if [ $command = "redeploy" ]

@@ -4,7 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - 'ShardsMaster/**'
+      - 'DiscordGateway2HTTPMaster/**'
   schedule:
     - cron: "0 0 1 * *"
 
@@ -19,11 +19,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - run: echo "::set-output name=version::$(cat ./ShardsMaster/VERSION)"
+      - run: echo "::set-output name=version::$(cat ./DiscordGateway2HTTPMaster/VERSION)"
         id: version
       - uses: docker/build-push-action@v4
         with:
-          context: ./ShardsMaster/
+          context: ./DiscordGateway2HTTPMaster/
           build-args: APPLICATION_VERSION=${{ steps.version.outputs.version }}
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-shardsmaster:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-shardsmaster:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-discordgateway2httpmaster:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-discordgateway2httpmaster:latest
           push: true
