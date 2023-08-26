@@ -3,7 +3,7 @@ ARG APPLICATION_VERSION
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
 
-COPY src/ logging.properties .
+COPY src/ logging.properties ./
 RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-api/1.29.0/opentelemetry-api-1.29.0.jar
 RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-context/1.9.1/opentelemetry-context-1.9.1.jar
 RUN javac -cp $(find . -name '*.jar' | paste -sd ":" -) eu/philbot/*.java && rm eu/philbot/*.java
