@@ -311,7 +311,7 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/code': return endpoint_code.handle();
         case '/ssh': return endpoint_ssh.handle();
         case '/server': return endpoint_server.handle();
-        case '/memoryexport': return endpoint_memoryexport.handle();
+        // case '/memoryexport': return endpoint_memoryexport.handle();
         case '/scheduler/monthly': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_monthly.handle());
         case '/scheduler/daily': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_daily.handle());
         case '/scheduler/hourly': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_hourly.handle());
