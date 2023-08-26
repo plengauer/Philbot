@@ -366,7 +366,7 @@ async function handleCallback(state, request, response) {
 }
 
 function saveState(state) {
-    return fs.writeFileSync(getStateFileName(state.shard_index, shard_count), JSON.stringify({ session_id: state.session_id, resume_gateway_url: state.resume_gateway_url, sequence: state.sequence }));
+    return fs.writeFileSync(getStateFileName(state.shard_index, state.shard_count), JSON.stringify({ session_id: state.session_id, resume_gateway_url: state.resume_gateway_url, sequence: state.sequence }));
 }
 
 function restoreState(shard_index, shard_count) {
