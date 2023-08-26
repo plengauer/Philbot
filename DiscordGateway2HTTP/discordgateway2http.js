@@ -60,9 +60,10 @@ async function connect(prev_state = {}) {
             let new_config = await requestConfig({ shard_index: state.shard_index, shard_count: state.shard_count });
             if (!new_config) return process.exit(0); // in theory we could try reset all the state, but its easier to restart
             if (new_config.shard_index == state.shard_index || new_config.shard_count == state.shard_count) return;
-            state.shard_index = config.shard_index;
-            state.shard_count = config.shard_count;
+            state.shard_index = new_config.shard_index;
+            state.shard_count = new_config.shard_count;
             state.session_id = undefined;
+            state.sequence = 0;
             state.socket?.close();
         } catch {
             // just retry again at some point
@@ -160,7 +161,7 @@ async function handleInvalidSession(state) {
 }
 
 async function sendIdentify(state) {
-    console.log('GATEWAY identify');
+    console.log('GATEWAY identify (' + state.shard_index + '/' + state.shard_count + ')');
     return send(state, 2, {
         token: process.env.DISCORD_API_TOKEN,
         properties: {
