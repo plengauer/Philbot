@@ -36,6 +36,7 @@ public class DiscordGateway2HTTPMaster {
             return;
         }
         updateDesiredShardCount();
+        clearTimedOutAssignments();
         exchange.sendResponseHeaders(200, 0);
         exchange.close();
     }
@@ -76,12 +77,16 @@ public class DiscordGateway2HTTPMaster {
 
     private static final Object LOCK = new Object();
     private static volatile int SHARD_COUNT = queryDesiredShardCount();
-    private static volatile Config[] CONFIGS = new Config[0];
+    private static volatile String[] ASSIGNMENTS = new String[SHARD_COUNT];
+    private static long[] TIMESTAMPS = new long[SHARD_COUNT];
 
     private static void updateDesiredShardCount() {
         synchronized(LOCK) {
             SHARD_COUNT = queryDesiredShardCount();
-            CONFIGS = Arrays.stream(CONFIGS).filter(config -> config.shard_count != SHARD_COUNT).toArray(Config[]::new);
+            if (SHARD_COUNT != ASSIGNMENTS.length) {
+                ASSIGNMENTS = new String[SHARD_COUNT];
+                TIMESTAMPS = new long[SHARD_COUNT];
+            }
         }
     }
 
@@ -112,28 +117,43 @@ public class DiscordGateway2HTTPMaster {
         }
     }
 
+    private static void clearTimedOutAssignments() {
+        synchronized (LOCK) {
+            for (int shard_index = 0; shard_index < SHARD_COUNT; shard_index++) {
+                if (ASSIGNMENTS[shard_index] == null) continue;
+                if (TIMESTAMPS[shard_index] + 1000 * 60 * 3 < System.currentTimeMillis()) continue;
+                ASSIGNMENTS[shard_index] = null;
+                TIMESTAMPS[shard_index] = 0;
+            }
+        }
+    }
+
     private static Config computeNewConfig(Config current) {
-        /*
-         * initial boot
-         * shard count changes
-         * one reboots
-         * one crashes
-         * one hangs temporarily (and a new one is spawned)
-         */
         synchronized (LOCK) {
             if (current.shard_index < 0 || current.shard_count < 0) {
+                // request without any preference (probably a new shart starting up), assign a new config
                 return createNewConfig(current.id);
             } else if (current.shard_count != SHARD_COUNT) {
+                // request with preference, but assumptions are out of date, assign a new one
                 return createNewConfig(current.id);
-            } else if (current.shard_count == SHARD_COUNT && Arrays.stream(CONFIGS).anyMatch(config -> config.id != current.id && current.shard_index == config.shard_index)) {
-                return createNewConfig(current.id);
-            } else if (Arrays.stream(CONFIGS).anyMatch(config -> config.id == current.id && config.shard_index == current.shard_index && config.shard_count == current.shard_count)) {
+            } else if (current.shard_count == SHARD_COUNT && current.id.equals(ASSIGNMENTS[current.shard_index])) {
+                // request with preference, config is still valid and matches our own state, confirm config
+                TIMESTAMPS[current.shard_index] = System.currentTimeMillis();
                 return current;
+            } else if (current.shard_count == SHARD_COUNT && !current.id.equals(ASSIGNMENTS[current.shard_index])) {
+                // request with preference, config is still valid but does not match our own state (probably an old shard that was frozen recovering)
+                if (ASSIGNMENTS[current.shard_index] == null) {
+                    // shard has not been assigned yet, we can let that shard recover and confirm the config
+                    ASSIGNMENTS[current.shard_index] = current.id;
+                    TIMESTAMPS[current.shard_index] = System.currentTimeMillis();
+                    return current;
+                } else {
+                    // shard has already been reassigned, assign a new config
+                    return createNewConfig(current.id);
+                }
             } else {
-                List<Config> configs = Arrays.asList(CONFIGS);
-                configs.add(current);
-                CONFIGS = configs.toArray(Config[]::new);
-                return current;
+                assert false : "here be dragons";
+                return createNewConfig(current.id);
             }
         }
     }
@@ -141,13 +161,10 @@ public class DiscordGateway2HTTPMaster {
     private static Config createNewConfig(String id) {
         synchronized(LOCK) {
             for (int shard_index = 0; shard_index < SHARD_COUNT; shard_index++) {
-                final int final_shard_index = shard_index;
-                if (Arrays.stream(CONFIGS).anyMatch(config -> config.shard_index == final_shard_index)) continue;
-                Config newConfig = new Config(id, shard_index, SHARD_COUNT);
-                List<Config> list = Arrays.stream(CONFIGS).filter(config -> config.id != newConfig.id).filter(config -> config.shard_index != newConfig.shard_index).collect(Collectors.toList());
-                list.add(newConfig);
-                CONFIGS = list.toArray(new Config[list.size()]);
-                return newConfig;
+                if (ASSIGNMENTS[shard_index] != null) continue;
+                ASSIGNMENTS[shard_index] = id;
+                TIMESTAMPS[shard_index] = System.currentTimeMillis();
+                return new Config(id, shard_index, SHARD_COUNT);
             }
         }
         return new Config(id, -1, -1);
