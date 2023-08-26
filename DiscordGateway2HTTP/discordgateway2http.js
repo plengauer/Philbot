@@ -60,6 +60,7 @@ async function connect(prev_state = {}) {
             if (new_config.shard_index == state.shard_index || new_config.shard_count == state.shard_count) return;
             state.shard_index = config.shard_index;
             state.shard_count = config.shard_count;
+            state.session_id = undefined;
             state.socket?.close();
         } catch {
             // just retry again at some point
