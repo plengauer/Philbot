@@ -7,6 +7,8 @@ import request from 'request';
 import url from 'url';
 import opentelemetry from '@opentelemetry/api';
 
+const CONFIG_REQUEST_INTERVAL = 1000 * 10;
+
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 const meter = opentelemetry.metrics.getMeter('discord.gateway');
 
@@ -16,7 +18,7 @@ init();
 
 async function init() {
     let config = await requestInitialConfig();
-    if (!config) return process.exit(0);
+    if (!config) return setTimeout(() => init(), CONFIG_REQUEST_INTERVAL);
     return connect(restoreState(config.shard_index, config.shard_count));
 }
 
@@ -56,7 +58,7 @@ async function connect(prev_state = {}) {
     state.timer = setInterval(async () => {
         try {
             let new_config = await requestConfig({ shard_index: state.shard_index, shard_count: state.shard_count });
-            if (!new_config) return process.exit(0);
+            if (!new_config) return process.exit(0); // in theory we could try reset all the state, but its easier to restart
             if (new_config.shard_index == state.shard_index || new_config.shard_count == state.shard_count) return;
             state.shard_index = config.shard_index;
             state.shard_count = config.shard_count;
@@ -65,7 +67,7 @@ async function connect(prev_state = {}) {
         } catch {
             // just retry again at some point
         }
-    }, 1000 * 10);
+    }, CONFIG_REQUEST_INTERVAL);
     /*
     const options = {
         key: fs.readFileSync(process.env.HTTP_KEY_FILE ?? "server.key"),
