@@ -5,6 +5,8 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.*;
 import java.net.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class DiscordGateway2HTTPMaster {
     public static void main(String[] args) throws IOException {
@@ -108,6 +110,14 @@ public class DiscordGateway2HTTPMaster {
                 count = count * 10 + (json.charAt(index) - '0');
                 index += 1;
             }
+            BiFunction<String, Integer, Integer> getenv = (key, backup) -> {
+                String value = System.getenv(key);
+                if (value == null) return backup;
+                return Integer.parseInt(value);
+            };
+            count = count + getenv.apply("SHARD_COUNT_REDUNDANT", 0);
+            count = Math.max(count, getenv.apply("SHARD_COUNT_MIN", 0));
+            count = Math.min(count, getenv.apply("SHARD_COUNT_MAX", Integer.MAX_VALUE));
             return count;
         } catch (IOException e) {
             throw new RuntimeException(e);
