@@ -6,7 +6,6 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.*;
 import java.net.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 public class DiscordGateway2HTTPMaster {
@@ -37,7 +36,9 @@ public class DiscordGateway2HTTPMaster {
         }
         updateDesiredShardCount();
         clearTimedOutAssignments();
-        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseHeaders().add("content-type", "text/plain");
+        exchange.sendResponseHeaders(200, 2);
+        writeResponseBody(exchange, "OK");
         exchange.close();
     }
 
