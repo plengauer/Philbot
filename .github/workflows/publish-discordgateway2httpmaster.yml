@@ -1,4 +1,4 @@
-name: Publish ShardsMaster
+name: Publish Discord Gateway 2 HTTP Master
 
 on:
   push:
