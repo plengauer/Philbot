@@ -23,6 +23,6 @@ CMD exec java -Xmx25m \
     -Dotel.exporter.otlp.metrics.endpoint=$OPENTELEMETRY_METRICS_API_ENDPOINT \
     -Dotel.exporter.otlp.metrics.headers="Authorization=Api-Token "$OPENTELEMETRY_METRICS_API_TOKEN \
     -javaagent:./opentelemetry-javaagent.jar \
-    -cp $(find . -name '*.jar' | paste -sd ":" -):. eu.philbot.ShardsMaster
+    -cp $(find . -name '*.jar' | paste -sd ":" -):. eu.philbot.DiscordGateway2HTTPMaster
 
 EXPOSE 8080/tcp

@@ -8,14 +8,13 @@ import java.net.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-public class ShardsMaster {
+public class DiscordGateway2HTTPMaster {
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", Integer.parseInt(System.getenv("PORT"))), 10);
-        server.createContext("/ping", ObservableHttpHandler.observe(ShardsMaster::servePing));
-        server.createContext("/gateway/update", ObservableHttpHandler.observe(ShardsMaster::serveUpdate));
-        server.createContext("/gateway/config", ObservableHttpHandler.observe(ShardsMaster::serveConfig));
+        server.createContext("/ping", ObservableHttpHandler.observe(DiscordGateway2HTTPMaster::servePing));
+        server.createContext("/gateway/update", ObservableHttpHandler.observe(DiscordGateway2HTTPMaster::serveUpdate));
+        server.createContext("/gateway/config", ObservableHttpHandler.observe(DiscordGateway2HTTPMaster::serveConfig));
         server.start();
     }
 
