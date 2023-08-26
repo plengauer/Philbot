@@ -7,6 +7,7 @@ import java.io.*;
 import java.net.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 public class DiscordGateway2HTTPMaster {
     public static void main(String[] args) throws IOException {
@@ -74,6 +75,7 @@ public class DiscordGateway2HTTPMaster {
         exchange.close();
     }
 
+    private static final Logger LOGGER = Logger.getLogger("master");
     private static final Object LOCK = new Object();
     private static volatile int SHARD_COUNT = queryDesiredShardCount();
     private static volatile String[] ASSIGNMENTS = new String[SHARD_COUNT];
@@ -83,8 +85,10 @@ public class DiscordGateway2HTTPMaster {
         synchronized(LOCK) {
             SHARD_COUNT = queryDesiredShardCount();
             if (SHARD_COUNT != ASSIGNMENTS.length) {
+                LOGGER.info("desired shard count changed to " + SHARD_COUNT);
                 ASSIGNMENTS = new String[SHARD_COUNT];
                 TIMESTAMPS = new long[SHARD_COUNT];
+                LOGGER.info("cleared all shard assignments");
             }
         }
     }
@@ -129,8 +133,10 @@ public class DiscordGateway2HTTPMaster {
             for (int shard_index = 0; shard_index < SHARD_COUNT; shard_index++) {
                 if (ASSIGNMENTS[shard_index] == null) continue;
                 if (TIMESTAMPS[shard_index] + 1000 * 60 < System.currentTimeMillis()) continue;
+                String id = ASSIGNMENTS[shard_index];
                 ASSIGNMENTS[shard_index] = null;
                 TIMESTAMPS[shard_index] = 0;
+                LOGGER.info("cleared shard " + shard_index + " assignment (" + id + ") due to missing heartbeat");
             }
         }
     }
@@ -139,12 +145,15 @@ public class DiscordGateway2HTTPMaster {
         synchronized (LOCK) {
             if (current.shard_index < 0 || current.shard_count < 0) {
                 // request without any preference (probably a new shart starting up), assign a new config
+                LOGGER.info("received config request w/o preference from " + current.id);
                 return createNewConfig(current.id);
             } else if (current.shard_count != SHARD_COUNT) {
                 // request with preference, but assumptions are out of date, assign a new one
+                LOGGER.info("received config request w/ preference (" + current.shard_index + ") from " + current.id + ", config invalid because shard count out of date");
                 return createNewConfig(current.id);
             } else if (current.shard_count == SHARD_COUNT && current.id.equals(ASSIGNMENTS[current.shard_index])) {
                 // request with preference, config is still valid and matches our own state, confirm config
+                LOGGER.fine("received config request w/ preference (" + current.shard_index + ") from " + current.id + ", config valid and up to date");
                 TIMESTAMPS[current.shard_index] = System.currentTimeMillis();
                 return current;
             } else if (current.shard_count == SHARD_COUNT && !current.id.equals(ASSIGNMENTS[current.shard_index])) {
@@ -153,9 +162,11 @@ public class DiscordGateway2HTTPMaster {
                     // shard has not been assigned yet, we can let that shard recover and confirm the config
                     ASSIGNMENTS[current.shard_index] = current.id;
                     TIMESTAMPS[current.shard_index] = System.currentTimeMillis();
+                    LOGGER.info("received config request w/ preference (" + current.shard_index + ") from " + current.id + ", config out of date due to missing heartbeats or master restart but still valid");
                     return current;
                 } else {
                     // shard has already been reassigned, assign a new config
+                    LOGGER.info("received config request w/ preference (" + current.shard_index + ") from " + current.id + ", config invalid because shard has been re-reassigned");
                     return createNewConfig(current.id);
                 }
             } else {
@@ -171,9 +182,11 @@ public class DiscordGateway2HTTPMaster {
                 if (ASSIGNMENTS[shard_index] != null) continue;
                 ASSIGNMENTS[shard_index] = id;
                 TIMESTAMPS[shard_index] = System.currentTimeMillis();
+                LOGGER.info("assigned shard " + shard_index + " to " + id);
                 return new Config(id, shard_index, SHARD_COUNT);
             }
         }
+        LOGGER.info("assigned no shard to " + id);
         return new Config(id, -1, -1);
     }
 
