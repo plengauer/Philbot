@@ -5,9 +5,6 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.*;
 import java.net.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class DiscordGateway2HTTPMaster {
     public static void main(String[] args) throws IOException {
