@@ -6,8 +6,8 @@ COPY package.json ./
 RUN npm install
 COPY . .
 
-ENV SHARD_INDEX=0
-ENV SHARD_COUNT=1
+ENV SHARD_INDEX=auto
+ENV SHARD_COUNT=auto
 ENV PORT=8080
 
 ENV SERVICE_NAME="Philbot Discord Gateway 2 HTTP"
