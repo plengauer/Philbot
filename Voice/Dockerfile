@@ -18,12 +18,12 @@ RUN apt-get -y update && apt-get -y install ffmpeg
 COPY --from=downloader /downloads/ ./
 ENV LD_LIBRARY_PATH=/application/lib/
 
-ENV STORAGE_DIRECTORY=/audio_cache
-RUN mkdir $STORAGE_DIRECTORY
-
 COPY --from=extractor /extraction/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY philbot-voice/* ./
+
+ENV STORAGE_DIRECTORY=/audio_cache
+RUN mkdir $STORAGE_DIRECTORY
 
 ENV PORT=8080
 
