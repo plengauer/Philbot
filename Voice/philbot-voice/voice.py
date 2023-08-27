@@ -1024,6 +1024,9 @@ def cleanup_loop():
         time.sleep(60)
 
 def main():
+    if not pyogg.PYOGG_OPUS_AVAIL or not pyogg.PYOGG_OPUS_FILE_AVAIL:
+        print('VOICE not ready (opus not available)')
+        exit(1)
     for file in os.listdir(SESSION_DIRECTORY):
         if file.startswith('.state.') and file.endswith('.json'):
             get_context(file[len('.state.'):len(file) - len('.json')])
