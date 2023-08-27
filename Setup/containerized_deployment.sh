@@ -78,7 +78,6 @@ install() {
     sudo docker create \
         --name $name \
         --restart unless-stopped \
-        --user $(id -u):$(id -g) \
         --network=host \
         --env-file environment.properties.$image \
         "${@:3}" \
