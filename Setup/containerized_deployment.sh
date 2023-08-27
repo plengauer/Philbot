@@ -78,7 +78,6 @@ install() {
     sudo docker create \
         --name $name \
         --restart unless-stopped \
-        --memory=128m \
         --network=host \
         --env-file environment.properties.$image \
         "${@:3}" \
