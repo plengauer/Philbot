@@ -338,7 +338,7 @@ async function handleCallback(state, request, response) {
                 }
             }
             try {
-                if (payload.guild_id && (BigInt(payload.guild_id) >> BigInt(22)) % BigInt(state.shard_count) != BigInt(state.shard_count)) {
+                if (payload.guild_id && (BigInt(payload.guild_id) >> BigInt(22)) % BigInt(state.shard_count) != BigInt(state.shard_index)) {
                     response.writeHead(422, 'Wrong shard', { 'content-type': 'text/plain' });
                     response.end();
                 } else {
