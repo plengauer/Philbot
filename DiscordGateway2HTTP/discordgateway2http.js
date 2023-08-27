@@ -12,7 +12,15 @@ const CONFIG_REQUEST_INTERVAL = 1000 * 10;
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 const meter = opentelemetry.metrics.getMeter('discord.gateway');
 
-const id = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+const id = computeID();
+
+function computeID() {
+    try {
+        return ('' + fs.readFileSync('/etc/hostname')).trim();
+    } catch {
+        return [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    }
+}
 
 init();
 
