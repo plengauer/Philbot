@@ -5,7 +5,7 @@ RUN pip install poetry && poetry export -f requirements.txt --output requirement
 
 FROM ubuntu:rolling AS downloader
 WORKDIR /downloads
-RUN apt-get update && apt-get install -y wget tar
+RUN apt-get update && apt-get install -y wget tar bzip2
 RUN wget -O libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2 && tar -xf libopus.tar.bz2 -C . && rm libopus.tar.bz2
 
 FROM python:latest
