@@ -61,11 +61,13 @@ async function request_simple(options) {
   // if (options.body) options.headers['content-length'] = options.body.length;
   // options.headers['host'] = options.hostname; // not necessary right now
   // options.headers['user-agent'] = "Philbot Backend 1.0.0"; // do we wanna do this?
-  
+
+  let s = options.secure ? 's' : '';
+  let log_request_string = `HTTP ${options.method} http${s}://${options.hostname}` + (options.port ? (':' + options.port) : '') + `${options.path}`;
+
   let counter_attrs = counter_attributes(options);
 
   return retry(() => new Promise((resolve, reject) => {
-      let s = options.secure ? 's' : '';
       let time = Date.now();      
       let request = (options.secure ? https : http).request(options, response => {
           let receiver = null;
@@ -77,7 +79,7 @@ async function request_simple(options) {
           }
           let result = { status: response.statusCode, headers: response.headers };
           let duration = Date.now() - time;
-          console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${response.statusCode} (${duration}ms)`);
+          console.log(`${log_request_string} => ${response.statusCode} (${duration}ms)`);
           counter_attrs['http.response.status'] = response.statusCode;
           counter_attrs['http.response.content-type'] = response.headers['content-type'];
           counter_attrs['http.response.content-encoding'] = response.headers['content-encoding'];
@@ -92,14 +94,14 @@ async function request_simple(options) {
           }
         });
       request.on('error', error => {
-          console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => ${error.message}`);
+          console.log(`${log_request_string} => ${error.message}`);
           counter_attrs['http.response.status'] = 0;
           request_counter.add(1, counter_attrs);
           reject(error);
         });
       request.on('timeout', () => {
           let duration = Date.now() - time;
-          console.log(`HTTP ${options.method} http${s}://${options.hostname}${options.path} => TIMEOUT (${duration}ms)`);
+          console.log(`${log_request_string} => TIMEOUT (${duration}ms)`);
           counter_attrs['http.response.status'] = 504;
           request_counter.add(1, counter_attrs);
           if (options.fail_on_timeout == undefined || options.fail_on_timeout) reject(new Error(`HTTP Timeout`));
