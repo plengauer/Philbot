@@ -43,10 +43,12 @@ async function resolve_search_string(search_string) {
   } else if (search_string.startsWith('https://www.youtube.com/watch?v=') || search_string.startsWith('https://youtube.com/watch?v=')) {
     return [ search_string ];
   } else if (search_string.startsWith('https://www.youtube.com/playlist?list=') || search_string.startsWith('https://youtube.com/playlist?list=')) {
+    let list = search_string.split('list=')[1];
+    if (list.includes('&')) list = list.substring(0, list.indexOf('&'));
     let items = [];
     let pageToken = null;
     do {
-      let result = await HTTP_YOUTUBE('/playlistItems', { part: 'snippet', maxResults: 1000, pageToken: pageToken, playlistId: search_string.split('list=')[1] });
+      let result = await HTTP_YOUTUBE('/playlistItems', { part: 'snippet', maxResults: 1000, pageToken: pageToken, playlistId: list });
       items = items.concat(result.items);
       pageToken = result.nextPageToken;
     } while(pageToken != null && pageToken.length > 0);
