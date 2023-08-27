@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
@@ -147,7 +148,17 @@ public class DiscordGateway2HTTPMaster {
             if (current.shard_index < 0 || current.shard_count < 0) {
                 // request without any preference (probably a new shart starting up), assign a new config
                 LOGGER.info("received config request w/o preference from " + current.id);
-                return createNewConfig(current.id);
+                if (Arrays.stream(ASSIGNMENTS).anyMatch(id -> current.id.equals(id))) {
+                    // the id has already a shard assigned, probably a restart that was so fast that the missing heartbeat didn't kick it out
+                    // in theory we could just assign a new shard and let the other time out, but this will cause an unnecessary delay
+                    // so this is a pure optimization
+                    int shard_index = Arrays.asList(ASSIGNMENTS).indexOf(current.id);
+                    TIMESTAMPS[shard_index] = System.currentTimeMillis();
+                    LOGGER.info("reassigned shard " + shard_index + " to " + current.id);
+                    return new Config(current.id, shard_index, SHARD_COUNT);
+                } else {
+                    return createNewConfig(current.id);
+                }
             } else if (current.shard_count != SHARD_COUNT) {
                 // request with preference, but assumptions are out of date, assign a new one
                 LOGGER.info("received config request w/ preference (" + current.shard_index + ") from " + current.id + ", config invalid because shard count out of date");
