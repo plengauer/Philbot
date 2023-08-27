@@ -13,10 +13,10 @@ ARG APPLICATION_VERSION
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
 
-RUN apt-get -y update && apt-get -y install ffmpeg
+RUN apt-get -y update && apt-get -y install ffmpeg libopusfile0
 
 COPY --from=downloader /downloads/ ./
-ENV LD_LIBRARY_PATH=/application/lib/
+ENV LD_LIBRARY_PATH=./lib/
 
 COPY --from=extractor /extraction/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
