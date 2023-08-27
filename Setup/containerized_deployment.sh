@@ -97,6 +97,7 @@ install_backend() {
     sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
     sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443 &&
     sudo bash -c 'iptables-save > /etc/iptables/rules.v4' &&
+    sudo chown root:root $HOST_MEMORY_DIRECTORY &&
     install backend backend \
         --env PORT=$BACKEND_PORT \
         --env VOICE_PORT=$VOICE_PORT \
@@ -110,6 +111,7 @@ install_discordgateway2http() {
     CONTAINER_SESSIONS_DIRECTORY=sessions
     HOST_SESSIONS_DIRECTORY=.philbot_discordgateway2http_$CONTAINER_SESSIONS_DIRECTORY
     mkdir -p $HOST_SESSIONS_DIRECTORY
+    sudo chown root:root $HOST_SESSIONS_DIRECTORY &&
     for shard_index in $(desired_shards)
     do
         install discordgateway2http_$shard_index discordgateway2http \
@@ -135,6 +137,8 @@ install_voice() {
     HOST_CACHE_DIRECTORY=.philbot_voice_$CONTAINER_CACHE_DIRECTORY
     mkdir -p $HOST_SESSIONS_DIRECTORY
     mkdir -p $HOST_CACHE_DIRECTORY
+    sudo chown root:root $HOST_SESSIONS_DIRECTORY &&
+    sudo chown root:root $HOST_CACHE_DIRECTORY &&
     install voice voice \
         --env PORT=$VOICE_PORT \
         --env STATE_STORAGE_DIRECTORY=/$CONTAINER_SESSIONS_DIRECTORY \
