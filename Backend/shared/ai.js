@@ -7,7 +7,7 @@ const openai = require('./openai.js');
 const googleai = require('./googleai.js');
 const speechify = require('./speechify.js');
 
-const VENDORS = ['openai', 'google', 'speechify'];
+const VENDORS = ['openai', 'google', 'speechify', 'microsoft' ];
 
 const meter = opentelemetry.metrics.getMeter('ai');
 meter.createObservableGauge('ai.cost.slotted.absolute').addCallback(async (result) => Promise.all(VENDORS.map(vendor => getCurrentCost(vendor).then(cost => result.observe(cost, {'ai.vendor': vendor})))));
@@ -132,6 +132,7 @@ function getCostLimit(vendor) {
         case 'openai': return openai.getCostLimit();
         case 'google': return googleai.getCostLimit();
         case 'speechify': return speechify.getCostLimit();
+        case 'microsoft': return 0;
         default: throw new Error('Unknown vendor: ' + vendor);
     }
 }
@@ -141,6 +142,7 @@ function isSameBillingSlot(vendor, timestamp, now) {
         case 'openai': return openai.isSameBillingSlot(timestamp, now);
         case 'google': return googleai.isSameBillingSlot(timestamp, now);
         case 'speechify': return speechify.isSameBillingSlot(timestamp, now);
+        case 'microsoft': return true;
         default: throw new Error('Unknown vendor: ' + vendor);
     }
 }
@@ -150,6 +152,7 @@ function computeBillingSlotProgress(vendor) {
         case 'openai': return openai.computeBillingSlotProgress();
         case 'google': return googleai.computeBillingSlotProgress();
         case 'speechify': return speechify.computeBillingSlotProgress();
+        case 'microsoft': return 0;
         default: throw new Error('Unknown vendor: ' + vendor);
     }
 }
