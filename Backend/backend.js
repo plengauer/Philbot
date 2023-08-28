@@ -177,7 +177,7 @@ function redirectSafely(request, response) {
 
 function handleSafely(request, response) {
     try {
-        opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', url.parse(request.url).pathname);
+        opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', '*');
         handle(request, response);
     } catch (error) {
         console.error(`HTTP SERVER handling ${request.url} failed ` + error);
@@ -242,6 +242,7 @@ async function dispatchAny(path, params, headers, payload, response) {
         response.end();
         return;
     } else if (path == '/') {
+        opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', path);
         response.writeHead(301, 'Moved Permanently', { location: '/index.html' });
         response.end();
         return;
@@ -250,6 +251,7 @@ async function dispatchAny(path, params, headers, payload, response) {
         response.end();
         return;
     } else if (fs.existsSync('./endpoints/www/' + path)) {
+        opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', path);
         path = './endpoints/www/' + path;
         let contentType;
         if (path.endsWith('.txt')) contentType = 'text/plain';
@@ -275,6 +277,7 @@ async function dispatchAny(path, params, headers, payload, response) {
                 if (!result) {
                     result = { status: 200, body: 'Success' };
                 }
+                opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', result.status != 404 ? path : '*');
                 if (result.body) {
                     result.headers = result.headers ?? {};
                     if (result.headers['content-type'] == 'application/zip') { // this should really be "if body is buffer"
