@@ -9,12 +9,16 @@ require 'net/http'
 $stdout.sync = true
 
 OpenTelemetry::SDK.configure do |c|
-  c.use_all()
+  version = 'unknown'
+  begin
+    version = File.read('version.txt')
+  rescue
+  end
   c.resource = OpenTelemetry::SDK::Resources::Resource.create({
     OpenTelemetry::SemanticConventions::Resource::SERVICE_NAMESPACE => 'Philbot',
     OpenTelemetry::SemanticConventions::Resource::SERVICE_NAME => 'Philbot Scheduler',
     OpenTelemetry::SemanticConventions::Resource::SERVICE_INSTANCE_ID => SecureRandom.uuid,
-    OpenTelemetry::SemanticConventions::Resource::SERVICE_VERSION => ENV['SERVICE_VERSION']
+    OpenTelemetry::SemanticConventions::Resource::SERVICE_VERSION => version
   })
   for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties", "/var/lib/dynatrace/enrichment/dt_metadata.properties"] do
     begin
@@ -23,6 +27,7 @@ OpenTelemetry::SDK.configure do |c|
     end
   end
   c.resource = OpenTelemetry::Resource::Detectors::AutoDetector.detect
+
   c.add_span_processor(
     OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
       OpenTelemetry::Exporter::OTLP::Exporter.new(
@@ -31,6 +36,8 @@ OpenTelemetry::SDK.configure do |c|
       )
     )
   )
+
+  c.use_all()
 end
 
 tracer = OpenTelemetry.tracer_provider.tracer('scheduler', '1.0')
