@@ -323,7 +323,7 @@ async function createInteractionComponents(guild_id) {
         type: 1,
         components: [
           { type: 2, style: 2, label: '', emoji: { name: '🔀' }, custom_id: 'player.shuffle', disabled: !hasNext },
-          { type: 2, style: 2, label: '', emoji: { name: '🔁' }, custom_id: 'player.repeat', disabled: false /* !connected */ },
+          { type: 2, style: 2, label: '', emoji: { name: '🔁' }, custom_id: 'player.repeat', disabled: true /* !connected */ },
           { type: 2, style: 2, label: '', emoji: { name: '➕' }, custom_id: 'player.append.modal', disabled: false },
           { type: 2, style: 2, label: '', emoji: { name: '🗑️' }, custom_id: 'player.clear', disabled: !hasNext },
         ]
