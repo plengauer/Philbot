@@ -3,13 +3,13 @@ const propertiesReader = require('properties-reader');
 const opentelemetry_api = require('@opentelemetry/api');
 const opentelemetry_sdk = require("@opentelemetry/sdk-node");
 const { Resource } = require('@opentelemetry/resources');
-const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 const { PeriodicExportingMetricReader, AggregationTemporality} = require('@opentelemetry/sdk-metrics');
 const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
 const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
 const { AlwaysOnSampler, AlwaysOffSampler } = require("@opentelemetry/core");
 const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
+const { envDetector, processDetector } = require('@opentelemetry/resources');
 const { gitSyncDetector } = require('opentelemetry-resource-detector-git');
 const { gitHubDetector } = require('@opentelemetry/resource-detector-github');
 const { containerDetector } = require('@opentelemetry/resource-detector-container');
@@ -52,6 +52,8 @@ class ShutdownAwareSpanProcessor {
 async function opentelemetry_init() {
   let sdk = opentelemetry_create();
   process.on('exit', () => sdk.shutdown());
+  process.on('SIGINT', () => sdk.shutdown());
+  process.on('SIGQUIT', () => sdk.shutdown());
   return sdk.start();
 }
 
@@ -84,16 +86,15 @@ function opentelemetry_create() {
     }),
     instrumentations: [getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }})],
     resourceDetectors: [
+        envDetector,
+        processDetector,
         gitSyncDetector, gitHubDetector,
         containerDetector,
         awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector,
         gcpDetector,
         alibabaCloudEcsDetector,
       ],
-    resource: new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: name,
-        [SemanticResourceAttributes.SERVICE_VERSION]: version,
-      }).merge(dtmetadata),
+    resource: dtmetadata,
   });
   return sdk;
 }
