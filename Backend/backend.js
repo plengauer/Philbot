@@ -330,7 +330,7 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/scheduler/monthly': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_monthly.handle());
         case '/scheduler/daily': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_daily.handle());
         case '/scheduler/hourly': return dispatchAPIAuthorized(headers, () => endpoint_scheduler_hourly.handle());
-        case '/scheduler/minutely': return { status: 404, body: 'Not found' };
+        case '/scheduler/minutely': return undefined;
         case '/discord/guild_create': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_create.handle(payload));
         case '/discord/guild_member_add': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_member_add.handle(payload));
         case '/discord/guild_member_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_guild_member_update.handle(payload));
