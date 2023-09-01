@@ -1,6 +1,6 @@
 {
   "name": "philbot-backend",
-  "version": "2.69.3",
+  "version": "2.70.0",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "form-data": "^4.0.0",
@@ -16,7 +16,13 @@
     "@opentelemetry/semantic-conventions": "*",
     "@opentelemetry/exporter-trace-otlp-proto": "*",
     "@opentelemetry/auto-instrumentations-node": "*",
-    "@opentelemetry/exporter-metrics-otlp-proto": "*"
+    "@opentelemetry/exporter-metrics-otlp-proto": "*",
+    "opentelemetry-resource-detector-git": "*",
+    "@opentelemetry/resource-detector-github": "*",
+    "@opentelemetry/resource-detector-container": "*",
+    "@opentelemetry/resource-detector-aws": "*",
+    "@opentelemetry/resource-detector-gcp": "*",
+    "@opentelemetry/resource-detector-alibaba-cloud": "*"
   },
   "scripts": {
     "start": "node backend.js",

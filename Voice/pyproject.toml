@@ -20,6 +20,9 @@ opentelemetry-instrumentation-flask = "*"
 opentelemetry-instrumentation-urllib = "*"
 opentelemetry-instrumentation-urllib3 = "*"
 opentelemetry-instrumentation-requests = "*"
+opentelemetry-resourcedetector-process = "*"
+opentelemetry-resourcedetector-docker = "*"
+opentelemetry-resourcedetector-kubernetes = "*"
 
 [build-system]
 requires = ["poetry-core"]

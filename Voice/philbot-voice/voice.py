@@ -17,7 +17,7 @@ import websocket
 from flask import Flask, request, Response, send_file
 import yt_dlp
 import opentelemetry
-from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.resources import Resource, get_aggregated_resources
 from opentelemetry import metrics
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
@@ -25,6 +25,8 @@ from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExp
 from opentelemetry.sdk.trace import TracerProvider, sampling
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry_resourcedetector_docker import DockerResourceDetector
+from opentelemetry_resourcedetector_kubernetes import KubernetesResourceDetector
 
 merged = dict()
 for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
@@ -39,7 +41,7 @@ merged.update({
   "service.name": os.environ['SERVICE_NAME'],
   "service.version": os.environ['SERVICE_VERSION']
 })
-resource = Resource.create(merged)
+resource = get_aggregated_resources([DockerResourceDetector, KubernetesResourceDetector], Resource.create(merged))
 
 os.environ['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'] = 'delta'
 meter_provider = MeterProvider(metric_readers = [ PeriodicExportingMetricReader(OTLPMetricExporter(

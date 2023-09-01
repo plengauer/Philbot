@@ -1,6 +1,7 @@
 require 'opentelemetry/sdk'
 require 'opentelemetry/exporter/otlp'
 require 'opentelemetry/instrumentation/all'
+require 'opentelemetry/resource/detectors'
 require 'uri'
 require 'net/http'
 
@@ -16,6 +17,7 @@ OpenTelemetry::SDK.configure do |c|
     rescue
     end
   end
+  c.resource = OpenTelemetry::Resource::Detectors::AutoDetector.detect
   c.add_span_processor(
     OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
       OpenTelemetry::Exporter::OTLP::Exporter.new(

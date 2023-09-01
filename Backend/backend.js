@@ -10,6 +10,12 @@ const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
 const { AlwaysOnSampler, AlwaysOffSampler } = require("@opentelemetry/core");
 const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
+const { gitSyncDetector } = require('opentelemetry-resource-detector-git');
+const { gitHubDetector } = require('@opentelemetry/resource-detector-github');
+const { containerDetector } = require('@opentelemetry/resource-detector-container');
+const { awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector } = require('@opentelemetry/resource-detector-aws');
+const { gcpDetector } = require('@opentelemetry/resource-detector-gcp');
+const { alibabaCloudEcsDetector } = require('@opentelemetry/resource-detector-alibaba-cloud');
 
 class ShutdownAwareSpanProcessor {
   processor;
@@ -77,11 +83,17 @@ function opentelemetry_create() {
       exportIntervalMillis: 5000,
     }),
     instrumentations: [getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }})],
+    resourceDetectors: [
+        gitSyncDetector, gitHubDetector,
+        containerDetector,
+        awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector,
+        gcpDetector,
+        alibabaCloudEcsDetector,
+      ],
     resource: new Resource({
         [SemanticResourceAttributes.SERVICE_NAME]: name,
         [SemanticResourceAttributes.SERVICE_VERSION]: version,
       }).merge(dtmetadata),
-    autoDetectResources: false // really we do want to detect resources, but ... well, this will await and then instrumentation comes in too late
   });
   return sdk;
 }

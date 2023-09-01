@@ -8,6 +8,12 @@ import opentelemetry_semantic_conventions from "@opentelemetry/semantic-conventi
 import opentelemetry_metrics_otlp from '@opentelemetry/exporter-metrics-otlp-proto';
 import opentelemetry_traces_otlp from '@opentelemetry/exporter-trace-otlp-proto';
 import opentelemetry_auto_instrumentations from "@opentelemetry/auto-instrumentations-node";
+import opentelemetry_resources_git from 'opentelemetry-resource-detector-git';
+import opentelemetry_resources_github from '@opentelemetry/resource-detector-github';
+import opentelemetry_resources_container from '@opentelemetry/resource-detector-container';
+import opentelemetry_resources_aws from '@opentelemetry/resource-detector-aws';
+import opentelemetry_resources_gcp from '@opentelemetry/resource-detector-gcp';
+import opentelemetry_resources_alibaba_cloud from '@opentelemetry/resource-detector-alibaba-cloud';
 
 class ShutdownAwareSpanProcessor {
   processor;
@@ -74,7 +80,18 @@ function create() {
       }),
       exportIntervalMillis: 5000,
     }),
-    instrumentations: [opentelemetry_auto_instrumentations.getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }})],
+    instrumentations: [ opentelemetry_auto_instrumentations.getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }}) ],
+    resourceDetectors: [
+      opentelemetry_resources_git.gitSyncDetector,
+      opentelemetry_resources_github.gitHubDetector,
+      opentelemetry_resources_container.containerDetector,
+      opentelemetry_resources_aws.awsBeanstalkDetector,
+      opentelemetry_resources_aws.awsEc2Detector,
+      opentelemetry_resources_aws.awsEcsDetector,
+      opentelemetry_resources_aws.awsEksDetector,
+      opentelemetry_resources_gcp.gcpDetector,
+      opentelemetry_resources_alibaba_cloud.alibabaCloudEcsDetector,
+    ],
     resource: new opentelemetry_resources.Resource({
         [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAME]: name,
         [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_VERSION]: version,
