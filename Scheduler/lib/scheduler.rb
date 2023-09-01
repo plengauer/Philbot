@@ -9,11 +9,13 @@ require 'net/http'
 $stdout.sync = true
 
 OpenTelemetry::SDK.configure do |c|
-  c.service_namespace = 'Philbot'
-  c.service_name = 'Philbot Scheduler'
-  c.service_version = ENV['SERVICE_VERSION']
-  c.service_instance_id = SecureRandom.uuid
   c.use_all()
+  c.resource = OpenTelemetry::SDK::Resources::Resource.create({
+    OpenTelemetry::SemanticConventions::Resource::SERVICE_NAMESPACE => 'Philbot',
+    OpenTelemetry::SemanticConventions::Resource::SERVICE_NAME => 'Philbot Scheduler',
+    OpenTelemetry::SemanticConventions::Resource::SERVICE_INSTANCE_ID => SecureRandom.uuid,
+    OpenTelemetry::SemanticConventions::Resource::SERVICE_VERSION => ENV['SERVICE_VERSION']
+  })
   for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties", "/var/lib/dynatrace/enrichment/dt_metadata.properties"] do
     begin
       c.resource = OpenTelemetry::SDK::Resources::Resource.create(Hash[*File.read(name.start_with?("/var") ? name : File.read(name)).split(/[=\n]+/)])
