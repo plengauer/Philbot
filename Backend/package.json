@@ -9,6 +9,7 @@
     "boomerencoding": "^1.0.0",
     "properties-reader": "^2.2.0",
     "@opentelemetry/resources": "*",
+    "@opentelemetry/semantic-conventions": "*",
     "@opentelemetry/api": "*",
     "@opentelemetry/core": "*",
     "@opentelemetry/sdk-node": "*",

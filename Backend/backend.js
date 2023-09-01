@@ -3,6 +3,7 @@ const propertiesReader = require('properties-reader');
 const opentelemetry_api = require('@opentelemetry/api');
 const opentelemetry_sdk = require("@opentelemetry/sdk-node");
 const { Resource } = require('@opentelemetry/resources');
+const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 const { PeriodicExportingMetricReader, AggregationTemporality} = require('@opentelemetry/sdk-metrics');
 const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
 const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
@@ -94,7 +95,10 @@ function opentelemetry_create() {
         gcpDetector,
         alibabaCloudEcsDetector,
       ],
-    resource: dtmetadata,
+    resource: new Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: name,
+        [SemanticResourceAttributes.SERVICE_VERSION]: version,
+      }).merge(dtmetadata),
   });
   return sdk;
 }
