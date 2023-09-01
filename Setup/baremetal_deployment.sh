@@ -98,8 +98,7 @@ install_backend() {
     install backend backend node.js &&
     echo MEMORY_DIRECTORY=$(pwd)/memory/ >> ./backend/environment.properties &&
     echo PORT=$BACKEND_PORT >> ./backend/environment.properties &&
-    echo VOICE_PORT=$VOICE_PORT >> ./backend/environment.properties &&
-    echo SERVICE_NAME="Philbot Backend" >> ./backend/environment.properties
+    echo VOICE_PORT=$VOICE_PORT >> ./backend/environment.properties
 }
 
 uninstall_backend() { uninstall backend; }
@@ -111,7 +110,6 @@ install_discordgateway2http() {
     for shard_index in $(desired_shards)
     do
         install discordgateway2http_$shard_index discordgateway2http node.js &&
-        echo SERVICE_NAME="Philbot Discord Gateway 2 HTTP" >> ./discordgateway2http_$shard_index/environment.properties
         echo SHARD_INDEX=$shard_index >> ./discordgateway2http_$shard_index/environment.properties &&
         echo SHARD_COUNT=$(desired_shard_count) >> ./discordgateway2http_$shard_index/environment.properties &&
         echo PORT=$(($GATEWAY_PORT_BASE + $shard_index)) >> ./discordgateway2http_$shard_index/environment.properties &&
@@ -137,8 +135,7 @@ install_voice() {
     echo CACHE_DIRECTORY=$(pwd)/.philbot_voice_audio_cache/ >> ./voice/environment.properties &&
     tar -xf libopus.tar.bz2 -C voice/ &&
     echo LD_LIBRARY_PATH=$(pwd)/voice/lib/ >> ./voice/environment.properties &&
-    rm libopus.tar.bz2 &&
-    echo SERVICE_NAME="Philbot Voice" >> ./voice/environment.properties
+    rm libopus.tar.bz2
 }
 
 uninstall_voice() {
@@ -153,8 +150,7 @@ install_scheduler() {
     echo 'hourly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/hourly' >> ./scheduler/config.properties &&
     echo 'daily=http://127.0.0.1:'$BACKEND_PORT'/scheduler/daily' >> ./scheduler/config.properties &&
     echo 'monthly=http://127.0.0.1:'$BACKEND_PORT'/scheduler/monthly' >> ./scheduler/config.properties &&
-    echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties  &&
-    echo SERVICE_NAME="Philbot Scheduler" >> ./scheduler/environment.properties
+    echo CONFIG_FILE=$(pwd)/scheduler/config.properties >> ./scheduler/environment.properties
 }
 
 uninstall_scheduler() { uninstall scheduler; }

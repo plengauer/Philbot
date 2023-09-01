@@ -7,22 +7,19 @@ RUN wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/re
 
 # FROM amazoncorretto:20
 FROM eclipse-temurin:latest
-ARG APPLICATION_VERSION
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
 
 COPY --from=build /downloads/ ./
-COPY src/ logging.properties ./
+COPY VERSION logging.properties src/ ./
 RUN javac -cp $(find . -name '*.jar' | paste -sd ":" -) eu/philbot/*.java && rm eu/philbot/*.java
 
 ENV PORT=8080
 
-ENV SERVICE_NAME="Philbot Discord Gateway 2 HTTP Master"
-ENV SERVICE_VERSION=$APPLICATION_VERSION
-
 CMD exec java -Xmx50m -XX:+ExitOnOutOfMemoryError \
     -Djava.util.logging.config.file=logging.properties \
-    -Dotel.service.name="$SERVICE_NAME" -Dotel.service.version=$SERVICE_VERSION \
+    -Dotel.service.namespace="Philbot" -Dotel.service.name="Philbot Discord Gateway 2 HTTP Master" \
+    -Dotel.service.version=$(cat VERSION) -Dotel.service.instance.id=$(uuidgen) \
     -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.protocol=http/protobuf \
     -Dotel.exporter.otlp.traces.endpoint=$OPENTELEMETRY_TRACES_API_ENDPOINT \
     -Dotel.exporter.otlp.traces.headers="Authorization=Api-Token "$OPENTELEMETRY_TRACES_API_TOKEN \

@@ -1,3 +1,4 @@
+import uuid
 import os
 import io
 import time
@@ -38,8 +39,10 @@ for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dyna
     except:
         pass
 merged.update({
-  "service.name": os.environ['SERVICE_NAME'],
-  "service.version": os.environ['SERVICE_VERSION']
+  "service.namespace": "Philbot",
+  "service.name": "Philbot Voice",
+  "service.version": os.environ['SERVICE_VERSION'],
+  "service.instance.id": str(uuid.uuid4())
 })
 resource = get_aggregated_resources([DockerResourceDetector(), KubernetesResourceDetector()], Resource.create(merged))
 

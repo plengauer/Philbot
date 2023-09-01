@@ -40,6 +40,5 @@ jobs:
       - uses: docker/build-push-action@v4
         with:
           context: ./Backend/
-          build-args: APPLICATION_VERSION=${{ steps.version.outputs.version }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-backend:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-backend:latest
           push: true

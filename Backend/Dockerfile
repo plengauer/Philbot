@@ -1,5 +1,4 @@
 FROM node:latest
-ARG APPLICATION_VERSION
 WORKDIR /application
 
 RUN apt-get update && apt-get -y install ffmpeg
@@ -13,8 +12,6 @@ RUN mkdir $MEMORY_DIRECTORY
 
 ENV PORT=8080
 
-ENV SERVICE_NAME="Philbot Backend"
-ENV SERVICE_VERSION=$APPLICATION_VERSION
 CMD exec node backend.js
 
 EXPOSE 8080

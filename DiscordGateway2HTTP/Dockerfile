@@ -1,5 +1,4 @@
 FROM node:19
-ARG APPLICATION_VERSION
 WORKDIR /application
 
 COPY package.json ./
@@ -10,8 +9,6 @@ ENV SHARD_INDEX=auto
 ENV SHARD_COUNT=auto
 ENV PORT=8080
 
-ENV SERVICE_NAME="Philbot Discord Gateway 2 HTTP"
-ENV SERVICE_VERSION=$APPLICATION_VERSION
 CMD exec node discordgateway2http.js
 
 EXPOSE 8080

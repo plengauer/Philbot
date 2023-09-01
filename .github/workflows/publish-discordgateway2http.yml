@@ -40,6 +40,5 @@ jobs:
       - uses: docker/build-push-action@v4
         with:
           context: ./DiscordGateway2HTTP/
-          build-args: APPLICATION_VERSION=${{ steps.version.outputs.version }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-discordgateway2http:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-discordgateway2http:latest
           push: true

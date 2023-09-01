@@ -1,3 +1,4 @@
+require 'securerandom'
 require 'opentelemetry/sdk'
 require 'opentelemetry/exporter/otlp'
 require 'opentelemetry/instrumentation/all'
@@ -8,8 +9,10 @@ require 'net/http'
 $stdout.sync = true
 
 OpenTelemetry::SDK.configure do |c|
-  c.service_name = ENV['SERVICE_NAME']
+  c.service_namespace = 'Philbot'
+  c.service_name = 'Philbot Scheduler'
   c.service_version = ENV['SERVICE_VERSION']
+  c.service_instance_id = SecureRandom.uuid
   c.use_all()
   for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties", "/var/lib/dynatrace/enrichment/dt_metadata.properties"] do
     begin

@@ -27,7 +27,6 @@ RUN mkdir $STORAGE_DIRECTORY
 
 ENV PORT=8080
 
-ENV SERVICE_NAME="Philbot Voice"
 ENV SERVICE_VERSION=$APPLICATION_VERSION
 CMD exec opentelemetry-instrument python -u voice.py
 

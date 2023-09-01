@@ -1,15 +1,17 @@
 const process = require('process');
+const fs = require("fs");
+const crypto = require('crypto');
 const propertiesReader = require('properties-reader');
 const opentelemetry_api = require('@opentelemetry/api');
-const opentelemetry_sdk = require("@opentelemetry/sdk-node");
+const opentelemetry_sdk = require('@opentelemetry/sdk-node');
 const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 const { PeriodicExportingMetricReader, AggregationTemporality} = require('@opentelemetry/sdk-metrics');
 const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
 const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
-const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
-const { AlwaysOnSampler, AlwaysOffSampler } = require("@opentelemetry/core");
-const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-proto');
+const { AlwaysOnSampler, AlwaysOffSampler } = require('@opentelemetry/core');
+const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { envDetector, processDetector } = require('@opentelemetry/resources');
 const { gitSyncDetector } = require('opentelemetry-resource-detector-git');
 const { gitHubDetector } = require('@opentelemetry/resource-detector-github');
@@ -59,8 +61,6 @@ async function opentelemetry_init() {
 }
 
 function opentelemetry_create() {
-  let name = process.env.SERVICE_NAME;
-  let version = process.env.SERVICE_VERSION;
   let dtmetadata = new Resource({});
   for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
     try {
@@ -68,7 +68,7 @@ function opentelemetry_create() {
     } catch { }
   }
   const sdk = new opentelemetry_sdk.NodeSDK({
-    sampler: (name && version) ? new AlwaysOnSampler() : new AlwaysOffSampler(),
+    sampler: process.env.OPENTELEMETRY_TRACES_API_ENDPOINT ? new AlwaysOnSampler() : new AlwaysOffSampler(),
     spanProcessor: new ShutdownAwareSpanProcessor(
       new BatchSpanProcessor(
         new OTLPTraceExporter({
@@ -96,8 +96,10 @@ function opentelemetry_create() {
         alibabaCloudEcsDetector,
       ],
     resource: new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: name,
-        [SemanticResourceAttributes.SERVICE_VERSION]: version,
+        [SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
+        [SemanticResourceAttributes.SERVICE_NAME]: 'Philbot Backend',
+        [SemanticResourceAttributes.SERVICE_VERSION]: JSON.parse('' + fs.readFileSync('package.json')).version,
+        [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: crypto.randomUUID(),
       }).merge(dtmetadata),
   });
   return sdk;
@@ -108,7 +110,6 @@ opentelemetry_init();
 const http = require('http');
 const https = require('https');
 const url = require("url");
-const fs = require("fs");
 
 const endpoint_about = require('./endpoints/api/about.js');
 const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');
