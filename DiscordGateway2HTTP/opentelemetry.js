@@ -50,6 +50,8 @@ class ShutdownAwareSpanProcessor {
 async function init() {
   let sdk = create();
   process.on('exit', () => sdk.shutdown());
+  process.on('SIGINT', () => sdk.shutdown());
+  process.on('SIGQUIT', () => sdk.shutdown());
   await sdk.start();
 }
 
@@ -82,6 +84,8 @@ function create() {
     }),
     instrumentations: [ opentelemetry_auto_instrumentations.getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }}) ],
     resourceDetectors: [
+      opentelemetry_resources.envDetector,
+      opentelemetry_resources.processDetector,
       opentelemetry_resources_git.gitSyncDetector,
       opentelemetry_resources_github.gitHubDetector,
       opentelemetry_resources_container.containerDetector,
@@ -92,10 +96,7 @@ function create() {
       opentelemetry_resources_gcp.gcpDetector,
       opentelemetry_resources_alibaba_cloud.alibabaCloudEcsDetector,
     ],
-    resource: new opentelemetry_resources.Resource({
-        [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAME]: name,
-        [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_VERSION]: version,
-      }).merge(dtmetadata),
+    resource: dtmetadata,
   });
   return sdk;
 }
