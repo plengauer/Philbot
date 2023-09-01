@@ -3,6 +3,7 @@ WORKDIR /extractions
 COPY philbot-scheduler.gemspec ./
 RUN cat philbot-scheduler.gemspec | grep 'version' | awk -F\' '{print $2}' > version.txt
 
+
 FROM ruby:latest
 WORKDIR /application
 
