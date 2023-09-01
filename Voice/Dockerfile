@@ -1,5 +1,5 @@
 FROM python:latest AS extractor
-WORKDIR /extraction
+WORKDIR /extractions
 COPY pyproject.toml ./
 RUN pip install poetry && poetry export -f requirements.txt --output requirements.txt
 RUN cat pyproject.toml | grep version | grep -E '[0-9]+\.[0-9]+\.[0-9]+' -o > version.txt
@@ -20,7 +20,7 @@ RUN apt-get -y update && apt-get -y install ffmpeg libopusfile0
 COPY --from=downloader /downloads/ ./
 ENV LD_LIBRARY_PATH=./lib/
 
-COPY --from=extractor /extraction/requirements.txt /extraction.version.txt ./
+COPY --from=extractor /extractions/requirements.txt version.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY philbot-voice/* ./
 
