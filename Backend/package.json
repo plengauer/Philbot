@@ -1,6 +1,6 @@
 {
   "name": "philbot-backend",
-  "version": "2.70.2",
+  "version": "2.70.3",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "form-data": "^4.0.0",
@@ -13,7 +13,6 @@
     "@opentelemetry/core": "*",
     "@opentelemetry/sdk-node": "*",
     "@opentelemetry/sdk-trace-base": "*",
-    "@opentelemetry/semantic-conventions": "*",
     "@opentelemetry/exporter-trace-otlp-proto": "*",
     "@opentelemetry/auto-instrumentations-node": "*",
     "@opentelemetry/exporter-metrics-otlp-proto": "*",
