@@ -29,6 +29,13 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry_resourcedetector_docker import DockerResourceDetector
 from opentelemetry_resourcedetector_kubernetes import KubernetesResourceDetector
 
+version = 'unknown'
+try:
+    with open('version.txt') as f:
+        version = f.read()
+except:
+    pass
+
 merged = dict()
 for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
     try:
@@ -41,7 +48,7 @@ for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dyna
 merged.update({
   "service.namespace": "Philbot",
   "service.name": "Philbot Voice",
-  "service.version": os.environ['SERVICE_VERSION'],
+  "service.version": version,
   "service.instance.id": str(uuid.uuid4())
 })
 resource = get_aggregated_resources([DockerResourceDetector(), KubernetesResourceDetector()], Resource.create(merged))
