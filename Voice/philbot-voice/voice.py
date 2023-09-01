@@ -41,7 +41,7 @@ merged.update({
   "service.name": os.environ['SERVICE_NAME'],
   "service.version": os.environ['SERVICE_VERSION']
 })
-resource = get_aggregated_resources([DockerResourceDetector, KubernetesResourceDetector], Resource.create(merged))
+resource = get_aggregated_resources([DockerResourceDetector(), KubernetesResourceDetector()], Resource.create(merged))
 
 os.environ['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'] = 'delta'
 meter_provider = MeterProvider(metric_readers = [ PeriodicExportingMetricReader(OTLPMetricExporter(
