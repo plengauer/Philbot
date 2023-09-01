@@ -4,6 +4,7 @@ import opentelemetry_sdk from "@opentelemetry/sdk-node";
 import opentelemetry_metrics from '@opentelemetry/sdk-metrics';
 import opentelemetry_tracing from "@opentelemetry/sdk-trace-base";
 import opentelemetry_resources from "@opentelemetry/resources";
+import opentelemetry_semantic_conventions from "@opentelemetry/semantic-conventions";
 import opentelemetry_metrics_otlp from '@opentelemetry/exporter-metrics-otlp-proto';
 import opentelemetry_traces_otlp from '@opentelemetry/exporter-trace-otlp-proto';
 import opentelemetry_auto_instrumentations from "@opentelemetry/auto-instrumentations-node";
@@ -95,7 +96,10 @@ function create() {
       opentelemetry_resources_gcp.gcpDetector,
       opentelemetry_resources_alibaba_cloud.alibabaCloudEcsDetector,
     ],
-    resource: dtmetadata,
+    resource: new opentelemetry_resources.Resource({
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAME]: name,
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_VERSION]: version,
+    }).merge(dtmetadata)
   });
   return sdk;
 }
