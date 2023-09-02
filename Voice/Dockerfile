@@ -20,7 +20,7 @@ RUN apt-get -y update && apt-get -y install ffmpeg libopusfile0
 COPY --from=downloader /downloads/ ./
 ENV LD_LIBRARY_PATH=./lib/
 
-COPY --from=extractor /extractions/requirements.txt version.txt ./
+COPY --from=extractor /extractions/requirements.txt /extractions/version.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY philbot-voice/* ./
 
