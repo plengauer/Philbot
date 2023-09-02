@@ -90,7 +90,7 @@ function opentelemetry_create() {
         envDetector,
         processDetector,
         gitSyncDetector, gitHubDetector,
-        containerDetector,
+        containerDetector, // k8s detector
         awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector,
         gcpDetector,
         alibabaCloudEcsDetector,

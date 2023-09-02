@@ -89,6 +89,7 @@ function create() {
       opentelemetry_resources_git.gitSyncDetector,
       opentelemetry_resources_github.gitHubDetector,
       opentelemetry_resources_container.containerDetector,
+      // k8s detector
       opentelemetry_resources_aws.awsBeanstalkDetector,
       opentelemetry_resources_aws.awsEc2Detector,
       opentelemetry_resources_aws.awsEcsDetector,
