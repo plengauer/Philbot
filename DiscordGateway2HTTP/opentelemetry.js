@@ -84,19 +84,21 @@ function create() {
     }),
     instrumentations: [ opentelemetry_auto_instrumentations.getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }}) ],
     resourceDetectors: [
-      opentelemetry_resources.envDetector,
-      opentelemetry_resources.processDetector,
-      opentelemetry_resources_git.gitSyncDetector,
-      opentelemetry_resources_github.gitHubDetector,
-      opentelemetry_resources_container.containerDetector,
-      // TODO k8s detector
+      //TODO move dtmetadata into DynatraceResourceDetector
+      opentelemetry_resources_alibaba_cloud.alibabaCloudEcsDetector,
+      // TODO azure
+      opentelemetry_resources_gcp.gcpDetector,
       opentelemetry_resources_aws.awsBeanstalkDetector,
       opentelemetry_resources_aws.awsEc2Detector,
       opentelemetry_resources_aws.awsEcsDetector,
       opentelemetry_resources_aws.awsEksDetector,
-      opentelemetry_resources_gcp.gcpDetector,
-      // TODO azure
-      opentelemetry_resources_alibaba_cloud.alibabaCloudEcsDetector,
+      // TODO k8s detector
+      opentelemetry_resources_container.containerDetector,
+      opentelemetry_resources_git.gitSyncDetector,
+      opentelemetry_resources_github.gitHubDetector,
+      opentelemetry_resources.processDetector,
+      opentelemetry_resources.envDetector,
+      // TODO move resources below into a ServiceResourceDetector
     ],
     resource: new opentelemetry_resources.Resource({
       [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',

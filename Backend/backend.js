@@ -87,14 +87,16 @@ function opentelemetry_create() {
     }),
     instrumentations: [getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }})],
     resourceDetectors: [
-        envDetector,
-        processDetector,
-        gitSyncDetector, gitHubDetector,
-        containerDetector, // TODO k8s detector
-        awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector,
+        // TODO move dtmeta into DynatraceResourceDetector
+        alibabaCloudEcsDetector,
         gcpDetector,
         // TODO azure
-        alibabaCloudEcsDetector,
+        awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector,
+        containerDetector, // TODO k8s detector
+        gitSyncDetector, gitHubDetector,
+        processDetector,
+        envDetector,
+        // TODO move below resource attributes into dedicted ServiceResourceDetector
       ],
     resource: new Resource({
         [SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
