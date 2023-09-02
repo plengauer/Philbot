@@ -77,16 +77,16 @@ class DynatraceResourceDetector(ResourceDetector):
 
 resource = get_aggregated_resources([
         DynatraceResourceDetector(),
+        # TODO azure
+        # TODO alibaba cloud 
+        # TODO GCP
+        # TODO AWS beanstock, ECS, EKS, 
         AwsEC2ResourceDetector(),
         KubernetesResourceDetector(),
         DockerResourceDetector(),
         ProcessResourceDetector(),
         OTELResourceDetector(),
         ServiceResourceDetector(),
-        # TODO AWS beanstock, ECS, EKS, 
-        # TODO GCP
-        # TODO azure
-        # TODO alibaba cloud 
     ]
 )
 
