@@ -77,8 +77,8 @@ resource = get_aggregated_resources([
         ProcessResourceDetector(),
         DockerResourceDetector(),
         KubernetesResourceDetector(),
-        DynatraceResourceDetector(),
-        AwsEC2ResourceDetector(),
+        # DynatraceResourceDetector(),
+        # AwsEC2ResourceDetector(),
         # TODO AWS beanstock, ECS, EKS, 
         # TODO GCP
         # TODO azure
