@@ -89,12 +89,13 @@ function create() {
       opentelemetry_resources_git.gitSyncDetector,
       opentelemetry_resources_github.gitHubDetector,
       opentelemetry_resources_container.containerDetector,
-      // k8s detector
+      // TODO k8s detector
       opentelemetry_resources_aws.awsBeanstalkDetector,
       opentelemetry_resources_aws.awsEc2Detector,
       opentelemetry_resources_aws.awsEcsDetector,
       opentelemetry_resources_aws.awsEksDetector,
       opentelemetry_resources_gcp.gcpDetector,
+      // TODO azure
       opentelemetry_resources_alibaba_cloud.alibabaCloudEcsDetector,
     ],
     resource: new opentelemetry_resources.Resource({
