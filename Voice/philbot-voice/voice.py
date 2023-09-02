@@ -26,6 +26,7 @@ from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExp
 from opentelemetry.sdk.trace import TracerProvider, sampling
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.context import Context
 from opentelemetry_resourcedetector_docker import DockerResourceDetector
 from opentelemetry_resourcedetector_kubernetes import KubernetesResourceDetector
 
@@ -47,22 +48,26 @@ class ServiceResourceDetector(ResourceDetector):
 
 class AwsEC2ResourceDetector(ResourceDetector):
     def detect(self) -> Resource:
-        # token = requests.put('http://169.254.169.254/latest/api/token', headers={ 'X-aws-ec2-metadata-token-ttl-seconds': '60' }, timeout=5).text
-        # identity = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).json()
-        # hostname = requests.get('http://169.254.169.254/latest/meta-data/hostname', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).text
-        identity = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document', timeout=5).json()
-        hostname = requests.get('http://169.254.169.254/latest/meta-data/hostname', timeout=5).text
-        return Resource.create({})
-        return Resource.create({
-            'cloud.provider': 'aws',
-            'cloud.platform': 'aws_ec2',
-            'cloud.account.id': identity['accountId'],
-            'cloud.region': identity['region'],
-            'cloud.availability_zone': identity['availabilityZone'],
-            'host.id': identity['instanceId'],
-            'host.type': identity['instanceType'],
-            'host.name': hostname
-        })
+        suppress = Context.suppress_instrumentation
+        try:
+            Context.suppress_instrumentation = True
+            # token = requests.put('http://169.254.169.254/latest/api/token', headers={ 'X-aws-ec2-metadata-token-ttl-seconds': '60' }, timeout=5).text
+            # identity = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).json()
+            # hostname = requests.get('http://169.254.169.254/latest/meta-data/hostname', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).text
+            identity = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document', timeout=5).json()
+            hostname = requests.get('http://169.254.169.254/latest/meta-data/hostname', timeout=5).text
+            return Resource.create({
+                'cloud.provider': 'aws',
+                'cloud.platform': 'aws_ec2',
+                'cloud.account.id': identity['accountId'],
+                'cloud.region': identity['region'],
+                'cloud.availability_zone': identity['availabilityZone'],
+                'host.id': identity['instanceId'],
+                'host.type': identity['instanceType'],
+                'host.name': hostname
+            })
+        finally:
+            Context.suppress_instrumentation = suppress
 
 class DynatraceResourceDetector(ResourceDetector):
     def detect(self) -> Resource:
@@ -360,7 +365,7 @@ class Stream:
         self.buffer = None
         self.buffer_revision = None
 
-class Context:
+class Connection:
     lock = threading.Lock()
     callback_url = None
     guild_id = None
@@ -916,11 +921,11 @@ class Context:
 contexts_lock = threading.Lock()
 contexts = {}
 
-def get_context(guild_id):
+def get_connection(guild_id):
     with contexts_lock:
         context = contexts.get(guild_id)
         if not context:
-            context = contexts[guild_id] = Context(guild_id)
+            context = contexts[guild_id] = Connection(guild_id)
         return context
 
 def get_connection_count(options):
@@ -942,7 +947,7 @@ def voice_state_update():
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
-    context = get_context(body['guild_id'])
+    context = get_connection(body['guild_id'])
     context.on_state_update(body['channel_id'], body['user_id'], body['session_id'], body['callback_url'])
     return 'Success'
 
@@ -951,7 +956,7 @@ def voice_server_update():
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
-    context = get_context(body['guild_id'])
+    context = get_connection(body['guild_id'])
     context.on_server_update(body['endpoint'], body['token'])
     return 'Success'
 
@@ -963,14 +968,14 @@ def voice_content_update(guild_id):
         file = request.files['file']
         temporary = STORAGE_DIRECTORY + '/temporary.' + str(random.randint(0, 1000000)) + '.' + file.content_type.split('/')[1]
         file.save(temporary)
-        context = get_context(guild_id)
+        context = get_connection(guild_id)
         context.on_content_update(resolve_url(guild_id, 'file://' + temporary))
         if os.path.exists(temporary):
             os.unlink(temporary)
         return 'Success'
     elif request.headers['content-type'] == 'application/json':
         body = request.json
-        context = get_context(guild_id)
+        context = get_connection(guild_id)
         try:
             context.on_content_update(resolve_url(guild_id, body['url']))
         except yt_dlp.utils.DownloadError as e:
@@ -1017,7 +1022,7 @@ def voice_content_lookahead(guild_id):
 def voice_pause(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    context = get_context(guild_id)
+    context = get_connection(guild_id)
     context.pause()
     return 'Success'
 
@@ -1025,7 +1030,7 @@ def voice_pause(guild_id):
 def voice_resume(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    context = get_context(guild_id)
+    context = get_connection(guild_id)
     context.resume()
     return 'Success'
 
@@ -1036,7 +1041,7 @@ def voice_is_connected(guild_id):
     end = time_millis() + 1000 * 30
     tryy = 100
     while time_millis() < end:
-        context = get_context(guild_id)
+        context = get_connection(guild_id)
         if context and context.is_connected():
             return Response(context.channel_id, status=200)
         if context and not context.is_connecting():
@@ -1077,7 +1082,7 @@ def main():
         exit(1)
     for file in os.listdir(SESSION_DIRECTORY):
         if file.startswith('.state.') and file.endswith('.json'):
-            get_context(file[len('.state.'):len(file) - len('.json')])
+            get_connection(file[len('.state.'):len(file) - len('.json')])
     threading.Thread(target=cleanup_loop).start()
     print('VOICE ready')
     # app.run(port=HTTP_PORT, ssl_context='adhoc', threaded=True)
