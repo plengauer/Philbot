@@ -18,7 +18,7 @@ import websocket
 from flask import Flask, request, Response, send_file
 import yt_dlp
 import opentelemetry
-from opentelemetry.sdk.resources import Resource, get_aggregated_resources
+from opentelemetry.sdk.resources import Resource, ResourceDetector, OTELResourceDetector, ProcessResourceDetector, get_aggregated_resources
 from opentelemetry import metrics
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
@@ -29,29 +29,62 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry_resourcedetector_docker import DockerResourceDetector
 from opentelemetry_resourcedetector_kubernetes import KubernetesResourceDetector
 
-version = 'unknown'
-try:
-    with open('version.txt') as f:
-        version = f.read()
-except:
-    pass
+class ServiceResourceDetector(ResourceDetector):
+    def detect(self) -> Resource:
+        version = 'unknown'
+        try:
+            with open('version.txt') as f:
+                version = f.read()
+        except:
+            pass
+        return Resource.create({
+            "service.namespace": "Philbot",
+            "service.name": "Philbot Voice",
+            "service.version": version,
+            "service.instance.id": str(uuid.uuid4())
+        })
 
-merged = dict()
-for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
-    try:
-        data = ''
-        with open(name) as f:
-            data = json.load(f if name.startswith("/var") else open(f.read()))
-        merged.update(data)
-    except:
-        pass
-merged.update({
-  "service.namespace": "Philbot",
-  "service.name": "Philbot Voice",
-  "service.version": version,
-  "service.instance.id": str(uuid.uuid4())
-})
-resource = get_aggregated_resources([DockerResourceDetector(), KubernetesResourceDetector()], Resource.create(merged))
+
+class AwsEC2ResourceDetector(ResourceDetector):
+    def detect(self) -> Resource:
+        token = requests.put('http://169.254.169.254/latest/api/token', headers={ 'X-aws-ec2-metadata-token-ttl-seconds': '60' }, timeout=5).text
+        identity = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).json()
+        hostname = requests.get('http://169.254.169.254/latest/meta-data/hostname', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).text
+        return Resource.create({
+            'cloud.provider': 'aws',
+            'cloud.platform': 'aws_ec2',
+            'cloud.account.id': identity['accountId'],
+            'cloud.region': identity['region'],
+            'cloud.availability_zone': identity['availabilityZone'],
+            'host.id': identity['instanceId'],
+            'host.type': identity['instanceType'],
+            'host.name': hostname
+        })
+
+class DynatraceResourceDetector(ResourceDetector):
+    def detect(self) -> Resource:
+        for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
+            try:
+                with open(name) as f:
+                    return Resource.create(json.load(f if name.startswith("/var") else open(f.read())))
+            except:
+                pass
+        return Resource.get_empty()
+
+resource = get_aggregated_resources([
+        ServiceResourceDetector(),
+        OTELResourceDetector(),
+        ProcessResourceDetector(),
+        DockerResourceDetector(),
+        KubernetesResourceDetector(),
+        DynatraceResourceDetector(),
+        AwsEC2ResourceDetector(),
+        # TODO AWS beanstock, ECS, EKS, 
+        # TODO GCP
+        # TODO azure
+        # TODO alibaba cloud 
+    ]
+)
 
 os.environ['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'] = 'delta'
 meter_provider = MeterProvider(metric_readers = [ PeriodicExportingMetricReader(OTLPMetricExporter(
