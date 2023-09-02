@@ -26,7 +26,7 @@ from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExp
 from opentelemetry.sdk.trace import TracerProvider, sampling
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.context import Context
+from opentelemetry.context import _SUPPRESS_INSTRUMENTATION_KEY, attach, detach, set_value
 from opentelemetry_resourcedetector_docker import DockerResourceDetector
 from opentelemetry_resourcedetector_kubernetes import KubernetesResourceDetector
 
@@ -45,12 +45,10 @@ class ServiceResourceDetector(ResourceDetector):
             "service.instance.id": str(uuid.uuid4())
         })
 
-
 class AwsEC2ResourceDetector(ResourceDetector):
     def detect(self) -> Resource:
-        suppress = Context.suppress_instrumentation
+        context_token = attach(set_value(_SUPPRESS_INSTRUMENTATION_KEY, True))
         try:
-            Context.suppress_instrumentation = True
             # token = requests.put('http://169.254.169.254/latest/api/token', headers={ 'X-aws-ec2-metadata-token-ttl-seconds': '60' }, timeout=5).text
             # identity = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).json()
             # hostname = requests.get('http://169.254.169.254/latest/meta-data/hostname', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).text
@@ -67,7 +65,7 @@ class AwsEC2ResourceDetector(ResourceDetector):
                 'host.name': hostname
             })
         finally:
-            Context.suppress_instrumentation = suppress
+            detach(context_token)
 
 class DynatraceResourceDetector(ResourceDetector):
     def detect(self) -> Resource:
