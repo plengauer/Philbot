@@ -76,13 +76,13 @@ class DynatraceResourceDetector(ResourceDetector):
         return Resource.get_empty()
 
 resource = get_aggregated_resources([
-        ServiceResourceDetector(),
-        OTELResourceDetector(),
-        ProcessResourceDetector(),
-        DockerResourceDetector(),
-        KubernetesResourceDetector(),
         DynatraceResourceDetector(),
         AwsEC2ResourceDetector(),
+        KubernetesResourceDetector(),
+        DockerResourceDetector(),
+        ProcessResourceDetector(),
+        OTELResourceDetector(),
+        ServiceResourceDetector(),
         # TODO AWS beanstock, ECS, EKS, 
         # TODO GCP
         # TODO azure
