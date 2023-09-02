@@ -47,9 +47,11 @@ class ServiceResourceDetector(ResourceDetector):
 
 class AwsEC2ResourceDetector(ResourceDetector):
     def detect(self) -> Resource:
-        token = requests.put('http://169.254.169.254/latest/api/token', headers={ 'X-aws-ec2-metadata-token-ttl-seconds': '60' }, timeout=5).text
-        identity = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).json()
-        hostname = requests.get('http://169.254.169.254/latest/meta-data/hostname', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).text
+        # token = requests.put('http://169.254.169.254/latest/api/token', headers={ 'X-aws-ec2-metadata-token-ttl-seconds': '60' }, timeout=5).text
+        # identity = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).json()
+        # hostname = requests.get('http://169.254.169.254/latest/meta-data/hostname', headers={ 'X-aws-ec2-metadata-token': token }, timeout=5).text
+        identity = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document', timeout=5).json()
+        hostname = requests.get('http://169.254.169.254/latest/meta-data/hostname', timeout=5).text
         return Resource.create({
             'cloud.provider': 'aws',
             'cloud.platform': 'aws_ec2',
