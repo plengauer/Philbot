@@ -56,20 +56,20 @@ class DynatraceResourceDetector {
   detect() {
     for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
       try {
-        return new opentelemetry_resources.Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties());
+        return new Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties());
       } catch { }
     }
-    return new opentelemetry_resources.Resource({});
+    return new Resource({});
   }
 }
 
 class ServiceResourceDetector {
   detect() {
-    return new opentelemetry_resources.Resource({
-      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
-      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAME]: 'Philbot Backend',
-      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_VERSION]: JSON.parse('' + fs.readFileSync('package.json')).version,
-      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_INSTANCE_ID]: crypto.randomUUID(),
+    return new Resource({
+      [SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
+      [SemanticResourceAttributes.SERVICE_NAME]: 'Philbot Backend',
+      [SemanticResourceAttributes.SERVICE_VERSION]: JSON.parse('' + fs.readFileSync('package.json')).version,
+      [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: crypto.randomUUID(),
     });
   }
 }
