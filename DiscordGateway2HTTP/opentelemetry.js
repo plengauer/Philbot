@@ -49,6 +49,28 @@ class ShutdownAwareSpanProcessor {
   }
 }
 
+class DynatraceResourceDetector {
+  detect() {
+    for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
+      try {
+        return new opentelemetry_resources.Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties());
+      } catch { }
+    }
+    return new opentelemetry_resources.Resource({});
+  }
+}
+
+class ServiceResourceDetector {
+  detect() {
+    return new opentelemetry_resources.Resource({
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAME]: 'Philbot Discord Gateway 2 HTTP',
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_VERSION]: JSON.parse('' + fs.readFileSync('package.json')).version,
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_INSTANCE_ID]: crypto.randomUUID(),
+    });
+  }
+}
+
 async function init() {
   let sdk = create();
   process.on('exit', () => sdk.shutdown());
@@ -58,13 +80,7 @@ async function init() {
 }
 
 function create() {
-  let dtmetadata = new opentelemetry_resources.Resource({});
-  for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
-    try {
-      dtmetadata.merge(new opentelemetry_resources.Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties()));
-    } catch { }
-  }
-  const sdk = new opentelemetry_sdk.NodeSDK({
+  return new opentelemetry_sdk.NodeSDK({
     sampler: process.env.OPENTELEMETRY_TRACES_API_ENDPOINT ? new opentelemetry_tracing.AlwaysOnSampler() : new opentelemetry_tracing.AlwaysOffSampler(),
     spanProcessor: new ShutdownAwareSpanProcessor(
       new opentelemetry_tracing.BatchSpanProcessor(
@@ -84,7 +100,7 @@ function create() {
     }),
     instrumentations: [ opentelemetry_auto_instrumentations.getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }}) ],
     resourceDetectors: [
-      //TODO move dtmetadata into DynatraceResourceDetector
+      new DynatraceResourceDetector(),
       opentelemetry_resources_alibaba_cloud.alibabaCloudEcsDetector,
       // TODO azure
       opentelemetry_resources_gcp.gcpDetector,
@@ -98,16 +114,9 @@ function create() {
       opentelemetry_resources_github.gitHubDetector,
       opentelemetry_resources.processDetector,
       opentelemetry_resources.envDetector,
-      // TODO move resources below into a ServiceResourceDetector
+      new ServiceResourceDetector()
     ],
-    resource: new opentelemetry_resources.Resource({
-      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
-      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAME]: 'Philbot Discord Gateway 2 HTTP',
-      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_VERSION]: JSON.parse('' + fs.readFileSync('package.json')).version,
-      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_INSTANCE_ID]: crypto.randomUUID(),
-    }).merge(dtmetadata),
   });
-  return sdk;
 }
 
 await init();

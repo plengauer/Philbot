@@ -52,6 +52,28 @@ class ShutdownAwareSpanProcessor {
   }
 }
 
+class DynatraceResourceDetector {
+  detect() {
+    for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
+      try {
+        return new opentelemetry_resources.Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties());
+      } catch { }
+    }
+    return new opentelemetry_resources.Resource({});
+  }
+}
+
+class ServiceResourceDetector {
+  detect() {
+    return new opentelemetry_resources.Resource({
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAME]: 'Philbot Backend',
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_VERSION]: JSON.parse('' + fs.readFileSync('package.json')).version,
+      [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_INSTANCE_ID]: crypto.randomUUID(),
+    });
+  }
+}
+
 async function opentelemetry_init() {
   let sdk = opentelemetry_create();
   process.on('exit', () => sdk.shutdown());
@@ -61,13 +83,7 @@ async function opentelemetry_init() {
 }
 
 function opentelemetry_create() {
-  let dtmetadata = new Resource({});
-  for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
-    try {
-      dtmetadata.merge(new Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties()));
-    } catch { }
-  }
-  const sdk = new opentelemetry_sdk.NodeSDK({
+  return new opentelemetry_sdk.NodeSDK({
     sampler: process.env.OPENTELEMETRY_TRACES_API_ENDPOINT ? new AlwaysOnSampler() : new AlwaysOffSampler(),
     spanProcessor: new ShutdownAwareSpanProcessor(
       new BatchSpanProcessor(
@@ -87,25 +103,18 @@ function opentelemetry_create() {
     }),
     instrumentations: [getNodeAutoInstrumentations({'@opentelemetry/instrumentation-fs': { enabled: false }})],
     resourceDetectors: [
-        // TODO move dtmeta into DynatraceResourceDetector
-        alibabaCloudEcsDetector,
-        gcpDetector,
-        // TODO azure
-        awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector,
-        containerDetector, // TODO k8s detector
-        gitSyncDetector, gitHubDetector,
-        processDetector,
-        envDetector,
-        // TODO move below resource attributes into dedicted ServiceResourceDetector
-      ],
-    resource: new Resource({
-        [SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
-        [SemanticResourceAttributes.SERVICE_NAME]: 'Philbot Backend',
-        [SemanticResourceAttributes.SERVICE_VERSION]: JSON.parse('' + fs.readFileSync('package.json')).version,
-        [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: crypto.randomUUID(),
-      }).merge(dtmetadata),
+      new DynatraceResourceDetector(),
+      alibabaCloudEcsDetector,
+      gcpDetector,
+      // TODO azure
+      awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector,
+      containerDetector, // TODO k8s detector
+      gitSyncDetector, gitHubDetector,
+      processDetector,
+      envDetector,
+      new ServiceResourceDetector()
+    ]
   });
-  return sdk;
 }
 
 opentelemetry_init();
