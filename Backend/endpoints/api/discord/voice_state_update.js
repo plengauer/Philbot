@@ -42,7 +42,7 @@ async function playGreeting(guild_id, channel_id, user_id) {
   if (birthday_track && birthday && birthday.month == now.getUTCMonth() + 1 && birthday.day == now.getUTCDate()) {
     return player.play(guild_id, channel_id, birthday_track, false);
   } else if (intro_track) {
-    return player.play(guild_id, channel_id, intro_track, false).then(() => discord.dms_channel_retrieve(user_id).then(channel => player.openInteraction(guild_id, channel.id)));
+    return player.play(guild_id, channel_id, intro_track, intro_track.includes('playlist')).then(() => discord.dms_channel_retrieve(user_id).then(channel => player.openInteraction(guild_id, channel.id)));
   }
 }
 
