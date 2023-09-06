@@ -1,0 +1,8 @@
+#!/bin/bash
+# TODO start services directly
+# TODO setup ip tables
+# TODO download opus (or maybe include it in the debian package build)
+# TODO reload system deamon
+# TODO go through all deployment and make sure we do all in postinst
+bash philbot_deployment_baremetal.sh install &&
+bash philbot_deployment_baremetal.sh start

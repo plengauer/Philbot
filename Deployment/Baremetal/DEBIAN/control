@@ -1,0 +1,11 @@
+Package: philbot-baremetal
+Version: 0.1
+Architecture: all
+Depends: nodejs python3 python3-pip python3-venv libopusfile0 ffmpeg ruby ruby-bundler iptables-persistent
+Conflicts: philbot-containerized
+Priority: extra
+Maintainer: Philipp Lengauer <p.lengauer@gmail.com>
+Homepage: https://github.com/plengauer/Philbot
+Description: Philbot as baremetal installation
+# TODO add services and config files directly and not dynamically, completely get rid of deployment script
+# TODO assume shard count of 1, but also make it configurable

@@ -1,0 +1,4 @@
+#!/bin/bash
+# TODO stop services directly
+bash philbot_deployment_baremetal.sh stop &&
+bash philbot_deployment_baremetal.sh uninstall
