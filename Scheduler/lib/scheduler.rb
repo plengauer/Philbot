@@ -25,28 +25,36 @@ module ServiceResourceDetector
   end
 end
 
+req = Net::HTTP::Put.new(path, initheader = { 'Content-Type' => 'text/plain'})
+req.body = "whatever"
+response = Net::HTTP.new(host, port).start {|http| http.request(req) }
+puts response.code
+
+
 module AwsEC2ResourceDetector
   extend self
   
   def detect
-    token_request = Net::HTTP.new(URI('http://169.254.169.254/latest/api/token'))
-    token_request.add_field('X-aws-ec2-metadata-token-ttl-seconds', '60')
-    token = token_request.send_request('PUT', '/latest/api/token').body    
-    identity = JSON.parse(Net::HTTP.get(URI('http://169.254.169.254/latest/dynamic/instance-identity/document'), { 'X-aws-ec2-metadata-token' => token }).body)
-    hostname = Net::HTTP.get(URI('http://169.254.169.254/latest/meta-data/hostname'), { 'X-aws-ec2-metadata-token' => token }).body
-    resource_attributes = {}
-    unless identity.nil?
-      resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER] = 'aws'
-      resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_PLATFORM] = 'aws_ec2'
-      resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_ACCOUNT_ID] = identity['accountId']
-      resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_REGION] = identity['region']
-      resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_AVAILABILITY_ZONE] = identity['availabilityZone']
-      resource_attributes[OpenTelemetry::SemanticConventions::Resource::HOST_ID] = identity['instanceId']
-      resource_attributes[OpenTelemetry::SemanticConventions::Resource::HOST_TYPE] = identity['instanceType']
-      resource_attributes[OpenTelemetry::SemanticConventions::Resource::HOST_NAME] = hostname
+    begin
+      token = Net::HTTP.new('169.254.169.254', 80).start { |http| http.request(Net::HTTP::Put.new('/latest/api/token', initheader = { 'X-aws-ec2-metadata-token-ttl-seconds' => '60'})) }
+      identity = JSON.parse(Net::HTTP.get(URI('http://169.254.169.254/latest/dynamic/instance-identity/document'), { 'X-aws-ec2-metadata-token' => token }).body)
+      hostname = Net::HTTP.get(URI('http://169.254.169.254/latest/meta-data/hostname'), { 'X-aws-ec2-metadata-token' => token }).body
+      resource_attributes = {}
+      unless identity.nil?
+        resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER] = 'aws'
+        resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_PLATFORM] = 'aws_ec2'
+        resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_ACCOUNT_ID] = identity['accountId']
+        resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_REGION] = identity['region']
+        resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_AVAILABILITY_ZONE] = identity['availabilityZone']
+        resource_attributes[OpenTelemetry::SemanticConventions::Resource::HOST_ID] = identity['instanceId']
+        resource_attributes[OpenTelemetry::SemanticConventions::Resource::HOST_TYPE] = identity['instanceType']
+        resource_attributes[OpenTelemetry::SemanticConventions::Resource::HOST_NAME] = hostname
+      end
+      resource_attributes.delete_if { |_key, value| value.nil? || value.empty? }
+      OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
+    rescue
+      OpenTelemetry::SDK::Resources::Resource.create({})
     end
-    resource_attributes.delete_if { |_key, value| value.nil? || value.empty? }
-    OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
   end
 end
 
