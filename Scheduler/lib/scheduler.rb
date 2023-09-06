@@ -30,7 +30,7 @@ module AwsEC2ResourceDetector
   
   def detect
     token_request = Net::HTTP.new(URI('http://169.254.169.254/latest/api/token'))
-    token_request['X-aws-ec2-metadata-token-ttl-seconds'] = '60'
+    token_request.add_field('X-aws-ec2-metadata-token-ttl-seconds', '60')
     token = token_request.send_request('PUT', '/latest/api/token').body    
     identity = JSON.parse(Net::HTTP.get(URI('http://169.254.169.254/latest/dynamic/instance-identity/document'), { 'X-aws-ec2-metadata-token' => token }).body)
     hostname = Net::HTTP.get(URI('http://169.254.169.254/latest/meta-data/hostname'), { 'X-aws-ec2-metadata-token' => token }).body
