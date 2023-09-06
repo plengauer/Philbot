@@ -30,9 +30,9 @@ module AwsEC2ResourceDetector
   
   def detect
     begin
-      token = Net::HTTP.new('169.254.169.254', 80).start { |http| http.request(Net::HTTP::Put.new('/latest/api/token', initheader = { 'X-aws-ec2-metadata-token-ttl-seconds' => '60'})) }
-      identity = JSON.parse(Net::HTTP.get(URI('http://169.254.169.254/latest/dynamic/instance-identity/document'), { 'X-aws-ec2-metadata-token' => token }).body)
-      hostname = Net::HTTP.get(URI('http://169.254.169.254/latest/meta-data/hostname'), { 'X-aws-ec2-metadata-token' => token }).body
+      token = Net::HTTP.new('169.254.169.254', 80).start { |http| http.request(Net::HTTP::Put.new('/latest/api/token', initheader = { 'X-aws-ec2-metadata-token-ttl-seconds' => '60'})) }.body
+      identity = JSON.parse(Net::HTTP.get(URI('http://169.254.169.254/latest/dynamic/instance-identity/document'), { 'X-aws-ec2-metadata-token' => token }))
+      hostname = Net::HTTP.get(URI('http://169.254.169.254/latest/meta-data/hostname'), { 'X-aws-ec2-metadata-token' => token })
       resource_attributes = {}
       unless identity.nil?
         resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER] = 'aws'
