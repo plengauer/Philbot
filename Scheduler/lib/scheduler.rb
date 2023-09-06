@@ -25,12 +25,6 @@ module ServiceResourceDetector
   end
 end
 
-req = Net::HTTP::Put.new(path, initheader = { 'Content-Type' => 'text/plain'})
-req.body = "whatever"
-response = Net::HTTP.new(host, port).start {|http| http.request(req) }
-puts response.code
-
-
 module AwsEC2ResourceDetector
   extend self
   
