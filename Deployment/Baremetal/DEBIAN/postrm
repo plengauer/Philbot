@@ -1,2 +1,5 @@
 #!/bin/bash
-# nothing to do
+# TODO check whether everything in /opt/philbot has been removed
+# TODO check whether everything in /var/lib/philbot is still there
+sudo systemctl daemon-reload &&
+sudo rm -rf /opt/philbot

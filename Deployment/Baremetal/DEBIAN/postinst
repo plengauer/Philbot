@@ -1,8 +1,12 @@
 #!/bin/bash
-# TODO start services directly
-# TODO setup ip tables
 # TODO download opus (or maybe include it in the debian package build)
-# TODO reload system deamon
 # TODO go through all deployment and make sure we do all in postinst
-bash philbot_deployment_baremetal.sh install &&
-bash philbot_deployment_baremetal.sh start
+
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 &&
+sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443 &&
+sudo bash -c 'iptables-save > /etc/iptables/rules.v4' &&
+
+sudo systemctl daemon-reload &&
+sudo systemctl enable philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice &&
+sudo systemctl start philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice
+

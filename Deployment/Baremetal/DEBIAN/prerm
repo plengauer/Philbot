@@ -1,4 +1,3 @@
 #!/bin/bash
-# TODO stop services directly
-bash philbot_deployment_baremetal.sh stop &&
-bash philbot_deployment_baremetal.sh uninstall
+sudo systemctl stop philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice &&
+sudo systemctl disable philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice
