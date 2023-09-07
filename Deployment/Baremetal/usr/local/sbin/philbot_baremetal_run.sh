@@ -20,7 +20,7 @@ then
     mkdir -p gems &&
     flock -F $lock_file gem install --install-dir=gems $gem &&
     pushd gems/gems/$gem-*/ && flock -F $lock_file bundle install && popd &&
-    export SERVICE_VERSION= &&
+    export SERVICE_VERSION=$(ls gems/gems/$gem-* | awk -F- '{print $2}') &&
     exec ruby gems/gems/$gem-*/lib/*.rb
 elif [ $technology = "python" ]
 then
