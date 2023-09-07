@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo systemctl stop philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice || exit 0
+systemctl stop philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice || exit 0
