@@ -1,3 +1,4 @@
 #!/bin/bash
-systemctl daemon-reload &&
+set -e
+systemctl daemon-reload
 rm -rf /opt/philbot

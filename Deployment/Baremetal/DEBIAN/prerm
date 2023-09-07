@@ -1,3 +1,4 @@
 #!/bin/bash
-systemctl stop philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice &&
+set -e
+systemctl stop philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice
 systemctl disable philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice

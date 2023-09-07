@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e
+. /usr/share/debconf/confmodule
+
+db_input critical philbot-baremetal/DISCORD_CLIENT_ID || true
+db_input critical philbot-baremetal/DISCORD_API_TOKEN || true
+db_input critical philbot-baremetal/OWNER_DISCORD_USER_ID || true
+
+db_input high philbot-baremetal/OPENTELEMETRY_TRACES_API_ENDPOINT || true
+db_input high philbot-baremetal/OPENTELEMETRY_TRACES_API_TOKEN || true
+db_input high philbot-baremetal/OPENTELEMETRY_METRICS_API_ENDPOINT || true
+db_input high philbot-baremetal/OPENTELEMETRY_METRICS_API_TOKEN || true
+db_input high philbot-baremetal/LINK_OBSERVABILITY || true
+
+db_input high philbot-baremetal/OPENAI_API_TOKEN || true
+db_input high philbot-baremetal/OPENAI_COST_LIMIT || true
+db_input high philbot-baremetal/GCP_T2S_TOKEN || true
+
+db_input high philbot-baremetal/YOUTUBE_API_TOKEN || true
+
+db_input high philbot-baremetal/RIOT_API_TOKEN || true
+db_input high philbot-baremetal/RIOT_TFT_API_TOKEN || true
+db_input high philbot-baremetal/RAPID_API_TOKEN || true
+db_input high philbot-baremetal/APEX_LEGENDS_API_TOKEN || true
+db_input high philbot-baremetal/TRACKER_GG_API_TOKEN || true
+
+db_go
