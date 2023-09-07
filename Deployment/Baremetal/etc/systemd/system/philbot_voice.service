@@ -8,6 +8,6 @@ RestartSec=1
 StartLimitBurst=10
 User=ubuntu
 WorkingDirectory=/opt/philbot
-ExecStart=bash /usr/local/sbin/philbot_baremetal_run.sh /opt/philbot python philbot-voice
+ExecStart=bash /usr/local/sbin/genericstart.sh /etc/environment.properties.voice /opt/philbot python philbot-voice
 [Install]
 WantedBy=multi-user.target

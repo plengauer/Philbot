@@ -1,10 +1,11 @@
 directory=$1
-technology=$2
-module=$3
+env_file=$2
+technology=$3
+module=$4
 lock_file=$(pwd)/.install_lock
 touch $lock_file &&
 cd $directory &&
-eval $(cat environment.properties.$module | awk '{print "export \"" $0 "\""}') ||
+eval $(cat $env_file | awk '{print "export \"" $0 "\""}') ||
 exit $?
 if [ $technology = "node.js" ]
 then

@@ -8,6 +8,6 @@ RestartSec=1
 StartLimitBurst=10
 User=ubuntu
 WorkingDirectory=/opt/philbot
-ExecStart=bash /usr/local/sbin/philbot_baremetal_run.sh /opt/philbot ruby philbot-scheduler
+ExecStart=bash /usr/local/sbin/genericstart.sh /etc/environment.properties.scheduler /opt/philbot ruby philbot-scheduler
 [Install]
 WantedBy=multi-user.target
