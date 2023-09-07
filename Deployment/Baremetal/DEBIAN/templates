@@ -1,0 +1,82 @@
+Template: philbot-baremetal/DISCORD_CLIENT_ID
+Type: string
+Description: Discord Client ID:
+
+Template: philbot-baremetal/DISCORD_API_TOKEN
+Type: string
+Description: Discord API Token:
+
+Template: philbot-baremetal/OWNER_DISCORD_USER_ID
+Type: string
+Description: Discord Owner User ID:
+
+Template: philbot-baremetal/OPENTELEMETRY_TRACES_API_ENDPOINT
+Type: string
+Description: Open Telemetry Traces API Endpoint:
+
+Template: philbot-baremetal/OPENTELEMETRY_TRACES_API_TOKEN
+Type: string
+Description: Open Telemetry Traces API Token:
+
+Template: philbot-baremetal/OPENTELEMETRY_METRICS_API_ENDPOINT
+Type: string
+Description: Open Telemetry Metrics API Endpoint:
+
+Template: philbot-baremetal/OPENTELEMETRY_METRICS_API_TOKEN
+Type: string
+Description: Open Telemetry Metrics API Token:
+
+Template: philbot-baremetal/LINK_OBSERVABILITY
+Type: string
+Description: Link to observability data:
+
+Template: philbot-baremetal/OPENAI_API_TOKEN
+Type: string
+Description: OpenAI API Token:
+
+Template: philbot-baremetal/OPENAI_COST_LIMIT
+Type: string
+Default: 1
+Description: OpenAI Cost Limit:
+
+Template: philbot-baremetal/GCP_T2S_TOKEN
+Type: string
+Description: Google AI Token:
+
+Template: philbot-baremetal/GOOGLEAI_COST_LIMIT
+Type: string
+Default: 1
+Description: GoogleAI Cost Limit:
+
+Template: philbot-baremetal/SPEECHIFY_API_TOKEN
+Type: string
+Description: Speechify API_TOKEN:
+
+Template: philbot-baremetal/SPEECHIFY_COST_LIMIT
+Type: string
+Default: 1
+Description: Speechify Cost Limit:
+
+Template: philbot-baremetal/YOUTUBE_API_TOKEN
+Type: string
+Description: Youtube API Token:
+
+Template: philbot-baremetal/RIOT_API_TOKEN
+Type: string
+Description: Riot API Token:
+
+Template: philbot-baremetal/RIOT_TFT_API_TOKEN
+Type: string
+Description: Riot TFT API Token:
+
+Template: philbot-baremetal/RAPID_API_TOKEN
+Type: string
+Description: Rapid API Token:
+
+Template: philbot-baremetal/APEX_LEGENDS_API_TOKEN
+Type: string
+Description: Apex Legends API Token:
+
+Template: philbot-baremetal/TRACKER_GG_API_TOKEN
+Type: string
+Description: Tracker GG API Token:

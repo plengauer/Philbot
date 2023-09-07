@@ -27,17 +27,19 @@ echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.sc
 echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.discordgateway2http
 echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.backend
 echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.voice
-echo $(config OWNER_DISCORD_USER_ID) >> /etc/environment.properties.backend
 echo $(config DISCORD_CLIENT_ID) >> /etc/environment.properties.backend
+echo $(config OWNER_DISCORD_USER_ID) >> /etc/environment.properties.backend
+echo $(config OPENAI_API_TOKEN) >> /etc/environment.properties.backend
+echo $(config GCP_T2S_TOKEN) >> /etc/environment.properties.backend
+echo $(config GOOGLEAI_COST_LIMIT) >> /etc/environment.properties.backend
+echo $(config SPEECHIFY_TOKEN) >> /etc/environment.properties.backend
+echo $(config SPEECHIFY_COST_LIMIT) >> /etc/environment.properties.backend
 echo $(config RIOT_API_TOKEN) >> /etc/environment.properties.backend
 echo $(config RIOT_TFT_API_TOKEN) >> /etc/environment.properties.backend
 echo $(config RAPID_API_TOKEN) >> /etc/environment.properties.backend
 echo $(config APEX_LEGENDS_API_TOKEN) >> /etc/environment.properties.backend
 echo $(config TRACKER_GG_API_TOKEN) >> /etc/environment.properties.backend
 echo $(config YOUTUBE_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config OPENAI_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config GCP_T2S_TOKEN) >> /etc/environment.properties.backend
-echo $(config OPENAI_COST_LIMIT) >> /etc/environment.properties.backend
 echo $(config LINK_OBSERVABILITY) >> /etc/environment.properties.backend
 
 wget -O /opt/philbot/libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2

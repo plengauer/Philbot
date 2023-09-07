@@ -13,8 +13,11 @@ db_input high philbot-baremetal/OPENTELEMETRY_METRICS_API_TOKEN || true
 db_input high philbot-baremetal/LINK_OBSERVABILITY || true
 
 db_input high philbot-baremetal/OPENAI_API_TOKEN || true
-db_input high philbot-baremetal/OPENAI_COST_LIMIT || true
+db_input medium philbot-baremetal/OPENAI_COST_LIMIT || true
 db_input high philbot-baremetal/GCP_T2S_TOKEN || true
+db_input medium philbot-baremetal/GOOGLEAI_COST_LIMIT || true
+db_input high philbot-baremetal/SPEECHIFY_TOKEN || true
+db_input medium philbot-baremetal/SPEECHIFY_COST_LIMIT || true
 
 db_input high philbot-baremetal/YOUTUBE_API_TOKEN || true
 
