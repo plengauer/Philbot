@@ -2,29 +2,39 @@
 set -e
 . /usr/share/debconf/confmodule
 
+db_beginblock
 db_input critical philbot/DISCORD_CLIENT_ID || true
 db_input critical philbot/DISCORD_API_TOKEN || true
 db_input critical philbot/OWNER_DISCORD_USER_ID || true
+db_endblock
 
+db_beginblock
 db_input high philbot/OPENTELEMETRY_TRACES_API_ENDPOINT || true
 db_input high philbot/OPENTELEMETRY_TRACES_API_TOKEN || true
 db_input high philbot/OPENTELEMETRY_METRICS_API_ENDPOINT || true
 db_input high philbot/OPENTELEMETRY_METRICS_API_TOKEN || true
 db_input high philbot/LINK_OBSERVABILITY || true
+db_endblock
 
+db_beginblock
 db_input high philbot/OPENAI_API_TOKEN || true
 db_input medium philbot/OPENAI_COST_LIMIT || true
 db_input high philbot/GCP_T2S_TOKEN || true
 db_input medium philbot/GOOGLEAI_COST_LIMIT || true
 db_input high philbot/SPEECHIFY_TOKEN || true
 db_input medium philbot/SPEECHIFY_COST_LIMIT || true
+db_endblock
 
+db_beginblock
 db_input high philbot/YOUTUBE_API_TOKEN || true
+db_endblock
 
+db_beginblock
 db_input high philbot/RIOT_API_TOKEN || true
 db_input high philbot/RIOT_TFT_API_TOKEN || true
 db_input high philbot/RAPID_API_TOKEN || true
 db_input high philbot/APEX_LEGENDS_API_TOKEN || true
 db_input high philbot/TRACKER_GG_API_TOKEN || true
+db_endblock
 
 db_go
