@@ -24,7 +24,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
         with:
-          tag_name: Deployment Baremetal v${{ steps.version.outputs.version }}
+          tag_name: deployment-baremetal-v${{ steps.version.outputs.version }}
           release_name: Release Deployment Baremetal v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
