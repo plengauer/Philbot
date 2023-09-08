@@ -1,84 +1,84 @@
-Template: philbot-baremetal/DISCORD_CLIENT_ID
+Template: philbot/DISCORD_CLIENT_ID
 Type: string
 Description: Discord Client ID:
  Create a new appliocation here https://discord.com/developers/applications
 
-Template: philbot-baremetal/DISCORD_API_TOKEN
+Template: philbot/DISCORD_API_TOKEN
 Type: string
 Description: Discord API Token:
  Get token from here https://discord.com/developers/applications
 
-Template: philbot-baremetal/OWNER_DISCORD_USER_ID
+Template: philbot/OWNER_DISCORD_USER_ID
 Type: string
 Description: Discord Owner User ID:
 
-Template: philbot-baremetal/OPENTELEMETRY_TRACES_API_ENDPOINT
+Template: philbot/OPENTELEMETRY_TRACES_API_ENDPOINT
 Type: string
 Description: Open Telemetry Traces API Endpoint:
 
-Template: philbot-baremetal/OPENTELEMETRY_TRACES_API_TOKEN
+Template: philbot/OPENTELEMETRY_TRACES_API_TOKEN
 Type: string
 Description: Open Telemetry Traces API Token:
 
-Template: philbot-baremetal/OPENTELEMETRY_METRICS_API_ENDPOINT
+Template: philbot/OPENTELEMETRY_METRICS_API_ENDPOINT
 Type: string
 Description: Open Telemetry Metrics API Endpoint:
 
-Template: philbot-baremetal/OPENTELEMETRY_METRICS_API_TOKEN
+Template: philbot/OPENTELEMETRY_METRICS_API_TOKEN
 Type: string
 Description: Open Telemetry Metrics API Token:
 
-Template: philbot-baremetal/LINK_OBSERVABILITY
+Template: philbot/LINK_OBSERVABILITY
 Type: string
 Description: Link to observability data:
 
-Template: philbot-baremetal/OPENAI_API_TOKEN
+Template: philbot/OPENAI_API_TOKEN
 Type: string
 Description: OpenAI API Token:
 
-Template: philbot-baremetal/OPENAI_COST_LIMIT
+Template: philbot/OPENAI_COST_LIMIT
 Type: string
 Default: 1
 Description: OpenAI Cost Limit:
 
-Template: philbot-baremetal/GCP_T2S_TOKEN
+Template: philbot/GCP_T2S_TOKEN
 Type: string
 Description: Google AI Token:
 
-Template: philbot-baremetal/GOOGLEAI_COST_LIMIT
+Template: philbot/GOOGLEAI_COST_LIMIT
 Type: string
 Default: 1
 Description: GoogleAI Cost Limit:
 
-Template: philbot-baremetal/SPEECHIFY_API_TOKEN
+Template: philbot/SPEECHIFY_API_TOKEN
 Type: string
 Description: Speechify API_TOKEN:
 
-Template: philbot-baremetal/SPEECHIFY_COST_LIMIT
+Template: philbot/SPEECHIFY_COST_LIMIT
 Type: string
 Default: 1
 Description: Speechify Cost Limit:
 
-Template: philbot-baremetal/YOUTUBE_API_TOKEN
+Template: philbot/YOUTUBE_API_TOKEN
 Type: string
 Description: Youtube API Token:
 
-Template: philbot-baremetal/RIOT_API_TOKEN
+Template: philbot/RIOT_API_TOKEN
 Type: string
 Description: Riot API Token:
 
-Template: philbot-baremetal/RIOT_TFT_API_TOKEN
+Template: philbot/RIOT_TFT_API_TOKEN
 Type: string
 Description: Riot TFT API Token:
 
-Template: philbot-baremetal/RAPID_API_TOKEN
+Template: philbot/RAPID_API_TOKEN
 Type: string
 Description: Rapid API Token:
 
-Template: philbot-baremetal/APEX_LEGENDS_API_TOKEN
+Template: philbot/APEX_LEGENDS_API_TOKEN
 Type: string
 Description: Apex Legends API Token:
 
-Template: philbot-baremetal/TRACKER_GG_API_TOKEN
+Template: philbot/TRACKER_GG_API_TOKEN
 Type: string
 Description: Tracker GG API Token:
