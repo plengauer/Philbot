@@ -3,7 +3,7 @@ set -e
 . /usr/share/debconf/confmodule
 
 config() {
-    db_get philbot-baremetal/"$@"
+    db_get philbot/"$@"
     return "$@=$RET"
 }
 
