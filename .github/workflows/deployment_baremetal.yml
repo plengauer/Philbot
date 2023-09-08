@@ -16,8 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: sudo apt-get install devscripts debhelper
-      - run: |
-      	  echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
+      - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
         id: version
       - run: dpkg-deb --build .
       - uses: actions/create-release@v1
