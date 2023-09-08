@@ -74,7 +74,7 @@ stop_discordgateway2httpmaster() { stop discordgateway2httpmaster; }
 install() {
     name=$1
     image=$2
-    sudo apt-get -y install docker docker.io &&
+    sudo apt-get -y install docker.io &&
     sudo docker create \
         --name $name \
         --restart unless-stopped \

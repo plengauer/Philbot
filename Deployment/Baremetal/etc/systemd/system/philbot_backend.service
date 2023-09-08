@@ -8,6 +8,6 @@ RestartSec=1
 StartLimitBurst=10
 User=ubuntu
 WorkingDirectory=/opt/philbot
-ExecStart=bash /usr/local/sbin/genericstart.sh /etc/environment.properties.backend /opt/philbot node.js philbot-backend
+ExecStart=bash /usr/local/sbin/genericstart.sh /etc/philbot-baremetal/environment.properties.backend /opt/philbot node.js philbot-backend
 [Install]
 WantedBy=multi-user.target

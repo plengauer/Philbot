@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+docker stop voice backend discordgateway2http scheduler
+docker rm voice backend discordgateway2http scheduler
