@@ -1055,6 +1055,7 @@ async function fixCommand(guild_id, user_id, message) {
   let context = await createHelpString(guild_id, '' /*discord.mention_user((await discord.me()).id)*/);
   const dummy_token = 'NULL';
   let command = await ai.createResponse(model, user_id, null, context, `Fix the command "${message}". Respond with the fixed command only. Respond with "${dummy_token}" if it is not a valid command.`);
+  if (!command) return null;
   if (command && ((command.startsWith('\'') && command.endsWith('\'')) || (command.startsWith('"') && command.endsWith('"')))) command = command.substring(1, command.length - 1);
   if (command == dummy_token || command.startsWith(dummy_token)) return null;
   return command.trim();
@@ -1170,7 +1171,7 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
       `I determine the BCP 47 language tag representing the language of a given text. I ignore typos. I respond with the language tag only. I respond with ${dummy_token} if no clear language can be determined.`,
       message
     );
-    if (!languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
+    if (!languageCode || !languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
     let sample = sender_user_id ? await memory.get(`voice_clone:sample:user:${sender_user_id}`, null) : null;
     let seed = sample ? media.convert(await streamAttachment(sample), sample.content_type.split('/')[1], codec) : null;
     if (sender_user_id && !seed) message = discord.mention_user(sender_user_id) + ' says: ' + message;
@@ -1188,6 +1189,7 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
       }
     }
     let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), (sender_user_id && seed) ? sender_user_id : me.id, message, languageCode, 'neutral', seed, codec);
+    if (!audio) return discord.respond(channel_id, event_id, message);
     return player.play(guild_id, channel_id, { content: audio, codec: codec }, false);
   } else {
     return discord.respond(channel_id, event_id, message);
