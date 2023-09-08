@@ -42,6 +42,9 @@ echo $(config TRACKER_GG_API_TOKEN) >> /etc/philbot-baremetal/environment.proper
 echo $(config YOUTUBE_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config LINK_OBSERVABILITY) >> /etc/philbot-baremetal/environment.properties.backend
 
+# this is only necessary because we manually delete the file in postrm
+mkdir -p /opt/philbot
+
 wget -O /opt/philbot/libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2
 tar -xf /opt/philbot/libopus.tar.bz2 -C /opt/philbot
 rm /opt/philbot/libopus.tar.bz2

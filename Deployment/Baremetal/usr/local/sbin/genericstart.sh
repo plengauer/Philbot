@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
-directory=$1
-env_file=$2
+env_file=$1
+directory=$2
 technology=$3
 module=$4
 lock_file=$(pwd)/.install_lock
