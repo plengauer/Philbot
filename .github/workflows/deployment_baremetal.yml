@@ -1,0 +1,40 @@
+name: Publish Deployment Baremetal
+
+on:
+  push:
+    branches: main
+    paths:
+      - 'Deployment/Baremetal/**'
+      
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Deployment/Baremetal
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: sudo apt-get install devscripts debhelper
+      - run: |
+      	  echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
+        id: version
+      - run: dpkg-deb --build .
+      - uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
+        with:
+          tag_name: Deployment Baremetal v${{ steps.version.outputs.version }}
+          release_name: Release Deployment Baremetal v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+      - uses: actions/upload-release-asset@v1
+        id: upload-release-asset 
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ..deb
+          asset_name: philbot_deployment_baremetal.deb
+          asset_content_type: application/octet-stream
