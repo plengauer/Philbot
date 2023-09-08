@@ -51,6 +51,5 @@ iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
 iptables-save > /etc/iptables/rules.v4
 
 systemctl daemon-reload
-systemctl enable philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice
-systemctl start philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice
-
+systemctl enable philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice
+systemctl start philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice
