@@ -1,10 +1,12 @@
 Template: philbot-baremetal/DISCORD_CLIENT_ID
 Type: string
 Description: Discord Client ID:
+ Create a new appliocation here https://discord.com/developers/applications
 
 Template: philbot-baremetal/DISCORD_API_TOKEN
 Type: string
 Description: Discord API Token:
+ Get token from here https://discord.com/developers/applications
 
 Template: philbot-baremetal/OWNER_DISCORD_USER_ID
 Type: string
