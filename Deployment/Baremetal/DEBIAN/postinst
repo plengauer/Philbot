@@ -4,7 +4,7 @@ set -e
 
 config() {
     db_get philbot/"$@"
-    return "$@=$RET"
+    echo "$@=$RET"
 }
 
 echo $(config DISCORD_API_TOKEN) >> /etc/environment.properties.scheduler
