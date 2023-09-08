@@ -6,7 +6,7 @@ ExitType=main
 Restart=always
 RestartSec=1
 StartLimitBurst=10
-User=ubuntu
+User=root
 WorkingDirectory=/opt/philbot
 ExecStart=bash /usr/local/sbin/genericstart.sh /etc/philbot-baremetal/environment.properties.voice /opt/philbot python philbot-voice
 [Install]
