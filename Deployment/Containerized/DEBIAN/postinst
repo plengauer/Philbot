@@ -7,40 +7,40 @@ config() {
     echo "$@=$RET"
 }
 
-echo $(config DISCORD_API_TOKEN) >> /etc/environment.properties.scheduler
-echo $(config DISCORD_API_TOKEN) >> /etc/environment.properties.discordgateway2http
-echo $(config DISCORD_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config DISCORD_API_TOKEN) >> /etc/environment.properties.voice
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/environment.properties.scheduler
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/environment.properties.backend
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/environment.properties.voice
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/environment.properties.scheduler
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/environment.properties.voice
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/environment.properties.scheduler
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/environment.properties.backend
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/environment.properties.voice
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.scheduler
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.voice
-echo $(config DISCORD_CLIENT_ID) >> /etc/environment.properties.backend
-echo $(config OWNER_DISCORD_USER_ID) >> /etc/environment.properties.backend
-echo $(config OPENAI_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config GCP_T2S_TOKEN) >> /etc/environment.properties.backend
-echo $(config GOOGLEAI_COST_LIMIT) >> /etc/environment.properties.backend
-echo $(config SPEECHIFY_TOKEN) >> /etc/environment.properties.backend
-echo $(config SPEECHIFY_COST_LIMIT) >> /etc/environment.properties.backend
-echo $(config RIOT_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config RIOT_TFT_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config RAPID_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config APEX_LEGENDS_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config TRACKER_GG_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config YOUTUBE_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config LINK_OBSERVABILITY) >> /etc/environment.properties.backend
+echo $(config DISCORD_API_TOKEN) >> /etc/philbot-containerized/environment.properties.scheduler
+echo $(config DISCORD_API_TOKEN) >> /etc/philbot-containerized/environment.properties.discordgateway2http
+echo $(config DISCORD_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config DISCORD_API_TOKEN) >> /etc/philbot-containerized/environment.properties.voice
+echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-containerized/environment.properties.scheduler
+echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-containerized/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-containerized/environment.properties.voice
+echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-containerized/environment.properties.scheduler
+echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-containerized/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-containerized/environment.properties.voice
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-containerized/environment.properties.scheduler
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-containerized/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-containerized/environment.properties.voice
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-containerized/environment.properties.scheduler
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-containerized/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-containerized/environment.properties.voice
+echo $(config DISCORD_CLIENT_ID) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config OWNER_DISCORD_USER_ID) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config OPENAI_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config GCP_T2S_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config GOOGLEAI_COST_LIMIT) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config SPEECHIFY_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config SPEECHIFY_COST_LIMIT) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config RIOT_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config RIOT_TFT_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config RAPID_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config APEX_LEGENDS_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config TRACKER_GG_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config YOUTUBE_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend
+echo $(config LINK_OBSERVABILITY) >> /etc/philbot-containerized/environment.properties.backend
 
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
 iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
@@ -52,7 +52,7 @@ start() {
         --name $name \
         --restart unless-stopped \
         --network=host \
-        --env-file /etc/environment.properties.$name \
+        --env-file /etc/philbot-containerized/environment.properties.$name \
         "${@:3}" \
         --init philipplengauer/philbot-$name:latest
     # TODO remove host network, map ports properly, and use bridge network interface so communication works

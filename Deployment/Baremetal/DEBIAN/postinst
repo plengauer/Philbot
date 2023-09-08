@@ -7,48 +7,48 @@ config() {
     echo "$@=$RET"
 }
 
-echo $(config DISCORD_API_TOKEN) >> /etc/environment.properties.scheduler
-echo $(config DISCORD_API_TOKEN) >> /etc/environment.properties.discordgateway2http
-echo $(config DISCORD_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config DISCORD_API_TOKEN) >> /etc/environment.properties.voice
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/environment.properties.scheduler
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/environment.properties.backend
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/environment.properties.voice
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/environment.properties.scheduler
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/environment.properties.voice
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/environment.properties.scheduler
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/environment.properties.backend
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/environment.properties.voice
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.scheduler
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/environment.properties.voice
-echo $(config DISCORD_CLIENT_ID) >> /etc/environment.properties.backend
-echo $(config OWNER_DISCORD_USER_ID) >> /etc/environment.properties.backend
-echo $(config OPENAI_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config GCP_T2S_TOKEN) >> /etc/environment.properties.backend
-echo $(config GOOGLEAI_COST_LIMIT) >> /etc/environment.properties.backend
-echo $(config SPEECHIFY_TOKEN) >> /etc/environment.properties.backend
-echo $(config SPEECHIFY_COST_LIMIT) >> /etc/environment.properties.backend
-echo $(config RIOT_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config RIOT_TFT_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config RAPID_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config APEX_LEGENDS_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config TRACKER_GG_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config YOUTUBE_API_TOKEN) >> /etc/environment.properties.backend
-echo $(config LINK_OBSERVABILITY) >> /etc/environment.properties.backend
+echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.scheduler
+echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
+echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.voice
+echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.scheduler
+echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.voice
+echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.scheduler
+echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.voice
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.scheduler
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.voice
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.scheduler
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.voice
+echo $(config DISCORD_CLIENT_ID) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config OWNER_DISCORD_USER_ID) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config OPENAI_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config GCP_T2S_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config GOOGLEAI_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config SPEECHIFY_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config SPEECHIFY_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config RIOT_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config RIOT_TFT_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config RAPID_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config APEX_LEGENDS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config TRACKER_GG_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config YOUTUBE_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config LINK_OBSERVABILITY) >> /etc/philbot-baremetal/environment.properties.backend
 
 wget -O /opt/philbot/libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2
-tar -xf libopus.tar.bz2 -C /opt/philbot
-rm libopus.tar.bz2
+tar -xf /opt/philbot/libopus.tar.bz2 -C /opt/philbot
+rm /opt/philbot/libopus.tar.bz2
 
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
 iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
-bash -c 'iptables-save > /etc/iptables/rules.v4'
+iptables-save > /etc/iptables/rules.v4
 
 systemctl daemon-reload
 systemctl enable philbot-scheduler philbot-discordgateway2http philbot-backend philbot-voice
