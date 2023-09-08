@@ -7,6 +7,10 @@ config() {
     echo "$@=$RET"
 }
 
+echo "" >> /etc/philbot-containerized/environment.properties.scheduler
+echo "" >> /etc/philbot-containerized/environment.properties.discordgateway2http
+echo "" >> /etc/philbot-containerized/environment.properties.backend
+echo "" >> /etc/philbot-containerized/environment.properties.voice
 echo $(config DISCORD_API_TOKEN) >> /etc/philbot-containerized/environment.properties.scheduler
 echo $(config DISCORD_API_TOKEN) >> /etc/philbot-containerized/environment.properties.discordgateway2http
 echo $(config DISCORD_API_TOKEN) >> /etc/philbot-containerized/environment.properties.backend

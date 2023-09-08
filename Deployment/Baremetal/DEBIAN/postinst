@@ -7,6 +7,10 @@ config() {
     echo "$@=$RET"
 }
 
+echo "" >> /etc/philbot-baremetal/environment.properties.scheduler
+echo "" >> /etc/philbot-baremetal/environment.properties.discordgateway2http
+echo "" >> /etc/philbot-baremetal/environment.properties.backend
+echo "" >> /etc/philbot-baremetal/environment.properties.voice
 echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.scheduler
 echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
 echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
