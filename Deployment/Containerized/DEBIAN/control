@@ -6,4 +6,4 @@ Conflicts: philbot-baremetal, philbot-k8s
 Priority: extra
 Maintainer: Philipp Lengauer <p.lengauer@gmail.com>
 Homepage: https://github.com/plengauer/Philbot
-Description: Philbot as containerized installation
+Description: Philbot as containerized installation, bot will auto-update
