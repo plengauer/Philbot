@@ -3,7 +3,7 @@ set -e
 
 start() {
     name=$1
-    docker run \
+    docker create \
         --name $name \
         --restart unless-stopped \
         --network=host \
@@ -11,6 +11,7 @@ start() {
         "${@:3}" \
         --init philipplengauer/philbot-$name:latest
     # TODO remove host network, map ports properly, and use bridge network interface so communication works
+    docker run $name
 }
 
 start voice \
