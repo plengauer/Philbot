@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
-bash stop.sh || true
-bash start.sh
+bash /etc/philbot-containerized/stop.sh || true
+bash /etc/philbot-containerized/start.sh
