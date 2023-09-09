@@ -1,7 +1,7 @@
 Package: philbot-containerized
-Version: 1.0.6
+Version: 1.1.0
 Architecture: all
-Depends: debconf, bash, wget, docker.io, iptables-persistent
+Depends: philbot-config, debconf, bash, wget, docker.io, iptables-persistent
 Conflicts: philbot-baremetal, philbot-k8s
 Priority: extra
 Maintainer: Philipp Lengauer <p.lengauer@gmail.com>

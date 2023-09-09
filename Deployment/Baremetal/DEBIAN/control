@@ -1,7 +1,7 @@
 Package: philbot-baremetal
-Version: 1.0.4
+Version: 1.1.0
 Architecture: all
-Depends: debconf, bash, wget, tar, jq, ruby, ruby-bundler, nodejs (>= 20.0.0), npm, python3, python3-pip, python3-venv, libopusfile0, ffmpeg, iptables-persistent
+Depends: philbot-config, bash, wget, tar, jq, ruby, ruby-bundler, nodejs (>= 20.0.0), npm, python3, python3-pip, python3-venv, libopusfile0, ffmpeg, iptables-persistent
 Conflicts: philbot-containerized, philbot-k8s
 Priority: extra
 Maintainer: Philipp Lengauer <p.lengauer@gmail.com>

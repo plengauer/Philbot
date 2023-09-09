@@ -1,54 +1,7 @@
 #!/bin/bash
 set -e
-. /usr/share/debconf/confmodule
 
-config() {
-    db_get philbot/"$@"
-    echo "$@=$RET"
-}
-echo "" >> /etc/philbot-baremetal/environment.properties.scheduler
-echo "" >> /etc/philbot-baremetal/environment.properties.discordgateway2http
-echo "" >> /etc/philbot-baremetal/environment.properties.backend
-echo "" >> /etc/philbot-baremetal/environment.properties.voice
-echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment/g' >> /etc/philbot-baremetal/environment.properties.scheduler
-echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment/g' >> /etc/philbot-baremetal/environment.properties.discordgateway2http
-echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment/g' >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment/g' >> /etc/philbot-baremetal/environment.properties.voice
-echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.scheduler
-echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
-echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.voice
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.scheduler
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.voice
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.scheduler
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.voice
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.scheduler
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> /etc/philbot-baremetal/environment.properties.voice
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.scheduler
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.voice
-echo $(config DISCORD_CLIENT_ID) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config OWNER_DISCORD_USER_ID) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config OPENAI_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config OPENAI_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config GCP_T2S_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config GOOGLEAI_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config SPEECHIFY_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config SPEECHIFY_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config RIOT_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config RIOT_TFT_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config RAPID_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config APEX_LEGENDS_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config TRACKER_GG_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config YOUTUBE_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config LINK_OBSERVABILITY) >> /etc/philbot-baremetal/environment.properties.backend
+bash /etc/philbot-config/populate.sh /etc/philbot-baremetal
 
 wget -O /opt/philbot/libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2
 tar -xf /opt/philbot/libopus.tar.bz2 -C /opt/philbot
