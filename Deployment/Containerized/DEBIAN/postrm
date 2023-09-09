@@ -1,3 +1,2 @@
 #!/bin/bash
-set -e
-bash /etc/philbot-containerized/stop.sh
+# nothing to do
