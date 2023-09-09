@@ -3,6 +3,10 @@ set -e
 . /usr/share/debconf/confmodule
 
 db_beginblock
+db_input critical philbot/DEPLOYMENT || true
+db_endblock
+
+db_beginblock
 db_input critical philbot/DISCORD_CLIENT_ID || true
 db_input critical philbot/DISCORD_API_TOKEN || true
 db_input critical philbot/OWNER_DISCORD_USER_ID || true
