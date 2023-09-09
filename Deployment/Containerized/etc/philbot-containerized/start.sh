@@ -35,4 +35,4 @@ start discordgateway2http \
 
 start scheduler \
     --env CONFIG_FILE=/config.properties \
-    --mount type=bind,source=/etc/config.properties.scheduler,target=/config.properties,readonly
+    --mount type=bind,source=/etc/philbot-containerized/config.properties.scheduler,target=/config.properties,readonly
