@@ -8,14 +8,18 @@ config() {
     echo "$@=$RET"
 }
 
+kvp_deployment=$(config DEPLOYMENT | sed 's/DEPLOYMENT/deployment.environment/g')
+kvp_application_id=$(config DISCORD_CLIENT_ID | sed 's/DISCORD_CLIENT_ID/discord.application.id/g')
+resource_attributes=OTEL_RESOURCE_ATTRIBUTES=$kvp_application_id,$kvp_deployment
+
 echo "" >> $destination_directory/environment.properties.scheduler
 echo "" >> $destination_directory/environment.properties.discordgateway2http
 echo "" >> $destination_directory/environment.properties.backend
 echo "" >> $destination_directory/environment.properties.voice
-echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment/g' >> $destination_directory/environment.properties.scheduler
-echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment/g' >> $destination_directory/environment.properties.discordgateway2http
-echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment/g' >> $destination_directory/environment.properties.backend
-echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment/g' >> $destination_directory/environment.properties.voice
+echo $resource_attributes >> $destination_directory/environment.properties.scheduler
+echo $resource_attributes >> $destination_directory/environment.properties.discordgateway2http
+echo $resource_attributes >> $destination_directory/environment.properties.backend
+echo $resource_attributes >> $destination_directory/environment.properties.voice
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.scheduler
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.discordgateway2http
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.backend
