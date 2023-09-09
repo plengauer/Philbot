@@ -1,4 +1,4 @@
 #!/bin/bash
 systemctl daemon-reload
-rm -rf /opt/philbot
+rm -rf /opt/philbot/*
 exit 0
