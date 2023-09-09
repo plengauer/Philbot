@@ -8,7 +8,7 @@ start() {
         --restart unless-stopped \
         --network=host \
         --env-file /etc/philbot-containerized/environment.properties.$name \
-        "${@:3}" \
+        "${@:2}" \
         --init philipplengauer/philbot-$name:latest
     # TODO remove host network, map ports properly, and use bridge network interface so communication works
     docker start $name
