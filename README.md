@@ -1,4 +1,4 @@
-This is Philbot, a Discord Bot. See features here: http://philbot.eu/help
+This is Philbot, a Discord Bot. See features here: http://philbot.eu/help. Add it to your own Discord server with this link: http://philbot.eu/deploy
 
 To deploy, select one the the deb packages from here: https://github.com/plengauer/Philbot/releases.
 The deployment packages ONLY take care of deployment, the Bot itself will auto-update.
