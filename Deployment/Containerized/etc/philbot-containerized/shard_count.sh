@@ -2,5 +2,5 @@
 set -e
 prefix=$1
 . /usr/share/debconf/confmodule
-db_get philbot-containerized/"$@"
+db_get philbot-containerized/SHARD_COUNT
 echo "$RET"
