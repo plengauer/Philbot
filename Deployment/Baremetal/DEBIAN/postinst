@@ -40,7 +40,7 @@ echo $(config OPENAI_API_TOKEN) >> /etc/philbot-baremetal/environment.properties
 echo $(config OPENAI_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config GCP_T2S_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config GOOGLEAI_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
-echo $(config SPEECHIFY_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config SPEECHIFY_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config SPEECHIFY_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config RIOT_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config RIOT_TFT_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
