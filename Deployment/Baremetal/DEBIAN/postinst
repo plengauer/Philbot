@@ -37,6 +37,7 @@ echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> /etc/philbot-baremetal/environ
 echo $(config DISCORD_CLIENT_ID) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config OWNER_DISCORD_USER_ID) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config OPENAI_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config OPENAI_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config GCP_T2S_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config GOOGLEAI_COST_LIMIT) >> /etc/philbot-baremetal/environment.properties.backend
 echo $(config SPEECHIFY_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend

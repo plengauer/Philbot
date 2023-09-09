@@ -25,7 +25,7 @@ db_input high philbot/OPENAI_API_TOKEN || true
 db_input high philbot/OPENAI_COST_LIMIT || true
 db_input high philbot/GCP_T2S_TOKEN || true
 db_input high philbot/GOOGLEAI_COST_LIMIT || true
-db_input high philbot/SPEECHIFY_TOKEN || true
+db_input high philbot/SPEECHIFY_API_TOKEN || true
 db_input high philbot/SPEECHIFY_COST_LIMIT || true
 db_endblock
 
