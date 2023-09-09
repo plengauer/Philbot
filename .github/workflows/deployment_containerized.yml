@@ -18,7 +18,7 @@ jobs:
       - run: sudo apt-get install devscripts debhelper
       - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
         id: version
-      - run: dpkg-deb --build . package.deb
+      - run: dpkg-deb --build . --root-owner-group package.deb
       - uses: actions/create-release@v1
         id: create_release
         env:
