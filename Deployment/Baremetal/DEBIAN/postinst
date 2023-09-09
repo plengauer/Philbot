@@ -6,11 +6,14 @@ config() {
     db_get philbot/"$@"
     echo "$@=$RET"
 }
-
 echo "" >> /etc/philbot-baremetal/environment.properties.scheduler
 echo "" >> /etc/philbot-baremetal/environment.properties.discordgateway2http
 echo "" >> /etc/philbot-baremetal/environment.properties.backend
 echo "" >> /etc/philbot-baremetal/environment.properties.voice
+echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment=/g' >> /etc/philbot-baremetal/environment.properties.scheduler
+echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment=/g' >> /etc/philbot-baremetal/environment.properties.discordgateway2http
+echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment=/g' >> /etc/philbot-baremetal/environment.properties.backend
+echo $(config DEPLOYMENT) | sed 's/DEPLOYMENT/OTEL_RESOURCE_ATTRIBUTES=deployment.environment=/g' >> /etc/philbot-baremetal/environment.properties.voice
 echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.scheduler
 echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.discordgateway2http
 echo $(config DISCORD_API_TOKEN) >> /etc/philbot-baremetal/environment.properties.backend

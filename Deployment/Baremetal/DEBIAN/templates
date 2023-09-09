@@ -1,7 +1,12 @@
+Template: philbot/DEPLOYMENT
+Type: select
+Choices: development, staging, production
+Description: Deployment:
+
 Template: philbot/DISCORD_CLIENT_ID
 Type: string
 Description: Discord Client ID:
- Create a new appliocation here https://discord.com/developers/applications
+ Create a new application here https://discord.com/developers/applications
 
 Template: philbot/DISCORD_API_TOKEN
 Type: string

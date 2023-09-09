@@ -1,3 +1,3 @@
 #!/bin/bash
 set -e
-docker stop voice backend discordgateway2http scheduler || true
+bash /etc/philbot-containerized/stop.sh

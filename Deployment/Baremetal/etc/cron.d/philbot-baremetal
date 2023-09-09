@@ -1,1 +1,1 @@
-0 0 * * * root /bin/bash -c "systemctl restart philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice"
+0 0 * * 2 root /bin/bash -c "systemctl restart philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice"
