@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-bash /etc/philbot-config/populate.sh /etc/philbot-containerized
+bash /usr/bin/philbot_config_populate.sh /etc/philbot-containerized
 
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
 iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
 bash -c 'iptables-save > /etc/iptables/rules.v4'
 
-bash /etc/philbot-containerized/start.sh
+bash /usr/bin/philbot_containerized_start.sh

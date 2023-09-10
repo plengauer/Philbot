@@ -18,7 +18,7 @@ jobs:
       - run: sudo apt-get install devscripts debhelper
       - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
         id: version
-      - run: dpkg-deb --root-owner-group --build . package.deb
+      - run: dpkg-deb --root-owner-group --build . ../package.deb
       - uses: actions/create-release@v1
         id: create_release
         env:
@@ -34,6 +34,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Deployment/Baremetal/package.deb
-          asset_name: philbot_deployment_baremetal.deb
+          asset_path: ./Deployment/package.deb
+          asset_name: philbot_deployment_baremetal_${{ steps.version.outputs.version }}.deb
           asset_content_type: application/octet-stream
