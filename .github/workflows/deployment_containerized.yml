@@ -35,5 +35,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./Deployment/package.deb
-          asset_name: philbot_deployment_containerized.deb
+          asset_name: philbot_deployment_containerized_${{ steps.version.outputs.version }}.deb
           asset_content_type: application/octet-stream
