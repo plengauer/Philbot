@@ -1,5 +1,5 @@
 Package: philbot-containerized
-Version: 1.2.0
+Version: 1.2.1
 Architecture: all
 Depends: philbot-config (>= 2.0.0), debconf, bash, wget, docker.io, iptables-persistent
 Conflicts: philbot-baremetal, philbot-k8s
