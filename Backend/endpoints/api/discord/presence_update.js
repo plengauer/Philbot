@@ -124,6 +124,10 @@ async function sendManualNotification(guild_id, user_id, user_name, activity, me
 }
 
 async function sendAutomaticNotifications(guild_id, guild_name, activities, members) {
+  if (members.length > 100) {
+    return Promise.resolve();
+  }
+
   let role = await memory.get(`notification:role:guild:${guild_id}`, null);
   // search members that have the same current activity
   let members_with_same_activity_promises = members
