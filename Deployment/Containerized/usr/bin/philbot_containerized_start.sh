@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-shard_count=$(bash /etc/philbot-containerized/shard_count.sh 2>&1)
+shard_count=$(bash /usr/bin/philbot_containerized_shard_count.sh 2>&1)
 
 start() {
     name=$1
