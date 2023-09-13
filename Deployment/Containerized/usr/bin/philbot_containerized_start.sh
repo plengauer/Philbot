@@ -10,7 +10,7 @@ start() {
         --name $name \
         --restart unless-stopped \
         --network=host \
-        --env-file /etc/philbot-containerized/environment.properties.$image \
+        --env-file /opt/philbot/environment.properties.$image \
         "${@:3}" \
         --init philipplengauer/philbot-$image:latest
     # TODO remove host network, map ports properly, and use bridge network interface so communication works
@@ -35,6 +35,7 @@ do
     start discordgateway2http_$shard_index discordgateway2http \
         --env SHARD_INDEX=$shard_index --env SHARD_COUNT=$shard_count \
         --env PORT=$((8081 + $shard_index)) \
+        --env FORWARD_PORT=8080 \
         --env STATE_STORAGE_DIRECTORY=/sessions \
         --mount type=bind,source=/var/lib/philbot/gateway_sessions,target=/sessions
 done
