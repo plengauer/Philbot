@@ -54,7 +54,7 @@ async function createVoice(model, user, text, format, report) {
   let body = new FormData();
   body.append('text', text, { contentType: 'string' });
   body.append('voice_id', voice.id, { contentType: 'string' });
-  let response_clone = await HTTP('POST', body.getHeaders(), '/tts/clone', body); //TODO this respons with 500
+  let response_clone = await HTTP('POST', body.getHeaders(), '/tts/clone', body); //TODO this responds with 500
   await report(model, await getVoiceCost(text));
   return media.convert(pipeAudio(url.parse(response_clone.url)), null, format); //TODO what format do they respond with?
 }
@@ -100,7 +100,7 @@ function voiceusedkey() {
 async function HTTP(method, headers, path, body) {
   headers['x-api-key'] = token; // https://webhook.site/09725061-5fc6-4648-b408-cd023c4c565f
   if (body) {
-    headers['content-length'] = body.getLengthSync();
+    headers['content-length'] = body.getLengthSync(); //BUG this is necessary, because otherwise client is chunking and server will respond with 500
   }
   let result = await curl.request({
     // hostname: 'webhook.site',
