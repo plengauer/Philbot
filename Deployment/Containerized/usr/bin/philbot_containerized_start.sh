@@ -42,4 +42,4 @@ done
 
 start scheduler scheduler \
     --env CONFIG_FILE=/config.properties \
-    --mount type=bind,source=/etc/philbot-containerized/config.properties.scheduler,target=/config.properties,readonly
+    --mount type=bind,source=/opt/philbot/config.properties.scheduler,target=/config.properties,readonly
