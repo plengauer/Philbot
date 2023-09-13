@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+rm -f /opt/philbot/env
+
+. /usr/share/debconf/confmodule
+db_get philbot-containerized/SHARD_COUNT
+echo "SHARD_COUNT=$RET" >> /opt/philbot/env
+
 bash /usr/bin/philbot_config_populate.sh /etc/philbot-containerized
 
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080

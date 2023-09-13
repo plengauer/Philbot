@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-shard_count=$(bash /usr/bin/philbot_containerized_shard_count.sh 2>&1)
+source /opt/philbot/env
 
 start() {
     name=$1
@@ -30,7 +30,7 @@ start backend backend \
     --env MEMORY_DIRECTORY=/memory \
     --mount type=bind,source=/var/lib/philbot/memory,target=/memory
 
-for shard_index in $(seq 0 $(($shard_count-1)))
+for shard_index in $(seq 0 $(($SHARD_COUNT-1)))
 do
     start discordgateway2http_$shard_index discordgateway2http \
         --env SHARD_INDEX=$shard_index --env SHARD_COUNT=$shard_count \
