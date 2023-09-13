@@ -1,4 +1,5 @@
 const process = require('process');
+const url = require('url');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
 const synchronized = require('./synchronized.js');
@@ -25,14 +26,13 @@ function computeBillingSlotProgress() {
   return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
-async function getVoiceModels() {
-  return [ 'custom-voice-clone' ];
+async function getVoiceModels(user) {
+  return resolveVoice(user).then(voice => voice ? [ voice.name ] : []);
 }
 
-async function createVoice(model, user, text, seed, format, report) {
+async function seedVoice(model, user, seed, format) {
   if (!token) return null;
-  
-  const buffer = false;
+  const buffer = true;
   if (buffer) {
     let chunks = [];
     let stream = seed;
@@ -41,31 +41,32 @@ async function createVoice(model, user, text, seed, format, report) {
       stream.on('end', () => resolve(Buffer.concat(chunks)));
     });
   }
+  let body = new FormData();
+  body.append('name', user, { contentType: 'string' });
+  body.append('files', seed, { contentType: 'video/' + format, filename: 'voice_sample.' + user + '.' + format });
+  return await HTTP('POST', body.getHeaders(), '/voice', body); //TODO this errors with 405
+}
 
-  const inline = true;
-  if (inline) {
-    let body = new FormData();
-    body.append('text', text, { contentType: 'string' });
-    body.append('files', seed, { contentType: 'audio/' + format });
-    let response = await HTTP('POST', body.getHeaders(), '/tts/clone', body);
-    await report(model, await getVoiceCost(text));
-    return response;
-  } else {
-    let body_create = new FormData();
-    body_create.append('name', user, { contentType: 'string' });
-    body_create.append('files', seed, { contentType: 'audio/' + format });
-    let response_create = await HTTP('POST', body_create.getHeaders(), '/voice', body_create);
-    try {
-      let body_clone = new FormData();
-      body_clone.append('text', text, { contentType: 'string' });
-      body_clone.append('voice_id', response_create.id, { contentType: 'string' });
-      let response_clone = await HTTP('POST', body_clone.getHeaders(), '/tts/clone', body_clone);
-      await report(model, await getVoiceCost(text));
-      return response_clone;
-    } finally {
-      await HTTP('DELETE', {}, '/voice/' + response_create.id);
-    }
-  }
+async function createVoice(model, user, text, format, report) {
+  if (!token) return null;
+  let voice = await resolveVoice(user);
+  if (!voice) return null;
+  let body = new FormData();
+  body.append('text', text, { contentType: 'string' });
+  body.append('voice_id', voice.id, { contentType: 'string' });
+  let response_clone = await HTTP('POST', body.getHeaders(), '/tts/clone', body); //TODO this respons with 500
+  await report(model, await getVoiceCost(text));
+  return media.convert(pipeAudio(url.parse(response_clone.url)), null, format); //TODO what format do they respond with?
+}
+
+async function resolveVoice(user) {
+  let voices = await HTTP('GET', {}, '/voice');
+  return voices.find(voice => voice.name == 'Jenna Test');
+  return voices.find(voice => voice.name == user);
+}
+
+async function pipeAudio(url) {
+  return curl.request({ hostname: url.hostname, path: url.pathname + (url.search ?? ''), stream: true });
 }
 
 async function getVoiceCost(text) {
@@ -97,8 +98,13 @@ function voiceusedkey() {
 }
 
 async function HTTP(method, headers, path, body) {
-  headers['x-api-key'] = token;
+  headers['x-api-key'] = token; // https://webhook.site/09725061-5fc6-4648-b408-cd023c4c565f
+  if (body) {
+    headers['content-length'] = body.getLengthSync();
+  }
   let result = await curl.request({
+    // hostname: 'webhook.site',
+    // path: '/09725061-5fc6-4648-b408-cd023c4c565f',
     hostname: 'myvoice.speechify.com',
     path: '/api' + path,
     headers: headers,
@@ -116,5 +122,6 @@ module.exports = {
   computeBillingSlotProgress,
   
   getVoiceModels,
+  seedVoice,
   createVoice
 }
