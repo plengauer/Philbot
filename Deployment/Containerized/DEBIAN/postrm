@@ -1,2 +1,7 @@
 #!/bin/bash
-# nothing to do
+set -e
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+  docker image prune --all --force
+else
+  exit 0
+fi
