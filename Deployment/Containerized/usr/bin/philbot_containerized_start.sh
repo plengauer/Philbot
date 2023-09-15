@@ -11,7 +11,7 @@ start() {
         --name $name \
         --restart unless-stopped \
         --network=host \
-        --env-file /opt/philbot/environment.properties.$image \
+        --env-file /var/lib/philbot/environment.properties.$image \
         "${@:3}" \
         --init philipplengauer/philbot-$image:latest
     # TODO remove host network, map ports properly, and use bridge network interface so communication works
@@ -43,6 +43,6 @@ done
 
 start scheduler scheduler \
     --env CONFIG_FILE=/config.properties \
-    --mount type=bind,source=/opt/philbot/config.properties.scheduler,target=/config.properties,readonly
+    --mount type=bind,source=/var/lib/philbot/config.properties.scheduler,target=/config.properties,readonly
 
 docker image prune --force

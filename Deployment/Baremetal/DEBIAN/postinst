@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-bash /usr/bin/philbot_config_populate.sh /opt/philbot
+bash /usr/bin/philbot_config_populate.sh /var/lib/philbot
 
 wget -O /opt/philbot/libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2
 tar -xf /opt/philbot/libopus.tar.bz2 -C /opt/philbot
