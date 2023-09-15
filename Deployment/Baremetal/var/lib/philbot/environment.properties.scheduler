@@ -1,1 +1,1 @@
-CONFIG_FILE=/etc/philbot-baremetal/config.properties.scheduler
+CONFIG_FILE=/var/lib/philbot/config.properties.scheduler
