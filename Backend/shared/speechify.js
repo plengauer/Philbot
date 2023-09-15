@@ -69,6 +69,7 @@ async function createVoice(model, user, text, format, report) {
     return media.convert(await pipeAudio(url.parse(response.url)), 'mpeg', format);
   } catch {
     let response = await HTTP_CURL('POST', '/tts/clone', { text: text, voice_id: voice.id });
+    if (!response.url) throw new Error(response);
     await report(model, await getVoiceCost(text));
     return media.convert(await pipeAudio(url.parse(response.url)), 'mpeg', format);
   }
