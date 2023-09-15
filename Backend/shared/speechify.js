@@ -66,11 +66,11 @@ async function createVoice(model, user, text, format, report) {
     body.append('voice_id', voice.id, { contentType: 'string' });
     let response = await HTTP('POST', body.getHeaders(), '/tts/clone', body); //TODO this responds with 500
     await report(model, await getVoiceCost(text));
-    return media.convert(pipeAudio(url.parse(response.url)), 'mpeg', format);
+    return media.convert(await pipeAudio(url.parse(response.url)), 'mpeg', format);
   } catch {
     let response = await HTTP_CURL('POST', '/tts/clone', { text: text, voice_id: voice.id });
     await report(model, await getVoiceCost(text));
-    return media.convert(pipeAudio(url.parse(response.url)), 'mpeg', format);
+    return media.convert(await pipeAudio(url.parse(response.url)), 'mpeg', format);
   }
 }
 
