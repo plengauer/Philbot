@@ -6,6 +6,7 @@ source /opt/philbot/env
 start() {
     name=$1
     image=$2
+    docker pull philipplengauer/philbot-$image:latest
     docker create \
         --name $name \
         --restart unless-stopped \
@@ -33,7 +34,7 @@ start backend backend \
 for shard_index in $(seq 0 $(($SHARD_COUNT-1)))
 do
     start discordgateway2http_$shard_index discordgateway2http \
-        --env SHARD_INDEX=$shard_index --env SHARD_COUNT=$shard_count \
+        --env SHARD_INDEX=$shard_index --env SHARD_COUNT=$SHARD_COUNT \
         --env PORT=$((8081 + $shard_index)) \
         --env FORWARD_PORT=8080 \
         --env STATE_STORAGE_DIRECTORY=/sessions \
@@ -43,3 +44,5 @@ done
 start scheduler scheduler \
     --env CONFIG_FILE=/config.properties \
     --mount type=bind,source=/opt/philbot/config.properties.scheduler,target=/config.properties,readonly
+
+docker image prune --force
