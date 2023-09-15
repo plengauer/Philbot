@@ -1190,7 +1190,7 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
     );
     if (!languageCode || !languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
     let model = await ai.getDynamicModel(await ai.getVoiceModels(sender_user_id ?? me.id));
-    if (model.name == sender_user_id) message = discord.mention_user(speaker_user_id) + ' says: ' + message;
+    if (model.name != sender_user_id) message = discord.mention_user(sender_user_id) + ' says: ' + message;
     let audio = await ai.createVoice(model, sender_user_id ?? me.id, message, languageCode, 'neutral', codec);
     if (!audio) return discord.respond(channel_id, event_id, message);
     return player.play(guild_id, channel_id, { content: audio, codec: codec }, false);

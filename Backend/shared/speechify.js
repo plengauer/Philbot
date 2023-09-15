@@ -138,7 +138,7 @@ async function HTTP_CURL(method, path, parameters) {
       arguments.push(key + '=' + parameters[key]);
     }
     let process = child_process.spawn('curl', arguments, { stdio: [ 'ignore', 'pipe', 'inherit' ] });
-    if (DEBUG) process.stderr.on('data', chunk => console.log('' + chunk));
+    if (debug) process.stderr.on('data', chunk => console.log('' + chunk));
     process.stdout.on('data', chunk => stdout_chunks.push(chunk));
     process.on('exit', (code, signal) => {
       console.log(`PROCESS curl ` + arguments.join(' ') + ' => ' + (signal ?? code));
