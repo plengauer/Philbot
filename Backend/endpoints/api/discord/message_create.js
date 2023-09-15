@@ -34,7 +34,6 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
 
   if (is_voice_message && await memory.consume(`voice_clone:in_progress:user:${user_id}`, false)) {
     let attachment = attachments[0];
-    attachment = await memory.get(`voice_clone:sample:user:${user_id}`, attachment); // JUST FOR TESTING
     if (attachments.duration_secs < 60) return respond(guild_id, channel_id, event_id, 'The voice sample is too short!');
     let format = attachment.content_type.split('/')[1];
     await memory.set(`voice_clone:sample:user:${user_id}`, attachment);
