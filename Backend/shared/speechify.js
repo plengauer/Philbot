@@ -65,11 +65,13 @@ async function createVoice(model, user, text, format, report) {
     let body = new FormData();
     body.append('text', text, { contentType: 'string' });
     body.append('voice_id', voice.id, { contentType: 'string' });
+    body.append('stability', 0.75);
+    body.append('clarity', 0.75);
     let response = await HTTP('POST', body.getHeaders(), '/tts/clone', body); //TODO this responds with 500
     await report(model, await getVoiceCost(text));
     return media.convert(await pipeAudio(url.parse(response.url)), 'mpeg', format);
   } catch {
-    let response = await HTTP_CURL('POST', '/tts/clone', { text: text, voice_id: voice.id });
+    let response = await HTTP_CURL('POST', '/tts/clone', { text: text, voice_id: voice.id, stability: 0.75, clarity: 0.75 });
     if (!response.url) throw new Error(response);
     await report(model, await getVoiceCost(text));
     return media.convert(await pipeAudio(url.parse(response.url)), 'mpeg', format);
