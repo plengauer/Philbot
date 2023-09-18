@@ -1167,6 +1167,17 @@ async function handleLongResponse(channel_id, func) {
 
 async function respond(guild_id, channel_id, event_id, message, sender_user_id = undefined) {
   if (!event_id && guild_id && ((await discord.guild_channel_retrieve(null, channel_id)).type & 2) != 0) {
+    const codec = 'mp3';
+    let me = await discord.me();
+    const dummy_token = 'NULL';
+    let languageCode = await ai.createResponse(
+      await ai.getDynamicModel(await ai.getLanguageModels()), me.id, null,
+      `I determine the BCP 47 language tag representing the language of a given text. I ignore typos. I respond with the language tag only. I respond with ${dummy_token} if no clear language can be determined.`,
+      message
+    );
+    if (!languageCode || !languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
+    let model = await ai.getDynamicModel(await ai.getVoiceModels(sender_user_id ?? me.id));
+    if (model.name != sender_user_id) message = discord.mention_user(sender_user_id) + ' says: ' + message;
     let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
     for (let mentioned_member of mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention))) { 
       let member = await discord.guild_member_retrieve(guild_id, mentioned_member);
@@ -1180,17 +1191,6 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
         message = message.replace(discord.mention_role(mentioned_role), role.name);
       }
     }
-    const codec = 'mp3';
-    let me = await discord.me();
-    const dummy_token = 'NULL';
-    let languageCode = await ai.createResponse(
-      await ai.getDynamicModel(await ai.getLanguageModels()), me.id, null,
-      `I determine the BCP 47 language tag representing the language of a given text. I ignore typos. I respond with the language tag only. I respond with ${dummy_token} if no clear language can be determined.`,
-      message
-    );
-    if (!languageCode || !languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
-    let model = await ai.getDynamicModel(await ai.getVoiceModels(sender_user_id ?? me.id));
-    if (model.name != sender_user_id) message = discord.mention_user(sender_user_id) + ' says: ' + message;
     let audio = await ai.createVoice(model, sender_user_id ?? me.id, message, languageCode, 'neutral', codec);
     if (!audio) return discord.respond(channel_id, event_id, message);
     return player.play(guild_id, channel_id, { content: audio, codec: codec }, false);
