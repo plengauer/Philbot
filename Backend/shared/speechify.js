@@ -29,6 +29,7 @@ function computeBillingSlotProgress() {
 }
 
 async function getVoiceModels(user) {
+  if (!token) return [];
   return resolveVoice(user).then(voice => voice ? [ voice.name ] : []);
 }
 
