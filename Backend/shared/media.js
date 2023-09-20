@@ -1,6 +1,6 @@
 const process = require('process');
 const os = require('os');
-const child_process = require('child_process');
+const child_process = require('./observed_child_process.js');
 const { PassThrough } = require('stream');
 
 const DEBUG = (process.env.DEBUG_AUDIO ?? 'false') == 'true';
