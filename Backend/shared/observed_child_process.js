@@ -1,5 +1,4 @@
 const opentelemetry = require('@opentelemetry/api');
-const { HttpTraceContext } = require('@opentelemetry/core');
 const child_process = require('child_process');
 
 const tracer = opentelemetry.trace.getTracer("child_process");
@@ -12,7 +11,7 @@ function spawn(command, args, options) {
     span.setAttribute('subprocess.executable.name', command.includes('/') ? command.substring(command.lastIndexOf('/')) : command);
     return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
         const headers = {};
-        tracer.context().inject(opentelemetry.context.active(), headers, new HttpTraceContext());
+        opentelemetry.propagation.inject(opentelemetry.context.active(), headers);
         const env = options && options.env || {};
         env['OTEL_TRACEPARENT'] = headers['traceparent'];
         const child = child_process.spawn(command, args, { ...options, env });
@@ -23,3 +22,5 @@ function spawn(command, args, options) {
         return child;
     });
 }
+
+module.exports = { spawn }
