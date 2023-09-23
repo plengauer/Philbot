@@ -1,7 +1,7 @@
 const opentelemetry = require('@opentelemetry/api');
 const child_process = require('child_process');
 
-const tracer = opentelemetry.trace.getTracer("child_process");
+const tracer = opentelemetry.trace.getTracer("philbot-backend/child_process");
 
 function spawn(command, args, options) {
     const span = tracer.startSpan(`${command} ${args ? args.join(' ') : ''}`);
