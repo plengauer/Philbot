@@ -28,7 +28,7 @@ async function verifyPermissions(guild_id) {
   
   let my_role_ids = Array.from(new Set(members.filter(member => member.user.id == me.id).map(member => member.roles)[0].concat([ guild_id ])));
   let my_roles = roles.filter(role => role.id == guild_id || my_role_ids.includes(role.id));
-  let my_role = roles.filter(role => role.name == me.username)[0];
+  let my_role = roles.find(role => role.tags?.bot_id == me.id);
   
   let missing = [];
   let unnecessary = [];
