@@ -1,4 +1,7 @@
 const process = require('process');
+const url = require('url');
+const fs = require('fs');
+const child_process = require('./observed_child_process.js');
 const memory = require('./memory.js');
 const curl = require('./curl.js');
 const synchronized = require('./synchronized.js');
@@ -25,47 +28,67 @@ function computeBillingSlotProgress() {
   return millisSinceStartOfMonth / (totalDaysInMonth * 1000 * 60 * 60 * 24);
 }
 
-async function getVoiceModels() {
-  return [ 'custom-voice-clone' ];
+async function getVoiceModels(user) {
+  if (!token) return [];
+  return resolveVoice(user).then(voice => voice ? [ voice.name ] : []);
 }
 
-async function createVoice(model, user, text, seed, format, report) {
+async function seedVoice(model, user, seed, format) {
   if (!token) return null;
-  
-  const buffer = false;
-  if (buffer) {
-    let chunks = [];
-    let stream = seed;
-    seed = await new Promise(resolve => {
-      stream.on('data', chunk => chunks.push(chunk));
-      stream.on('end', () => resolve(Buffer.concat(chunks)));
-    });
+  try {
+    const buffer = true;
+    if (buffer) {
+      let chunks = [];
+      let stream = seed;
+      seed = await new Promise(resolve => {
+        stream.on('data', chunk => chunks.push(chunk));
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+      });
+    }
+    let body = new FormData();
+    body.append('name', user, { contentType: 'string' });
+    body.append('files', seed, { contentType: 'audio/' + format, filename: 'voice_sample.' + user + '.' + format, knownLength: seed.length });
+    return await HTTP('POST', body.getHeaders(), '/voice', body); //TODO this errors with 405
+  } catch {
+    let filename = 'voice_sample.' + user + '.' + format;
+    fs.writeFileSync(filename, seed);
+    return HTTP_CURL('POST', '/voice', { name: user, files: '@' + filename + ';audio/' + format })
+      .finally(() => fs.unlinkSync(filename));
   }
+}
 
-  const inline = true;
-  if (inline) {
+async function createVoice(model, user, text, format, report) {
+  if (!token) return null;
+  let voice = await resolveVoice(user);
+  if (!voice) return null;
+  let audio = null;
+  try {
     let body = new FormData();
     body.append('text', text, { contentType: 'string' });
-    body.append('files', seed, { contentType: 'audio/' + format });
-    let response = await HTTP('POST', body.getHeaders(), '/tts/clone', body);
+    body.append('voice_id', voice.id, { contentType: 'string' });
+    body.append('stability', 0.75);
+    body.append('clarity', 0.75);
+    let response = await HTTP('POST', body.getHeaders(), '/tts/clone', body); //TODO this responds with 500
     await report(model, await getVoiceCost(text));
-    return response;
-  } else {
-    let body_create = new FormData();
-    body_create.append('name', user, { contentType: 'string' });
-    body_create.append('files', seed, { contentType: 'audio/' + format });
-    let response_create = await HTTP('POST', body_create.getHeaders(), '/voice', body_create);
-    try {
-      let body_clone = new FormData();
-      body_clone.append('text', text, { contentType: 'string' });
-      body_clone.append('voice_id', response_create.id, { contentType: 'string' });
-      let response_clone = await HTTP('POST', body_clone.getHeaders(), '/tts/clone', body_clone);
-      await report(model, await getVoiceCost(text));
-      return response_clone;
-    } finally {
-      await HTTP('DELETE', {}, '/voice/' + response_create.id);
-    }
+    audio = await pipeAudio(url.parse(response.url));
+  } catch {
+    let response = await HTTP_CURL('POST', '/tts/clone', { text: text, voice_id: voice.id, stability: 0.75, clarity: 0.75 });
+    if (!response.url) throw new Error(response);
+    await report(model, await getVoiceCost(text));
+    audio = await pipeAudio(url.parse(response.url));
   }
+  audio = media.convert(audio, 'mpeg', format);
+  audio = media.relative_volume_audio(audio, format, 4);
+  return audio;
+}
+
+async function resolveVoice(user) {
+  let voices = await HTTP('GET', {}, '/voice');
+  return voices.find(voice => voice.name == user);
+}
+
+async function pipeAudio(url) {
+  return curl.request({ hostname: url.hostname, path: url.pathname + (url.search ?? ''), stream: true });
 }
 
 async function getVoiceCost(text) {
@@ -97,7 +120,10 @@ function voiceusedkey() {
 }
 
 async function HTTP(method, headers, path, body) {
-  headers['x-api-key'] = token;
+  headers['x-api-key'] = token; // https://webhook.site/09725061-5fc6-4648-b408-cd023c4c565f
+  if (body) {
+    headers['content-length'] = body.getLengthSync(); //BUG this is necessary, because otherwise client is chunking and server will respond with 500
+  }
   let result = await curl.request({
     hostname: 'myvoice.speechify.com',
     path: '/api' + path,
@@ -110,11 +136,32 @@ async function HTTP(method, headers, path, body) {
   return result;
 }
 
+async function HTTP_CURL(method, path, parameters) {
+  return new Promise((resolve, reject) => {
+    // curl -X 'POST' 'https://myvoice.speechify.com/api/voice' -H 'accept: application/json' -H 'x-api-key: <token>' -H 'Content-Type: multipart/form-data' -F 'name=Jenna Test Curl' -F 'files=@Jenna.ogg;type=video/ogg'
+    let stdout_chunks = [];
+    let arguments = [ '-X', method, 'https://myvoice.speechify.com/api' + path, '-H', 'accept: application/json', '-H', 'x-api-key: ' + token, '-H', 'content-type: multipart/form-data' ];
+    for (let key in parameters) {
+      arguments.push('-F');
+      arguments.push(key + '=' + parameters[key]);
+    }
+    let process = child_process.spawn('curl', arguments, { stdio: [ 'ignore', 'pipe', 'inherit' ] });
+    if (debug) process.stderr.on('data', chunk => console.log('' + chunk));
+    process.stdout.on('data', chunk => stdout_chunks.push(chunk));
+    process.on('exit', (code, signal) => {
+      console.log(`PROCESS curl ` + arguments.join(' ') + ' => ' + (signal ?? code));
+      if (code != 0) reject(new Error('curl -X ' + method + ' https://myvoice.speechify.com/api' + path + ' ... => ' + code));
+      else resolve('' + Buffer.concat(stdout_chunks));
+    });
+  }).then(result => JSON.parse(result));
+}
+
 module.exports = {
   getCostLimit,
   isSameBillingSlot,
   computeBillingSlotProgress,
   
   getVoiceModels,
+  seedVoice,
   createVoice
 }

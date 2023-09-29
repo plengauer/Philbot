@@ -1,6 +1,6 @@
 const process = require('process');
 const os = require('os');
-const child_process = require('child_process');
+const child_process = require('./observed_child_process.js');
 const { PassThrough } = require('stream');
 
 const DEBUG = (process.env.DEBUG_AUDIO ?? 'false') == 'true';
@@ -61,6 +61,12 @@ function concat_audio_v1(inputs, output_format) {
   return merging.stdout;
 }
 
+function relative_volume_audio(input, format, modifier) {
+  let process = ffmpeg(['-i', 'pipe:0', '-af', 'volume=' + modifier, '-c:v', 'copy', '-f', format, 'pipe:1']);
+  input.pipe(process.stdin);
+  return process.stdout;
+}
+
 function ffmpeg(arguments, stdio = ['pipe', 'pipe', 'pipe']) {
   let process = child_process.spawn('ffmpeg', arguments, { stdio: stdio });
   if (DEBUG) process.stderr.on('data', chunk => console.log('' + chunk));
@@ -68,4 +74,4 @@ function ffmpeg(arguments, stdio = ['pipe', 'pipe', 'pipe']) {
   return process;
 }
 
-module.exports = { convert, concat_audio }
+module.exports = { convert, concat_audio, relative_volume_audio }

@@ -33,8 +33,12 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
   let is_audio = (flags & (1 << 31)) != 0;
 
   if (is_voice_message && await memory.consume(`voice_clone:in_progress:user:${user_id}`, false)) {
-    if (attachments[0].duration_secs < 60) return respond(guild_id, channel_id, event_id, 'The voice sample is too short!');
-    return memory.set(`voice_clone:sample:user:${user_id}`, attachments[0]).then(() => reactOK(channel_id, event_id));
+    let attachment = attachments[0];
+    if (attachment.duration_secs < 60) return respond(guild_id, channel_id, event_id, 'The voice sample is too short!');
+    let format = attachment.content_type.split('/')[1];
+    await memory.set(`voice_clone:sample:user:${user_id}`, attachment);
+    await ai.seedVoice(null, user_id, await streamAttachment(attachment), format);
+    return reactOK(channel_id, event_id);
   }
 
   if (is_voice_message || is_audio) {
@@ -994,7 +998,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase() == 'configure voice' || message.toLowerCase() == 'clone voice') {
-    let poem = 'The quick brown fox jumps over the lazy dog.' + '\n'
+    let poem = 'The quick brown fox jumps over the lazy dog.' + '\n' + 
       'The pleasure of Shawn’s company is what I most enjoy.' + '\n' +
       'He put a tack on Ms. Yancey’s chair when she called him a horrible boy.' + '\n' +
       'At the end of the month he was flinging two kittens across the width of the room.' + '\n' +
@@ -1172,9 +1176,8 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
       message
     );
     if (!languageCode || !languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
-    let sample = sender_user_id ? await memory.get(`voice_clone:sample:user:${sender_user_id}`, null) : null;
-    let seed = sample ? media.convert(await streamAttachment(sample), sample.content_type.split('/')[1], codec) : null;
-    if (sender_user_id && !seed) message = discord.mention_user(sender_user_id) + ' says: ' + message;
+    let model = await ai.getDynamicModel(await ai.getVoiceModels(sender_user_id ?? me.id));
+    if (model.name != sender_user_id) message = discord.mention_user(sender_user_id) + ' says: ' + message;
     let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
     for (let mentioned_member of mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention))) { 
       let member = await discord.guild_member_retrieve(guild_id, mentioned_member);
@@ -1188,7 +1191,7 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
         message = message.replace(discord.mention_role(mentioned_role), role.name);
       }
     }
-    let audio = await ai.createVoice(await ai.getDynamicModel(await ai.getVoiceModels()), (sender_user_id && seed) ? sender_user_id : me.id, message, languageCode, 'neutral', seed, codec);
+    let audio = await ai.createVoice(model, sender_user_id ?? me.id, message, languageCode, 'neutral', codec);
     if (!audio) return discord.respond(channel_id, event_id, message);
     return player.play(guild_id, channel_id, { content: audio, codec: codec }, false);
   } else {

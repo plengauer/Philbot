@@ -1,4 +1,6 @@
 #!/bin/bash
 systemctl daemon-reload
-rm -rf /opt/philbot/*
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+  rm -rf /opt/philbot
+fi
 exit 0
