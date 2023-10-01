@@ -78,7 +78,7 @@ async function createVoice(model, user, text, format, report) {
     audio = await pipeAudio(url.parse(response.url));
   }
   audio = media.convert(audio, 'mpeg', format);
-  audio = media.relative_volume_audio(audio, format, parseInt(process.env.SPEECHIFY_VOLUME_MODIFIER ?? "4"));
+  audio = media.relative_volume_audio(audio, format, parseInt(process.env.SPEECHIFY_VOLUME_MODIFIER ?? "6"));
   return audio;
 }
 
