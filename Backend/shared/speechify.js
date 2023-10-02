@@ -33,6 +33,11 @@ async function getVoiceModels(user) {
   return resolveVoice(user).then(voice => voice ? [ voice.name ] : []);
 }
 
+async function resolveVoice(user) {
+  let voices = await HTTP('GET', {}, '/voice');
+  return voices.sort((v1, v2) => v2.created - v1.created).find(voice => voice.name == user);
+}
+
 async function seedVoice(model, user, seed, format) {
   if (!token) return null;
   try {
@@ -78,13 +83,8 @@ async function createVoice(model, user, text, format, report) {
     audio = await pipeAudio(url.parse(response.url));
   }
   audio = media.convert(audio, 'mpeg', format);
-  audio = media.relative_volume_audio(audio, format, parseInt(process.env.SPEECHIFY_VOLUME_MODIFIER ?? "6"));
+  audio = media.relative_volume_audio(audio, format, parseInt(process.env.SPEECHIFY_VOLUME_MODIFIER ?? "5"));
   return audio;
-}
-
-async function resolveVoice(user) {
-  let voices = await HTTP('GET', {}, '/voice');
-  return voices.find(voice => voice.name == user);
 }
 
 async function pipeAudio(url) {
@@ -130,7 +130,8 @@ async function HTTP(method, headers, path, body) {
     headers: headers,
     method: method,
     body: body,
-    timeout: 1000 * 60 * 15
+    timeout: 1000 * 60 * 15,
+    cache: 60 * 60 * 24
   });
   if (debug) console.log('DEBUG SPEECHIFY ' + JSON.stringify(body) + ' => ' + JSON.stringify(result));
   return result;
