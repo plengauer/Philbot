@@ -38,6 +38,7 @@ echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> $destination_directory/environ
 echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> $destination_directory/environment.properties.voice
 echo $(config DISCORD_CLIENT_ID) >> $destination_directory/environment.properties.backend
 echo $(config OWNER_DISCORD_USER_ID) >> $destination_directory/environment.properties.backend
+echo $(config PUBLIC_URL) >> $destination_directory/environment.properties.backend
 echo $(config OPENAI_API_TOKEN) >> $destination_directory/environment.properties.backend
 echo $(config OPENAI_COST_LIMIT) >> $destination_directory/environment.properties.backend
 echo $(config GCP_T2S_TOKEN) >> $destination_directory/environment.properties.backend
