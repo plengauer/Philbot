@@ -87,3 +87,7 @@ Description: Apex Legends API Token:
 Template: philbot/TRACKER_GG_API_TOKEN
 Type: string
 Description: Tracker GG API Token:
+
+Template: philbot/PUBLIC_URL
+Type: string
+Description: Public URL:

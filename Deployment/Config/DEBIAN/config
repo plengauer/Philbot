@@ -13,6 +13,10 @@ db_input critical philbot/OWNER_DISCORD_USER_ID || true
 db_endblock
 
 db_beginblock
+db_input critical philbot/PUBLIC_URL || true
+db_endblock
+
+db_beginblock
 db_input high philbot/OPENTELEMETRY_TRACES_API_ENDPOINT || true
 db_input high philbot/OPENTELEMETRY_TRACES_API_TOKEN || true
 db_input high philbot/OPENTELEMETRY_METRICS_API_ENDPOINT || true
