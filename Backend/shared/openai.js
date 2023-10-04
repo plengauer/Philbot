@@ -62,7 +62,7 @@ async function createCompletion(model, user, prompt, report, temperature = undef
     return createResponse(model, user, null, null, `Complete the following text, respond with the completion only:\n${prompt}`, report, temperature);
   }
   
-  let response = await HTTP('/v1/completions' , { user: user, "model": model, "prompt": prompt, temperature: temperature });
+  let response = await HTTP('/v1/completions' , { user: user, "model": model, "prompt": prompt, temperature: temperature, max_tokens: 1024 });
   let completion = response.choices[0].text.trim();
   await report(response.model, computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens));
   return completion;

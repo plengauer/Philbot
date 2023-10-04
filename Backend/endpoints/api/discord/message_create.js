@@ -1069,7 +1069,9 @@ async function createAIResponse(guild_id, channel_id, user_id, message) {
   let model = await ai.getDynamicModel(await ai.getLanguageModels(), ai.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
   if (!model) return null;
   let system_message = await createAIContext(guild_id, channel_id, user_id, message, model);
-  return ai.createResponse(model, user_id, `channel:${channel_id}:user:${user_id}`, system_message, message);
+  let response = await ai.createResponse(model, user_id, `channel:${channel_id}:user:${user_id}`, system_message, message);
+  if (response.startsWith('"') && response.endsWith('"')) response = response.substring(1, response.length - 1)
+  return response;
 }
 
 async function createAIContext(guild_id, channel_id, user_id, message, model) {

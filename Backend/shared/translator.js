@@ -47,7 +47,7 @@ async function on_message_create(guild_id, channel_id, message_id, user_id, cont
   // gpt-3.5-turbo seems really bad at answering with exactly only the language, worse then older generation completion models!
   const dummy_token = 'NULL';
   let source_language = await ai.createResponse(
-    model.name != 'gpt-3.5-turbo' ? model : models[models.findIndex(m => m.name == 'gpt-3.5-turbo') - 1], user_id, null,
+    !model.name.startsWith('gpt-3.5-turbo') ? model : models[models.findIndex(m => m.name == 'gpt-3.5-turbo') - 1], user_id, null,
     `I determine the language of a text. I ignore typos. I respond with the language only. I respond with ${dummy_token} if no clear language can be determined.`,
     content
   );

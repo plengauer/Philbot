@@ -107,18 +107,6 @@ function expandLanguageCode(languageCode) {
   return result;
 }
 
-function getVoice(model, language) {
-  if (language != 'en-US') throw new Error();
-  switch (model) {
-    case 'Standard': return 'A';
-    case  'Wavenet': return 'A';
-    case  'Neural2': return 'A';
-    case 'Polyglot': return '1';
-    case   'Studio': return 'M';
-    default: throw new Error('Unknown model: ' + model);
-  }
-}
-
 async function getVoiceCost(model, text) {
   return synchronized.locked('googleai.cost:model:' + model, async () => getVoiceCost0(model, text));
 }
