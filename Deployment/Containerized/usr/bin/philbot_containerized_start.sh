@@ -7,6 +7,9 @@ source /opt/philbot/env
 start() {
     name=$1
     image=$2
+    if [ "$(docker ps --format '{{.Names}}' | grep $name)" ]; then
+      return 0
+    fi
     docker pull philipplengauer/philbot-$image:latest
     docker create \
         --name $name \

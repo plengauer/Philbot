@@ -21,6 +21,7 @@ echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.propertie
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.discordgateway2http
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.backend
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.voice
+echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.deployment
 echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> $destination_directory/environment.properties.scheduler
 echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> $destination_directory/environment.properties.discordgateway2http
 echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> $destination_directory/environment.properties.backend
