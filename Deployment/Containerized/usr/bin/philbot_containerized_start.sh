@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+source /usr/bin/philbot_containerized_init_otel.sh
 
 source /opt/philbot/env
 
