@@ -7,10 +7,15 @@ source /opt/philbot/env
 start() {
     name=$1
     image=$2
-    if [ "$(docker ps --format '{{.Names}}' | grep $name)" ]; then
-      return 0
-    fi
     docker pull philipplengauer/philbot-$image:latest
+    if [ "$(docker ps --format '{{.Names}}' | grep $name)" ]; then
+      image_digest=$(docker image inspect --format='{{json .Id}}' "philipplengauer/philbot-$image:latest" | tr -d '"')
+      instance_digest=$(docker inspect --format='{{json .Image}}' $name | tr -d '"')
+      if [ "$image_digest" = "$instance_digest" ]; then
+        return 0
+      fi
+      docker rm $name
+    fi
     docker create \
         --name $name \
         --restart unless-stopped \
