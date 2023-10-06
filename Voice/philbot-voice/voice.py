@@ -258,6 +258,7 @@ desired_frame_size = int(frame_rate * frame_duration / 1000)
 
 counter_streams = meter.create_counter(name = 'discord.gateway.voice.streams', description = 'Number of streams', unit="count")
 counter_streaming = meter.create_counter(name = 'discord.gateway.voice.streaming', description = 'Amount of time streamed', unit="milliseconds")
+counter_real_time_violations = meter.create_counter(name = 'discord.gateway.voice.real_time_violations', description = 'Time audio has not been sent in real-time', unit="milliseconds")
 
 class Packet:
     sequence = None
@@ -532,6 +533,13 @@ class Connection:
             raise RuntimeError(str(error.value))
         if self.mode != "xsalsa20_poly1305":
             raise RuntimeError('unexpected mode: ' + self.mode)
+        metric_dimensions = {
+                "discord.guild.id": self.guild_id,
+                "discord.voicegateway.server": self.endpoint,
+                "discord.voicegateway.ip": self.ip,
+                "discord.voicegateway.port": self.port,
+                "discord.voicegateway.mode": self.mode
+            }
 
         sequence = 0
         path = None
@@ -619,20 +627,13 @@ class Connection:
                 except: # TODO limit to socket close exceptions
                     pass
                 last_heartbeat = heartbeat
-                counter_streaming.add((sequence - last_heartbeat_sequence) * frame_duration, {
-                    "discord.guild.id": self.guild_id,
-                    "discord.voicegateway.server": self.endpoint if self.endpoint else "",
-                    "discord.voicegateway.ip": self.ip if self.ip else "",
-                    "discord.voicegateway.port": self.port if self.port else 0,
-                    "discord.voicegateway.mode": self.mode if self.mode else ""
-                })
+                counter_streaming.add((sequence - last_heartbeat_sequence) * frame_duration, metric_dimensions)
                 last_heartbeat_sequence = sequence
             # sleep
             new_timestamp = time_millis()
             sleep_time = frame_duration - (new_timestamp - timestamp)
             if sleep_time < 0:
-                # we are behind, what to do?
-                pass
+                counter_real_time_violations.add(frame_duration, metric_dimensions)
             elif sleep_time == 0:
                 pass
             else:
