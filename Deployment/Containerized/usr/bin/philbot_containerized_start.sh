@@ -14,6 +14,7 @@ start() {
       if [ "$image_digest" = "$instance_digest" ]; then
         return 0
       fi
+      docker stop $name
       docker rm $name
     fi
     docker create \

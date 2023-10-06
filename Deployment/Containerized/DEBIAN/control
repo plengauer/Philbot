@@ -1,5 +1,5 @@
 Package: philbot-containerized
-Version: 1.8.3
+Version: 1.8.4
 Architecture: all
 Depends: philbot-config (>= 2.3.0), debconf, bash, wget, docker.io, iptables-persistent, jq
 Suggests: opentelemetry-bash
