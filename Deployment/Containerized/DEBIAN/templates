@@ -1,5 +1,0 @@
-Template: philbot-containerized/SHARD_COUNT
-Type: string
-Default: 1
-Description: Shard Count:
- Number of shards to deploy (Discord allows a max of 2500 servers per shard)

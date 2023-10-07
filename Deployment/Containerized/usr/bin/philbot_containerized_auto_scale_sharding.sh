@@ -3,7 +3,7 @@ set -e
 source /usr/bin/philbot_containerized_init_otel.sh
 
 source /opt/philbot/env
-SHARD_COUNT_NEW=$(curl -s -H "authorization: Bot $DISCORD_API_TOKEN" "https://discord.com/api/v10/gateway/bot" | jq .shards)
+SHARD_COUNT_NEW=$(curl -s "http://127.0.0.1/gateway/shards")
 if [ "$SHARD_COUNT" -eq "$SHARD_COUNT_NEW" ]; then
   exit 0
 fi
@@ -12,5 +12,5 @@ shard_container_names=$(echo discordgateway2http_$(seq -s " discordgateway2http_
 docker stop $shard_container_names
 docker rm $shard_container_names
 
-echo "SHARD_COUNT=$SHARD_COUNT_NEW" > /opt/philbot/env
+echo "SHARD_COUNT=$SHARD_COUNT_NEW" > /opt/philbot/shards
 bash /usr/bin/philbot_containerized_start.sh
