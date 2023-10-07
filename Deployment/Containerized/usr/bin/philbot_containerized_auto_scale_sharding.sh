@@ -2,7 +2,7 @@
 set -e
 source /usr/bin/philbot_containerized_init_otel.sh
 
-source /opt/philbot/env
+source /opt/philbot/shards
 SHARD_COUNT_NEW=$(curl -s "http://127.0.0.1:7999/gateway/shards")
 if [ "$SHARD_COUNT" -eq "$SHARD_COUNT_NEW" ]; then
   exit 0
