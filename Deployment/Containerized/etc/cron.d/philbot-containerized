@@ -1,2 +1,2 @@
-0 0 * * 2 root philbot_containerized_restart.sh
-* * * * * root philbot_containerized_auto_scale_sharding.sh
+0 0 * * 2 root philbot_containerized_restart
+* * * * * root philbot_containerized_auto_scale_sharding
