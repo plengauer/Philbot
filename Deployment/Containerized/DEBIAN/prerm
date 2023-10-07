@@ -1,3 +1,3 @@
 #!/bin/bash
 set -e
-bash /usr/bin/philbot_containerized_stop.sh
+bash /usr/bin/philbot_containerized_stop

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-source /usr/bin/philbot_containerized_init_otel.sh
+source /usr/bin/philbot_containerized_init_otel
 
 source /opt/philbot/shards
 
