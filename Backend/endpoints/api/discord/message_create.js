@@ -1179,7 +1179,7 @@ async function respond(guild_id, channel_id, event_id, message, sender_user_id =
     );
     if (!languageCode || !languageCode.match(/^([a-zA-Z0-9]+-)*[a-zA-Z0-9]+/)) languageCode = 'en';
     let model = await ai.getDynamicModel(await ai.getVoiceModels(sender_user_id ?? me.id));
-    if (model.name != sender_user_id) message = discord.mention_user(sender_user_id) + ' says: ' + message;
+    if (sender_user_id && model.name != sender_user_id) message = discord.mention_user(sender_user_id) + ' says: ' + message;
     let mentioned_entities = message.match(/<@(.*?)>/g) ?? [];
     for (let mentioned_member of mentioned_entities.filter(mention => mention.startsWith('<@') && !mention.startsWith('<@&')).map(mention => discord.parse_mention(mention))) { 
       let member = await discord.guild_member_retrieve(guild_id, mentioned_member);
