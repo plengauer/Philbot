@@ -192,21 +192,20 @@ def download_from_youtube(url, filename_prefix):
 
 def download_url(url, filename_prefix):
     response = requests.get(url)
-    if response.status_code == 200:
-        codec = None
-        content_type = response.headers['content-type']
-        if content_type.startswith('audio/') or content_type.startswith('video/'):
-            codec = content_type.split('/', 1)[1]
-        else:
-            codec = url.rsplit('.', 1)[1]
-            if len(codec) > 5:
-                raise RuntimeError
-        path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + codec
-        with open(path, 'wb') as file:
-            file.write(response.content)
-        return path
-    else:
+    if response.status_code != 200:
         raise RuntimeError
+    codec = None
+    content_type = response.headers['content-type']
+    if content_type.startswith('audio/') or content_type.startswith('video/'):
+        codec = content_type.split('/', 1)[1]
+    else:
+        codec = url.rsplit('.', 1)[1]
+        if len(codec) > 5 or '/' in codec or '.' in codec:
+            raise RuntimeError
+    path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + codec
+    with open(path, 'wb') as file:
+        file.write(response.content)
+    return path
 
 def resolve_url(guild_id, url):
     codec = 'mp3'
