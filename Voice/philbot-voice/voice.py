@@ -171,18 +171,24 @@ def unwrap_voice_package(package, secret_box):
     return sequence, timestamp, ssrc, voice_chunk
 
 def generate_audio_file_path(guild_id, channel_id, user_id, nonce, extension = 'wav'):
-    return STORAGE_DIRECTORY + '/audio.in.' + guild_id + '.' + channel_id + '.' + user_id + '.' + str(nonce) + '.' + extension
+    path = STORAGE_DIRECTORY + '/audio.in.' + guild_id + '.' + channel_id + '.' + user_id + '.' + str(nonce) + '.' + extension
+    if not os.path.normpath(path).startswith(STORAGE_DIRECTORY):
+        raise RuntimeError
+    return path
 
 download_lock = threading.Lock()
 downloads = {}
 
 def download_from_youtube(url, filename_prefix):
+    path = STORAGE_DIRECTORY + '/' + filename_prefix
+    if not os.path.normpath(path).startswith(STORAGE_DIRECTORY):
+        raise RuntimeError
     options = {
         'quiet': True,
         'no_warnings': True,
         'geo_bypass': True,
         'format': 'bestaudio',
-        'outtmpl': STORAGE_DIRECTORY + '/' + filename_prefix + '.%(ext)s',
+        'outtmpl': path + '.%(ext)s',
         'nooverwrites': False,
         'updatetime': False
     }
@@ -203,6 +209,8 @@ def download_url(url, filename_prefix):
         if len(codec) > 5 or '/' in codec or '.' in codec:
             raise RuntimeError
     path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + codec
+    if not os.path.normpath(path).startswith(STORAGE_DIRECTORY):
+        raise RuntimeError
     with open(path, 'wb') as file:
         file.write(response.content)
     return path
@@ -213,6 +221,8 @@ def resolve_url(guild_id, url):
     codec = 'mp3'
     filename_prefix = 'audio.out.' + guild_id + '.' + str(hash(url))
     path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + codec
+    if not os.path.normpath(path).startswith(STORAGE_DIRECTORY):
+        raise RuntimeError
     if os.path.exists(path):
         os.utime(path)
         return path
@@ -235,6 +245,8 @@ def resolve_url(guild_id, url):
             path = download_url(url, filename_prefix)
         elif url.startswith('file://'):
             path = STORAGE_DIRECTORY + '/' + filename_prefix + '.' + url.rsplit('.', 1)[1]
+            if not os.path.normpath(path).startswith(STORAGE_DIRECTORY):
+                raise RuntimeError
             os.rename(url[len('file://'):], path)
         else:
             raise RuntimeError(url)
@@ -985,6 +997,8 @@ def voice_content_update(guild_id):
     if request.headers['content-type'].startswith('multipart/form-data'):
         file = request.files['file']
         temporary = STORAGE_DIRECTORY + '/temporary.' + str(random.randint(0, 1000000)) + '.' + file.content_type.split('/')[1]
+        if not os.path.normpath(temporary).startswith(STORAGE_DIRECTORY):
+            raise RuntimeError
         file.save(temporary)
         context = get_connection(guild_id)
         context.on_content_update(resolve_url(guild_id, 'file://' + temporary))
