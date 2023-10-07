@@ -1,9 +1,0 @@
-#!/bin/bash
-set -e
-. /usr/share/debconf/confmodule
-
-db_beginblock
-db_input critical philbot-containerized/SHARD_COUNT || true
-db_endblock
-
-db_go

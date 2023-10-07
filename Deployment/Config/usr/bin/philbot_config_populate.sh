@@ -12,34 +12,42 @@ kvp_deployment=$(config DEPLOYMENT | sed 's/DEPLOYMENT/deployment.environment/g'
 kvp_application_id=$(config DISCORD_CLIENT_ID | sed 's/DISCORD_CLIENT_ID/discord.application.id/g')
 resource_attributes=OTEL_RESOURCE_ATTRIBUTES=$kvp_application_id,$kvp_deployment
 
-echo $resource_attributes >> $destination_directory/environment.properties.scheduler
-echo $resource_attributes >> $destination_directory/environment.properties.discordgateway2http
-echo $resource_attributes >> $destination_directory/environment.properties.backend
-echo $resource_attributes >> $destination_directory/environment.properties.voice
-echo $resource_attributes >> $destination_directory/environment.properties.deployment
+echo $resource_attributes > $destination_directory/environment.properties.scheduler
+echo $resource_attributes > $destination_directory/environment.properties.discordgateway2http
+echo $resource_attributes > $destination_directory/environment.properties.discordgateway2httpmaster
+echo $resource_attributes > $destination_directory/environment.properties.backend
+echo $resource_attributes > $destination_directory/environment.properties.voice
+echo $resource_attributes > $destination_directory/environment.properties.deployment
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.scheduler
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.discordgateway2http
+echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.discordgateway2httpmaster
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.backend
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.voice
 echo $(config DISCORD_API_TOKEN) >> $destination_directory/environment.properties.deployment
 echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> $destination_directory/environment.properties.scheduler
 echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> $destination_directory/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> $destination_directory/environment.properties.discordgateway2httpmaster
 echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> $destination_directory/environment.properties.backend
 echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> $destination_directory/environment.properties.voice
 echo $(config OPENTELEMETRY_TRACES_API_ENDPOINT) >> $destination_directory/environment.properties.deployment
 echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> $destination_directory/environment.properties.scheduler
 echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> $destination_directory/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> $destination_directory/environment.properties.discordgateway2httpmaster
 echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> $destination_directory/environment.properties.backend
 echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> $destination_directory/environment.properties.voice
 echo $(config OPENTELEMETRY_TRACES_API_TOKEN) >> $destination_directory/environment.properties.deployment
 echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> $destination_directory/environment.properties.scheduler
 echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> $destination_directory/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> $destination_directory/environment.properties.discordgateway2httpmaster
 echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> $destination_directory/environment.properties.backend
 echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> $destination_directory/environment.properties.voice
+echo $(config OPENTELEMETRY_METRICS_API_ENDPOINT) >> $destination_directory/environment.properties.deployment
 echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> $destination_directory/environment.properties.scheduler
 echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> $destination_directory/environment.properties.discordgateway2http
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> $destination_directory/environment.properties.discordgateway2httpmaster
 echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> $destination_directory/environment.properties.backend
 echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> $destination_directory/environment.properties.voice
+echo $(config OPENTELEMETRY_METRICS_API_TOKEN) >> $destination_directory/environment.properties.deployment
 echo $(config DISCORD_CLIENT_ID) >> $destination_directory/environment.properties.backend
 echo $(config OWNER_DISCORD_USER_ID) >> $destination_directory/environment.properties.backend
 echo $(config PUBLIC_URL) >> $destination_directory/environment.properties.backend

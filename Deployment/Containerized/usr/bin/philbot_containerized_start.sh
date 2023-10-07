@@ -2,7 +2,7 @@
 set -e
 source /usr/bin/philbot_containerized_init_otel.sh
 
-source /opt/philbot/env
+source /opt/philbot/shards
 
 start() {
     name=$1
@@ -41,11 +41,15 @@ start backend backend \
     --env MEMORY_DIRECTORY=/memory \
     --mount type=bind,source=/var/lib/philbot/memory,target=/memory
 
+start discordgateway2httpmaster discordgateway2httpmaster \
+    --env PORT=7999
+
 for shard_index in $(seq 0 $(($SHARD_COUNT-1)))
 do
     start discordgateway2http_$shard_index discordgateway2http \
-        --env SHARD_INDEX=$shard_index --env SHARD_COUNT=$SHARD_COUNT \
-        --env PORT=$((8081 + $shard_index)) \
+        --env SHARD_INDEX=auto --env SHARD_COUNT=auto \
+        --env BASE_PORT=8081 \
+        --env SHARDS_MASTER_PORT=7999 \
         --env FORWARD_PORT=8080 \
         --env STATE_STORAGE_DIRECTORY=/sessions \
         --mount type=bind,source=/var/lib/philbot/gateway_sessions,target=/sessions

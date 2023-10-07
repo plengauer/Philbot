@@ -14,6 +14,7 @@ public class DiscordGateway2HTTPMaster {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", Integer.parseInt(System.getenv("PORT"))), 10);
         server.createContext("/ping", ObservableHttpHandler.observe(DiscordGateway2HTTPMaster::servePing));
         server.createContext("/gateway/update", ObservableHttpHandler.observe(DiscordGateway2HTTPMaster::serveUpdate));
+        server.createContext("/gateway/shards", ObservableHttpHandler.observe(DiscordGateway2HTTPMaster::serveShards));
         server.createContext("/gateway/config", ObservableHttpHandler.observe(DiscordGateway2HTTPMaster::serveConfig));
         server.start();
     }
@@ -40,6 +41,21 @@ public class DiscordGateway2HTTPMaster {
         exchange.getResponseHeaders().add("content-type", "text/plain");
         exchange.sendResponseHeaders(200, 2);
         writeResponseBody(exchange, "OK");
+        exchange.close();
+    }
+
+    private static void serveShards(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestMethod().equals("GET")) {
+            error(exchange, 405);
+            return;
+        }
+        String myShardCount = "0";
+        synchronized(LOCK) {
+            myShardCount = String.valueOf(SHARD_COUNT);
+        }
+        exchange.getResponseHeaders().add("content-type", "text/plain");
+        exchange.sendResponseHeaders(200, myShardCount.length());
+        writeResponseBody(exchange, myShardCount);
         exchange.close();
     }
 
