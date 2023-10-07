@@ -7,7 +7,7 @@ import request from 'request';
 import url from 'url';
 import opentelemetry from '@opentelemetry/api';
 
-const CONFIG_REQUEST_INTERVAL = 1000 * 60;
+const CONFIG_REQUEST_INTERVAL = 1000 * 60 * 1;
 
 const tracer = opentelemetry.trace.getTracer('discord.gateway');
 const meter = opentelemetry.metrics.getMeter('discord.gateway');
