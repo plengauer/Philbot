@@ -972,9 +972,6 @@ def voice_state_update():
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
-    if '/' in body['guild_id'] or '.' in body['guild_id']: return Response('Bad Request', status=400)
-    if '/' in body['channel_id'] or '.' in body['channel_id']: return Response('Bad Request', status=400)
-    if '/' in body['user_id'] or '.' in body['user_id']: return Response('Bad Request', status=400)
     context = get_connection(body['guild_id'])
     context.on_state_update(body['channel_id'], body['user_id'], body['session_id'], body['callback_url'])
     return 'Success'
@@ -984,7 +981,6 @@ def voice_server_update():
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
     body = request.json
-    if '/' in body['guild_id'] or '.' in body['guild_id']: return Response('Bad Request', status=400)
     context = get_connection(body['guild_id'])
     context.on_server_update(body['endpoint'], body['token'])
     return 'Success'
@@ -993,7 +989,6 @@ def voice_server_update():
 def voice_content_update(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    if '/' in guild_id or '.' in guild_id: return Response('Bad Request', status=400)
     if request.headers['content-type'].startswith('multipart/form-data'):
         file = request.files['file']
         temporary = STORAGE_DIRECTORY + '/temporary.' + str(random.randint(0, 1000000)) + '.' + file.content_type.split('/')[1]
@@ -1032,7 +1027,6 @@ def voice_content_update(guild_id):
 def voice_content_lookahead(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    if '/' in guild_id or '.' in guild_id: return Response('Bad Request', status=400)
     body = request.json
     try:
         resolve_url(guild_id, body['url'])
@@ -1055,7 +1049,6 @@ def voice_content_lookahead(guild_id):
 def voice_pause(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    if '/' in guild_id or '.' in guild_id: return Response('Bad Request', status=400)
     context = get_connection(guild_id)
     context.pause()
     return 'Success'
@@ -1064,7 +1057,6 @@ def voice_pause(guild_id):
 def voice_resume(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    if '/' in guild_id or '.' in guild_id: return Response('Bad Request', status=400)
     context = get_connection(guild_id)
     context.resume()
     return 'Success'
@@ -1073,7 +1065,6 @@ def voice_resume(guild_id):
 def voice_is_connected(guild_id):
     if not request.headers.get('x-authorization'): return Response('Unauthorized', status=401)
     if request.headers['x-authorization'] != os.environ['DISCORD_API_TOKEN']: return Response('Forbidden', status=403)
-    if '/' in guild_id or '.' in guild_id: return Response('Bad Request', status=400)
     end = time_millis() + 1000 * 30
     tryy = 100
     while time_millis() < end:
@@ -1091,10 +1082,6 @@ def audio(guild_id, channel_id, user_id, nonce):
     # authenticate?
     # attacker would have to know guild_id, channel_id (needs to be in the server), user_id (needs to be in the server or friend), and guess the right nonce, and access it in real-time
     # they would get a small random audio chunk
-    if '/' in guild_id or '.' in guild_id: return Response('Bad Request', status=400)
-    if '/' in channel_id or '.' in channel_id: return Response('Bad Request', status=400)
-    if '/' in user_id or '.' in user_id: return Response('Bad Request', status=400)
-    if '/' in nonce or '.' in nonce: return Response('Bad Request', status=400)
     for extension in ['wav', 'mp3']:
         path = generate_audio_file_path(guild_id, channel_id, user_id, nonce, extension)
         if os.path.exists(path):
