@@ -122,7 +122,7 @@ async function HTTP_VOICE(operation, payload, method = 'POST', headers = {}) {
 }
 
 async function resolveTitle(link) {
-  if (link.startsWith('https://www.youtube.com')) {
+  if (link.startsWith('https://www.youtube.com/')) {
     return HTTP_YOUTUBE('/videos', { part: 'snippet', id: url.parse(link, true).query['v'] }).then(result => result.items[0].snippet.title);
   } else {
     return link.split('/').slice(-1);
