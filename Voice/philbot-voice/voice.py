@@ -112,7 +112,7 @@ def observed_subprocess_run(command):
     with opentelemetry.trace.get_tracer('philbot-voice/subprocess').start_as_current_span(' '.join(command)) as span:
         span.set_attribute("subprocess.command", ' '.join(command))
         span.set_attribute("subprocess.command_args", ' '.join(command[1:]))
-        span.set_attribute("subprocess.executable.path", command[0] if '/' in command[0] else None)
+        span.set_attribute("subprocess.executable.path", command[0] if '/' in command[0] else "")
         span.set_attribute("subprocess.executable.name", command[0].rsplit('/', 1)[-1] if '/' in command else command[0])
         carrier = {}
         TraceContextTextMapPropagator().inject(carrier, opentelemetry.trace.set_span_in_context(span, None))
