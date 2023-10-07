@@ -1213,11 +1213,11 @@ async function hasMasterPermission(guild_id, user_id) {
   return discord.guild_member_has_permission(guild_id, null, user_id, 'MANAGE_SERVER');
 }
 
-async function respondNeedsMasterPermission(guild_id, guild_id, channel_id, event_id, action) {
+async function respondNeedsMasterPermission(guild_id, channel_id, event_id, action) {
   return respond(guild_id, channel_id, event_id, `You need the permission 'Manage Server' to ${action}.`);
 }
 
-async function respondNeedsFeatureActive(guild_id, guild_id, channel_id, event_id, feature, action) {
+async function respondNeedsFeatureActive(guild_id, channel_id, event_id, feature, action) {
   return discord.me().then(me => respond(guild_id, channel_id, event_id, `The feature ${feature} needs to be active to ${action}. Use '<@${me.id}> activate ${feature}' to turn it on.`));
 }
 
