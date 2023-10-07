@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+. /usr/share/debconf/confmodule
+
+db_beginblock
+db_input critical philbot/SHARD_COUNT_MIN || true
+db_input critical philbot/SHARD_COUNT_MAX || true
+db_input critical philbot/SHARD_COUNT_REDUNDANT || true
+db_endblock
+
+db_go

@@ -1,9 +1,18 @@
 #!/bin/bash
 set -e
+. /usr/share/debconf/confmodule
+
+config() {
+    db_get philbot-containerized/"$@"
+    echo "$@=$RET"
+}
 
 echo "SHARD_COUNT=0" > /opt/philbot/shards
 
 bash /usr/bin/philbot_config_populate.sh /var/lib/philbot
+echo $(config SHARD_COUNT_MIN) >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+echo $(config SHARD_COUNT_MAX) >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+echo $(config SHARD_COUNT_REDUNDANT) >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
 
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
 iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443

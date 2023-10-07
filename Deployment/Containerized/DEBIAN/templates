@@ -1,0 +1,14 @@
+Template: philbot-containerized/SHARD_COUNT_MIN
+Type: string
+Default: 0
+Description: Minimum Number of Shards:
+
+Template: philbot-containerized/SHARD_COUNT_MAX
+Type: string
+Default: 32
+Description: Maximum Number of Shards:
+
+Template: philbot-containerized/SHARD_COUNT_REDUNDANT
+Type: string
+Default: 0
+Description: Redundant Number of Shards:
