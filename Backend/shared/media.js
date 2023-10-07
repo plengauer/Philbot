@@ -5,7 +5,13 @@ const { PassThrough } = require('stream');
 
 const DEBUG = (process.env.DEBUG_AUDIO ?? 'false') == 'true';
 
+function validate_argument(argument) {
+  if (argument.includes('.') || argument.includes('/')) throw new Error();
+}
+
 function convert(input_stream, input_format, output_format, additional_arguments = []) {
+  validate_argument(input_format);
+  validate_argument(output_format);
   if (input_format == output_format && additional_arguments.length == 0) return input_stream;
   if (output_format == 'png') return convert(input_stream, input_format, 'image2', ['-c', output_format].concat(additional_arguments));
   let convertion = ffmpeg(['-i', 'pipe:0', '-f', output_format].concat(additional_arguments).concat(['pipe:1']));
@@ -41,6 +47,7 @@ function concat_audio_v0(inputs, output_format) {
 
 function concat_audio_v1(inputs, output_format) {
   if (inputs.length == 0) throw new Error();
+  validate_argument(output_format);
   // ffmpeg -i input1.wav -i input2.wav -i input3.wav -i input4.wav -filter_complex '[0:0][1:0][2:0][3:0]concat=n=4:v=0:a=1[out]' -map '[out]' output.wav
   // ffmpeg -i pipe:3 -i pipe:4 -filter_complex '[0:0][1:0]concat=n=2:v=0:a=1[out]' -f mp3 -map '[out]' pipe:1
   let input_arguments = [];
@@ -62,6 +69,8 @@ function concat_audio_v1(inputs, output_format) {
 }
 
 function relative_volume_audio(input, format, modifier) {
+  validate_argument(format);
+  validate_argument(modifier);
   let process = ffmpeg(['-i', 'pipe:0', '-af', 'volume=' + modifier, '-c:v', 'copy', '-f', format, 'pipe:1']);
   input.pipe(process.stdin);
   return process.stdout;
