@@ -6,6 +6,7 @@ const { PassThrough } = require('stream');
 const DEBUG = (process.env.DEBUG_AUDIO ?? 'false') == 'true';
 
 function validate_argument(argument) {
+  argument = "" + argument;
   if (argument.includes('.') || argument.includes('/')) throw new Error();
 }
 
