@@ -33,6 +33,14 @@ Template: philbot/OPENTELEMETRY_METRICS_API_TOKEN
 Type: string
 Description: Open Telemetry Metrics API Token:
 
+Template: philbot/OPENTELEMETRY_LOGS_API_ENDPOINT
+Type: string
+Description: Open Telemetry Logs API Endpoint:
+
+Template: philbot/OPENTELEMETRY_LOGS_API_TOKEN
+Type: string
+Description: Open Telemetry Logs API Token:
+
 Template: philbot/LINK_OBSERVABILITY
 Type: string
 Description: Link to observability data:
