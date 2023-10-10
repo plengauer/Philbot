@@ -21,6 +21,8 @@ db_input high philbot/OPENTELEMETRY_TRACES_API_ENDPOINT || true
 db_input high philbot/OPENTELEMETRY_TRACES_API_TOKEN || true
 db_input high philbot/OPENTELEMETRY_METRICS_API_ENDPOINT || true
 db_input high philbot/OPENTELEMETRY_METRICS_API_TOKEN || true
+db_input high philbot/OPENTELEMETRY_LOGS_API_ENDPOINT || true
+db_input high philbot/OPENTELEMETRY_LOGS_API_TOKEN || true
 db_input high philbot/LINK_OBSERVABILITY || true
 db_endblock
 
