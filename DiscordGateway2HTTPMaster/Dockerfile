@@ -19,7 +19,7 @@ RUN javac -cp $(find . -name '*.jar' | paste -sd ":" -) eu/philbot/*.java && rm 
 
 ENV PORT=8080
 
-CMD exec java -Xmx50m -XX:+ExitOnOutOfMemoryError \
+CMD exec java -Xmx100m -XX:+ExitOnOutOfMemoryError \
     -Djava.util.logging.config.file=logging.properties \
     -Dotel.service.name="Philbot Discord Gateway 2 HTTP Master" \
     -Dotel.resource.attributes=service.namespace="Philbot",service.version=$(cat version.txt),service.instance.id=$(uuidgen) \
