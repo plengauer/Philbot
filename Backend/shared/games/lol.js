@@ -72,7 +72,7 @@ async function getInformationClassic(details, state, user_id) {
   let history = await memory.get('activity_hint_history:activity:League of Legends', []);
   let accuracy = await memory.get('activity_hint_accuracy:activity:League of Legends', undefined);
   if (!accuracy && history.length > 0) {
-    let matches = await Promise.all(history.map(entry => getMatch(entry.server.toUpperCase() + '_' + entry.match).catch(e => null)));
+    let matches = await Promise.all(history.map(entry => getMatch(entry.server.toUpperCase() + '_' + entry.match))).then(matches => matches.filter(match => !!match));
     let accuracies = [];
     for (let i = 0; i < history.length; i++) {
       if (!matches[i]) continue;
@@ -223,7 +223,8 @@ async function getMatches(server, summonerId) {
   return getPuuid(server, summonerId)
     .then(puuid => http_get(getBasicServer(server), '/lol/match/v5/matches/by-puuid/' + puuid + '/ids?start=0&count=100', 60 * 60))
     .then(match_ids => match_ids.slice(0, 45)) // cant make too many calls to the API, so lets limit a bit
-    .then(match_ids => Promise.all(match_ids.map(getMatch)));
+    .then(match_ids => Promise.all(match_ids.map(getMatch)))
+    .then(matches => matches.filter(match => !!match));
 }
 
 async function getPuuid(server, summonerId) {
@@ -231,7 +232,9 @@ async function getPuuid(server, summonerId) {
 }
 
 async function getMatch(match_id) {
-  return http_get(getBasicServer(match_id.substring(0, match_id.indexOf('_')).toLowerCase()), '/lol/match/v5/matches/' + match_id, 60 * 60).then(match => match.info);
+  return http_get(getBasicServer(match_id.substring(0, match_id.indexOf('_')).toLowerCase()), '/lol/match/v5/matches/' + match_id, 60 * 60)
+    .then(match => match.info)
+    .catch(e => e.message.startsWith('HTTP Error 404') ? null : Promise.reject(e));
 }
 
 function getBasicServer(server) {
