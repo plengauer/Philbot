@@ -63,6 +63,7 @@ public class ObservableHttpHandler {
                 };
                 OutputStream out = new OutputStream() {
                     private final OutputStream inner = exchange.getResponseBody();
+                    
                     @Override
                     public void write(int b) throws IOException {
                         inner.write(b);
