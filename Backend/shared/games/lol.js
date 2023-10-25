@@ -234,7 +234,7 @@ async function getPuuid(server, summonerId) {
 async function getMatch(match_id) {
   return http_get(getBasicServer(match_id.substring(0, match_id.indexOf('_')).toLowerCase()), '/lol/match/v5/matches/' + match_id, 60 * 60)
     .then(match => match.info)
-    .catch(e => e.message.startsWith('HTTP Error 404') ? null : Promise.reject(e));
+    .catch(e => e.message.startsWith('HTTP error 404') ? null : Promise.reject(e));
 }
 
 function getBasicServer(server) {
