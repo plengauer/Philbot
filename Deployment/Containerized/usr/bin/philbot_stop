@@ -1,5 +1,5 @@
 #!/bin/bash
-source /usr/bin/philbot_containerized_init_otel
+source /usr/bin/philbot_init_otel
 source /opt/philbot/shards
 shard_container_names=$(echo discordgateway2http_$(seq -s " discordgateway2http_" 0 $(($SHARD_COUNT-1))))
 docker stop voice backend $shard_container_names discordgateway2httpmaster scheduler

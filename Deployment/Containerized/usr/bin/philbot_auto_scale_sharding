@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-source /usr/bin/philbot_containerized_init_otel
+source /usr/bin/philbot_init_otel
 
 source /opt/philbot/shards
 SHARD_COUNT_NEW=$(curl --no-progress-meter "http://127.0.0.1:7999/gateway/shards")
@@ -15,4 +15,4 @@ if [ "$SHARD_COUNT" -gt "0" ]; then
 fi
 
 echo "SHARD_COUNT=$SHARD_COUNT_NEW" > /opt/philbot/shards
-bash /usr/bin/philbot_containerized_start
+bash /usr/bin/philbot_start

@@ -18,4 +18,4 @@ bash -c 'iptables-save > /etc/iptables/rules.v4'
 if [ ! -f "/opt/philbot/shards" ]; then
   echo "SHARD_COUNT=1" > /opt/philbot/shards
 fi
-bash /usr/bin/philbot_containerized_start
+bash /usr/bin/philbot_start

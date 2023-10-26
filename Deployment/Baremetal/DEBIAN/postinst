@@ -13,4 +13,4 @@ iptables-save > /etc/iptables/rules.v4
 
 systemctl daemon-reload
 systemctl enable philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice
-systemctl start philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice
+bash /usr/bin/philbot_start

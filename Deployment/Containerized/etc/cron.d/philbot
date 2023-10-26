@@ -1,0 +1,2 @@
+0 2 * * 2 root philbot_restart
+*/5 * * * * root philbot_auto_scale_sharding
