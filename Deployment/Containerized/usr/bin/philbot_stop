@@ -1,7 +1,7 @@
 #!/bin/bash
 source /usr/bin/philbot_init_otel
 source /opt/philbot/shards
-shard_container_names=$(echo discordgateway2http_$(seq -s " discordgateway2http_" 0 $(($SHARD_COUNT-1))))
-docker stop voice backend $shard_container_names discordgateway2httpmaster scheduler
-docker rm voice backend $shard_container_names discordgateway2httpmaster scheduler
+shard_container_names=$(echo philbot-discordgateway2http_$(seq -s " philbot-discordgateway2http_" 0 $(($SHARD_COUNT-1))))
+docker stop philbot-voice philbot-backend $shard_container_names philbot-discordgateway2httpmaster philbot-scheduler
+docker rm philbot-voice philbot-backend $shard_container_names philbot-discordgateway2httpmaster philbot-scheduler
 exit 0

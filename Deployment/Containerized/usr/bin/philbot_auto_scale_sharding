@@ -9,7 +9,7 @@ if [ "$SHARD_COUNT" -eq "$SHARD_COUNT_NEW" ]; then
 fi
 
 if [ "$SHARD_COUNT" -gt "0" ]; then
-  shard_container_names=$(echo discordgateway2http_$(seq -s " discordgateway2http_" 0 $(($SHARD_COUNT-1))))
+  shard_container_names=$(echo philbot-discordgateway2http_$(seq -s " philbot-discordgateway2http_" 0 $(($SHARD_COUNT-1))))
   docker stop $shard_container_names
   docker rm $shard_container_names
 fi
