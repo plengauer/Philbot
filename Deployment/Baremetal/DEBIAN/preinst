@@ -1,3 +1,6 @@
 #!/bin/bash
+if [ -f /usr/bin/philbot_init_otel ]; then
+  source /usr/bin/philbot_init_otel
+fi
 bash /usr/bin/philbot_stop
 exit 0
