@@ -1,8 +1,8 @@
 Package: philbot-containerized
-Version: 1.15.0
+Version: 1.15.1
 Architecture: all
 Depends: philbot-config (>= 2.5.0), debconf, bash, wget, docker.io, iptables-persistent, jq
-Suggests: opentelemetry-bash
+Suggests: opentelemetry-shell (>= 2.4.3)
 Conflicts: philbot-baremetal, philbot-k8s
 Priority: extra
 Maintainer: Philipp Lengauer <p.lengauer@gmail.com>
