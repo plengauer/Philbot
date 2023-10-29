@@ -1,5 +1,6 @@
 const discord = require('../../../shared/discord.js');
 const memory = require('../../../shared/memory.js');
+const synchronized = require('../../../shared/synchronized.js');
 
 async function handle(payload) {
   const threshold = 1000 * 60 * 60 * 24;
@@ -10,15 +11,17 @@ async function handle(payload) {
   
   if (guild_id) return;
 
-  let messages = await discord.messages(channel_id);
-  let is_too_recent = messages.some(message => message.author.id == user_id && new Date(message.timestamp).getTime() > now.getTime() - threshold);
-  if(is_too_recent) return;
+  return synchronized.locked(`reaction:typing:channel:${channel_id}`, async () => {
+    let messages = await discord.messages(channel_id);
+    let is_too_recent = messages.some(message => message.author.id == user_id && new Date(message.timestamp).getTime() > now.getTime() - threshold);
+    if(is_too_recent) return;
 
-  const key = `mute:auto:typing:channel:${channel_id}`;
-  if (await memory.get(key, false)) return;
-  await memory.set(key, true, 60 * 60);
+    const key = `mute:auto:typing:channel:${channel_id}`;
+    if (await memory.get(key, false)) return;
+    await memory.set(key, true, 60 * 60);
 
-  await discord.post(channel_id, '👀');
+    await discord.post(channel_id, '👀');
+  });
 }
 
 module.exports = { handle }
