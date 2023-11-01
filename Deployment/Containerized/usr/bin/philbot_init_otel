@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ -f /var/lib/philbot/environment.properties.deployment ] && [ -f /usr/bin/opentelemetry_shell.sh ]; then
+if [ -f /var/lib/philbot/environment.properties.deployment ] && [ -f /usr/bin/opentelemetry_shell.sh ] && [ -z "$OTEL_SHELL_INJECTED" ]; then
   source /var/lib/philbot/environment.properties.deployment
   export OTEL_SERVICE_NAME="Philbot Deployment"
   export OTEL_RESOURCE_ATTRIBUTES="$OTEL_RESOURCE_ATTRIBUTES,service.namespace=Philbot,service.version="$(apt show philbot-containerized 2> /dev/null | grep Version | awk '{ print $2 }')
