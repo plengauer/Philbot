@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+. /usr/share/debconf/confmodule
 
 source /usr/bin/philbot_init_otel
 
@@ -7,7 +8,6 @@ bash /usr/bin/philbot_config_populate.sh /var/lib/philbot
 
 source /usr/bin/philbot_init_otel
 
-. /usr/share/debconf/confmodule
 config() {
     db_get philbot-containerized/"$@"
     echo "$@=$RET"
