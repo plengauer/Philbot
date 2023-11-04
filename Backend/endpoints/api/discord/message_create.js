@@ -1154,7 +1154,7 @@ async function createAboutString(my_name) {
   let url = await identity.getPublicURL();
   return ('' + fs.readFileSync('./about.txt'))
     .replace(/\$\{name\}/g, my_name)
-    .replace(/\$\{version\}/g, process.env.SERVICE_VERSION)
+    .replace(/\$\{version\}/g, JSON.parse('' + fs.readFileSync('package.json')).version)
     .replace(/\$\{link_code\}/g, url + '/code')
     .replace(/\$\{link_discord_add\}/g, url + '/deploy')
     .replace(/\$\{link_monitoring\}/g, url + '/monitoring');
