@@ -76,8 +76,10 @@ async function getInformationClassic(details, state, user_id) {
     let accuracies = [];
     for (let i = 0; i < history.length; i++) {
       if (!matches[i]) continue;
-      let player = matches[i].participants.filter(participant => participant.summonerId == history[i].player)[0];
+      let player = matches[i].participants.find(participant => participant.summonerId == history[i].player);
+      if (!player) continue;
       let players = matches[i].participants.filter(participant => participant.teamId == player.teamId);
+      if (players.length == 0) continue;
       let values = [
         1.0 * player.kills / players.map(p => p.kills).reduce((v1, v2) => Math.max(v1, v2), 0),
         1.0 * player.totalDamageDealtToChampions / players.map(p => p.totalDamageDealtToChampions).reduce((v1, v2) => Math.max(v1, v2), 0),
