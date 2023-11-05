@@ -1,6 +1,6 @@
 
 async function getInformation() {
-  return 'Fly safe!';
+  return { text: 'Fly safe!' };
 }
 
 module.exports = { getInformation }
