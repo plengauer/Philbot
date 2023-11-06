@@ -205,7 +205,7 @@ async function getImageModels() {
   return models;
 }
 
-async function getImageQualities(model) {
+function getImageQualities(model) {
   switch (model) {
     case 'dall-e-2': return [ undefined ];
     case 'dall-e-3': return [ "standard", "hd" ];
