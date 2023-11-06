@@ -204,8 +204,8 @@ async function getImageModels() {
 function getImageSizes(model) { // TODO check if model names are correct
   switch (model) {
     case 'dall-e-2': return [ "256x256", "512x512", "1024x1024" ];
-    case 'dall-e-3': return [ "1024x1024", "1024x1792", "1792x1024" ];
-    case 'dall-e-3-HD': return [ "1024x1024", "1024x1792", "1792x1024" ];
+    case 'dall-e-3': return [ "1024x1024", "1792x1024" ];
+    case 'dall-e-3-HD': return [ "1024x1024", "1792x1024" ];
     default: throw new Error('Unknown model: ' + model);
   }
 }
@@ -215,7 +215,7 @@ async function createImage(model, size, user, prompt, format, report) {
   let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
   let pipe = estimated_size > 1024 * 1024;
   try {
-    let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', size: size });
+    let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', model: model, size: size });
     await report(model, getImageCost(model, size));
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : buffer2stream(Buffer.from(result.b64_json, 'base64'));
