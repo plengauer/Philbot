@@ -59,7 +59,7 @@ async function createCompletion(model, user, prompt, report, temperature = undef
   if (!token) return null;
   
   if (!isLanguageCompletionModel(model)) {
-    return createResponse(model, user, null, null, `Complete the following text, respond with the completion only:\n${prompt}`, report, temperature);
+    return createResponse(model, user, null, null, `Complete the following text, respond with the completion only:\n${prompt}`, null, report, temperature);
   }
   
   let response = await HTTP('/v1/completions' , { user: user, "model": model, "prompt": prompt, temperature: temperature, max_tokens: 1024 });
@@ -68,19 +68,19 @@ async function createCompletion(model, user, prompt, report, temperature = undef
   return completion;
 }
 
-async function createResponse(model, user, history_token, system, message, report, temperature = undefined) {
-  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(model, user, history_token, system, message, report, temperature));
-  else return createResponse0(model, user, history_token, system, message, report, temperature);
+async function createResponse(model, user, history_token, system, message, image_url, report, temperature = undefined) {
+  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(model, user, history_token, system, message, image_url, report, temperature));
+  else return createResponse0(model, user, history_token, system, message, image_url, report, temperature);
 }
 
-async function createResponse0(model, user, history_token, system, message, report, temperature = undefined) {
+async function createResponse0(model, user, history_token, system, message, image_url, report, temperature = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!token) return null;
 
-  const horizon = 2;
+  const horizon = 3;
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = (conversation_key ? await memory.get(conversation_key, []) : []).slice(-(2 * horizon + 1));
-  let input = { role: 'user', content: message.trim() };
+  let input = { role: 'user', content: image_url ? [{ type: "text", text: message.trim() }, { type: "image_url", image_url: image_url }] : message.trim() };
   conversation.push(input);
   
   let output = null;
@@ -182,14 +182,14 @@ async function createBoolean(model, user, question, report, temperature = undefi
   if (isLanguageCompletionModel(model)) {
     response = await createCompletion(model, user, `Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, report, temperature);
   } else {
-    response = await createResponse(model, user, null, 'I respond only with yes or no!', question, report, temperature);
+    response = await createResponse(model, user, null, 'I respond only with yes or no!', question, null, report, temperature);
   }
   if (!response) return null;
   let boolean = response.trim().toLowerCase();
   const match = boolean.match(/^([a-z]+)/);
   boolean = match ? match[0] : boolean;
   if (boolean != 'yes' && boolean != 'no') {
-    let sentiment = await createResponse(model, user, null, `I determine whether the sentiment of the text is positive or negative.`, boolean, report, temperature);
+    let sentiment = await createResponse(model, user, null, `I determine whether the sentiment of the text is positive or negative.`, boolean, null, report, temperature);
     const sentiment_match = sentiment.trim().toLowerCase().match(/^([a-z]+)/);
     if (sentiment_match && sentiment_match[0] == 'positive') boolean = 'yes';
     else if (sentiment_match && sentiment_match[0] == 'negative') boolean = 'no';

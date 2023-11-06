@@ -57,8 +57,8 @@ async function createCompletion(model, user, prompt, temperature = undefined) {
     return openai.createCompletion(model.name, user, prompt, async (model_name, cost) => bill(model.vendor, model_name, user, cost), temperature);
 }
 
-async function createResponse(model, user, history_token, system, message, temperature = undefined) {
-    return openai.createResponse(model.name, user, history_token, system, message, async (model_name, cost) => bill(model.vendor, model_name, user, cost), temperature);
+async function createResponse(model, user, history_token, system, message, url = undefined, temperature = undefined) {
+    return openai.createResponse(model.name, user, history_token, system, message, url, async (model_name, cost) => bill(model.vendor, model_name, user, cost), temperature);
 }
 
 async function createBoolean(model, user, question, temperature = undefined) {
