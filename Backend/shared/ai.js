@@ -69,19 +69,21 @@ async function getImageModels() {
     let names = await openai.getImageModels();
     let models = [];
     for (let name of names) {
-        for (let size of openai.getImageSizes(name)) {
-            models.push({ vendor: 'openai', name: name, size: size });
+        for (let quality of openai.getImageQualities(name)) {
+            for (let size of openai.getImageSizes(name)) {
+                models.push({ vendor: 'openai', name: name, quality: quality, size: size });
+            }
         }
     }
     return models;
 }
 
 async function createImage(model, user, prompt, format) {
-    return openai.createImage(model.name, model.size, user, prompt, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
+    return openai.createImage(model.name, model.quality, model.size, user, prompt, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
 }
 
 async function editImage(model, user, base_image, format, prompt, regions) {
-    return openai.editImage(model.name, model.size, user, base_image, format, prompt, regions, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
+    return openai.editImage(model.name, model.quality, model.size, user, base_image, format, prompt, regions, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
 }
 
 async function getTranscriptionModels() {

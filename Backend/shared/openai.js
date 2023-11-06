@@ -29,7 +29,7 @@ function computeBillingSlotProgress() {
 
 async function getLanguageModels() {
   let models = await getModels();
-  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d*k/));
+  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/));
   models = Array.from(new Set(models));
   models = models.sort((m1, m2) => {
     let p1 = getModelPower(m1);
@@ -89,7 +89,7 @@ async function createResponse0(model, user, history_token, system, message, repo
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
   } else {
-    let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature });
+    let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature, max_tokens: 4096 });
     output = response.choices[0].message;
     await report(response.model, computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens));
   }
@@ -157,16 +157,20 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "text-davinci-003":
       return (tokens_prompt + tokens_completion) / 1000 * 0.02;
     case "gpt-3.5-turbo":
+      return tokens_prompt / 1000 * 0.0010 + tokens_completion / 1000 * 0.0020;
     case "gpt-3.5-turbo-instruct":
-      return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.002;
-    case "gpt-3.5-turbo-16k":
-    case "gpt-3.5-turbo-instruct-16k":
+      return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.0020;
+    case "gpt-3.5-turbo-16k": //TODO this seems to be obsolete
+    case "gpt-3.5-turbo-instruct-16k": // TODO this maybe also?
       return tokens_prompt / 1000 * 0.003 + tokens_completion / 1000 * 0.004;
     case "gpt-4":
       return tokens_prompt / 1000 * 0.03 + tokens_completion / 1000 * 0.06;
     case "gpt-4-32k":
       return tokens_prompt / 1000 * 0.06 + tokens_completion / 1000 * 0.12;
     case "gpt-4-turbo": // TODO check exact model name (also how to add vision here?)
+    case "gpt-4-vision-preview":
+    case "gpt-4-1106-preview":
+    case "gpt-4-1106-vision-preview":
       return tokens_prompt / 1000 * 0.01 + tokens_completion / 1000 * 0.03
     default:
       throw new Error("Unknown model: " + model);
@@ -201,22 +205,29 @@ async function getImageModels() {
   return models;
 }
 
-function getImageSizes(model) { // TODO check if model names are correct
+async function getImageQualities(model) {
   switch (model) {
-    case 'dall-e-2': return [ "256x256", "512x512", "1024x1024" ];
-    case 'dall-e-3': return [ "1024x1024", "1792x1024" ];
-    case 'dall-e-3-HD': return [ "1024x1024", "1792x1024" ];
+    case 'dall-e-2': return [ undefined ];
+    case 'dall-e-3': return [ "standard", "hd" ];
     default: throw new Error('Unknown model: ' + model);
   }
 }
 
-async function createImage(model, size, user, prompt, format, report) {
+function getImageSizes(model) {
+  switch (model) {
+    case 'dall-e-2': return [ "256x256", "512x512", "1024x1024" ];
+    case 'dall-e-3': return [ "1024x1024", "1792x1024" ];
+    default: throw new Error('Unknown model: ' + model);
+  }
+}
+
+async function createImage(model, quality, size, user, prompt, format, report) {
   if (!token) return null;
   let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
   let pipe = estimated_size > 1024 * 1024;
   try {
-    let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', model: model, size: size }); // TODO check API if its still valid
-    await report(model, getImageCost(model, size));
+    let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', model: model, quality: quality, size: size });
+    await report(model, getImageCost(model, quality, size));
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : buffer2stream(Buffer.from(result.b64_json, 'base64'));
     return media.convert(image, 'png', format);
@@ -273,35 +284,42 @@ async function pipeImage(url) {
   return curl.request({ hostname: url.hostname, path: url.pathname + (url.search ?? ''), stream: true });
 }
 
-function getImageCost(model, size) {
+function getImageCost(model, quality, size) {
   switch(model) {
-    case "dall-e 2":
+    case "dall-e-2":
       switch(size) {
         case   "256x256": return 0.016;
         case   "512x512": return 0.018;
         case "1024x1024": return 0.020;
         default: throw new Error('Unknown size: ' + size);
       }
-    case "dall-e 3":
-      switch(size) {
-        case "1024x1024": return 0.04;
-        case "1024x1792": return 0.08;
-        case "1792x1024": return 0.08;
-        default: throw new Error('Unknown size: ' + size);
-      }
-    case "dall-e 3 HD":
-      switch(size) {
-        case "1024x1024": return 0.08;
-        case "1024x1792": return 0.12;
-        case "1792x1024": return 0.12;
-        default: throw new Error('Unknown size: ' + size);
+    case "dall-e-3":
+      switch (quality) {
+        case 'standard':
+          switch(size) {
+            case "1024x1024": return 0.04;
+            case "1024x1792": return 0.08;
+            case "1792x1024": return 0.08;
+            default: throw new Error('Unknown size: ' + size);
+          }
+        case 'hd':
+          switch(size) {
+            case "1024x1024": return 0.08;
+            case "1024x1792": return 0.12;
+            case "1792x1024": return 0.12;
+            default: throw new Error('Unknown size: ' + size);
+          }
+        default: throw new Error('Unknown quality: ' + quality);
       }
     default: throw new Error("Unknown model: " + model);
   }
 }
 
 async function getTranscriptionModels() {
-  return getModels().then(models => models.filter(model => model.startsWith('whisper-')));
+  let models = await getModels();
+  models = models.filter(model => model.startsWith('whisper-'));
+  models = models.sort();
+  return models;
 }
 
 async function createTranscription(model, user, prompt, audio_stream, audio_stream_format, audio_stream_length_millis, report) {
@@ -368,6 +386,7 @@ module.exports = {
   createBoolean,
   
   getImageModels,
+  getImageQualities,
   getImageSizes,
   createImage,
   editImage,
