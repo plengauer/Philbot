@@ -215,7 +215,7 @@ async function createImage(model, size, user, prompt, format, report) {
   let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
   let pipe = estimated_size > 1024 * 1024;
   try {
-    let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', model: model, size: size });
+    let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', model: model, size: size }); // TODO check API if its still valid
     await report(model, getImageCost(model, size));
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : buffer2stream(Buffer.from(result.b64_json, 'base64'));
