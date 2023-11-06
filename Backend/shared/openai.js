@@ -80,7 +80,7 @@ async function createResponse0(model, user, history_token, system, message, imag
   const horizon = 3;
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = (conversation_key ? await memory.get(conversation_key, []) : []).slice(-(2 * horizon + 1));
-  let input = { role: 'user', content: image_url ? [{ type: "text", text: message.trim() }, { type: "image_url", image_url: image_url }] : message.trim() };
+  let input = { role: 'user', content: (image_url && model.includes('vision')) ? [{ type: "text", text: message.trim() }, { type: "image_url", image_url: image_url }] : message.trim() };
   conversation.push(input);
   
   let output = null;

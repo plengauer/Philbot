@@ -1047,6 +1047,10 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       }
     }
 
+    if (!attachments || attachments.length == 0) {
+      attachments = (await discord.message_retrieve(channel_id, referenced_message_id)).attachments;
+    }
+
     return handleLongResponse(channel_id, () => createAIResponse(guild_id, channel_id, user_id, message, attachments))
       .then(response => response ?? `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(response => respond(guild_id, channel_id, event_id, response));
