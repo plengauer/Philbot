@@ -160,14 +160,14 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
       return tokens_prompt / 1000 * 0.0010 + tokens_completion / 1000 * 0.0020;
     case "gpt-3.5-turbo-instruct":
       return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.0020;
-    case "gpt-3.5-turbo-16k": //TODO this seems to be obsolete
-    case "gpt-3.5-turbo-instruct-16k": // TODO this maybe also?
+    case "gpt-3.5-turbo-16k":
+    case "gpt-3.5-turbo-instruct-16k":
       return tokens_prompt / 1000 * 0.003 + tokens_completion / 1000 * 0.004;
     case "gpt-4":
       return tokens_prompt / 1000 * 0.03 + tokens_completion / 1000 * 0.06;
     case "gpt-4-32k":
       return tokens_prompt / 1000 * 0.06 + tokens_completion / 1000 * 0.12;
-    case "gpt-4-turbo": // TODO check exact model name (also how to add vision here?)
+    case "gpt-4-turbo":
     case "gpt-4-vision-preview":
     case "gpt-4-1106-preview":
     case "gpt-4-1106-vision-preview":
