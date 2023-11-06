@@ -194,17 +194,18 @@ async function createBoolean(model, user, question, report, temperature = undefi
   return boolean == 'yes';
 }
 
-const IMAGE_MODELS = [ 'dall-e 2', 'dall-e 3', 'dall-e 3 HD' ]; // TODO check where to get models from, if names are correct in all below functions. Also check if new API version needs to be used
-
 async function getImageModels() {
-  return IMAGE_MODELS;
+  let models = await getModels();
+  models = models.filter(model => model.startsWith('dall-e-'));
+  models = models.sort(); // TODO make sure its properly sorted, default may actually be correct!
+  return models;
 }
 
-function getImageSizes(model) {
+function getImageSizes(model) { // TODO check if model names are correct
   switch (model) {
-    case 'dall-e 2': return [ "256x256", "512x512", "1024x1024" ];
-    case 'dall-e 3': return [ "1024x1024", "1024x1792", "1792x1024" ];
-    case 'dall-e 3 HD': return [ "1024x1024", "1024x1792", "1792x1024" ];
+    case 'dall-e-2': return [ "256x256", "512x512", "1024x1024" ];
+    case 'dall-e-3': return [ "1024x1024", "1024x1792", "1792x1024" ];
+    case 'dall-e-3-HD': return [ "1024x1024", "1024x1792", "1792x1024" ];
     default: throw new Error('Unknown model: ' + model);
   }
 }
