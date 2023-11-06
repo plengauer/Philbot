@@ -194,7 +194,7 @@ async function createBoolean(model, user, question, report, temperature = undefi
   return boolean == 'yes';
 }
 
-const IMAGE_MODELS = [ 'dall-e 2', 'dall-e 3', 'dall-e 3 HD' ];
+const IMAGE_MODELS = [ 'dall-e 2', 'dall-e 3', 'dall-e 3 HD' ]; // TODO check where to get models from, if names are correct in all below functions. Also check if new API version needs to be used
 
 async function getImageModels() {
   return IMAGE_MODELS;
