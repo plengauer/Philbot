@@ -166,6 +166,8 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
       return tokens_prompt / 1000 * 0.03 + tokens_completion / 1000 * 0.06;
     case "gpt-4-32k":
       return tokens_prompt / 1000 * 0.06 + tokens_completion / 1000 * 0.12;
+    case "gpt-4-turbo": // TODO check exact model name (also how to add vision here?)
+      return tokens_prompt / 1000 * 0.01 + tokens_completion / 1000 * 0.03
     default:
       throw new Error("Unknown model: " + model);
   }
@@ -192,15 +194,19 @@ async function createBoolean(model, user, question, report, temperature = undefi
   return boolean == 'yes';
 }
 
-const IMAGE_MODELS = [ 'dall-e 2' ];
-const IMAGE_SIZES = ["256x256", "512x512", "1024x1024"];
+const IMAGE_MODELS = [ 'dall-e 2', 'dall-e 3', 'dall-e 3 HD' ];
 
 async function getImageModels() {
   return IMAGE_MODELS;
 }
 
 function getImageSizes(model) {
-  return IMAGE_SIZES;
+  switch (model) {
+    case 'dall-e 2': return [ "256x256", "512x512", "1024x1024" ];
+    case 'dall-e 3': return [ "1024x1024", "1024x1792", "1792x1024" ];
+    case 'dall-e 3 HD': return [ "1024x1024", "1024x1792", "1792x1024" ];
+    default: throw new Error('Unknown model: ' + model);
+  }
 }
 
 async function createImage(model, size, user, prompt, format, report) {
@@ -267,11 +273,29 @@ async function pipeImage(url) {
 }
 
 function getImageCost(model, size) {
-  switch(size) {
-    case   "256x256": return 0.016;
-    case   "512x512": return 0.018;
-    case "1024x1024": return 0.020;
-    default: throw new Error('Unknown size: ' + size);
+  switch(model) {
+    case "dall-e 2":
+      switch(size) {
+        case   "256x256": return 0.016;
+        case   "512x512": return 0.018;
+        case "1024x1024": return 0.020;
+        default: throw new Error('Unknown size: ' + size);
+      }
+    case "dall-e 3":
+      switch(size) {
+        case "1024x1024": return 0.04;
+        case "1024x1792": return 0.08;
+        case "1792x1024": return 0.08;
+        default: throw new Error('Unknown size: ' + size);
+      }
+    case "dall-e 3 HD":
+      switch(size) {
+        case "1024x1024": return 0.08;
+        case "1024x1792": return 0.12;
+        case "1792x1024": return 0.12;
+        default: throw new Error('Unknown size: ' + size);
+      }
+    default: throw new Error("Unknown model: " + model);
   }
 }
 
