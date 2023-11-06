@@ -99,7 +99,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
     features.isActive(guild_id, 'raid protection').then(active => (guild_id && !mentioned && !is_audio && active) ? raid_protection.on_guild_message_create(guild_id, channel_id, user_id, event_id) : Promise.resolve()),
     features.isActive(guild_id, 'role management').then(active => (guild_id && !mentioned && !is_audio && active) ? role_management.on_message_create(guild_id, user_id, message) : Promise.resolve()),
     (guild_id && !mentioned && can_respond && !is_audio) ? handleMessage(guild_id, channel_id, event_id, user_id, message, mentioned) : Promise.resolve(),
-    (mentioned && can_respond) ? handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me).catch(ex => respond(guild_id, channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
+    (mentioned && can_respond) ? handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, attachments, me).catch(ex => respond(guild_id, channel_id, event_id, `I'm sorry, I ran into an error.`).finally(() => { throw ex; })) : Promise.resolve(),
   ]);
 }
 
@@ -294,7 +294,7 @@ async function handleMessageForTriggers(guild_id, channel_id, event_id, message)
   );
 }
 
-async function handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me, pure_command_handling = false) {
+async function handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, attachments, me, pure_command_handling = false) {
   if (message.length == 0) {
     return Promise.resolve();
   
@@ -401,7 +401,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase() == 'command execute') {
     return memory.consume(`command:user:${user_id}`, null)
       .then(command => command ?
-        handleCommand(guild_id, channel_id, event_id, user_id, command, referenced_message_id, me, pure_command_handling) :
+        handleCommand(guild_id, channel_id, event_id, user_id, command, referenced_message_id, attachments, me, pure_command_handling) :
         reactNotOK(channel_id, event_id)
       );
   
@@ -417,7 +417,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase() == 'next') {
-    return handleCommand(guild_id, channel_id, event_id, user_id, 'play next', referenced_message_id, me, pure_command_handling);
+    return handleCommand(guild_id, channel_id, event_id, user_id, 'play next', referenced_message_id, attachments, me, pure_command_handling);
 
   } else if (message.toLowerCase().startsWith('play ')) {
     guild_id = guild_id ?? await resolveGuildID(user_id);
@@ -1025,7 +1025,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       let alias = await memory.get(`alias:` + memory.mask(tokens[0]) + `:guild:${guild_id}`, undefined);
       if (alias) {
         message = (alias + ' ' + message.substring(tokens[0].length + 1)).trim();
-        return handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, me, pure_command_handling);
+        return handleCommand(guild_id, channel_id, event_id, user_id, message, referenced_message_id, attachments, me, pure_command_handling);
       }
     }
 
@@ -1037,7 +1037,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let command = try_fix_command ? await fixCommand(guild_id, user_id, message) : null;
     if (command) {
       try {
-        return await handleCommand(guild_id, channel_id, event_id, user_id, command, referenced_message_id, me, true);
+        return await handleCommand(guild_id, channel_id, event_id, user_id, command, referenced_message_id, attachments, me, true);
       } catch (error) {
         if(error.message.startsWith('Unknown command: ')) {
           // just continue
@@ -1047,7 +1047,11 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       }
     }
 
-    return handleLongResponse(channel_id, () => createAIResponse(guild_id, channel_id, user_id, message))
+    if (!attachments || attachments.length == 0) {
+      attachments = (await discord.message_retrieve(channel_id, referenced_message_id)).attachments;
+    }
+
+    return handleLongResponse(channel_id, () => createAIResponse(guild_id, channel_id, user_id, message, attachments))
       .then(response => response ?? `I\'m sorry, I do not understand. Use \'<@${me.id}> help\' to learn more.`)
       .then(response => respond(guild_id, channel_id, event_id, response));
   }
@@ -1065,11 +1069,12 @@ async function fixCommand(guild_id, user_id, message) {
   return command.trim();
 }
 
-async function createAIResponse(guild_id, channel_id, user_id, message) {
+async function createAIResponse(guild_id, channel_id, user_id, message, attachments) {
+  attachments = attachments.filter(attachment => attachment.content_type.startsWith('image/'));
   let model = await ai.getDynamicModel(await ai.getLanguageModels(), ai.getDefaultDynamicModelSafety() * (guild_id ? 1 : 0.5));
   if (!model) return null;
   let system_message = await createAIContext(guild_id, channel_id, user_id, message, model);
-  let response = await ai.createResponse(model, user_id, `channel:${channel_id}:user:${user_id}`, system_message, message);
+  let response = await ai.createResponse(model, user_id, `channel:${channel_id}:user:${user_id}`, system_message, message, attachments.map(attachment => attachment.url).find(a => !!a));
   if (response.startsWith('"') && response.endsWith('"')) response = response.substring(1, response.length - 1)
   return response;
 }

@@ -29,7 +29,7 @@ function computeBillingSlotProgress() {
 
 async function getLanguageModels() {
   let models = await getModels();
-  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d*k/));
+  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/));
   models = Array.from(new Set(models));
   models = models.sort((m1, m2) => {
     let p1 = getModelPower(m1);
@@ -59,7 +59,7 @@ async function createCompletion(model, user, prompt, report, temperature = undef
   if (!token) return null;
   
   if (!isLanguageCompletionModel(model)) {
-    return createResponse(model, user, null, null, `Complete the following text, respond with the completion only:\n${prompt}`, report, temperature);
+    return createResponse(model, user, null, null, `Complete the following text, respond with the completion only:\n${prompt}`, null, report, temperature);
   }
   
   let response = await HTTP('/v1/completions' , { user: user, "model": model, "prompt": prompt, temperature: temperature, max_tokens: 1024 });
@@ -68,19 +68,19 @@ async function createCompletion(model, user, prompt, report, temperature = undef
   return completion;
 }
 
-async function createResponse(model, user, history_token, system, message, report, temperature = undefined) {
-  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(model, user, history_token, system, message, report, temperature));
-  else return createResponse0(model, user, history_token, system, message, report, temperature);
+async function createResponse(model, user, history_token, system, message, image_url, report, temperature = undefined) {
+  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(model, user, history_token, system, message, image_url, report, temperature));
+  else return createResponse0(model, user, history_token, system, message, image_url, report, temperature);
 }
 
-async function createResponse0(model, user, history_token, system, message, report, temperature = undefined) {
+async function createResponse0(model, user, history_token, system, message, image_url, report, temperature = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!token) return null;
 
-  const horizon = 2;
+  const horizon = 3;
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = (conversation_key ? await memory.get(conversation_key, []) : []).slice(-(2 * horizon + 1));
-  let input = { role: 'user', content: message.trim() };
+  let input = { role: 'user', content: (image_url && model.includes('vision')) ? [{ type: "text", text: message.trim() }, { type: "image_url", image_url: image_url }] : message.trim() };
   conversation.push(input);
   
   let output = null;
@@ -89,7 +89,7 @@ async function createResponse0(model, user, history_token, system, message, repo
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
   } else {
-    let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature });
+    let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature, max_tokens: 4096 });
     output = response.choices[0].message;
     await report(response.model, computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens));
   }
@@ -157,8 +157,9 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "text-davinci-003":
       return (tokens_prompt + tokens_completion) / 1000 * 0.02;
     case "gpt-3.5-turbo":
+      return tokens_prompt / 1000 * 0.0010 + tokens_completion / 1000 * 0.0020;
     case "gpt-3.5-turbo-instruct":
-      return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.002;
+      return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.0020;
     case "gpt-3.5-turbo-16k":
     case "gpt-3.5-turbo-instruct-16k":
       return tokens_prompt / 1000 * 0.003 + tokens_completion / 1000 * 0.004;
@@ -166,6 +167,11 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
       return tokens_prompt / 1000 * 0.03 + tokens_completion / 1000 * 0.06;
     case "gpt-4-32k":
       return tokens_prompt / 1000 * 0.06 + tokens_completion / 1000 * 0.12;
+    case "gpt-4-turbo":
+    case "gpt-4-vision-preview":
+    case "gpt-4-1106-preview":
+    case "gpt-4-1106-vision-preview":
+      return tokens_prompt / 1000 * 0.01 + tokens_completion / 1000 * 0.03
     default:
       throw new Error("Unknown model: " + model);
   }
@@ -176,14 +182,14 @@ async function createBoolean(model, user, question, report, temperature = undefi
   if (isLanguageCompletionModel(model)) {
     response = await createCompletion(model, user, `Respond to the question only with yes or no.\nQuestion: ${question}\nResponse:`, report, temperature);
   } else {
-    response = await createResponse(model, user, null, 'I respond only with yes or no!', question, report, temperature);
+    response = await createResponse(model, user, null, 'I respond only with yes or no!', question, null, report, temperature);
   }
   if (!response) return null;
   let boolean = response.trim().toLowerCase();
   const match = boolean.match(/^([a-z]+)/);
   boolean = match ? match[0] : boolean;
   if (boolean != 'yes' && boolean != 'no') {
-    let sentiment = await createResponse(model, user, null, `I determine whether the sentiment of the text is positive or negative.`, boolean, report, temperature);
+    let sentiment = await createResponse(model, user, null, `I determine whether the sentiment of the text is positive or negative.`, boolean, null, report, temperature);
     const sentiment_match = sentiment.trim().toLowerCase().match(/^([a-z]+)/);
     if (sentiment_match && sentiment_match[0] == 'positive') boolean = 'yes';
     else if (sentiment_match && sentiment_match[0] == 'negative') boolean = 'no';
@@ -192,24 +198,36 @@ async function createBoolean(model, user, question, report, temperature = undefi
   return boolean == 'yes';
 }
 
-const IMAGE_MODELS = [ 'dall-e 2' ];
-const IMAGE_SIZES = ["256x256", "512x512", "1024x1024"];
-
 async function getImageModels() {
-  return IMAGE_MODELS;
+  let models = await getModels();
+  models = models.filter(model => model.startsWith('dall-e-'));
+  models = models.sort(); // TODO make sure its properly sorted, default may actually be correct!
+  return models;
+}
+
+function getImageQualities(model) {
+  switch (model) {
+    case 'dall-e-2': return [ undefined ];
+    case 'dall-e-3': return [ "standard", "hd" ];
+    default: throw new Error('Unknown model: ' + model);
+  }
 }
 
 function getImageSizes(model) {
-  return IMAGE_SIZES;
+  switch (model) {
+    case 'dall-e-2': return [ "256x256", "512x512", "1024x1024" ];
+    case 'dall-e-3': return [ "1024x1024", "1792x1024" ];
+    default: throw new Error('Unknown model: ' + model);
+  }
 }
 
-async function createImage(model, size, user, prompt, format, report) {
+async function createImage(model, quality, size, user, prompt, format, report) {
   if (!token) return null;
   let estimated_size = size.split('x').reduce((d1, d2) => d1 * d2, 1) * 4;
   let pipe = estimated_size > 1024 * 1024;
   try {
-    let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', size: size });
-    await report(model, getImageCost(model, size));
+    let response = await HTTP('/v1/images/generations', { user: user, prompt: prompt, response_format: pipe ? 'url' : 'b64_json', model: model, quality: quality, size: size });
+    await report(model, getImageCost(model, quality, size));
     let result = response.data[0];
     let image = pipe ? await pipeImage(url.parse(result.url)) : buffer2stream(Buffer.from(result.b64_json, 'base64'));
     return media.convert(image, 'png', format);
@@ -266,17 +284,42 @@ async function pipeImage(url) {
   return curl.request({ hostname: url.hostname, path: url.pathname + (url.search ?? ''), stream: true });
 }
 
-function getImageCost(model, size) {
-  switch(size) {
-    case   "256x256": return 0.016;
-    case   "512x512": return 0.018;
-    case "1024x1024": return 0.020;
-    default: throw new Error('Unknown size: ' + size);
+function getImageCost(model, quality, size) {
+  switch(model) {
+    case "dall-e-2":
+      switch(size) {
+        case   "256x256": return 0.016;
+        case   "512x512": return 0.018;
+        case "1024x1024": return 0.020;
+        default: throw new Error('Unknown size: ' + size);
+      }
+    case "dall-e-3":
+      switch (quality) {
+        case 'standard':
+          switch(size) {
+            case "1024x1024": return 0.04;
+            case "1024x1792": return 0.08;
+            case "1792x1024": return 0.08;
+            default: throw new Error('Unknown size: ' + size);
+          }
+        case 'hd':
+          switch(size) {
+            case "1024x1024": return 0.08;
+            case "1024x1792": return 0.12;
+            case "1792x1024": return 0.12;
+            default: throw new Error('Unknown size: ' + size);
+          }
+        default: throw new Error('Unknown quality: ' + quality);
+      }
+    default: throw new Error("Unknown model: " + model);
   }
 }
 
 async function getTranscriptionModels() {
-  return getModels().then(models => models.filter(model => model.startsWith('whisper-')));
+  let models = await getModels();
+  models = models.filter(model => model.startsWith('whisper-'));
+  models = models.sort();
+  return models;
 }
 
 async function createTranscription(model, user, prompt, audio_stream, audio_stream_format, audio_stream_length_millis, report) {
@@ -343,6 +386,7 @@ module.exports = {
   createBoolean,
   
   getImageModels,
+  getImageQualities,
   getImageSizes,
   createImage,
   editImage,
