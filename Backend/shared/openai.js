@@ -85,13 +85,14 @@ async function createResponse0(model, user, history_token, system, message, imag
   
   let output = null;
   if (!isLanguageChatModel(model)) {
+    conversation = conversation.map(line => { return { role: line.role, content: typeof line.content == 'string' ? line.content : line.content.find(content => content.type == 'text' ).text }; });
     let completion = await createCompletion(model, user, `Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', report, temperature);
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
   } else {
     let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature, max_tokens: 4096 });
     output = response.choices[0].message;
-    await report(response.model, computeLanguageCost(response.model.replace(/-\d\d\d\d$/, ''), response.usage.prompt_tokens, response.usage.completion_tokens));
+    await report(response.model, computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens));
   }
   output.content = sanitizeResponse(output.content);
 
@@ -151,27 +152,31 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "text-babbage-001":
       return (tokens_prompt + tokens_completion) / 1000 * 0.0005;
     case "text-curie-001":
-      return (tokens_prompt + tokens_completion) / 1000 * 0.002;
+      return (tokens_prompt + tokens_completion) / 1000 * 0.0020;
     case "text-davinci-001":
     case "text-davinci-002":
     case "text-davinci-003":
-      return (tokens_prompt + tokens_completion) / 1000 * 0.02;
-    case "gpt-3.5-turbo":
-      return tokens_prompt / 1000 * 0.0010 + tokens_completion / 1000 * 0.0020;
-    case "gpt-3.5-turbo-instruct":
+      return (tokens_prompt + tokens_completion) / 1000 * 0.0200;
+    case "gpt-3.5-turbo-0301":
+    case "gpt-3.5-turbo-0613":
       return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.0020;
-    case "gpt-3.5-turbo-16k":
-    case "gpt-3.5-turbo-instruct-16k":
-      return tokens_prompt / 1000 * 0.003 + tokens_completion / 1000 * 0.004;
-    case "gpt-4":
-      return tokens_prompt / 1000 * 0.03 + tokens_completion / 1000 * 0.06;
-    case "gpt-4-32k":
-      return tokens_prompt / 1000 * 0.06 + tokens_completion / 1000 * 0.12;
-    case "gpt-4-turbo":
-    case "gpt-4-vision-preview":
+    case "gpt-3.5-turbo-1106":
+      return tokens_prompt / 1000 * 0.0010 + tokens_completion / 1000 * 0.0020;
+    case "gpt-3.5-turbo-16k-0613":
+      return tokens_prompt / 1000 * 0.0030 + tokens_completion / 1000 * 0.0040;
+    case "gpt-3.5-turbo-instruct-0914":
+      return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.0020;
+    case "gpt-4-0314":
+      return tokens_prompt / 1000 * 0.0300 + tokens_completion / 1000 * 0.0600;
+    case "gpt-4-0613":
+      return tokens_prompt / 1000 * 0.0300 + tokens_completion / 1000 * 0.0600;
+    case "gpt-4-32k-0314":
+      return tokens_prompt / 1000 * 0.0600 + tokens_completion / 1000 * 0.1200;
+    case "gpt-4-32k-0613":
+      return tokens_prompt / 1000 * 0.0600 + tokens_completion / 1000 * 0.1200;
     case "gpt-4-1106-preview":
     case "gpt-4-1106-vision-preview":
-      return tokens_prompt / 1000 * 0.01 + tokens_completion / 1000 * 0.03
+      return tokens_prompt / 1000 * 0.0100 + tokens_completion / 1000 * 0.0300;
     default:
       throw new Error("Unknown model: " + model);
   }

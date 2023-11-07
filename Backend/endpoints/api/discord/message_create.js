@@ -1047,7 +1047,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       }
     }
 
-    if (!attachments || attachments.length == 0) {
+    if ((!attachments || attachments.length == 0) && referenced_message_id) {
       attachments = (await discord.message_retrieve(channel_id, referenced_message_id)).attachments;
     }
 
