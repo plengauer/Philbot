@@ -360,7 +360,35 @@ function getTranscriptionCost(model, time_millis) {
   }
 }
 
-async function HTTP(endpoint, body, headers = {}) {
+async function getSpeechModels() {
+  let models = await getModels();
+  models = models.filter(model => model.startsWith('tts-') && !model.match(/-\d{4}$/));
+  models = Array.from(new Set(models));
+  models = models.sort();
+  return models;
+}
+
+function getSpeechVoices(model) {
+  return [ "alloy", "echo", "fable", "onyx", "nova", "shimmer" ];
+}
+
+async function createSpeech(model, user, voice, input, audio_stream_format, report) {
+  let response = await HTTP('/v1/audio/speech', { model: model, voice: voice, input: input, response_format: "mp3" }, {}, true);
+  await report(model, getSpeechCost(model, input.length));
+  return media.convert(response.body, response.headers['content-type'].split('/')[1], audio_stream_format);
+}
+
+function getSpeechCost(model, length) {
+  switch (model) {
+    case "tts-1": // shorthand
+    case "tts-1-1106": return length / 1000 * 0.0150;
+    case "tts-1-hd": // shorthand
+    case "tts-1-hd-1106": return length / 1000 * 0.0300;
+    default: throw new Error('Unknown model: ' + model);
+  }
+}
+
+async function HTTP(endpoint, body, headers = {}, stream = false) {
   headers['Authorization'] = 'Bearer ' + token;
   let result = await curl.request({
     hostname: 'api.openai.com',
@@ -368,6 +396,7 @@ async function HTTP(endpoint, body, headers = {}) {
     headers: headers,
     method: 'POST',
     body: body,
+    stream: stream,
     timeout: 1000 * 60 * 15
   });
   if (debug) console.log('DEBUG OPENAI ' + (endpoint == '/v1/audio/transcriptions' ? '<audio>' :  JSON.stringify(body)) + ' => ' + (endpoint.startsWith('/v1/images/') && body.response_format == 'b64_json' ? '<image>' : JSON.stringify(result)));
@@ -403,5 +432,9 @@ module.exports = {
   editImage,
   
   getTranscriptionModels,
-  createTranscription
+  createTranscription,
+
+  getSpeechModels,
+  getSpeechVoices,
+  createSpeech
 }

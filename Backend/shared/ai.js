@@ -97,7 +97,8 @@ async function createTranscription(model, user, prompt, audio_stream, audio_stre
 async function getVoiceModels(user) {
     let models_speechify = await speechify.getVoiceModels(user).then(models => wrapModels('speechify', models));
     let models_google = await googleai.getVoiceModels().then(models => wrapModels('google', models));
-    return models_google.concat(models_speechify);
+    let models_openai = await openai.getSpeechModels().then(models => wrapModels('openai', models));
+    return models_openai.concat(models_google).concat(models_speechify);
 }
 
 async function seedVoice(model, user, seed, format) {
@@ -108,6 +109,7 @@ async function createVoice(model, user, text, language, gender, format) {
     switch(model.vendor) {
         case 'speechify': return speechify.createVoice(model.name, user, text, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
         case 'google': return googleai.createVoice(model.name, text, language, gender, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost)); 
+        case 'openai': return openai.createSpeech(model.name, user, getSpeechVoices(model.name)[0], text, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
     }
 }
 
