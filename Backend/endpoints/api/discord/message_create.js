@@ -1058,7 +1058,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
 }
 
 async function fixCommand(guild_id, user_id, message) {
-  let model = await ai.getDynamicModel(await ai.getLanguageModels(), ai.getDefaultDynamicModelSafety() + (1 - ai.getDefaultDynamicModelSafety()) / 2);
+  let model = await ai.getDynamicModel(await ai.getLanguageModels()); // ai.getDefaultDynamicModelSafety() + (1 - ai.getDefaultDynamicModelSafety()) / 2
   if (ai.compareLanguageModelByPower(model, { vendor: 'openai', name: 'gpt-3.5-turbo' })) return null;
   let context = await createHelpString(guild_id, '' /*discord.mention_user((await discord.me()).id)*/);
   const dummy_token = 'NULL';
