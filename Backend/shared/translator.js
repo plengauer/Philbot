@@ -38,7 +38,7 @@ async function on_message_create(guild_id, channel_id, message_id, user_id, cont
     let target_language_percentage = await ai.createResponse(model_fast, user_id, null, `I determine the percentage of how much of a given text is ${target_language}. I respond only with the percentage.`, content, null, 0);
     //console.log(`DEBUG TRANSLATOR v2 #1 "${content}" => ${target_language_percentage}`);
     if (!target_language_percentage) return;
-    if (!target_language_percentage.endsWith('%')) throw new Error();
+    if (!target_language_percentage.endsWith('%')) return; // throw new Error();
     target_language_percentage = parseFloat(target_language_percentage.substring(0, target_language_percentage.length - 1)) / 100;
     if (isNaN(target_language_percentage)) throw new Error();
     if (target_language_percentage > 0.9) return;
