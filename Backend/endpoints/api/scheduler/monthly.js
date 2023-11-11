@@ -2,6 +2,7 @@ const fs = require('fs');
 const memory = require('../../../shared/memory.js');
 const discord = require('../../../shared/discord.js');
 const identity = require('../../../shared/identity.js');
+const ai = require('../../../shared/ai.js');
 
 const ttl = 60 * 60 * 24 * (31 + 1);
 const birthday_track = 'https://www.youtube.com/watch?v=jgfu30N-zpY';
@@ -56,8 +57,9 @@ async function handle() {
       .then(users => users.map(user => user.id))
       .then(user_ids => Promise.all([
         cleanUsersActivities(user_ids),
-        // cleanUsersExcept(user_ids)
-      ]))
+        cleanUsersExcept(user_ids)
+      ])),
+    resetAvatar()
   ])
   .then(() => undefined)
 }
@@ -117,6 +119,15 @@ async function cleanUsersExcept(except_user_ids) {
         .filter(key => !except_user_ids.some(except_user_id => key.includes(except_user_id)))
       )
     );
+}
+
+async function resetAvatar() {
+  let model = { vendor: 'openai', name: "dall-e-3", size: "1024x1024", quality: "hd" };
+  let me = await discord.me();
+  let prompt = `An avatar for a Discord bot called "${me.username}"`;
+  let format = 'png';
+  let avatar_stream = await ai.createImage(model, me.id, prompt, format);
+  return discord.me_avatar_update(avatar_stream, format);
 }
 
 module.exports = { handle }

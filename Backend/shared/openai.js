@@ -84,17 +84,20 @@ async function createResponse0(model, user, history_token, system, message, atta
   for (let attachment of attachments ?? []) {
     if (attachment.content_type.startsWith('image/') && model.includes('vision')) {
       let format = attachment.content_type.split('/')[1];
-      if (![ 'png', 'jpeg', 'webp', 'gif' ].includes(format)) {
+      let image_url = null;
+      if ([ 'png', 'jpeg', 'webp', 'gif' ].includes(format)) {
+        image_url = attachment.url;
+      } else {
         let uri = url.parse(attachment.url);
         let stream = media.convert(await curl.request({ method: 'GET', hostname: uri.hostname, path: uri.path, query: uri.query, stream: true }), format, 'png');
         let chunks = [];
-        attachment.url = await new Promise((resolve, reject) => {
+        image_url = 'data:image/png;base64,' + await new Promise((resolve, reject) => {
           stream.on('error', error => reject(error));
           stream.on('data', chunk => chunks.push(chunk));
           stream.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
         });
       }
-      input.content.push({ type: 'image_url', image_url: attachment.url });
+      input.content.push({ type: 'image_url', image_url: image_url });
     } else {
       // ignore
     }

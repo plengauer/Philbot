@@ -51,6 +51,16 @@ async function me() {
   return HTTP(`/users/@me`, 'GET', undefined, 60 * 60);
 }
 
+async function me_avatar_update(avatar_format, avatar_stream) {
+  let image = await new Promise((resolve, reject) => {
+    let chunks = [];
+    avatar_stream.on('error', error => reject(error));
+    avatar_stream.on('data', chunk => chunks.push(chunk));
+    avatar_stream.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
+  });
+  return HTTP(`/users/@me`, 'PATCH', { avatar: `data:image/${format};base64,${image}` });
+}
+
 async function user_retrieve(user_id) {
   return HTTP(`/users/${user_id}`, 'GET');
 }
@@ -453,6 +463,7 @@ module.exports = {
   scheduledevent_link_create,
   
   me,
+  me_avatar_update,
   user_retrieve,
 
   guilds_list,
