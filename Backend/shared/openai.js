@@ -90,7 +90,7 @@ async function createResponse0(model, user, history_token, system, message, imag
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
   } else {
-    let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature, max_tokens: 4096 });
+    let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature, max_tokens: 1024 });
     output = response.choices[0].message;
     await report(response.model, computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens));
   }
