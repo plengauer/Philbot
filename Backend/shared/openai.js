@@ -68,19 +68,37 @@ async function createCompletion(model, user, prompt, report, temperature = undef
   return completion;
 }
 
-async function createResponse(model, user, history_token, system, message, image_url, report, temperature = undefined) {
-  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(model, user, history_token, system, message, image_url, report, temperature));
-  else return createResponse0(model, user, history_token, system, message, image_url, report, temperature);
+async function createResponse(model, user, history_token, system, message, attachments, report, temperature = undefined) {
+  if (history_token) return synchronized.locked(`chatgpt:${history_token}`, () => createResponse0(model, user, history_token, system, message, attachments, report, temperature));
+  else return createResponse0(model, user, history_token, system, message, attachments, report, temperature);
 }
 
-async function createResponse0(model, user, history_token, system, message, image_url, report, temperature = undefined) {
+async function createResponse0(model, user, history_token, system, message, attachments, report, temperature = undefined) {
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!token) return null;
 
   const horizon = 3;
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = (conversation_key ? await memory.get(conversation_key, []) : []).slice(-(2 * horizon + 1));
-  let input = { role: 'user', content: (image_url && model.includes('vision')) ? [{ type: "text", text: message.trim() }, { type: "image_url", image_url: image_url }] : message.trim() };
+  let input = { role: 'user', content: attachments && attachments.length > 0 ? [{ type: "text", text: message.trim() }] : message.trim() };
+  for (let attachment of attachments ?? []) {
+    if (attachment.content_type.startsWith('image/') && model.includes('vision')) {
+      let format = attachment.content_type.split('/')[1];
+      if (![ 'png', 'jpeg', 'webp', 'gif' ].includes(format)) {
+        let uri = url.parse(attachment.url);
+        let stream = media.convert(await curl.request({ method: 'GET', hostname: uri.hostname, path: uri.path, query: uri.query, stream: true }), format, 'png');
+        let chunks = [];
+        attachment.url = await new Promise((resolve, reject) => {
+          stream.on('error', error => reject(error));
+          stream.on('data', chunk => chunks.push(chunk));
+          stream.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
+        });
+      }
+      input.content.push({ type: 'image_url', image_url: attachment.url });
+    } else {
+      // ignore
+    }
+  }
   conversation.push(input);
   
   let output = null;
