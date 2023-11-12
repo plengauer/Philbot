@@ -84,4 +84,4 @@ function ffmpeg(arguments, stdio = ['pipe', 'pipe', 'pipe']) {
   return process;
 }
 
-module.exports = { convert, concat_audio, relative_volume_audio }
+module.exports = { convert, concat_audio, relative_volume_audio, ffmpeg }

@@ -123,6 +123,7 @@ const http = require('http');
 const https = require('https');
 const url = require("url");
 
+const favicon = require('./endpoints/api/favicon.ico.js');
 const endpoint_about = require('./endpoints/api/about.js');
 const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');
 const endpoint_configure = require('./endpoints/api/configure.js');
@@ -310,7 +311,7 @@ async function dispatchAny(path, params, headers, payload, response) {
                 opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', result.status != 404 ? path : '*');
                 if (result.body) {
                     result.headers = result.headers ?? {};
-                    if (result.headers['content-type'] == 'application/zip') { // this should really be "if body is buffer"
+                    if (result.headers['content-type'] && (result.headers['content-type'] == 'application/zip' || result.headers['content-type'].startsWith('image/'))) { // this should really be "if body is buffer"
                         // body will be buffer
                     } else if (typeof result.body == 'object') {
                         result.body = JSON.stringify(result.body);
@@ -325,8 +326,17 @@ async function dispatchAny(path, params, headers, payload, response) {
                     opentelemetry_api.trace.getSpan(opentelemetry_api.context.active())?.setStatus({ code: opentelemetry_api.SpanStatusCode.ERROR });
                 }
                 response.writeHead(result.status, result.headers);
-                if (result.body) response.write(result.body);
-                response.end();
+                if (result.body) {
+                  if (result.body.pipe) {
+                    result.body.pipe(response);
+                    result.body.on('end', () => response.end());
+                  } else {
+                    response.write(result.body);
+                    response.end();
+                  }
+                } else {
+                  response.end();
+                }
             });
     }
 }
@@ -334,6 +344,7 @@ async function dispatchAny(path, params, headers, payload, response) {
 async function dispatchAPI(path, params, headers, payload) {
     if (path.startsWith('/discord/') && payload?.callback) discord.register_callback(payload.callback.guild_id, payload.callback.url);
     switch (path) {
+        case '/favicon.ico': return favicon.handle();
         case '/about': return endpoint_about.handle();
         case '/autorefresh': return endpoint_autorefresh.handle(params, headers);
         case '/configure': return endpoint_configure.handle();
@@ -364,7 +375,11 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/voice_callback/voice_reconnect': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_reconnect.handle(payload));
         case '/discord/voice_server_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_server_update.handle(payload));
         case '/discord/voice_state_update': return dispatchAPIAuthorized(headers, () => endpoint_discord_voice_state_update.handle(payload));
-        default: return { status: 404, body: 'Not found' };
+        default:
+          if(path.startsWith('/discord/')) {
+            opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', '/discord/*');
+            return { status: 200, body: 'OK' };
+          } else return { status: 404, body: 'Not found' };
     }
 }
 
