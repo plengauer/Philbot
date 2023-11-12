@@ -125,6 +125,14 @@ async function resetAvatar() {
   let model = { vendor: 'openai', name: "dall-e-3", size: "1024x1024", quality: "hd" };
   let me = await discord.me();
   let prompt = `An avatar for a Discord bot called "${me.username}"`;
+  switch (new Date().getUTCMonth() + 1) {
+    case 1: prompt += ' with a vibe of winter'; break;
+    case 3: prompt += ' with a vibe of spring'; break;
+    case 6: prompt += ' with a vibe of summer'; break;
+    case 9: prompt += ' with a vibe of fall'; break;
+    case 10: prompt += ' with a vibe of halloween'; break;
+    case 12: prompt += ' with a vibe of christmas'; break;
+  }
   let format = 'png';
   let avatar_stream = await ai.createImage(model, me.id, prompt, format);
   return discord.me_avatar_update(avatar_stream, format);

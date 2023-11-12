@@ -82,7 +82,7 @@ async function createResponse0(model, user, history_token, system, message, atta
   let conversation = (conversation_key ? await memory.get(conversation_key, []) : []).slice(-(2 * horizon + 1));
   let input = { role: 'user', content: attachments && attachments.length > 0 ? [{ type: "text", text: message.trim() }] : message.trim() };
   for (let attachment of attachments ?? []) {
-    if (attachment.content_type.startsWith('image/') && model.includes('vision')) {
+    if (attachment.content_type.startsWith('image/')) {
       let format = attachment.content_type.split('/')[1];
       let image_url = null;
       if ([ 'png', 'jpeg', 'webp', 'gif' ].includes(format)) {
@@ -106,12 +106,17 @@ async function createResponse0(model, user, history_token, system, message, atta
   
   let output = null;
   if (!isLanguageChatModel(model)) {
-    conversation = conversation.map(line => { return { role: line.role, content: typeof line.content == 'string' ? line.content : line.content.find(content => content.type == 'text' ).text }; });
-    let completion = await createCompletion(model, user, `Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation.map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ', report, temperature);
+    let completion = await createCompletion(model, user, `Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation
+        .map(line => { return { role: line.role, content: typeof line.content == 'string' ? line.content : line.content.find(content => content.type == 'text' ).text }; })
+        .map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ',
+      report, temperature);
     if (completion.startsWith('"') && completion.endsWith('"')) completion = completion.substring(1, completion.length - 1);
     output = { role: 'assistant', content: completion.trim() };
   } else {
-    let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(conversation), temperature: temperature, max_tokens: 1024 });
+    let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(
+        model.includes('vision') ? conversation :
+        conversation.map(line => { return { role: line.role, content: typeof line.content == 'string' ? line.content : line.content.find(content => content.type == 'text' ).text }; })
+      ), temperature: temperature, max_tokens: 1024 });
     output = response.choices[0].message;
     await report(response.model, computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens));
   }
