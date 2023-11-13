@@ -135,7 +135,7 @@ async function resetAvatar() {
   }
   let format = 'png';
   let avatar_stream = await ai.createImage(model, me.id, prompt, format);
-  return discord.me_avatar_update(avatar_stream, format);
+  return discord.me_avatar_update(format, avatar_stream);
 }
 
 module.exports = { handle }
