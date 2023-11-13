@@ -52,13 +52,13 @@ async function me() {
 }
 
 async function me_avatar_update(avatar_format, avatar_stream) {
-  let image = await new Promise((resolve, reject) => {
+  let avatar_image_base64 = await new Promise((resolve, reject) => {
     let chunks = [];
     avatar_stream.on('error', error => reject(error));
     avatar_stream.on('data', chunk => chunks.push(chunk));
     avatar_stream.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
   });
-  return HTTP(`/users/@me`, 'PATCH', { avatar: `data:image/${format};base64,${image}` });
+  return HTTP(`/users/@me`, 'PATCH', { avatar: `data:image/${avatar_format};base64,${avatar_image_base64}` });
 }
 
 async function user_retrieve(user_id) {
