@@ -93,8 +93,8 @@ resource = get_aggregated_resources([
 
 os.environ['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'] = 'delta'
 meter_provider = MeterProvider(metric_readers = [ PeriodicExportingMetricReader(OTLPMetricExporter(
-    endpoint = os.environ['OPENTELEMETRY_METRICS_API_ENDPOINT'],
-    headers = { 'Authorization': 'Api-Token ' + os.environ['OPENTELEMETRY_METRICS_API_TOKEN'] }
+    endpoint = os.environ.get('OPENTELEMETRY_METRICS_API_ENDPOINT'),
+    headers = { 'Authorization': 'Api-Token ' + os.environ.get('OPENTELEMETRY_METRICS_API_TOKEN') }
 #    preferred_temporality = { Counter: AggregationTemporality.DELTA }
 )) ], resource = resource)
 opentelemetry.metrics.set_meter_provider(meter_provider)
@@ -102,8 +102,8 @@ opentelemetry.metrics.set_meter_provider(meter_provider)
 tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource=resource)
 tracer_provider.add_span_processor(
     BatchSpanProcessor(OTLPSpanExporter(
-        endpoint = os.environ['OPENTELEMETRY_TRACES_API_ENDPOINT'],
-        headers = { 'Authorization': 'Api-Token ' + os.environ['OPENTELEMETRY_TRACES_API_TOKEN'] }
+        endpoint = os.environ.get('OPENTELEMETRY_TRACES_API_ENDPOINT'),
+        headers = { 'Authorization': 'Api-Token ' + os.environ.get('OPENTELEMETRY_TRACES_API_TOKEN') }
     ))
 )
 opentelemetry.trace.set_tracer_provider(tracer_provider)
