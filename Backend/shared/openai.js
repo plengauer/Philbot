@@ -116,7 +116,7 @@ async function createResponse0(model, user, history_token, system, message, atta
     let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(
         model.includes('vision') ? conversation :
         conversation.map(line => { return { role: line.role, content: typeof line.content == 'string' ? line.content : line.content.find(content => content.type == 'text' ).text }; })
-      ), temperature: temperature, max_tokens: 1024 });
+      ), temperature: temperature, max_tokens: model.includes('vision') ? 4096 : undefined });
     output = response.choices[0].message;
     await report(response.model, computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens));
   }
