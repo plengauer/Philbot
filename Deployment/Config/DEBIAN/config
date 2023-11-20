@@ -8,6 +8,14 @@ db_endblock
 
 db_beginblock
 db_input critical philbot/DISCORD_CLIENT_ID || true
+db_endblock
+
+db_go
+
+db_get philbot/DISCORD_CLIENT_ID
+db_subst philbot/DISCORD_CLIENT_ID DISCORD_CLIENT_ID $RET
+
+db_beginblock
 db_input critical philbot/DISCORD_API_TOKEN || true
 db_input critical philbot/OWNER_DISCORD_USER_ID || true
 db_endblock

@@ -7,7 +7,7 @@ const openai = require('./openai.js');
 const googleai = require('./googleai.js');
 const speechify = require('./speechify.js');
 
-const VENDORS = ['openai', 'google', 'speechify', 'microsoft' ];
+const VENDORS = [ 'openai', 'google', 'speechify', 'microsoft' ];
 
 const meter = opentelemetry.metrics.getMeter('ai');
 meter.createObservableGauge('ai.cost.slotted.absolute').addCallback(async (result) => Promise.all(VENDORS.map(vendor => getCurrentCost(vendor).then(cost => result.observe(cost, {'ai.vendor': vendor})))));

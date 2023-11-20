@@ -2,20 +2,22 @@ Template: philbot/DEPLOYMENT
 Type: select
 Choices: development, staging, production
 Description: Deployment:
+ Select whether the install is a production, staging, or development deployment.
 
 Template: philbot/DISCORD_CLIENT_ID
 Type: string
-Description: Discord Client ID:
- Create a new application here https://discord.com/developers/applications
+Description: Discord Application ID:
+ Create a new application here https://discord.com/developers/applications and provide the Application ID.
 
 Template: philbot/DISCORD_API_TOKEN
 Type: string
 Description: Discord API Token:
- Get token from here https://discord.com/developers/applications
+ Get token from here https://discord.com/developers/applications/${DISCORD_CLIENT_ID}/bot via the "Reset Token" option.
 
 Template: philbot/OWNER_DISCORD_USER_ID
 Type: string
 Description: Discord Owner User ID:
+ Provide the ID of the Discord User that should be treated as the owner of the bot.
 
 Template: philbot/OPENTELEMETRY_TRACES_API_ENDPOINT
 Type: string
@@ -48,11 +50,13 @@ Description: Link to observability data:
 Template: philbot/OPENAI_API_TOKEN
 Type: string
 Description: OpenAI API Token:
+ Create an OpenAI account to provide an API Key from https://platform.openai.com/api-keys. This is needed for any AI, including understanding text, voice and image input, as well as speaking.
 
 Template: philbot/OPENAI_COST_LIMIT
 Type: string
 Default: 1
 Description: OpenAI Cost Limit:
+ Provide the usage limit configured at https://platform.openai.com/account/limits.
 
 Template: philbot/GCP_T2S_TOKEN
 Type: string
