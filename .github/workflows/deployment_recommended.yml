@@ -1,17 +1,17 @@
-name: Publish Deployment Baremetal
+name: Publish Deployment Recommended
 
 on:
   push:
     branches: main
     paths:
-      - 'Deployment/Baremetal/**'
+      - 'Deployment/Recommended/**'
       
 jobs:
   publish:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Deployment/Baremetal
+        working-directory: ./Deployment/Recommended
 
     steps:
       - uses: actions/checkout@v2
@@ -24,8 +24,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
         with:
-          tag_name: deployment-baremetal-v${{ steps.version.outputs.version }}
-          release_name: Release Deployment Baremetal v${{ steps.version.outputs.version }}
+          tag_name: deployment-recommended-v${{ steps.version.outputs.version }}
+          release_name: Release Deployment Recommended v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
       - uses: actions/upload-release-asset@v1
@@ -35,5 +35,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./Deployment/package.deb
-          asset_name: philbot_deployment_baremetal_${{ steps.version.outputs.version }}.deb
+          asset_name: philbot_deployment_recommended_${{ steps.version.outputs.version }}.deb
           asset_content_type: application/octet-stream
