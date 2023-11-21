@@ -9,7 +9,7 @@ Run the following command to install on your own infrastructure:
 ```
 echo "deb [arch=all] http://philbot.eu:8000/ stable main" | sudo tee /etc/apt/sources.list.d/example.list
 sudo apt-get update
-sudo apt-get install philbot-containerized
+sudo apt-get install philbot
 ```
 
 While this Bot enjoys increased popularity (about 1500 users as of September 2023), it also serves as a learning platform for its developers.
