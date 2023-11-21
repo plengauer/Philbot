@@ -101,7 +101,7 @@ Template: philbot/RIOT_TFT_API_TOKEN
 Type: string
 Description: Riot TFT API Token:
  Create an account on https://developer.riotgames.com and create a new app for the TFT API. An app has to be manually approved by a human, you can leave this key empty for the time being and come back here when a key has been provided to you.
- 
+
 Template: philbot/RAPID_API_TOKEN
 Type: string
 Description: Rapid API Token:
