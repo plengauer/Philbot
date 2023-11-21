@@ -22,3 +22,6 @@ if [ ! -f "/opt/philbot/shards" ]; then
   echo "SHARD_COUNT=1" > /opt/philbot/shards
 fi
 bash /usr/bin/philbot_start
+
+invite_link=$(curl -v http://127.0.0.1:8080/deploy 2>&1 | grep location | rev | cut -d' ' -f1 | rev)
+echo "Invite with $invite_link"
