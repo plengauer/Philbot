@@ -17,77 +17,91 @@ Description: Discord API Token:
 Template: philbot/OWNER_DISCORD_USER_ID
 Type: string
 Description: Discord Owner User ID:
- Provide the ID of the Discord User that should be treated as the owner of the bot.
+ Provide the ID of the Discord User that should be treated as the owner of the bot. This user will have special permissions. A valid User ID is usually a snowflake (a very long sequence of exclusively numbers), not the username! 
 
 Template: philbot/OPENTELEMETRY_TRACES_API_ENDPOINT
 Type: string
 Description: Open Telemetry Traces API Endpoint:
+ Provide the endpoint that self-monitoring traces should be sent to, leave empty if no traces should be collected. For Dynatrace, an endpoint may look like this: https://<tenant-domain>/api/v2/otlp/v1/traces.
 
 Template: philbot/OPENTELEMETRY_TRACES_API_TOKEN
 Type: string
 Description: Open Telemetry Traces API Token:
+ Provide the token for the traces endpoint. For Dynatrace, this token must have the "ingest traces" scope.
 
 Template: philbot/OPENTELEMETRY_METRICS_API_ENDPOINT
 Type: string
 Description: Open Telemetry Metrics API Endpoint:
+ Provide the endpoint that self-monitoring metrics should be sent to, leave empty if no metrics should be collected. For Dynatrace, an endpoint may look like this: https://<tenant-domain>/api/v2/otlp/v1/metrics.
 
 Template: philbot/OPENTELEMETRY_METRICS_API_TOKEN
 Type: string
 Description: Open Telemetry Metrics API Token:
+ Provide the token for the metrics endpoint. For Dynatrace, this token must have the "ingest metrics" scope.
 
 Template: philbot/OPENTELEMETRY_LOGS_API_ENDPOINT
 Type: string
 Description: Open Telemetry Logs API Endpoint:
+ Provide the endpoint that self-monitoring logs should be sent to, leave empty if no logs should be collected. For Dynatrace, an endpoint may look like this: https://<tenant-domain>/api/v2/otlp/v1/logs.
 
 Template: philbot/OPENTELEMETRY_LOGS_API_TOKEN
 Type: string
 Description: Open Telemetry Logs API Token:
+ Provide the token for the traces endpoint. For Dynatrace, this token must have the "ingest logs" scope.
 
 Template: philbot/LINK_OBSERVABILITY
 Type: string
 Description: Link to observability data:
+ Provide any arbitrary full URL to the observability data, leave empty if no data is collected. This link will be used to show users the current health state of the bot.
 
 Template: philbot/OPENAI_API_TOKEN
 Type: string
 Description: OpenAI API Token:
- Create an OpenAI account to provide an API Key from https://platform.openai.com/api-keys. This is needed for any AI, including understanding text, voice and image input, as well as speaking.
+ Create an OpenAI account at https://platform.openai.com/signup and provide an API Key from https://platform.openai.com/api-keys. This is required for any AI, including understanding text, voice and image input, as well as speaking. You DO NOT need a ChatGPT+ account! This key will be used for all the AI-based functionality (intelligent responses to texts, translations, drawings, understanding speech as well as speaking).
 
 Template: philbot/OPENAI_COST_LIMIT
 Type: string
 Default: 1
 Description: OpenAI Cost Limit:
- Provide the usage limit configured at https://platform.openai.com/account/limits.
+ Provide the usage limit configured at https://platform.openai.com/account/limits. The limit must be an integer or floating point number (with . as decimal separator) without trailing or leading dollar signs ($).
 
 Template: philbot/GCP_T2S_TOKEN
 Type: string
 Description: Google AI Token:
+ Create and provide an API Token for Google Text to Speech from https://console.cloud.google.com/apis/credentials. This is optional to provide additional and cheaper text-to-speech capabilities.
 
 Template: philbot/GOOGLEAI_COST_LIMIT
 Type: string
 Default: 1
 Description: GoogleAI Cost Limit:
+ Provide the desired usage limit. The limit must be an integer or floating point number (with . as decimal separator) without trailing or leading dollar signs ($). It must be bigger than zero but can be very low because Google offers a big free contingent (for example "1").
 
 Template: philbot/SPEECHIFY_API_TOKEN
 Type: string
 Description: Speechify API_TOKEN:
+ Create an account at https://speechify.com for voice cloning and create and provide an API Token. This is optional for voice cloning. In case you do not want to create an account or provide an API key, the bot will not have any voice cloning abilities.
 
 Template: philbot/SPEECHIFY_COST_LIMIT
 Type: string
 Default: 1
 Description: Speechify Cost Limit:
+ Provide the desired usage limit. The limit must be an integer or floating point number (with . as decimal separator) without trailing or leading dollar signs ($). It must be bigger than zero but can be very low because Speechify offers a big included contingent (for example "1").
 
 Template: philbot/YOUTUBE_API_TOKEN
 Type: string
 Description: Youtube API Token:
+ Create and provide an API Token for Youtube from https://console.cloud.google.com/apis/credentials. This is mandatory and can be the same key as for Google Text to Speech assuming the key has scopes for both APIs.
 
 Template: philbot/RIOT_API_TOKEN
 Type: string
 Description: Riot API Token:
+ Create an account on https://developer.riotgames.com and create a new app for the League of Legends API. An app has to be manually approved by a human, you can leave this key empty for the time being and come back here when a key has been provided to you. 
 
 Template: philbot/RIOT_TFT_API_TOKEN
 Type: string
 Description: Riot TFT API Token:
-
+ Create an account on https://developer.riotgames.com and create a new app for the TFT API. An app has to be manually approved by a human, you can leave this key empty for the time being and come back here when a key has been provided to you.
+ 
 Template: philbot/RAPID_API_TOKEN
 Type: string
 Description: Rapid API Token:
@@ -103,3 +117,5 @@ Description: Tracker GG API Token:
 Template: philbot/PUBLIC_URL
 Type: string
 Description: Public URL:
+ Please provide a full URL with which the bot is reachable from the public internet.
+ 
