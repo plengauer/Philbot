@@ -299,6 +299,7 @@ async function dispatchAny(path, params, headers, payload, response) {
             stream.pipe(response);
         });
     } else {
+        opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', path);
         return dispatchAPI(path, params, headers, payload)
             .catch(error => {
                 console.error(error.stack);
@@ -309,7 +310,7 @@ async function dispatchAny(path, params, headers, payload, response) {
                 if (!result) {
                     result = { status: 200, body: 'Success' };
                 }
-                opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', result.status != 404 ? path : '*');
+                if (result.status == 404) opentelemetry_api.trace.getActiveSpan()?.setAttribute('http.route', '*');
                 if (result.body) {
                     result.headers = result.headers ?? {};
                     if (result.headers['content-type'] && (result.headers['content-type'] == 'application/zip' || result.headers['content-type'].startsWith('image/'))) { // this should really be "if body is buffer"
