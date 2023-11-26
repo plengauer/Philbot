@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: sudo apt-get install devscripts debhelper
+      - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
         id: version
       - run: dpkg-deb --root-owner-group -Zgzip --build . ../package.deb
