@@ -7,9 +7,7 @@ baremetal (install all dependencies on the system, slightly reduced downtime whe
 containerized (install all tiers as docker containers, less cluttered, discord shards manually scalable in case discord enforces sharding due to much usage). Kubernetes deployment will come soon.
 Run the following command to install on your own infrastructure:
 ```
-echo "deb [arch=all] http://philbot.eu:8000/ stable main" | sudo tee /etc/apt/sources.list.d/example.list
-sudo apt-get update
-sudo apt-get install philbot
+wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh -E
 ```
 
 While this Bot enjoys increased popularity (about 1500 users as of September 2023), it also serves as a learning platform for its developers.
