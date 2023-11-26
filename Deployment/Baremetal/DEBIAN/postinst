@@ -19,5 +19,5 @@ systemctl daemon-reload
 systemctl enable philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice
 bash /usr/bin/philbot_start
 
-invite_link=$(curl -v http://127.0.0.1:8080/deploy 2>&1 | grep location | rev | cut -d' ' -f1 | rev)
+invite_link=$(curl -v http://127.0.0.1:8080/invite 2>&1 | grep location | rev | cut -d' ' -f1 | rev)
 echo "Invite with $invite_link"

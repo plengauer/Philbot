@@ -128,6 +128,7 @@ const endpoint_about = require('./endpoints/api/about.js');
 const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');
 const endpoint_configure = require('./endpoints/api/configure.js');
 const endpoint_debug = require('./endpoints/api/debug.js');
+const endpoint_invite = require('./endpoints/api/invite.js');
 const endpoint_deploy = require('./endpoints/api/deploy.js');
 const endpoint_help = require('./endpoints/api/help.js');
 const endpoint_monitoring = require('./endpoints/api/monitoring.js');
@@ -349,6 +350,7 @@ async function dispatchAPI(path, params, headers, payload) {
         case '/autorefresh': return endpoint_autorefresh.handle(params, headers);
         case '/configure': return endpoint_configure.handle();
         case '/debug': return endpoint_debug.handle();
+        case '/invite': return endpoint_invite.handle();
         case '/deploy': return endpoint_deploy.handle();
         case '/help': return endpoint_help.handle();
         case '/monitoring': return endpoint_monitoring.handle();

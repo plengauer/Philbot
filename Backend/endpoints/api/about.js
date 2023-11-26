@@ -8,7 +8,7 @@ async function handle() {
     .replace(/\$\{name\}/g, `${me.username}`)
     .replace(/\$\{version\}/g, JSON.parse('' + fs.readFileSync('package.json')).version)
     .replace(/\$\{link_code\}/g, `this <a href="/code">link</a>`)
-    .replace(/\$\{link_discord_add\}/g, `this <a href="/deploy">link</a>`)
+    .replace(/\$\{link_discord_add\}/g, `this <a href="/invite">link</a>`)
     .replace(/\$\{link_monitoring\}/g, `this <a href="/monitoring">link</a>`)
     .replace(/\*\*(.*)\*\*/g, '<b>$1</b>')
     .replace(/\n/g, '<p/>');
