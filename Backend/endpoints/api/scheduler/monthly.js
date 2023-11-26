@@ -129,7 +129,7 @@ async function resetAvatar() {
     case 1: prompt += ' with a vibe of winter'; break;
     case 3: prompt += ' with a vibe of spring'; break;
     case 6: prompt += ' with a vibe of summer'; break;
-    case 9: prompt += ' with a vibe of fall'; break;
+    case 9: prompt += ' with a vibe of autumn'; break;
     case 10: prompt += ' with a vibe of halloween'; break;
     case 12: prompt += ' with a vibe of christmas'; break;
   }
