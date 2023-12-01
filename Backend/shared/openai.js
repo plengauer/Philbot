@@ -106,7 +106,7 @@ async function createResponse0(model, user, history_token, system, message, atta
   
   let output = null;
   if (!isLanguageChatModel(model)) {
-    let completion = await createCompletion(model, user, `Complete the conversation.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation
+    let completion = await createCompletion(model, user, `Complete the conversation with exactly one additional response.` + (system ? `\nassistant: "${system}"` : '') + '\n' + conversation
         .map(line => { return { role: line.role, content: typeof line.content == 'string' ? line.content : line.content.find(content => content.type == 'text' ).text }; })
         .map(line => `${line.role}: "${line.content}"`).join('\n') + '\nassistant: ',
       report, temperature);
