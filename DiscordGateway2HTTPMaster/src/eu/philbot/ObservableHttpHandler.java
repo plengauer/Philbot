@@ -60,6 +60,11 @@ public class ObservableHttpHandler {
                         else span.setAttribute("http.request_content_length_uncompressed", bytes);
                         return result;
                     }
+
+                    @Override
+                    public void close() {
+                        inner.close();
+                    }
                 };
                 OutputStream out = new OutputStream() {
                     private final OutputStream inner = exchange.getResponseBody();
@@ -73,6 +78,7 @@ public class ObservableHttpHandler {
                     public void close() throws IOException {
                         try {
                             super.close();
+                            inner.close();
                         } finally {
                             span.setAttribute("http.status_code", exchange.getResponseCode());
                             // span.setAttribute("http.status_text", "OK");
