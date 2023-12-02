@@ -63,6 +63,7 @@ public class ObservableHttpHandler {
 
                     @Override
                     public void close() {
+                        super.close();
                         inner.close();
                     }
                 };
