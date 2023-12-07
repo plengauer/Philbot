@@ -1,2 +1,2 @@
 FROM otel/opentelemetry-collector:latest
-EXPOSE 4319
+EXPOSE 4318
