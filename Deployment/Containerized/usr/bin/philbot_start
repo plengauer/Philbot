@@ -28,6 +28,8 @@ start() {
     docker start philbot-$name
 }
 
+start selfmonitoring selfmonitoring --mount type=bind,source=/var/lib/philbot/collector.yaml,target=/etc/otelcol/config.yaml
+
 start voice voice \
     --env PORT=12345 \
     --env STATE_STORAGE_DIRECTORY=/sessions \
