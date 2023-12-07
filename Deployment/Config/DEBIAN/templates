@@ -19,6 +19,13 @@ Type: string
 Description: Discord Owner User ID:
  Provide the ID of the Discord User that should be treated as the owner of the bot. This user will have special permissions. A valid User ID is usually a snowflake (a very long sequence of exclusively numbers), not the username! 
 
+Template: philbot/SELF_MONITORING
+Type: select
+Choices: yes, no
+Default: yes
+Description: Self Monitoring:
+ Do you want to send anonymized self-monitoring data to the maintainer?
+
 Template: philbot/OPENTELEMETRY_TRACES_API_ENDPOINT
 Type: string
 Description: Open Telemetry Traces API Endpoint:
@@ -116,6 +123,7 @@ Description: Tracker GG API Token:
 
 Template: philbot/PUBLIC_URL
 Type: string
+Default: http://philbot.eu
 Description: Public URL:
- Please provide a full URL with which the bot is reachable from the public internet.
+ Please provide a full URL with which the bot is reachable from the public internet, use an empty string if the bot should auto-detect its public IP and use that as its public URL.
  
