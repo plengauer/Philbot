@@ -9,7 +9,7 @@ value() {
 }
 
 config() {
-    echo "$@=\"$(value $@)\""
+    echo "$@=$(value $@)"
 }
 
 kvp_deployment=$(config DEPLOYMENT | sed 's/DEPLOYMENT/deployment.environment/g')
@@ -85,4 +85,3 @@ echo $(config LINK_OBSERVABILITY) >> $destination_directory/environment.properti
 if [ "$(config SELF_MONITORING)" != "yes" ]; then
   cat /var/lib/philbot-config/collector.yaml | sed 's/\$ENDPOINT_LOGS/'$(value OPENTELEMETRY_LOGS_API_ENDPOINT)'/' | sed 's/\$ENDPOINT_TRACES/'$(value OPENTELEMETRY_TRACES_API_ENDPOINT)'/' | sed 's/\$ENDPOINT_METRICS/'$(value OPENTELEMETRY_METRICS_API_ENDPOINT)'/' | sed 's/\$HEADERS_LOGS/'$(value OPENTELEMETRY_LOGS_API_TOKEN)'/' | sed 's/\$HEADERS_METRICS/'$(value OPENTELEMETRY_METRICS_API_TOKEN)'/' | sed 's/\$HEADERS_TRACES/'$(value OPENTELEMETRY_TRACES_API_TOKEN)'/' > $destination_directory/collector.yaml
 fi
-
