@@ -89,14 +89,14 @@ function opentelemetry_create() {
       new BatchSpanProcessor(
         new OTLPTraceExporter({
           url: process.env.OPENTELEMETRY_TRACES_API_ENDPOINT,
-          headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_TRACES_API_TOKEN },
+          headers: { Authorization: process.env.OPENTELEMETRY_TRACES_API_TOKEN },
         }),
       )
     ),
     metricReader: new PeriodicExportingMetricReader({
       exporter: new OTLPMetricExporter({
         url: process.env.OPENTELEMETRY_METRICS_API_ENDPOINT,
-        headers: { Authorization: "Api-Token " + process.env.OPENTELEMETRY_METRICS_API_TOKEN },
+        headers: { Authorization: process.env.OPENTELEMETRY_METRICS_API_TOKEN },
         temporalityPreference: AggregationTemporality.DELTA
       }),
       exportIntervalMillis: 5000,

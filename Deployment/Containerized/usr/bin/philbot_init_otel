@@ -5,12 +5,12 @@ if [ -f /var/lib/philbot/environment.properties.deployment ] && [ -f /usr/bin/op
   export OTEL_RESOURCE_ATTRIBUTES="$OTEL_RESOURCE_ATTRIBUTES,service.namespace=Philbot,service.version="$(apt show philbot-containerized 2> /dev/null | grep Version | awk '{ print $2 }')
   export OTEL_SHELL_TRACES_ENABLE=TRUE
   export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="$OPENTELEMETRY_TRACES_API_ENDPOINT"
-  export OTEL_EXPORTER_OTLP_TRACES_HEADERS=authorization=$(echo "Api-Token $OPENTELEMETRY_TRACES_API_TOKEN" | jq -Rr @uri)
+  export OTEL_EXPORTER_OTLP_TRACES_HEADERS=authorization=$(echo "$OPENTELEMETRY_TRACES_API_TOKEN" | jq -Rr @uri)
   export OTEL_SHELL_METRICS_ENABLE=TRUE
   export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="$OPENTELEMETRY_METRICS_API_ENDPOINT"
-  export OTEL_EXPORTER_OTLP_METRICS_HEADERS=authorization=$(echo "Api-Token $OPENTELEMETRY_METRICS_API_TOKEN" | jq -Rr @uri)
+  export OTEL_EXPORTER_OTLP_METRICS_HEADERS=authorization=$(echo "$OPENTELEMETRY_METRICS_API_TOKEN" | jq -Rr @uri)
   export OTEL_SHELL_LOGS_ENABLE=TRUE
   export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="$OPENTELEMETRY_LOGS_API_ENDPOINT"
-  export OTEL_EXPORTER_OTLP_LOGS_HEADERS=authorization=$(echo "Api-Token $OPENTELEMETRY_LOGS_API_TOKEN" | jq -Rr @uri)
+  export OTEL_EXPORTER_OTLP_LOGS_HEADERS=authorization=$(echo "$OPENTELEMETRY_LOGS_API_TOKEN" | jq -Rr @uri)
   source /usr/bin/opentelemetry_shell.sh
 fi
