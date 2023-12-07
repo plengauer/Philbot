@@ -3,9 +3,13 @@ set -e
 destination_directory=$1
 . /usr/share/debconf/confmodule
 
-config() {
+value() {
     db_get philbot/"$@"
-    echo "$@=$RET"
+    echo "$RET"
+}
+
+config() {
+    echo "$@=\"$(value $@)\""
 }
 
 kvp_deployment=$(config DEPLOYMENT | sed 's/DEPLOYMENT/deployment.environment/g')
@@ -79,6 +83,6 @@ echo $(config YOUTUBE_API_TOKEN) >> $destination_directory/environment.propertie
 echo $(config LINK_OBSERVABILITY) >> $destination_directory/environment.properties.backend
 
 if [ "$(config SELF_MONITORING)" != "yes" ]; then
-  cat /var/lib/philbot-config/collector.yaml | sed 's/\$ENDPOINT_LOGS/'$OPENTELEMETRY_LOGS_API_ENDPOINT'/' | sed 's/\$ENDPOINT_TRACES/'$OPENTELEMETRY_TRACES_API_ENDPOINT'/' | sed 's/\$ENDPOINT_METRICS/'$OPENTELEMETRY_METRICS_API_ENDPOINT'/' | sed 's/\$HEADERS_LOGS/'$OPENTELEMETRY_LOGS_API_TOKEN'/' | sed 's/\$HEADERS_METRICS/'$OPENTELEMETRY_METRICS_API_TOKEN'/' | sed 's/\$HEADERS_TRACES/'$OPENTELEMETRY_TRACES_API_TOKEN'/' > $destination_directory/collector.yaml
+  cat /var/lib/philbot-config/collector.yaml | sed 's/\$ENDPOINT_LOGS/'$(config OPENTELEMETRY_LOGS_API_ENDPOINT)'/' | sed 's/\$ENDPOINT_TRACES/'$(config OPENTELEMETRY_TRACES_API_ENDPOINT)'/' | sed 's/\$ENDPOINT_METRICS/'$(config OPENTELEMETRY_METRICS_API_ENDPOINT)'/' | sed 's/\$HEADERS_LOGS/'$(config OPENTELEMETRY_LOGS_API_TOKEN)'/' | sed 's/\$HEADERS_METRICS/'$(config OPENTELEMETRY_METRICS_API_TOKEN)'/' | sed 's/\$HEADERS_TRACES/'$(config OPENTELEMETRY_TRACES_API_TOKEN)'/' > $destination_directory/collector.yaml
 fi
 

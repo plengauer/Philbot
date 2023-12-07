@@ -25,10 +25,10 @@ CMD exec java -Xmx100m -XX:+ExitOnOutOfMemoryError \
     -Dotel.resource.attributes=service.namespace="Philbot",service.version=$(cat version.txt),service.instance.id=$(uuidgen) \
     -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.protocol=http/protobuf \
     -Dotel.exporter.otlp.traces.endpoint=$OPENTELEMETRY_TRACES_API_ENDPOINT \
-    -Dotel.exporter.otlp.traces.headers="Authorization="$OPENTELEMETRY_TRACES_API_TOKEN \
+    -Dotel.exporter.otlp.traces.headers="Authorization=$OPENTELEMETRY_TRACES_API_TOKEN" \
     -Dotel.metrics.exporter=otlp -Dotel.exporter.otlp.metrics.protocol=http/protobuf \
     -Dotel.exporter.otlp.metrics.endpoint=$OPENTELEMETRY_METRICS_API_ENDPOINT \
-    -Dotel.exporter.otlp.metrics.headers="Authorization="$OPENTELEMETRY_METRICS_API_TOKEN \
+    -Dotel.exporter.otlp.metrics.headers="Authorization=$OPENTELEMETRY_METRICS_API_TOKEN" \
     -javaagent:./opentelemetry-javaagent.jar \
     -cp $(find . -name '*.jar' | paste -sd ":" -):. eu.philbot.DiscordGateway2HTTPMaster
 
