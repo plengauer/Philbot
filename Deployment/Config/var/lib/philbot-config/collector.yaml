@@ -1,0 +1,40 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+
+exporters:
+  otlp/logs:
+    endpoint: "$ENDPOINT_LOGS"
+    headers:
+      Authorization: "$HEADER_LOGS"
+  
+  otlp/metrics:
+    endpoint: "$ENDPOINT_METRICS"
+    headers:
+      Authorization: "$HEADER_METRICS"
+  
+  otlp/traces:
+    endpoint: "$ENDPOINT_TRACES"
+    headers:
+      Authorization: "$HEADER_TRACES"
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      exporters: [otlp/logs]
+      processors: [batch]
+
+    metrics:
+      receivers: [otlp]
+      exporters: [otlp/metrics]
+      processors: [batch]
+
+    traces:
+      receivers: [otlp]
+      exporters: [otlp/traces]
+      processors: [batch]

@@ -76,3 +76,8 @@ echo $(config APEX_LEGENDS_API_TOKEN) >> $destination_directory/environment.prop
 echo $(config TRACKER_GG_API_TOKEN) >> $destination_directory/environment.properties.backend
 echo $(config YOUTUBE_API_TOKEN) >> $destination_directory/environment.properties.backend
 echo $(config LINK_OBSERVABILITY) >> $destination_directory/environment.properties.backend
+
+if [ "$(config SELF_MONITORING)" != "yes" ]; then
+  cat /var/lib/philbot-config/collector.yaml | sed 's/\$ENDPOINT_LOGS/'$OPENTELEMETRY_LOGS_API_ENDPOINT'/' | sed 's/\$ENDPOINT_TRACES/'$OPENTELEMETRY_TRACES_API_ENDPOINT'/' | sed 's/\$ENDPOINT_METRICS/'$OPENTELEMETRY_METRICS_API_ENDPOINT'/' | sed 's/\$HEADERS_LOGS/'$OPENTELEMETRY_LOGS_API_TOKEN'/' | sed 's/\$HEADERS_METRICS/'$OPENTELEMETRY_METRICS_API_TOKEN'/' | sed 's/\$HEADERS_TRACES/'$OPENTELEMETRY_TRACES_API_TOKEN'/' > $destination_directory/collector.yaml
+fi
+
