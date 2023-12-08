@@ -26,15 +26,15 @@ service:
   pipelines:
     logs:
       receivers: [otlp]
-      exporters: [otlp/logs]
+      exporters: [otlphttp/logs]
       processors: [batch]
 
     metrics:
       receivers: [otlp]
-      exporters: [otlp/metrics]
+      exporters: [otlphttp/metrics]
       processors: [batch]
 
     traces:
       receivers: [otlp]
-      exporters: [otlp/traces]
+      exporters: [otlphttp/traces]
       processors: [batch]
