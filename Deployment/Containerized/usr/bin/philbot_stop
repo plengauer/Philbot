@@ -3,5 +3,5 @@ source /usr/bin/philbot_init_otel
 source /opt/philbot/shards
 shard_container_names=$(echo philbot-discordgateway2http_$(seq -s " philbot-discordgateway2http_" 0 $(($SHARD_COUNT-1))))
 docker stop philbot-scheduler philbot-discordgateway2httpmaster $shard_container_names philbot-backend philbot-voice philbot-selfmonitoring
-docker stop philbot-scheduler philbot-discordgateway2httpmaster $shard_container_names philbot-backend philbot-voice philbot-selfmonitoring
+docker remove philbot-scheduler philbot-discordgateway2httpmaster $shard_container_names philbot-backend philbot-voice philbot-selfmonitoring
 exit 0
