@@ -197,6 +197,8 @@ async function request_rate_limited_v2(options, request) {
   if (!rate_limits[options.hostname + cpath] || rate_limits[options.hostname + cpath].length == 0) rate_limits[options.hostname + cpath] = [ create_rate_limit(1, 1, 0, true) ];
   if (!active_counts[options.hostname]) active_counts[options.hostname] = 0;
   if (!active_counts[options.hostname + cpath]) active_counts[options.hostname + cpath] = 0;
+
+  let builtin_delay = 1;
   
   for(;;) {
     // check and reset slotting of all rate limits
@@ -245,7 +247,8 @@ async function request_rate_limited_v2(options, request) {
     
     // if the request still was 429, restart the process and give hint about when to retry.
     if (response.status == 429) {
-      let next = response.headers['retry-after'] ? parseInt(response.headers['retry-after']) : 1;
+      builtin_delay *= 2;
+      let next = response.headers['retry-after'] ? parseInt(response.headers['retry-after']) : builtin_delay;
       rate_limits[options.hostname].filter(rl => rl.fake || rl.count + active_counts[options.hostname] >= rl.max).forEach(rl => rl.next = next);
       rate_limits[options.hostname + cpath].filter(rl => rl.fake || rl.count + active_counts[options.hostname + cpath] >= rl.max).forEach(rl => rl.next = next);
       console.error(`HTTP rate limit hit (${options.hostname}): ` + rate_limits[options.hostname].map(rl => `${rl.count}/${rl.max} (${rl.length},${rl.next})`).join(','));
