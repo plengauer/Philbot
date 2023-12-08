@@ -1,6 +1,10 @@
 #!/bin/bash
 if [ -f /var/lib/philbot/environment.properties.deployment ] && [ -f /usr/bin/opentelemetry_shell.sh ] && [ -z "$OTEL_SHELL_INJECTED" ]; then
-  source /var/lib/philbot/environment.properties.deployment
+  while IFS= read -r line; do
+    key=$(echo "$line" | cut -d'=' -f1)
+    value=$(echo "$line" | cut -d'=' -f2-)
+    export "$key=$value"
+  done < /var/lib/philbot/environment.properties.deployment
   export OTEL_SERVICE_NAME="Philbot Deployment"
   export OTEL_RESOURCE_ATTRIBUTES="$OTEL_RESOURCE_ATTRIBUTES,service.namespace=Philbot,service.version="$(apt show philbot-containerized 2> /dev/null | grep Version | awk '{ print $2 }')
   export OTEL_SHELL_TRACES_ENABLE=TRUE
@@ -12,5 +16,6 @@ if [ -f /var/lib/philbot/environment.properties.deployment ] && [ -f /usr/bin/op
   export OTEL_SHELL_LOGS_ENABLE=TRUE
   export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="$OPENTELEMETRY_LOGS_API_ENDPOINT"
   export OTEL_EXPORTER_OTLP_LOGS_HEADERS=authorization=$(echo "$OPENTELEMETRY_LOGS_API_TOKEN" | jq -Rr @uri)
+  export OTEL_SHELL_SDK_OUTPUT_REDIRECT=/dev/null
   source /usr/bin/opentelemetry_shell.sh
 fi

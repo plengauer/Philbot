@@ -1,5 +1,5 @@
 Package: philbot-baremetal
-Version: 2.0.0
+Version: 2.0.1
 Architecture: all
 Depends: philbot-config (>= 2.0.0), bash, wget, tar, jq, ruby, ruby-bundler, nodejs (>= 20.0.0), npm, python3, python3-pip, python3-venv, libopusfile0, ffmpeg, curl, iptables-persistent, opentelemetry-shell (>= 2.4.3)
 Conflicts: philbot-containerized, philbot-k8s
