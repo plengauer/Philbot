@@ -31,11 +31,11 @@ db_endblock
 db_get philbot/SELF_MONITORING
 if [ "$RET" = "yes" ]; then
   root_url="http://philbot.eu"
-  db_set philbot/OPENTELEMETRY_TRACES_API_ENDPOINT "$root_url:4318"
+  db_set philbot/OPENTELEMETRY_TRACES_API_ENDPOINT "$root_url:4318/v1/traces"
   db_set philbot/OPENTELEMETRY_TRACES_API_TOKEN ""
-  db_set philbot/OPENTELEMETRY_METRICS_API_ENDPOINT "$root_url:4318"
+  db_set philbot/OPENTELEMETRY_METRICS_API_ENDPOINT "$root_url:4318/v1/metrics"
   db_set philbot/OPENTELEMETRY_METRICS_API_TOKEN ""
-  db_set philbot/OPENTELEMETRY_LOGS_API_ENDPOINT "$root_url:4318"
+  db_set philbot/OPENTELEMETRY_LOGS_API_ENDPOINT "$root_url:4318/v1/logs"
   db_set philbot/OPENTELEMETRY_LOGS_API_TOKEN ""
   db_set philbot/LINK_OBSERVABILITY "$root_url/monitoring"
 else
