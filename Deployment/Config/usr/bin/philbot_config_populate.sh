@@ -83,5 +83,17 @@ echo $(config YOUTUBE_API_TOKEN) >> $destination_directory/environment.propertie
 echo $(config LINK_OBSERVABILITY) >> $destination_directory/environment.properties.backend
 
 if [ "$(config SELF_MONITORING)" != "yes" ]; then
-  cat /var/lib/philbot-config/collector.yaml | sed 's~\$ENDPOINT_LOGS~'$(value OPENTELEMETRY_LOGS_API_ENDPOINT)'~' | sed 's~\$ENDPOINT_TRACES~'$(value OPENTELEMETRY_TRACES_API_ENDPOINT)'~' | sed 's~\$ENDPOINT_METRICS~'$(value OPENTELEMETRY_METRICS_API_ENDPOINT)'~' | sed 's~\$HEADER_LOGS~'$(value OPENTELEMETRY_LOGS_API_TOKEN)'~' | sed 's~\$HEADER_METRICS~'$(value OPENTELEMETRY_METRICS_API_TOKEN)'~' | sed 's~\$HEADER_TRACES~'$(value OPENTELEMETRY_TRACES_API_TOKEN)'~' > $destination_directory/collector.yaml
+  local endpoint_logs="$(value OPENTELEMETRY_LOGS_API_ENDPOINT)"
+  local endpoint_metrics="$(value OPENTELEMETRY_METRICS_API_ENDPOINT)"
+  local endpoint_traces="$(value OPENTELEMETRY_TRACES_API_ENDPOINT)"
+  local header_logs="$(value OPENTELEMETRY_LOGS_API_TOKEN)"
+  local header_metrics="$(value OPENTELEMETRY_METRICS_API_TOKEN)"
+  local header_traces="$(value OPENTELEMETRY_TRACES_API_TOKEN)"
+  cat /var/lib/philbot-config/collector.yaml \
+    | sed 's~\$ENDPOINT_LOGS~'"$endpoint_logs"'~g' \
+    | sed 's~\$ENDPOINT_METRICS~'"$endpoint_metrics"'~g' \
+    | sed 's~\$ENDPOINT_TRACES~'"$endpoint_traces"'~g' \
+    | sed 's~\$HEADER_LOGS~'"$header_logs"'~g' \
+    | sed 's~\$HEADER_METRICS~'"$header_metrics"'~g' \
+    | sed 's~\$HEADER_TRACES~'"$header_traces"'~g' > $destination_directory/collector.yaml
 fi
