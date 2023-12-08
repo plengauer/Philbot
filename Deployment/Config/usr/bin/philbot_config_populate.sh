@@ -83,9 +83,9 @@ echo $(config YOUTUBE_API_TOKEN) >> $destination_directory/environment.propertie
 echo $(config LINK_OBSERVABILITY) >> $destination_directory/environment.properties.backend
 
 if [ "$(config SELF_MONITORING)" != "yes" ]; then
-  endpoint_logs="$(value OPENTELEMETRY_LOGS_API_ENDPOINT)"
-  endpoint_metrics="$(value OPENTELEMETRY_METRICS_API_ENDPOINT)"
-  endpoint_traces="$(value OPENTELEMETRY_TRACES_API_ENDPOINT)"
+  endpoint_logs="$(value OPENTELEMETRY_LOGS_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
+  endpoint_metrics="$(value OPENTELEMETRY_METRICS_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
+  endpoint_traces="$(value OPENTELEMETRY_TRACES_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
   header_logs="$(value OPENTELEMETRY_LOGS_API_TOKEN)"
   header_metrics="$(value OPENTELEMETRY_METRICS_API_TOKEN)"
   header_traces="$(value OPENTELEMETRY_TRACES_API_TOKEN)"
