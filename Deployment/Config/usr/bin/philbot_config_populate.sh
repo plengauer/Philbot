@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-destination_directory=$1
+destination_directory=/var/lib/philbot
 . /usr/share/debconf/confmodule
 
 value() {
