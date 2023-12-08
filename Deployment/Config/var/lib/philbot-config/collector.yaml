@@ -4,17 +4,17 @@ receivers:
       http:
 
 exporters:
-  otlp/logs:
+  otlphttp/logs:
     endpoint: "$ENDPOINT_LOGS"
     headers:
       Authorization: "$HEADER_LOGS"
   
-  otlp/metrics:
+  otlphttp/metrics:
     endpoint: "$ENDPOINT_METRICS"
     headers:
       Authorization: "$HEADER_METRICS"
   
-  otlp/traces:
+  otlphttp/traces:
     endpoint: "$ENDPOINT_TRACES"
     headers:
       Authorization: "$HEADER_TRACES"
