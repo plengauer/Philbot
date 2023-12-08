@@ -1,6 +1,7 @@
 Template: philbot/DEPLOYMENT
 Type: select
 Choices: development, staging, production
+Default: production
 Description: Deployment:
  Select whether the install is a production, staging, or development deployment.
 
