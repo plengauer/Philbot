@@ -7,7 +7,7 @@ RUN cat pyproject.toml | grep version | grep -E '[0-9]+\.[0-9]+\.[0-9]+' -o > ve
 
 FROM ubuntu:rolling AS downloader
 WORKDIR /downloads
-RUN apt-get update && apt-get install -y wget tar bzip2
+RUN apt-get update && apt-get install -y wget curl tar bzip2
 # RUN wget -O libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2 && tar -xf libopus.tar.bz2 -C . && rm libopus.tar.bz2
 RUN curl -v -O - https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2 > libopus.tar.bz2 && tar -xf libopus.tar.bz2 -C . && rm libopus.tar.bz2
 
