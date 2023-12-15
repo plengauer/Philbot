@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y wget curl tar bzip2
 # RUN wget -O libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2 && tar -xf libopus.tar.bz2 -C . && rm libopus.tar.bz2
 RUN curl -v --fail -L https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2 > libopus.tar.bz2 && tar -xf libopus.tar.bz2 -C . && rm libopus.tar.bz2
 
+
 FROM python:latest
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
