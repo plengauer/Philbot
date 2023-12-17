@@ -2,6 +2,10 @@
 set -e
 source /usr/bin/philbot_init_otel
 
+if [ "$1" = "triggered" ]; then
+  bash /usr/bin/philbot_stop
+fi
+
 bash /usr/bin/philbot_config_populate.sh
 source /usr/bin/philbot_init_otel
 
