@@ -1,4 +1,4 @@
-This is Philbot, a Discord Bot. Among other things, it can play music, give real-time hints for games, organize group events, and is fully AI powered. See all features here: http://philbot.eu/help. Add it to your own Discord server with this link: http://philbot.eu/deploy. It is SaaS hosted and free.
+This is Philbot, a Discord Bot. Among other things, it can play music, give real-time hints for games, organize group events, and is fully AI powered. See all features here: http://philbot.eu/help. Add it to your own Discord server with this link: http://philbot.eu/invite. It is SaaS hosted and free.
 
 # Deployment
 The bot is hosted by the maintainer and free to use. However, if you want to deploy and host it on your own infrastructure, select one the deb packages from this repostory `http://philbot.eu:8000/`.
