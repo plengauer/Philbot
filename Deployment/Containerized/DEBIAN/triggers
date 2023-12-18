@@ -1,2 +1,2 @@
-interest /usr/bin/philbot_config_populate.sh
-interest /var/lib/philbot-config
+interest-await /usr/bin/philbot_config_populate.sh
+interest-await /var/lib/philbot-config/
