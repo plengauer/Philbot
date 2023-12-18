@@ -97,3 +97,5 @@ if [ "$(config SELF_MONITORING)" != "yes" ]; then
     | sed 's~\$HEADER_METRICS~'"$header_metrics"'~g' \
     | sed 's~\$HEADER_TRACES~'"$header_traces"'~g' > $destination_directory/collector.yaml
 fi
+
+exit 0
