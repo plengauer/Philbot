@@ -238,6 +238,7 @@ async function createBoolean(model, user, question, report, temperature = undefi
 async function getImageModels() {
   let models = await getModels();
   models = models.filter(model => model.startsWith('dall-e-'));
+  if (!models.includes('dall-e-3')) models.push('dall-e-3'); // bug in openai because temporarily dall-e-3 seems to be removed from the models endpoint, but it still works
   models = models.sort(); // TODO make sure its properly sorted, default may actually be correct!
   return models;
 }
