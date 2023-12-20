@@ -9,6 +9,22 @@ fi
 bash /usr/bin/philbot_config_populate.sh
 source /usr/bin/philbot_init_otel
 
+echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.scheduler
+echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.discordgateway2http
+echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.backend
+echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.voice
+echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.scheduler
+echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.discordgateway2http
+echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.backend
+echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.voice
+echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.scheduler
+echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.discordgateway2http
+echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.backend
+echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.voice
+
 . /usr/share/debconf/confmodule
 config() {
     db_get philbot-containerized/"$@"

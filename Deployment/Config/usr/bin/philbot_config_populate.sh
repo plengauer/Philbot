@@ -83,20 +83,18 @@ echo $(config TRACKER_GG_API_TOKEN) >> $destination_directory/environment.proper
 echo $(config YOUTUBE_API_TOKEN) >> $destination_directory/environment.properties.backend
 echo $(config LINK_OBSERVABILITY) >> $destination_directory/environment.properties.backend
 
-if [ "$(config SELF_MONITORING)" != "yes" ]; then
-  endpoint_logs="$(value OPENTELEMETRY_LOGS_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
-  endpoint_metrics="$(value OPENTELEMETRY_METRICS_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
-  endpoint_traces="$(value OPENTELEMETRY_TRACES_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
-  header_logs="$(value OPENTELEMETRY_LOGS_API_TOKEN)"
-  header_metrics="$(value OPENTELEMETRY_METRICS_API_TOKEN)"
-  header_traces="$(value OPENTELEMETRY_TRACES_API_TOKEN)"
-  cat /var/lib/philbot-config/collector.yaml \
-    | sed 's~\$ENDPOINT_LOGS~'"$endpoint_logs"'~g' \
-    | sed 's~\$ENDPOINT_METRICS~'"$endpoint_metrics"'~g' \
-    | sed 's~\$ENDPOINT_TRACES~'"$endpoint_traces"'~g' \
-    | sed 's~\$HEADER_LOGS~'"$header_logs"'~g' \
-    | sed 's~\$HEADER_METRICS~'"$header_metrics"'~g' \
-    | sed 's~\$HEADER_TRACES~'"$header_traces"'~g' > $destination_directory/collector.yaml
-fi
+endpoint_logs="$(value OPENTELEMETRY_LOGS_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
+endpoint_metrics="$(value OPENTELEMETRY_METRICS_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
+endpoint_traces="$(value OPENTELEMETRY_TRACES_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
+header_logs="$(value OPENTELEMETRY_LOGS_API_TOKEN)"
+header_metrics="$(value OPENTELEMETRY_METRICS_API_TOKEN)"
+header_traces="$(value OPENTELEMETRY_TRACES_API_TOKEN)"
+cat /var/lib/philbot-config/collector.yaml \
+  | sed 's~\$ENDPOINT_LOGS~'"$endpoint_logs"'~g' \
+  | sed 's~\$ENDPOINT_METRICS~'"$endpoint_metrics"'~g' \
+  | sed 's~\$ENDPOINT_TRACES~'"$endpoint_traces"'~g' \
+  | sed 's~\$HEADER_LOGS~'"$header_logs"'~g' \
+  | sed 's~\$HEADER_METRICS~'"$header_metrics"'~g' \
+  | sed 's~\$HEADER_TRACES~'"$header_traces"'~g' > $destination_directory/collector.yaml
 
 exit 0
