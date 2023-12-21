@@ -19,7 +19,8 @@ jobs:
       - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
         id: version
       - run: mkdir -p ../ConfigFacade/DEBIAN
-      - run: cat DEBIAN/control | sed '/^Depends:/c\Depends: philbot-config-impl' > ../ConfigFacade/DEBIAN/control
+      - run: cat DEBIAN/control > ../ConfigFacade/DEBIAN/control
+      - run: sed -i '/^Depends:/c\Depends: philbot-config-impl' ../ConfigFacade/DEBIAN/control
       - run: sed -i s/philbot-config/philbot-config-impl/ DEBIAN/control
       - run: dpkg-deb --root-owner-group -Zgzip --build . ../package-impl.deb
       - run: dpkg-deb --root-owner-group -Zgzip --build ../ConfigFacade/ ../package-facade.deb
