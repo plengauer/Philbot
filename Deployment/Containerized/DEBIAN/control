@@ -1,4 +1,5 @@
 Package: philbot-containerized
+Provides: philbot
 Version: 2.3.0
 Architecture: all
 Pre-Depends: philbot-config (>= 3.3.0)

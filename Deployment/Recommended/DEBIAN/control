@@ -1,5 +1,6 @@
-Package: philbot
-Version: 1.0.1
+Package: philbot-recommended
+Provides: philbot
+Version: 1.0.0
 Architecture: all
 Depends: philbot-containerized
 Suggests: auto-management
