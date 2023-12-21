@@ -1,6 +1,6 @@
 Package: philbot-containerized
 Provides: philbot
-Version: 2.3.0
+Version: 2.4.0
 Architecture: all
 Pre-Depends: philbot-config (>= 3.3.0)
 Depends: debconf, bash, wget, docker.io, iptables-persistent, jq, opentelemetry-shell (>= 2.6.1)
