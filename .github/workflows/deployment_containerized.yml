@@ -5,7 +5,7 @@ on:
     branches: main
     paths:
       - 'Deployment/Containerized/**'
-  workflow_dispatch
+  workflow_dispatch:
       
 jobs:
   publish:

@@ -5,7 +5,7 @@ on:
     branches: main
     paths:
       - 'Deployment/Baremetal/**'
-  workflow_dispatch
+  workflow_dispatch:
       
 jobs:
   publish:
