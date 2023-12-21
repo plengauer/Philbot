@@ -4,7 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - 'Deployment/Config/**'
+      - 'Deployment/ConfigImplementation/**'
   workflow_dispatch:
       
 jobs:
@@ -12,21 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Deployment/Config
+        working-directory: ./Deployment/ConfigImplementation
 
     steps:
       - uses: actions/checkout@v2
       - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
         id: version
-      - run: dpkg-deb --root-owner-group -Zgzip --build . ../package-impl.deb
+      - run: dpkg-deb --root-owner-group -Zgzip --build . ../package.deb
       - uses: actions/create-release@v1
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
         with:
-          tag_name: deployment-config-v${{ steps.version.outputs.version }}
-          release_name: Release Deployment Config v${{ steps.version.outputs.version }}
+          tag_name: deployment-config-impl-v${{ steps.version.outputs.version }}
+          release_name: Release Deployment Config Implementation v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
       - uses: actions/upload-release-asset@v1
@@ -35,5 +35,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./Deployment/package.deb
-          asset_name: philbot_deployment_config_${{ steps.version.outputs.version }}.deb
+          asset_name: philbot_deployment_config_impl_${{ steps.version.outputs.version }}.deb
           asset_content_type: application/octet-stream
