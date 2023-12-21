@@ -1,7 +1,7 @@
 Package: philbot-config
-Version: 3.4.0
+Version: 3.5.0
 Architecture: all
-Depends: philbot-config-implementation
+Depends: debconf, bash
 Priority: extra
 Maintainer: Philipp Lengauer <p.lengauer@gmail.com>
 Homepage: https://github.com/plengauer/Philbot

@@ -1,8 +1,0 @@
-Package: philbot-config-implementation
-Version: 3.4.0
-Architecture: all
-Depends: debconf, bash
-Priority: extra
-Maintainer: Philipp Lengauer <p.lengauer@gmail.com>
-Homepage: https://github.com/plengauer/Philbot
-Description: Philbot config only
