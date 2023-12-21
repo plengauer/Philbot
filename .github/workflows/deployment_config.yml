@@ -18,7 +18,11 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
         id: version
-      - run: dpkg-deb --root-owner-group -Zgzip --build . ../package.deb
+      - run: mkdir -p ../ConfigFacade/DEBIAN
+      - run: cat DEBIAN/control | sed '/^Depends:/c\Depends: philbot-config-impl' > ../ConfigFacade/DEBIAN/control
+      - run: sed -i s/philbot-config/philbot-config-impl/ DEBIAN/control
+      - run: dpkg-deb --root-owner-group -Zgzip --build . ../package-impl.deb
+      - run: dpkg-deb --root-owner-group -Zgzip --build ../ConfigFacade/ ../package-facade.deb
       - uses: actions/create-release@v1
         id: create_release
         env:
@@ -29,11 +33,18 @@ jobs:
           draft: false
           prerelease: false
       - uses: actions/upload-release-asset@v1
-        id: upload-release-asset
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Deployment/package.deb
-          asset_name: philbot_deployment_config_${{ steps.version.outputs.version }}.deb
+          asset_path: ./Deployment/package-impl.deb
+          asset_name: philbot_deployment_config_impl_${{ steps.version.outputs.version }}.deb
+          asset_content_type: application/octet-stream
+      - uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./Deployment/package-facade.deb
+          asset_name: philbot_deployment_config_facade_${{ steps.version.outputs.version }}.deb
           asset_content_type: application/octet-stream
