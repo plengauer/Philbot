@@ -4,6 +4,5 @@ if [ -f /usr/bin/philbot_init_otel ]; then
 fi
 if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
   docker image prune --all --force
-else
-  exit 0
 fi
+exit 0
