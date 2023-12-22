@@ -1,0 +1,40 @@
+name: Publish Deployment Recommended
+
+on:
+  push:
+    branches: main
+    paths:
+      - 'Deployment/Root/**'
+  workflow_dispatch:
+      
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Deployment/Root
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: sudo apt-get update && sudo apt-get install devscripts debhelper
+      - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
+        id: version
+      - run: dpkg-deb --root-owner-group -Zgzip --build . ../package.deb
+      - uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
+        with:
+          tag_name: deployment-root-v${{ steps.version.outputs.version }}
+          release_name: Release Deployment Root v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+      - uses: actions/upload-release-asset@v1
+        id: upload-release-asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_RELEASE_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./Deployment/package.deb
+          asset_name: philbot_deployment_root_${{ steps.version.outputs.version }}.deb
+          asset_content_type: application/octet-stream
