@@ -1,9 +1,7 @@
-Package: philbot-recommended
-Provides: philbot-deployment
+Package: philbot
 Version: 2.3.0
 Architecture: all
-Depends: philbot-containerized
-Suggests: auto-management
+Depends: philbot-deployment
 Priority: extra
 Maintainer: Philipp Lengauer <p.lengauer@gmail.com>
 Homepage: https://github.com/plengauer/Philbot
