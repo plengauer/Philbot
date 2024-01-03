@@ -21,7 +21,7 @@ function member2name(member) {
 
 function parse_mention(mention) {
   mention = mention.trim();
-  if (!mention.startsWith('<@') || !mention.endsWith('>')) return null;
+  if (!mention.startsWith('<@') || !mention.endsWith('>') || mention.startsWith('<@&')) return null;
   return mention.substring(2, mention.length - 1);
 }
 

@@ -20,6 +20,7 @@ const role_management = require('../../../shared/role_management.js');
 const ai = require('../../../shared/ai.js');
 const translator = require('../../../shared/translator.js');
 const mirror = require('../../../shared/mirror.js');
+const democracy = require('../../../shared/democracy.js');
 
 async function handle(payload) {
   return handle0(payload.guild_id, payload.channel_id, payload.id, payload.author.id, payload.content, payload.referenced_message?.id, payload.attachments ?? [], payload.embeds ?? [], payload.components ?? [], payload.flags)
@@ -1010,6 +1011,28 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       + poem + '\n\n'
       + 'You have five minutes to send me a voice message. You can restart the process with the same command any time.'
     );
+  
+  } else if (message.toLowerCase().startsWith('start vote ')) {
+    // TODO end time and auto-end
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, "start a vote");
+    message = message.split(' ').slice(2).join(' ');
+    let tokens = message.split(';');
+    if (tokens.length != 3) return reactNotOK(channel_id, event_id);
+    let description = tokens[0];
+    if (!description.includes(':')) return reactNotOK(channel_id, event_id);
+    let title = description.split(':', 2)[0].trim();
+    let text = description.split(':', 2)[1].trim();
+    let choices = tokens[1].split(',').map(choice => choice.trim()).filter(choice => choice.length > 0);
+    if (title.length == 0 || text.length == 0 || choices.length == 0) return reactNotOK(channel_id, event_id);
+    let roles = tokens[2].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_role).filter(role_id => !!role_id);
+    let users = tokens[2].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_mention).filter(role_id => !!role_id);
+    return democracy.startVote(guild_id, channel_id, event_id, title, text, choices, roles, users)
+      .then(() => reactOK(channel_id, event_id));
+  
+  } else if (message.toLowerCase() == 'end vote' && referenced_message_id) {
+    if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, "end a vote");
+    return democracy.endVote(guild_id, channel_id, referenced_message_id)
+      .then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase() == 'mute for me') {
     return memory.set(`mute:user:${user_id}`, true, 60 * 60 * 24 * 7 * 4)
