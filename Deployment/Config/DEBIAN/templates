@@ -18,7 +18,7 @@ Description: Discord API Token:
 Template: philbot/OWNER_DISCORD_USER_ID
 Type: string
 Description: Discord Owner User ID:
- Provide the ID of the Discord User that should be treated as the owner of the bot. This user will have special permissions. A valid User ID is usually a snowflake (a very long sequence of exclusively numbers), not the username! 
+ Provide the ID of the Discord User that should be treated as the owner of the bot. This user will have special permissions. A valid User ID is usually a snowflake (a very long sequence of exclusively numbers), not the username!
 
 Template: philbot/SELF_MONITORING
 Type: select
