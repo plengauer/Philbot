@@ -44,7 +44,7 @@ function createComponents(guild_id, message_id, choices) {
         if (index % 5 == 0) {
             components.push({ type: 1, components: [] });
         }
-        components[components.length - 1].components.push({ type: 2, style: 2, label: choices[index], custom_id: key(guild_id, message_id) + ':choice:' + choices[index] });
+        components[components.length - 1].components.push({ type: 2, style: 2, label: choices[index], custom_id: key(guild_id, message_id) + ':choice:' + index });
     }
     return components;
 }
@@ -52,11 +52,11 @@ function createComponents(guild_id, message_id, choices) {
 async function onInteraction(guild_id, channel_id, user_id, message_id, interaction_id, interaction_token, data) {
     let custom = data.custom_id;
     let key = custom.substring(0, custom.indexOf(':choice:'));
-    let choice = custom.substring(custom.lastIndexOf(':') + 1);
+    let choice_index = parseInt(custom.substring(custom.lastIndexOf(':') + 1));
     return synchronized.locked(key, async () => {
         let data = await memory.get(key, null);
         if (!data) return;
-        data.votes.push(choice);
+        data.votes.push(data.choices[choice_index]);
         await memory.set(key, data, 1000 * 60 * 60 * 24 * 7 * 4);
         await discord.interact(interaction_id, interaction_token);
         await discord.message_update(channel_id, message_id, `Vote **${data.title}**\nThank you for voting!`);
