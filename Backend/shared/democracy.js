@@ -56,10 +56,24 @@ async function onInteraction(guild_id, channel_id, user_id, message_id, interact
     return synchronized.locked(key, async () => {
         let data = await memory.get(key, null);
         if (!data) return;
-        data.votes.push(data.choices[choice_index]);
+        if (!data.voters.includes(user_id)) return;
+        let choice = data.choices[choice_index];
+        data.voters = data.voters.filter(voter => voter != user_id);
+        data.votes.push(choice);
         await memory.set(key, data, 1000 * 60 * 60 * 24 * 7 * 4);
         await discord.interact(interaction_id, interaction_token);
-        await discord.message_update(channel_id, message_id, `Vote **${data.title}**\nThank you for voting!`);
+        let message = await discord.message_retrieve(channel_id, message_id);
+        for (let row of message.components) {
+            if (row.type != 1) continue;
+            for (let component of row.components) {
+                if (component.type != 2) continue;
+                component.disabled = true;
+                if (component.label == choice) {
+                    label.emoji = '✅';
+                }
+            }
+        }
+        await discord.message_update(channel_id, message_id, message.content, message.embeds, message.components);
         return data;
     }).then(data => data.votes.length == data.voters.length ? endVote(data.guild_id, data.channel_id, data.message_id) : undefined);
 }
