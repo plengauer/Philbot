@@ -82,7 +82,7 @@ async function onInteraction(guild_id, channel_id, user_id, message_id, interact
         }
         await discord.message_update(channel_id, message_id, message.content, message.embeds, message.components);
         return data;
-    }).then(data => data.votes.length == data.voter_count ? endVote(data.guild_id, data.channel_id, data.message_id) : undefined);
+    }).then(data => data && data.votes.length == data.voter_count ? endVote(data.guild_id, data.channel_id, data.message_id) : undefined);
 }
 
 async function endVote(guild_id, channel_id, message_id) {
