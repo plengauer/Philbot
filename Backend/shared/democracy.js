@@ -76,7 +76,7 @@ async function onInteraction(guild_id, channel_id, user_id, message_id, interact
                 if (component.type != 2) continue;
                 component.disabled = true;
                 if (component.label == choice) {
-                    component.emoji = '✅';
+                    component.emoji = { name: '✅' };
                 }
             }
         }
