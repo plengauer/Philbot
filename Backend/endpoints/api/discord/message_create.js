@@ -1016,7 +1016,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, "start a vote");
     message = message.split(' ').slice(2).join(' ');
     let tokens = message.split(';');
-    if (tokens.length != 3) return reactNotOK(channel_id, event_id);
+    if (tokens.length != 4) return reactNotOK(channel_id, event_id);
     let description = tokens[0];
     if (!description.includes(':')) return reactNotOK(channel_id, event_id);
     let title = description.split(':', 2)[0].trim();
