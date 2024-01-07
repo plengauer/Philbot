@@ -1013,7 +1013,6 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     );
   
   } else if (message.toLowerCase().startsWith('start vote ')) {
-    // TODO end time and auto-end
     if (!await hasMasterPermission(guild_id, user_id)) return respondNeedsMasterPermission(guild_id, channel_id, event_id, "start a vote");
     message = message.split(' ').slice(2).join(' ');
     let tokens = message.split(';');
@@ -1022,11 +1021,13 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (!description.includes(':')) return reactNotOK(channel_id, event_id);
     let title = description.split(':', 2)[0].trim();
     let text = description.split(':', 2)[1].trim();
-    let choices = tokens[1].split(',').map(choice => choice.trim()).filter(choice => choice.length > 0);
+    let length = parseFloat(tokens[1]);
+    if (isNaN(length)) return reactNotOK(channel_id, event_id);
+    let choices = tokens[2].split(',').map(choice => choice.trim()).filter(choice => choice.length > 0);
     if (title.length == 0 || text.length == 0 || choices.length == 0) return reactNotOK(channel_id, event_id);
-    let roles = tokens[2].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_role).filter(role_id => !!role_id);
-    let users = tokens[2].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_mention).filter(role_id => !!role_id);
-    return democracy.startVote(guild_id, channel_id, event_id, title, text, choices, roles, users)
+    let roles = tokens[3].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_role).filter(role_id => !!role_id);
+    let users = tokens[3].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_mention).filter(role_id => !!role_id);
+    return democracy.startVote(guild_id, channel_id, event_id, title, text, Date.now + 1000 * 60 * 60 * length, choices, roles, users)
       .then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase() == 'end vote' && referenced_message_id) {

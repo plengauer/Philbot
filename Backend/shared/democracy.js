@@ -18,7 +18,7 @@ function globalkey() {
     return 'democracy.votes.index';
 }
 
-async function startVote(guild_id, channel_id, message_id, title, text, choices, role_ids = [], user_ids = []) {
+async function startVote(guild_id, channel_id, message_id, title, text, end, choices, role_ids = [], user_ids = []) {
     for (let role_id of role_ids) {
         for (let member of await discord.guild_members_list(guild_id, role_id)) {
             user_ids.push(member.user.id);
@@ -30,7 +30,7 @@ async function startVote(guild_id, channel_id, message_id, title, text, choices,
         guild_id: guild_id,
         channel_id: channel_id,
         message_id: message_id,
-        end: Date.now + 1000 * 60 * 60 * 24,
+        end: end,
         title: title,
         choices: choices,
         voter_count: user_ids.length,
