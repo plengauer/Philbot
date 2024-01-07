@@ -85,6 +85,20 @@ async function onInteraction(guild_id, channel_id, user_id, message_id, interact
     }).then(data => data && data.votes.length == data.voter_count ? endVote(data.guild_id, data.channel_id, data.message_id) : undefined);
 }
 
+async function remindVoters(guild_id, channel_id, message_id) {
+    return synchronized.locked(key(guild_id, message_id), async () => {
+        let data = await memory.get(key(guild_id, message_id));
+        if (!data) return;
+        // TODO check wether the time is right!
+        return Promise.all(data.voters.map(user_id =>
+            discord.dms_channel_retrieve(user_id)
+                .then(dm_channel => discord.messages(dm_channel.id))
+                .then(messages => messages.find(message => message.content.includes(`**${title}**`))) // this is best effort and could be wrong!
+                .then(message => Promise.resolve()) // TODO send reminder in reply to vote!
+        ));
+    });
+}
+
 async function endVote(guild_id, channel_id, message_id) {
     return synchronized.locked(key(guild_id, message_id), async () => {
         let data = await memory.get(key(guild_id, message_id));
@@ -120,7 +134,7 @@ function key(guild_id, message_id) {
 
 async function tick() {
     return list()
-        .then(keys => Promise.all(keys.map(key => memory.get(key).then(data => data && Date.now > data.end ? endVote(data.guild_id, data.channel_id, data.message_id) : undefined))));
+        .then(keys => Promise.all(keys.map(key => memory.get(key).then(data => data && Date.now > data.end ? endVote(data.guild_id, data.channel_id, data.message_id) : remindVoters(data.guild_id, data.channel_id, data.message_id)))));
 }
 
 module.exports = { startVote, endVote, onInteraction, tick }
