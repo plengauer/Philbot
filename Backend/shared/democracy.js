@@ -62,7 +62,7 @@ async function onInteraction(guild_id, channel_id, user_id, message_id, interact
     return synchronized.locked(key, async () => {
         let data = await memory.get(key, null);
         if (!data) return;
-        if (Date.now > data.end) return;
+        if (Date.now() > data.end) return;
         if (!data.voters.includes(user_id)) return;
         let choice = data.choices[choice_index];
         data.voters = data.voters.filter(voter => voter != user_id);
@@ -134,7 +134,7 @@ function key(guild_id, message_id) {
 
 async function tick() {
     return list()
-        .then(keys => Promise.all(keys.map(key => memory.get(key).then(data => data && Date.now > data.end ? endVote(data.guild_id, data.channel_id, data.message_id) : remindVoters(data.guild_id, data.channel_id, data.message_id)))));
+        .then(keys => Promise.all(keys.map(key => memory.get(key).then(data => data && Date.now() > data.end ? endVote(data.guild_id, data.channel_id, data.message_id) : remindVoters(data.guild_id, data.channel_id, data.message_id)))));
 }
 
 module.exports = { startVote, endVote, onInteraction, tick }

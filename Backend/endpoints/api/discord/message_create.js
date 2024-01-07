@@ -1027,7 +1027,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     if (title.length == 0 || text.length == 0 || choices.length == 0) return reactNotOK(channel_id, event_id);
     let roles = tokens[3].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_role).filter(role_id => !!role_id);
     let users = tokens[3].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_mention).filter(role_id => !!role_id);
-    return democracy.startVote(guild_id, channel_id, event_id, title, text, Date.now + 1000 * 60 * 60 * length, choices, roles, users)
+    return democracy.startVote(guild_id, channel_id, event_id, title, text, Date.now() + 1000 * 60 * 60 * length, choices, roles, users)
       .then(() => reactOK(channel_id, event_id));
   
   } else if (message.toLowerCase() == 'end vote' && referenced_message_id) {
