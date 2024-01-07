@@ -93,7 +93,7 @@ async function remindVoters(guild_id, channel_id, message_id) {
         return Promise.all(data.voters.map(user_id =>
             discord.dms_channel_retrieve(user_id)
                 .then(dm_channel => discord.messages(dm_channel.id))
-                .then(messages => messages.find(message => message.content.includes(`**${title}**`))) // this is best effort and could be wrong!
+                .then(messages => messages.find(message => message.content.includes(`**${data.title}**`))) // this is best effort and could be wrong!
                 .then(message => Promise.resolve()) // TODO send reminder in reply to vote!
         ));
     });
