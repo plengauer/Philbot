@@ -10,6 +10,10 @@ async function deregister(closed_key) {
     return synchronized.locked(globalkey(), async() => memory.get(globalkey(), []).then(keys => keys.filter(key => key != closed_key)).then(keys => memory.set(globalkey(), keys, 60 * 60 * 24 * 7 * 4)))
 }
 
+async function list() {
+    return synchronized.locked(globalkey(), async () => memory.get(globalykey(), []));
+}
+
 function globalkey() {
     return 'democracy.votes.index';
 }
@@ -26,6 +30,7 @@ async function startVote(guild_id, channel_id, message_id, title, text, choices,
         guild_id: guild_id,
         channel_id: channel_id,
         message_id: message_id,
+        end: Date.now + 1000 * 60 * 60 * 24,
         title: title,
         choices: choices,
         voter_count: user_ids.length,
@@ -57,6 +62,7 @@ async function onInteraction(guild_id, channel_id, user_id, message_id, interact
     return synchronized.locked(key, async () => {
         let data = await memory.get(key, null);
         if (!data) return;
+        if (Date.now > data.end) return;
         if (!data.voters.includes(user_id)) return;
         let choice = data.choices[choice_index];
         data.voters = data.voters.filter(voter => voter != user_id);
@@ -76,7 +82,7 @@ async function onInteraction(guild_id, channel_id, user_id, message_id, interact
         }
         await discord.message_update(channel_id, message_id, message.content, message.embeds, message.components);
         return data;
-    }).then(data => data.votes.length == data.voters.length ? endVote(data.guild_id, data.channel_id, data.message_id) : undefined);
+    }).then(data => data.votes.length == data.voter_count ? endVote(data.guild_id, data.channel_id, data.message_id) : undefined);
 }
 
 async function endVote(guild_id, channel_id, message_id) {
@@ -112,4 +118,9 @@ function key(guild_id, message_id) {
     return `democracy:vote:guild:${guild_id}:id:${message_id}`;
 }
 
-module.exports = { startVote, endVote, onInteraction }
+async function tick() {
+    return list()
+        .then(keys => Promise.all(keys.map(key => memory.get(key).then(data => data && Date.now > data.end ? endVote(data.guild_id, data.channel_id, data.message_id) : undefined))));
+}
+
+module.exports = { startVote, endVote, onInteraction, tick }

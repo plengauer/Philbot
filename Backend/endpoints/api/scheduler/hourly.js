@@ -3,6 +3,7 @@ const discord = require('../../../shared/discord.js');
 const datefinder = require('../../../shared/datefinder.js');
 const features = require('../../../shared/features.js');
 const subscriptions = require('../../../shared/subscriptions.js');
+const democracy = require('../../../shared/democracy.js');
 
 const scheduling_distance = 1000 * 60 * 60 * 24 * 3;
 
@@ -10,7 +11,8 @@ async function handle() {
   return Promise.all([
     discord.guilds_list().then(guilds => Promise.all(guilds.map(guild => scheduleEvents(guild)))),
     sendReminders(),
-    subscriptions.tick()
+    subscriptions.tick(),
+    democracy.tick(),
   ])
   .then(() => undefined)
 }
