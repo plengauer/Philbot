@@ -11,7 +11,7 @@ async function deregister(closed_key) {
 }
 
 async function list() {
-    return synchronized.locked(globalkey(), async () => memory.get(globalykey(), []));
+    return synchronized.locked(globalkey(), async () => memory.get(globalkey(), []));
 }
 
 function globalkey() {
