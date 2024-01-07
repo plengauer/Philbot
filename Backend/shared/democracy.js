@@ -28,6 +28,7 @@ async function startVote(guild_id, channel_id, message_id, title, text, choices,
         message_id: message_id,
         title: title,
         choices: choices,
+        voter_count: user_ids.length,
         voters: user_ids,
         votes: []
     };
@@ -84,7 +85,7 @@ async function endVote(guild_id, channel_id, message_id) {
         if (!data) return;
         
         let winner_index = -1;
-        let totals = data.voters.length;
+        let totals = data.voter_count;
         let counts = [];
         for (let index = 0; index < data.choices.length; index++) {
             counts[index] = data.votes.filter(choice => choice == data.choices[index]).length;
