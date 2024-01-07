@@ -19,13 +19,24 @@ function globalkey() {
 }
 
 async function startVote(guild_id, channel_id, message_id, title, text, end, choices, role_ids = [], user_ids = []) {
+    // define eligable voters
+    let voters = user_ids;
     for (let role_id of role_ids) {
         for (let member of await discord.guild_members_list(guild_id, role_id)) {
-            user_ids.push(member.user.id);
+            voters.push(member.user.id);
         }
     }
-    user_ids = Array.from(new Set(user_ids));
+    voters = Array.from(new Set(voters));
 
+    // send ballots
+    let components = createComponents(guild_id, message_id, choices);
+    let ballots = await Promise.all(voters.map(voter => 
+        discord.dms_channel_retrieve(voter)
+            .then(dm_channel => discord.post(dm_channel.id, `**${title}**\n${text}`, undefined, true, [], components, []))
+            .then(message => { return { user_id: voter, message_id: message.id }; })
+    ));
+
+    // safe and register vote
     let data = {
         guild_id: guild_id,
         channel_id: channel_id,
@@ -35,13 +46,11 @@ async function startVote(guild_id, channel_id, message_id, title, text, end, cho
         choices: choices,
         voter_count: user_ids.length,
         voters: user_ids,
+        ballots: ballots,
         votes: []
     };
     await memory.set(key(guild_id, message_id), data, 60 * 60 * 24 * 7 * 4);
     await register(key(guild_id, message_id));
-
-    let components = createComponents(guild_id, message_id, choices)
-    return Promise.all(user_ids.map(user_id => discord.dms_channel_retrieve(user_id).then(dm_channel => discord.post(dm_channel.id, `Vote **${title}**\n${text}`, undefined, true, [], components, []))));
 }
 
 function createComponents(guild_id, message_id, choices) {
@@ -56,9 +65,6 @@ function createComponents(guild_id, message_id, choices) {
 }
 
 async function onInteraction(guild_id, channel_id, user_id, message_id, interaction_id, interaction_token, data) {
-    let custom = data.custom_id;
-    let key = custom.substring(0, custom.indexOf(':choice:'));
-    let choice_index = parseInt(custom.substring(custom.lastIndexOf(':') + 1));
     return synchronized.locked(key, async () => {
         let data = await memory.get(key, null);
         if (!data) return;
@@ -80,7 +86,7 @@ async function onInteraction(guild_id, channel_id, user_id, message_id, interact
                 }
             }
         }
-        await discord.message_update(channel_id, message_id, message.content, message.embeds, message.components);
+        await discord.message_update(message.channel_id, message.id, message.content, message.embeds, message.components);
         return data;
     }).then(data => data && data.votes.length == data.voter_count ? endVote(data.guild_id, data.channel_id, data.message_id) : undefined);
 }
@@ -89,13 +95,13 @@ async function remindVoters(guild_id, channel_id, message_id) {
     return synchronized.locked(key(guild_id, message_id), async () => {
         let data = await memory.get(key(guild_id, message_id));
         if (!data) return;
-        // TODO check wether the time is right!
-        return Promise.all(data.voters.map(user_id =>
+        if (Date.now() + 1000 * 60 * 60 * 24 < data.end) return;
+        if (Date.now() + 1000 * 60 * 60 * 23 > data.end) return;
+        return Promise.all(data.voters.map(voter =>
             discord.dms_channel_retrieve(user_id)
-                .then(dm_channel => discord.messages(dm_channel.id))
-                .then(messages => messages.find(message => message.content.includes(`**${data.title}**`))) // this is best effort and could be wrong!
-                .then(message => Promise.resolve()) // TODO send reminder in reply to vote!
-        ));
+                .then(dm_channel => discord.respond(dm_channel.id, data.ballots.find(ballot => ballot.user_id == voter)?.message_id, 'You have less than 24 hours left to vote.'))
+            )
+        );
     });
 }
 
@@ -114,7 +120,7 @@ async function endVote(guild_id, channel_id, message_id) {
         let invalids = data.votes.filter(choice => !data.choices.includes(choice)).length;
         let nones = totals - counts.reduce((a, b) => a + b, invalids);
         
-        let result = `Vote **${data.title}** Result:\n`;
+        let result = `**${data.title}**\n`;
         result += `(${totals - nones} valid votes, ${invalids} invalid votes, ${nones} no votes)\n`
         for (let index = 0; index < data.choices.length; index++) {
             let relative = (counts[index] * 100 / (totals - nones));
@@ -123,6 +129,19 @@ async function endVote(guild_id, channel_id, message_id) {
         result += `\n\n**Winner: ${data.choices[winner_index]}**`;
         await discord.respond(channel_id, message_id, result).finally(() => memory.unset(key(guild_id, message_id)));
 
+        await Promise.all(data.voters.map(voter => discord.dms_channel_retrieve(voter)
+            .then(dm_channel => discord.message_retrieve(dm_channel.id, data.ballots.find(ballot => ballot.user_id == voter)))
+            .then(message => {
+                for (let row of message.components) {
+                    if (row.type != 1) continue;
+                    for (let component of row.components) {
+                        if (component.type != 2) continue;
+                        component.disabled = true;
+                    }
+                }
+                return discord.message_update(message.channel_id, message.id, message.content, message.embeds, message.components);
+            })
+        ));
         await deregister(key(guild_id, message_id));
         await memory.unset(key(guild_id, message_id));
     });
