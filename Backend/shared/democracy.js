@@ -34,6 +34,7 @@ async function startVote(guild_id, channel_id, message_id, title, text, end, cho
         discord.dms_channel_retrieve(voter)
             .then(dm_channel => discord.post(dm_channel.id, `**${title}**\n${text}`, undefined, true, [], components, []))
             .then(message => { return { user_id: voter, message_id: message.id }; })
+            .catch(_ => { return { user_id: voter, message_id: null }; })
     ));
 
     // safe and register vote
@@ -51,6 +52,13 @@ async function startVote(guild_id, channel_id, message_id, title, text, end, cho
     };
     await memory.set(key(guild_id, message_id), data, 60 * 60 * 24 * 7 * 4);
     await register(key(guild_id, message_id));
+
+    let unissued = ballots.filter(ballot => !ballot.message_id).length;
+    return discord.respond(channel_id, message_id,
+        'Ballots have been issued to eligable voters in the respective DM channels.'
+        + (unissued > 0 ? ` ${unissued} voter(s) could not be contacted, they will be excluded from the vote.` : '')
+        + ' The results will be announced as soon as all eligable members have voted or the time has expired.'
+    );
 }
 
 function createComponents(guild_id, message_id, choices) {
@@ -100,7 +108,7 @@ async function remindVoters(guild_id, channel_id, message_id) {
         return Promise.all(data.voters.map(voter =>
             discord.dms_channel_retrieve(user_id)
                 .then(dm_channel => discord.respond(dm_channel.id, data.ballots.find(ballot => ballot.user_id == voter)?.message_id, 'You have less than 24 hours left to vote.'))
-            )
+            ).catch(_ => {})
         );
     });
 }
@@ -130,7 +138,7 @@ async function endVote(guild_id, channel_id, message_id) {
         await discord.respond(channel_id, message_id, result).finally(() => memory.unset(key(guild_id, message_id)));
 
         await Promise.all(data.voters.map(voter => discord.dms_channel_retrieve(voter)
-            .then(dm_channel => discord.message_retrieve(dm_channel.id, data.ballots.find(ballot => ballot.user_id == voter)))
+            .then(dm_channel => discord.message_retrieve(dm_channel.id, data.ballots.find(ballot => ballot.user_id == voter).message_id))
             .then(message => {
                 for (let row of message.components) {
                     if (row.type != 1) continue;
@@ -141,6 +149,7 @@ async function endVote(guild_id, channel_id, message_id) {
                 }
                 return discord.message_update(message.channel_id, message.id, message.content, message.embeds, message.components);
             })
+            .catch(_ => {})
         ));
         await deregister(key(guild_id, message_id));
         await memory.unset(key(guild_id, message_id));
