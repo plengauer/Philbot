@@ -1023,7 +1023,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let text = description.split(':', 2)[1].trim();
     let length = parseFloat(tokens[1]);
     if (isNaN(length)) return reactNotOK(channel_id, event_id);
-    let choices = tokens[2].split(',').map(choice => choice.trim()).filter(choice => choice.length > 0);
+    let choices = tokens[2].split(',').map(choice => choice.trim()).map(choice => choice.substring(0, 80)).filter(choice => choice.length > 0);
     if (title.length == 0 || text.length == 0 || choices.length == 0) return reactNotOK(channel_id, event_id);
     let roles = tokens[3].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_role).filter(role_id => !!role_id);
     let users = tokens[3].split(' ').map(string => string.trim()).filter(string => string.length > 0).map(discord.parse_mention).filter(role_id => !!role_id);
