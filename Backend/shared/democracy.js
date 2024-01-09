@@ -73,6 +73,9 @@ function createComponents(guild_id, message_id, choices) {
 }
 
 async function onInteraction(guild_id, channel_id, user_id, message_id, interaction_id, interaction_token, data) {
+    let custom = data.custom_id;
+    let key = custom.substring(0, custom.indexOf(':choice:'));
+    let choice_index = parseInt(custom.substring(custom.lastIndexOf(':') + 1));
     return synchronized.locked(key, async () => {
         let data = await memory.get(key, null);
         if (!data) return;
