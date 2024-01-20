@@ -10,6 +10,8 @@ async function handle() {
     .replace(/\$\{link_code\}/g, `this <a href="/code">link</a>`)
     .replace(/\$\{link_discord_add\}/g, `this <a href="/invite">link</a>`)
     .replace(/\$\{link_monitoring\}/g, `this <a href="/monitoring">link</a>`)
+    .replace(/\$\{help\}/g, `this <a href="/help">link</a>`)
+    .replace(/\$\{privacy\}/g, `this <a href="/privacy">link</a>`)
     .replace(/\*\*(.*)\*\*/g, '<b>$1</b>')
     .replace(/\n/g, '<p/>');
   return {

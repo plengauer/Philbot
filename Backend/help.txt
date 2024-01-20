@@ -42,5 +42,8 @@ Having people of different cultures in one server can be challenging because of 
 **Anonymous Voting**
 Sometimes we need an anonymous way of having server members vote on something, be it new server rules, or about admitting or kicking new members. Use '${name} start vote New Server Member: Should we admit Phil to the server?; 48; Yes, No; @Administrators @Jenna' to start a new vote where all Administratory and the member Jenna are allowed to vote for the next 48 hours. The vote will automatically end and the results announced when all eligable members have voted or the time has expired as a reply to the message that started the vote. Voting will take place in DM channels for privacy.
 
+**Privacy**
+Use '${name} request my data' to request a dump of all data I have stored about you. Use '${name} privacy' to learn more about my privacy policy.
+
 **About Myself**
 I have an AI-powered personality and I consider myself a prankster, just start a conversation with me and you will see. I'm also an artist, just say '${name} draw <description>'. ${about_instruction} to learn more about me and how to add me to your own server.

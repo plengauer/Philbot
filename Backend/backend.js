@@ -125,6 +125,7 @@ const url = require("url");
 
 const favicon = require('./endpoints/api/favicon.ico.js');
 const endpoint_about = require('./endpoints/api/about.js');
+const endpoint_privacy = require('./endpoints/api/privacy.js');
 const endpoint_autorefresh = require('./endpoints/api/autorefresh.js');
 const endpoint_configure = require('./endpoints/api/configure.js');
 const endpoint_debug = require('./endpoints/api/debug.js');
@@ -348,6 +349,7 @@ async function dispatchAPI(path, params, headers, payload) {
     switch (path) {
         case '/favicon.ico': return favicon.handle();
         case '/about': return endpoint_about.handle();
+        case '/privacy': return endpoint_privacy.handle();
         case '/autorefresh': return endpoint_autorefresh.handle(params, headers);
         case '/configure': return endpoint_configure.handle();
         case '/debug': return endpoint_debug.handle();

@@ -1,6 +1,7 @@
 const process = require('process');
 const fs = require('fs');
 const url = require('url');
+const Zip = require('jszip');
 const boomer = require('boomerencoding');
 const curl = require('../../../shared/curl.js');
 const memory = require('../../../shared/memory.js');
@@ -383,6 +384,23 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let url = await identity.getPublicURL();
     return createAboutString(discord.mention_user(me.id))
       .then(about => respond(guild_id, channel_id, event_id, `${about}\nUse ${url}/about to share this information with others outside your discord server.`));
+    
+  } else if (message.toLowerCase() == 'privacy') {
+    let url = await identity.getPublicURL();
+    return createPrivacyString(discord.mention_user(me.id))
+      .then(about => respond(guild_id, channel_id, event_id, `${about}\nUse ${url}/privacy to share this information with others outside your discord server.`));
+  
+  } else if (message.toLowerCase() == 'request my data') {
+    return memory.list()
+      .then(entries => entries.filter(entry => entry.key.includes(':user:' + user_id)))
+      .then(entries => {
+        let zip = new Zip();
+        for (let entry of entries) {
+          zip.file(entry.key.replace(/:/g, '_') + '.json', JSON.stringify(entry));
+        }
+        return zip.generateAsync({ type: "nodebuffer" });
+      })
+      .then(file => discord.post(channel_id, 'This is all data that I have about you.', event_id, true, [], [], [ { content: file, content_type: 'application/zip', filename: 'data_' + user_id + '.zip' } ]));
     
   } else if (message.toLowerCase() == 'good bot') {
     return discord.react(channel_id, event_id, '👍');
@@ -1196,7 +1214,21 @@ async function createAboutString(my_name) {
     .replace(/\$\{version\}/g, JSON.parse('' + fs.readFileSync('package.json')).version)
     .replace(/\$\{link_code\}/g, url + '/code')
     .replace(/\$\{link_discord_add\}/g, url + '/invite')
-    .replace(/\$\{link_monitoring\}/g, url + '/monitoring');
+    .replace(/\$\{link_monitoring\}/g, url + '/monitoring')
+    .replace(/\$\{help\}/g, url + '/help')
+    .replace(/\$\{privacy\}/g, url + '/privacy');
+}
+
+async function createPrivacyString(my_name) {
+  let url = await identity.getPublicURL();
+  return ('' + fs.readFileSync('./privacy.txt'))
+    .replace(/\$\{name\}/g, my_name)
+    .replace(/\$\{version\}/g, JSON.parse('' + fs.readFileSync('package.json')).version)
+    .replace(/\$\{link_code\}/g, url + '/code')
+    .replace(/\$\{link_discord_add\}/g, url + '/invite')
+    .replace(/\$\{link_monitoring\}/g, url + '/monitoring')
+    .replace(/\$\{help\}/g, url + '/help')
+    .replace(/\$\{privacy\}/g, url + '/privacy');
 }
 
 async function handleLongResponse(channel_id, func) {
