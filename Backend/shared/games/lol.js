@@ -214,6 +214,10 @@ async function getPlayerInfo(server, summonerId, summonerName, championId) {
 
 async function getMastery(server, summonerId, championId) {
   return http_get(server, '/lol/champion-mastery/v4/champion-masteries/by-summoner/' + summonerId + '/by-champion/' + championId, 60 * 60)
+    .catch(e => {
+      if (e.message.includes('HTTP error 403')) return getPuuid(server, summonerId).then(puuId => http_get(server, '/lol/champion-mastery/v4/champion-masteries/by-puuid/' + puuId + '/by-champion/' + championId, 60 * 60))
+      else throw e;
+    })
     .then(result => { return { level: result.championLevel, points: result.championPoints }; })
     .catch(e => {
       if (e.message.includes('HTTP error 404')) return { level: 0, points: 0 };
