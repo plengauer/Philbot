@@ -200,13 +200,13 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-4": // shorthand
     case "gpt-4-0613":
       return tokens_prompt / 1000 * 0.0300 + tokens_completion / 1000 * 0.0600;
-    case "gpt-4-32k-0314":
-      return tokens_prompt / 1000 * 0.0600 + tokens_completion / 1000 * 0.1200;
     case "gpt-4-32k": // shorthand
+    case "gpt-4-32k-0314":
     case "gpt-4-32k-0613":
       return tokens_prompt / 1000 * 0.0600 + tokens_completion / 1000 * 0.1200;
     case "gpt-4-vision-preview": // shorthand
     case "gpt-4-1106-preview":
+    case "gpt-4-0125-preview":
     case "gpt-4-1106-vision-preview":
       return tokens_prompt / 1000 * 0.0100 + tokens_completion / 1000 * 0.0300;
     default:
