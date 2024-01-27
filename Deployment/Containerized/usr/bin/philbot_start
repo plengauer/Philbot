@@ -21,6 +21,7 @@ start() {
         --name philbot-$name \
         --restart unless-stopped \
         --network=host \
+        --log-opt max-size=5m --log-opt max-file=5 \
         --env-file /var/lib/philbot/environment.properties.$image \
         "${@:3}" \
         --init philipplengauer/philbot-$image:latest
