@@ -109,7 +109,7 @@ async function createVoice(model, user, text, language, gender, format) {
     switch(model.vendor) {
         case 'speechify': return speechify.createVoice(model.name, user, text, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
         case 'google': return googleai.createVoice(model.name, text, language, gender, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost)); 
-        case 'openai': return openai.createSpeech(model.name, user, getSpeechVoices(model.name)[0], text, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
+        case 'openai': return openai.createSpeech(model.name, user, openai.getSpeechVoices(model.name)[0], text, format, async (model_name, cost) => bill(model.vendor, model_name, user, cost));
     }
 }
 

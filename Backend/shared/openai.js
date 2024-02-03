@@ -8,7 +8,6 @@ const media = require('./media.js');
 let FormData = require('form-data');
 
 const token = process.env.OPENAI_API_TOKEN;
-const debug = process.env.OPENAI_DEBUG == 'true'
 
 function getCostLimit() {
   return token ? parseFloat(process.env.OPENAI_COST_LIMIT ?? '1.00') : 0;
@@ -399,9 +398,9 @@ function getSpeechVoices(model) {
 }
 
 async function createSpeech(model, user, voice, input, audio_stream_format, report) {
-  let response = await HTTP('/v1/audio/speech', { model: model, voice: voice, input: input, response_format: "mp3" }, {}, true);
+  let response =await HTTP('/v1/audio/speech', { model: model, voice: voice, input: input, response_format: "mp3" }, {}, true);
   await report(model, getSpeechCost(model, input.length));
-  return media.convert(response.body, response.headers['content-type'].split('/')[1], audio_stream_format);
+  return media.convert(response, response.headers['content-type'].split('/')[1], audio_stream_format);
 }
 
 function getSpeechCost(model, length) {
@@ -425,7 +424,6 @@ async function HTTP(endpoint, body, headers = {}, stream = false) {
     stream: stream,
     timeout: 1000 * 60 * 15
   });
-  if (debug) console.log('DEBUG OPENAI ' + (endpoint == '/v1/audio/transcriptions' ? '<audio>' :  JSON.stringify(body)) + ' => ' + (endpoint.startsWith('/v1/images/') && body.response_format == 'b64_json' ? '<image>' : JSON.stringify(result)));
   return result;
 }
 
