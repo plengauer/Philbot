@@ -20,7 +20,7 @@ async function getActivityEmergencyNotification(name, details, state, user_name)
 async function getActivityHint(name, details, state, user_id) {
   if (name === 'Red Dead Redemption 2' || name.toLowerCase() === 'rdr2' || name.toLowerCase() === 'rdro') {
     return rdro.getInformation(3);
-  } else if (name === 'League of Legends' || name.toLowerCase() === 'lol') {
+  } else if (name === 'League of Legends' || name == 'Teamfight Tactics: League of Legends Strategy Game' || name.toLowerCase() === 'lol') {
     return lol.getInformation(details, state, user_id);
   } else if ((name.startsWith('World of Warcraft') && !name.startsWith('World of Warcraft Classic')) || name.toLowerCase().startsWith('wow')) {
     // that this is part of the name is not kewl!
@@ -53,7 +53,7 @@ async function getActivityHint(name, details, state, user_id) {
 }
 
 async function updateRankedRoles(name, guild_id, user_id) {
-  if (name == 'League of Legends') {
+  if (name == 'League of Legends' || name == 'Teamfight Tactics: League of Legends Strategy Game') {
     return lol.updateRankedRoles(guild_id, user_id);
   } else if (name == 'Apex Legends') {
     return apex.updateRankedRoles(guild_id, user_id);

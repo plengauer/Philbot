@@ -430,6 +430,7 @@ async function HTTP(endpoint, body, headers = {}, stream = false) {
 }
 
 async function getModels() {
+  if (!token) return [];
   return curl.request({ method: 'GET', hostname: 'api.openai.com', path: '/v1/models', headers: { 'Authorization': 'Bearer ' + token }, cache: 60 * 60 * 24 })
     .then(result => result.data.map(model => model.id.replace(/:/, '-')))
     .then(models => Array.from(new Set(models)));
