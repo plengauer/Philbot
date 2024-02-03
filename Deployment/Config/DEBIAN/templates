@@ -113,14 +113,17 @@ Description: Riot TFT API Token:
 Template: philbot/RAPID_API_TOKEN
 Type: string
 Description: Rapid API Token:
+ Create an API Token at https://rapidapi.com/community/api/urban-dictionary to allow accessing the urban dictionary. This is optional and can be left empty.
 
 Template: philbot/APEX_LEGENDS_API_TOKEN
 Type: string
 Description: Apex Legends API Token:
+ Create an API Token at https://apexlegendsapi.com/ to allow accessing the Apex Legends API. This is optional and can be left empty.
 
 Template: philbot/TRACKER_GG_API_TOKEN
 Type: string
 Description: Tracker GG API Token:
+ Create an API token at https://tracker.gg/developers/docs/authentication to allow accessing a variety of game statistics. This is optional and can be left empty.
 
 Template: philbot/PUBLIC_URL
 Type: string

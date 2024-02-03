@@ -9,16 +9,51 @@ db_endblock
 db_beginblock
 db_input critical philbot/DISCORD_CLIENT_ID || true
 db_endblock
-
-db_go
-
 db_get philbot/DISCORD_CLIENT_ID
+if [ -z "$RET" ]; then
+  echo "Discord application ID must not be empty!" >&2
+  exit 1
+fi
+if ! [[ "$RET" =~ ^[0-9]+$ ]]; then
+  echo "Discord application ID is invalid, it must be a snowflake ID!" >&2
+  exit 1
+fi
 db_subst philbot/DISCORD_CLIENT_ID DISCORD_CLIENT_ID $RET
 
 db_beginblock
 db_input critical philbot/DISCORD_API_TOKEN || true
+db_endblock
+db_get philbot/DISCORD_API_TOKEN
+if [ -z "$RET" ]; then
+  echo "Discord API Token must not be empty!" >&2
+  exit 1
+fi
+
+db_get philbot/DISCORD_CLIENT_ID
+client_id="$RET"
+db_get philbot/DISCORD_API_TOKEN
+token_client_id="$(curl -H "Authorization: Bot $RET" https://discord.com/api/v10/users/@me 2> /dev/null | jq -r '.id')"
+if [ "null" == "$token_client_id" ]; then
+  echo "Discord API Token invalid!" >&2
+  exit 1
+fi
+if [ "$client_id" != "$token_client_id" ]; then
+  echo "Discord application ID of token does not match the provided client ID!" >&2
+  exit 1
+fi
+
+db_beginblock
 db_input critical philbot/OWNER_DISCORD_USER_ID || true
 db_endblock
+db_get philbot/OWNER_DISCORD_USER_ID
+if [ -z "$RET" ]; then
+  echo "Owner Discord user ID must not be empty!" >&2
+  exit 1
+fi
+if ! [[ "$RET" =~ ^[0-9]+$ ]]; then
+  echo "Owner Discord user ID is invalid, it must be a snowflake ID!" >&2
+  exit 1
+fi
 
 db_beginblock
 db_input critical philbot/PUBLIC_URL || true
@@ -53,15 +88,59 @@ fi
 db_beginblock
 db_input high philbot/OPENAI_API_TOKEN || true
 db_input high philbot/OPENAI_COST_LIMIT || true
+db_endblock
+db_get philbot/OPENAI_API_TOKEN
+if [ -z "$RET" ]; then
+  echo "OpenAI API Token must not be empty!" >&2
+  exit 1
+fi
+if [ "null" != "$(curl -H "authorization: Bearer $RET" https://api.openai.com/v1/models 2> /dev/null | jq .error)" ]; then
+  echo "OpenAI API token is invalid!" >&2
+  exit 1
+fi
+db_get philbot/OPENAI_COST_LIMIT
+if ! [[ "$RET" =~ ^[0-9]+$ ]]; then
+  echo "OpenAI API cost limit must be an integer!" >&2
+  exit 1
+fi
+
+db_beginblock
 db_input high philbot/GCP_T2S_TOKEN || true
 db_input high philbot/GOOGLEAI_COST_LIMIT || true
 db_input high philbot/SPEECHIFY_API_TOKEN || true
 db_input high philbot/SPEECHIFY_COST_LIMIT || true
 db_endblock
+if [ "null" != "$(curl 'https://texttospeech.googleapis.com/v1/voices?key='"$RET" 2> /dev/null | jq .error)" ]; then
+  echo "GCP Text2Speech API token is invalid!" >&2
+  exit 1
+fi
+db_get philbot/GOOGLEAI_COST_LIMIT
+if ! [[ "$RET" =~ ^[0-9]+$ ]]; then
+  echo "Google API cost limit must be an integer!" >&2
+  exit 1
+fi
+if [ -z "$(curl -H "x-api-key: $RET" -i 'https://myvoice.speechify.com/api/voice' 2> /dev/null | head -1 | grep 200)" ]; then
+  echo "Speechify API token is invalid!" >&2
+  exit 1
+fi
+db_get philbot/SPEECHIFY_COST_LIMIT
+if ! [[ "$RET" =~ ^[0-9]+$ ]]; then
+  echo "Speechify API cost limit must be an integer!" >&2
+  exit 1
+fi
 
 db_beginblock
 db_input high philbot/YOUTUBE_API_TOKEN || true
 db_endblock
+db_get philbot/YOUTUBE_API_TOKEN
+if [ -z "$RET" ]; then
+  echo "Youtube API Token must not be empty!" >&2
+  exit 1
+fi
+if [ "null" != "$(curl 'https://www.googleapis.com/youtube/v3/search?key='"$RET"'&part=snippet&type=video&q=RickAstly' 2> /dev/null | jq .error)" ]; then
+  echo "Youtube API token is invalid!" >&2
+  exit 1
+fi
 
 db_beginblock
 db_input high philbot/RIOT_API_TOKEN || true
@@ -70,5 +149,4 @@ db_input high philbot/RAPID_API_TOKEN || true
 db_input high philbot/APEX_LEGENDS_API_TOKEN || true
 db_input high philbot/TRACKER_GG_API_TOKEN || true
 db_endblock
-
-db_go
+#TODO
