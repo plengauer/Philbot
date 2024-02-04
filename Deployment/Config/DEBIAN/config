@@ -110,7 +110,8 @@ db_input high philbot/GOOGLEAI_COST_LIMIT || true
 db_input high philbot/SPEECHIFY_API_TOKEN || true
 db_input high philbot/SPEECHIFY_COST_LIMIT || true
 db_endblock
-if [ "null" != "$(curl 'https://texttospeech.googleapis.com/v1/voices?key='"$RET" 2> /dev/null | jq .error)" ]; then
+db_get philbot/GCP_T2S_TOKEN
+if [ -n "$RET" ] && [ "null" != "$(curl 'https://texttospeech.googleapis.com/v1/voices?key='"$RET" 2> /dev/null | jq .error)" ]; then
   echo "GCP Text2Speech API token is invalid!" >&2
   exit 1
 fi
@@ -119,7 +120,8 @@ if ! [[ "$RET" =~ ^[0-9]+$ ]]; then
   echo "Google API cost limit must be an integer!" >&2
   exit 1
 fi
-if [ -z "$(curl -H "x-api-key: $RET" -i 'https://myvoice.speechify.com/api/voice' 2> /dev/null | head -1 | grep 200)" ]; then
+db_get philbot/SPEECHIFY_API_TOKEN
+if [ -n "$RET" ] && [ -z "$(curl -H "x-api-key: $RET" -i 'https://myvoice.speechify.com/api/voice' 2> /dev/null | head -1 | grep 200)" ]; then
   echo "Speechify API token is invalid!" >&2
   exit 1
 fi
