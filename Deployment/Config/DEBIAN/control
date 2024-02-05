@@ -1,5 +1,5 @@
 Package: philbot-config
-Version: 3.6.2
+Version: 3.6.3
 Architecture: all
 Depends: debconf, bash
 Priority: extra
