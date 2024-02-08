@@ -185,9 +185,11 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-3.5-turbo-0301":
     case "gpt-3.5-turbo-0613":
       return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.0020;
-    case "gpt-3.5-turbo": // shorthand
     case "gpt-3.5-turbo-1106":
       return tokens_prompt / 1000 * 0.0010 + tokens_completion / 1000 * 0.0020;
+    case "gpt-3.5-turbo": // shorthand
+    case "gpt-3.5-turbo-0125":
+      return tokens_prompt / 1000 * 0.0005 + tokens_completion / 1000 * 0.0015;
     case "gpt-3.5-turbo-16k": // shorthand
     case "gpt-3.5-turbo-16k-0613":
       return tokens_prompt / 1000 * 0.0030 + tokens_completion / 1000 * 0.0040;
@@ -203,9 +205,10 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-4-32k-0314":
     case "gpt-4-32k-0613":
       return tokens_prompt / 1000 * 0.0600 + tokens_completion / 1000 * 0.1200;
-    case "gpt-4-vision-preview": // shorthand
+    case "gpt-4-turbo-preview": // shorthand
     case "gpt-4-1106-preview":
     case "gpt-4-0125-preview":
+    case "gpt-4-vision-preview": // shorthand
     case "gpt-4-1106-vision-preview":
       return tokens_prompt / 1000 * 0.0100 + tokens_completion / 1000 * 0.0300;
     default:
