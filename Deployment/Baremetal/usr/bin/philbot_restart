@@ -1,5 +1,5 @@
-#!/bin/bash
+#!/bin/bash -e
 set -e
 source /usr/bin/philbot_init_otel
-bash /usr/bin/philbot_stop
-bash /usr/bin/philbot_start
+philbot_stop
+philbot_start

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 set -e
 source /usr/bin/philbot_init_otel
 
@@ -15,4 +15,4 @@ if [ "$SHARD_COUNT" -gt "0" ]; then
 fi
 
 echo "SHARD_COUNT=$SHARD_COUNT_NEW" > /opt/philbot/shards
-bash /usr/bin/philbot_start
+philbot_start

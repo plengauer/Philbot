@@ -6,7 +6,7 @@ if [ "$1" = "triggered" ]; then
   bash /usr/bin/philbot_stop
 fi
 
-bash /usr/bin/philbot_config_populate.sh
+philbot_config_populate
 source /usr/bin/philbot_init_otel
 
 echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.scheduler
@@ -41,7 +41,7 @@ iptables-save > /etc/iptables/rules.v4
 if [ ! -f "/opt/philbot/shards" ]; then
   echo "SHARD_COUNT=1" > /opt/philbot/shards
 fi
-bash /usr/bin/philbot_start
+philbot_start
 
 invite_link=$(curl -v http://127.0.0.1:8080/invite 2>&1 | grep location | rev | cut -d' ' -f1 | rev)
 echo "Invite with $invite_link"

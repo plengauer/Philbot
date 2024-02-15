@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 set -e
 source /usr/bin/philbot_init_otel
 
@@ -61,4 +61,4 @@ start scheduler scheduler \
     --env CONFIG_FILE=/config.properties \
     --mount type=bind,source=/var/lib/philbot/config.properties.scheduler,target=/config.properties,readonly
 
-docker image prune --force
+docker image prune --all --force
