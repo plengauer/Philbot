@@ -27,6 +27,7 @@ async function on_message_create(guild_id, channel_id, message_id, user_id, cont
 
   let models = await ai.getLanguageModels();
   let model = await ai.getDynamicModel(models);
+  if (!model) return;
   let model_fast = models[Math.max(0, models.findIndex(m => m.name == model.name)-1)];
   if (!ai.compareLanguageModelByCost(model_fast, model)) model_fast = model;
 

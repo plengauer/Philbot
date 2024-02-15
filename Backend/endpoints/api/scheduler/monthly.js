@@ -1,5 +1,6 @@
 const fs = require('fs');
 const memory = require('../../../shared/memory.js');
+const curl = require('../../../shared/curl.js');
 const discord = require('../../../shared/discord.js');
 const identity = require('../../../shared/identity.js');
 const ai = require('../../../shared/ai.js');
@@ -61,7 +62,24 @@ async function handle() {
       ])),
     resetAvatar()
   ])
+  .then(() => report())
   .then(() => undefined)
+}
+
+async function report() {
+  let channel = await discord.dms_channel_retrieve(process.env.OWNER_DISCORD_USER_ID);
+  let guilds = await discord.guilds_list();
+  let users = await discord.users_list();
+  let text = `This is your **monthly report**.\nI'm currently serving ${guilds.length} server(s) with a total of ${users.length} user(s).`;
+  let avatar = await discord.me()
+    .then(me => curl.request({ hostname: 'cdn.discordapp.com', path: `/avatars/${me.id}/${me.avatar}.png`, stream: true }))
+    .then(download => new Promise((resolve, reject) => {
+      const _buf = [];
+      download.on("data", (chunk) => _buf.push(chunk));
+      download.on("end", () => resolve(Buffer.concat(_buf)));
+      download.on("error", (err) => reject(err));
+    }));
+  return discord.post(channel.id, text, null, true, [], [], [{ content: avatar, contentType: 'image/png', filename: 'avatar.png' }]);
 }
 
 async function sendUsersActivityWarning(user_ids) {

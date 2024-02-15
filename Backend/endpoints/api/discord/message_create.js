@@ -391,6 +391,9 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
       .then(about => respond(guild_id, channel_id, event_id, `${about}\nUse ${url}/privacy to share this information with others outside your discord server.`));
   
   } else if (message.toLowerCase() == 'request my data') {
+    if (guild_id) {
+      return discord.respond(channel_id, event_id, 'To protect your data, I will only accept data requests in DM channels!');
+    }
     return memory.list()
       .then(entries => entries.filter(entry => entry.key.includes(':user:' + user_id)))
       .then(entries => {

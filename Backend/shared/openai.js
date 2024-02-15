@@ -8,7 +8,6 @@ const media = require('./media.js');
 let FormData = require('form-data');
 
 const token = process.env.OPENAI_API_TOKEN;
-const debug = process.env.OPENAI_DEBUG == 'true'
 
 function getCostLimit() {
   return token ? parseFloat(process.env.OPENAI_COST_LIMIT ?? '1.00') : 0;
@@ -186,9 +185,11 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-3.5-turbo-0301":
     case "gpt-3.5-turbo-0613":
       return tokens_prompt / 1000 * 0.0015 + tokens_completion / 1000 * 0.0020;
-    case "gpt-3.5-turbo": // shorthand
     case "gpt-3.5-turbo-1106":
       return tokens_prompt / 1000 * 0.0010 + tokens_completion / 1000 * 0.0020;
+    case "gpt-3.5-turbo": // shorthand
+    case "gpt-3.5-turbo-0125":
+      return tokens_prompt / 1000 * 0.0005 + tokens_completion / 1000 * 0.0015;
     case "gpt-3.5-turbo-16k": // shorthand
     case "gpt-3.5-turbo-16k-0613":
       return tokens_prompt / 1000 * 0.0030 + tokens_completion / 1000 * 0.0040;
@@ -200,13 +201,14 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-4": // shorthand
     case "gpt-4-0613":
       return tokens_prompt / 1000 * 0.0300 + tokens_completion / 1000 * 0.0600;
-    case "gpt-4-32k-0314":
-      return tokens_prompt / 1000 * 0.0600 + tokens_completion / 1000 * 0.1200;
     case "gpt-4-32k": // shorthand
+    case "gpt-4-32k-0314":
     case "gpt-4-32k-0613":
       return tokens_prompt / 1000 * 0.0600 + tokens_completion / 1000 * 0.1200;
-    case "gpt-4-vision-preview": // shorthand
+    case "gpt-4-turbo-preview": // shorthand
     case "gpt-4-1106-preview":
+    case "gpt-4-0125-preview":
+    case "gpt-4-vision-preview": // shorthand
     case "gpt-4-1106-vision-preview":
       return tokens_prompt / 1000 * 0.0100 + tokens_completion / 1000 * 0.0300;
     default:
@@ -399,9 +401,9 @@ function getSpeechVoices(model) {
 }
 
 async function createSpeech(model, user, voice, input, audio_stream_format, report) {
-  let response = await HTTP('/v1/audio/speech', { model: model, voice: voice, input: input, response_format: "mp3" }, {}, true);
+  let response =await HTTP('/v1/audio/speech', { model: model, voice: voice, input: input, response_format: "mp3" }, {}, true);
   await report(model, getSpeechCost(model, input.length));
-  return media.convert(response.body, response.headers['content-type'].split('/')[1], audio_stream_format);
+  return media.convert(response, response.headers['content-type'].split('/')[1], audio_stream_format);
 }
 
 function getSpeechCost(model, length) {
@@ -425,11 +427,11 @@ async function HTTP(endpoint, body, headers = {}, stream = false) {
     stream: stream,
     timeout: 1000 * 60 * 15
   });
-  if (debug) console.log('DEBUG OPENAI ' + (endpoint == '/v1/audio/transcriptions' ? '<audio>' :  JSON.stringify(body)) + ' => ' + (endpoint.startsWith('/v1/images/') && body.response_format == 'b64_json' ? '<image>' : JSON.stringify(result)));
   return result;
 }
 
 async function getModels() {
+  if (!token) return [];
   return curl.request({ method: 'GET', hostname: 'api.openai.com', path: '/v1/models', headers: { 'Authorization': 'Bearer ' + token }, cache: 60 * 60 * 24 })
     .then(result => result.data.map(model => model.id.replace(/:/, '-')))
     .then(models => Array.from(new Set(models)));
