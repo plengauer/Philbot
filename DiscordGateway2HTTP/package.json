@@ -22,7 +22,8 @@
     "@opentelemetry/resource-detector-container": "*",
     "@opentelemetry/resource-detector-aws": "*",
     "@opentelemetry/resource-detector-gcp": "*",
-    "@opentelemetry/resource-detector-alibaba-cloud": "*"
+    "@opentelemetry/resource-detector-alibaba-cloud": "*",
+    "xhr2": "^0.2.1"
   },
   "scripts": {
     "start": "node discordgateway2http.js",
