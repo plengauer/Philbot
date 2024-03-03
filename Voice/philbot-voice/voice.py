@@ -112,6 +112,7 @@ resource = get_aggregated_resources([
         ProcessResourceDetector(),
         OTELResourceDetector(),
         ServiceResourceDetector(),
+        OracleResourceDetector(),
     ]
 )
 
