@@ -46,6 +46,30 @@ class ServiceResourceDetector(ResourceDetector):
             "service.instance.id": str(uuid.uuid4())
         })
 
+class OracleResourceDetector(ResourceDetector):
+    def detect(self) -> Resource:
+        try:
+            metadata = self.fetch_metadata()
+            resource = Resource.create({
+                "cloud.provider": "oracle",
+                "cloud.region": metadata['region'],
+                "cloud.availability_zone": metadata['availabilityDomain'],
+                "cloud.account_id": metadata['tenantId'],
+                "host.type": metadata['shape'],
+                "host.name": metadata['hostname'],
+                "host.id": metadata['id'],
+                "host.image_id": metadata['image']
+            })
+            return resource
+        except Exception as e:
+            print("Error fetching metadata:", e)
+            return Resource({})
+
+    def fetch_metadata(self):
+        response = requests.get('http://169.254.169.254/opc/v1/instance/', headers={'Authorization': 'Bearer Oracle'})
+        response.raise_for_status()  # Raise an exception for 4xx or 5xx status codes
+        return response.json()
+
 class AwsEC2ResourceDetector(ResourceDetector):
     def detect(self) -> Resource:
         context_token = attach(set_value(_SUPPRESS_INSTRUMENTATION_KEY, True))
@@ -88,6 +112,7 @@ resource = get_aggregated_resources([
         ProcessResourceDetector(),
         OTELResourceDetector(),
         ServiceResourceDetector(),
+        OracleResourceDetector(),
     ]
 )
 

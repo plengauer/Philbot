@@ -65,12 +65,52 @@ module DynatraceResourceDetector
   end
 end
 
+module OracleResourceDetector
+  extend self
+
+  def detect
+    begin
+      metadata = fetch_metadata
+      resource_attributes = {
+        OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER => 'oracle',
+        OpenTelemetry::SemanticConventions::Resource::CLOUD_AVAILABILITY_ZONE => metadata['availabilityDomain'],
+        OpenTelemetry::SemanticConventions::Resource::CLOUD_ACCOUNT_ID => metadata['tenantId'],
+        OpenTelemetry::SemanticConventions::Resource::CLOUD_REGION => metadata['region'],
+        OpenTelemetry::SemanticConventions::Resource::HOST_TYPE => metadata['shape'],
+        OpenTelemetry::SemanticConventions::Resource::HOST_NAME => metadata['hostname'],
+        OpenTelemetry::SemanticConventions::Resource::HOST_ID => metadata['id'],
+        OpenTelemetry::SemanticConventions::Resource::HOST_IMAGE_ID => metadata['image']
+      }
+      resource_attributes.delete_if { |_key, value| value.nil? || value.empty? }
+      return OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
+    rescue StandardError => e
+      puts "Error fetching metadata: #{e.message}"
+      return OpenTelemetry::SDK::Resources::Resource.create({})
+    end
+  end
+
+  private
+
+  def fetch_metadata
+    uri = URI('http://169.254.169.254/opc/v1/instance/')
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Get.new(uri)
+    request['Authorization'] = 'Bearer Oracle'
+
+    response = http.request(request)
+    raise "Failed to fetch metadata: #{response.message}" unless response.code == '200'
+
+    JSON.parse(response.body)
+  end
+end
+
+
 OpenTelemetry::SDK.configure do |c|
   c.resource = DynatraceResourceDetector.detect
   c.resource = AwsEC2ResourceDetector.detect
   c.resource = ServiceResourceDetector.detect
   c.resource = OpenTelemetry::Resource::Detectors::AutoDetector.detect
-
+  c.resource = OracleResourceDetector.detect
   c.add_span_processor(
     OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
       OpenTelemetry::Exporter::OTLP::Exporter.new(
