@@ -43,5 +43,4 @@ if [ ! -f "/opt/philbot/shards" ]; then
 fi
 philbot_start
 
-invite_link=$(curl -v http://127.0.0.1:8080/invite 2>&1 | grep location | rev | cut -d' ' -f1 | rev)
-echo "Invite with $invite_link"
+curl -v http://127.0.0.1:8080/invite 2>&1 | grep location | rev | cut -d' ' -f1 | rev | xargs echo 'Invite with'
