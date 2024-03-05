@@ -20,6 +20,9 @@ const { awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector } =
 const { gcpDetector } = require('@opentelemetry/resource-detector-gcp');
 const { alibabaCloudEcsDetector } = require('@opentelemetry/resource-detector-alibaba-cloud');
 
+const XMLHttpRequest = require('xhr2');
+//const { azureCloudAppDetector } = require('@opentelemetry/resource-detector-azure');
+
 class ShutdownAwareSpanProcessor {
   processor;
   open;
@@ -61,6 +64,38 @@ class DynatraceResourceDetector {
     }
     return new Resource({});
   }
+}
+
+class OracleResourceDetector {
+    detect() {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'http://169.254.169.254/opc/v1/instance/', true);
+            xhr.setRequestHeader('Authorization', 'Bearer Oracle');
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    try {
+                        const metadata = JSON.parse(xhr.responseText);
+                        const resource = new Resource({
+                            [SemanticResourceAttributes.CLOUD_PROVIDER]: 'oracle',
+                            [SemanticResourceAttributes.CLOUD_REGION]: metadata.region,
+                            [SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE]: metadata.availabilityDomain,
+                            [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: metadata.tenantId,
+                            [SemanticResourceAttributes.HOST_TYPE]: metadata.shape,
+                            [SemanticResourceAttributes.HOST_NAME]: metadata.hostname,
+                            [SemanticResourceAttributes.HOST_ID]: metadata.id,
+                            [SemanticResourceAttributes.HOST_IMAGE_ID]: metadata.image,
+                        });
+                        resolve(resource);
+                    } catch (error) {
+                        console.error('Error parsing metadata JSON:', error);
+                        reject(error);
+                    }
+                }
+            };
+            xhr.send();
+        });
+    }
 }
 
 class ServiceResourceDetector {
@@ -106,7 +141,8 @@ function opentelemetry_create() {
       new DynatraceResourceDetector(),
       alibabaCloudEcsDetector,
       gcpDetector,
-      // TODO azure
+      new OracleResourceDetector(),
+      //azureCloudAppDetector, TODO azure
       awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector,
       containerDetector, // TODO k8s detector
       gitSyncDetector, gitHubDetector,

@@ -16,6 +16,7 @@ import opentelemetry_resources_container from '@opentelemetry/resource-detector-
 import opentelemetry_resources_aws from '@opentelemetry/resource-detector-aws';
 import opentelemetry_resources_gcp from '@opentelemetry/resource-detector-gcp';
 import opentelemetry_resources_alibaba_cloud from '@opentelemetry/resource-detector-alibaba-cloud';
+import XMLHttpRequest from 'xhr2';
 
 class ShutdownAwareSpanProcessor {
   processor;
@@ -57,6 +58,38 @@ class DynatraceResourceDetector {
       } catch { }
     }
     return new opentelemetry_resources.Resource({});
+  }
+}
+
+class OracleResourceDetector {
+  detect() {
+      return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', 'http://169.254.169.254/opc/v1/instance/', true);
+          xhr.setRequestHeader('Authorization', 'Bearer Oracle');
+          xhr.onload = function () {
+              if (xhr.status === 200) {
+                  try {
+                      const metadata = JSON.parse(xhr.responseText);
+                      const resource = new Resource({
+                          [SemanticResourceAttributes.CLOUD_PROVIDER]: 'oracle',
+                          [SemanticResourceAttributes.CLOUD_REGION]: metadata.region,
+                          [SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE]: metadata.availabilityDomain,
+                          [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: metadata.tenantId,
+                          [SemanticResourceAttributes.HOST_TYPE]: metadata.shape,
+                          [SemanticResourceAttributes.HOST_NAME]: metadata.hostname,
+                          [SemanticResourceAttributes.HOST_ID]: metadata.id,
+                          [SemanticResourceAttributes.HOST_IMAGE_ID]: metadata.image,
+                      });
+                      resolve(resource);
+                  } catch (error) {
+                      console.error('Error parsing metadata JSON:', error);
+                      reject(error);
+                  }
+              }
+          };
+          xhr.send();
+      });
   }
 }
 
@@ -114,7 +147,8 @@ function create() {
       opentelemetry_resources_github.gitHubDetector,
       opentelemetry_resources.processDetector,
       opentelemetry_resources.envDetector,
-      new ServiceResourceDetector()
+      new ServiceResourceDetector(),
+      new OracleResourceDetector()
     ],
   });
 }

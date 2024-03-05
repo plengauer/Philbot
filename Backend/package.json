@@ -1,6 +1,6 @@
 {
   "name": "philbot-backend",
-  "version": "3.10.0",
+  "version": "3.12.0",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "form-data": "^4.0.0",
@@ -22,7 +22,8 @@
     "@opentelemetry/resource-detector-container": "*",
     "@opentelemetry/resource-detector-aws": "*",
     "@opentelemetry/resource-detector-gcp": "*",
-    "@opentelemetry/resource-detector-alibaba-cloud": "*"
+    "@opentelemetry/resource-detector-alibaba-cloud": "*",
+    "xhr2": "^0.2.1"
   },
   "scripts": {
     "start": "node backend.js",
