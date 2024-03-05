@@ -86,14 +86,7 @@ class OracleResourceDetector {
                       console.error('Error parsing metadata JSON:', error);
                       reject(error);
                   }
-              } else {
-                  console.error('Failed to fetch metadata:', xhr.statusText);
-                  reject(new Error('Failed to fetch metadata'));
               }
-          };
-          xhr.onerror = function () {
-              console.error('Error fetching metadata:', xhr.statusText);
-              reject(new Error('Error fetching metadata'));
           };
           xhr.send();
       });
