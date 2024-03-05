@@ -16,8 +16,7 @@ import opentelemetry_resources_container from '@opentelemetry/resource-detector-
 import opentelemetry_resources_aws from '@opentelemetry/resource-detector-aws';
 import opentelemetry_resources_gcp from '@opentelemetry/resource-detector-gcp';
 import opentelemetry_resources_alibaba_cloud from '@opentelemetry/resource-detector-alibaba-cloud';
-
-const XMLHttpRequest = require('xhr2');
+import XMLHttpRequest from 'xhr2';
 
 class ShutdownAwareSpanProcessor {
   processor;
@@ -87,14 +86,7 @@ class OracleResourceDetector {
                       console.error('Error parsing metadata JSON:', error);
                       reject(error);
                   }
-              } else {
-                  console.error('Failed to fetch metadata:', xhr.statusText);
-                  reject(new Error('Failed to fetch metadata'));
               }
-          };
-          xhr.onerror = function () {
-              console.error('Error fetching metadata:', xhr.statusText);
-              reject(new Error('Error fetching metadata'));
           };
           xhr.send();
       });
