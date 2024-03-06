@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/bash -e
 source /usr/bin/philbot_init_otel
 
 if [ "$1" = "triggered" ]; then
