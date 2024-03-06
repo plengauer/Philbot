@@ -1,5 +1,4 @@
 #!/bin/bash -e
-set -e
 . /usr/share/debconf/confmodule
 
 db_beginblock
