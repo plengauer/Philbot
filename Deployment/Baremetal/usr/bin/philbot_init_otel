@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ -f /var/lib/philbot/environment.properties.deployment ] && [ -f /usr/bin/opentelemetry_shell.sh ] && [ -z "$OTEL_SHELL_INJECTED" ]; then
+if [ -f /var/lib/philbot/environment.properties.deployment ] && [ -f /usr/bin/opentelemetry_shell.sh ] && [ -z "$_otel_shell_injected" ]; then
   while IFS= read -r line; do
     key=$(echo "$line" | cut -d'=' -f1)
     value=$(echo "$line" | cut -d'=' -f2-)
