@@ -1,4 +1,3 @@
 #!/bin/bash -e
-set -e
 source /usr/bin/philbot_init_otel
 philbot_stop
