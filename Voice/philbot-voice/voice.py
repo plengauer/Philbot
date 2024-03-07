@@ -61,7 +61,7 @@ class OracleResourceDetector(ResourceDetector):
                 "host.image_id": metadata['image']
             })
             return resource
-        except Exception as e:
+        except Exception:
             return Resource({})
 
     def fetch_metadata(self):

@@ -85,8 +85,13 @@ class OracleResourceDetector {
                   } catch (error) {
                       reject(error);
                   }
+              } else {
+                reject();
               }
           };
+          xhr.onerror = reject;
+          xhr.onabort = reject;
+          xhr.ontimeout = reject;
           xhr.send();
       }).catch(_ => new opentelemetry_resources.Resource({}));
   }
