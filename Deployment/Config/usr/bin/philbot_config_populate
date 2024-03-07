@@ -4,7 +4,7 @@ destination_directory=/var/lib/philbot
 . /usr/share/debconf/confmodule
 
 value() {
-    db_get philbot/"$"
+    db_get philbot/"$*"
     echo "$RET"
 }
 
