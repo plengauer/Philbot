@@ -38,7 +38,7 @@ iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
 iptables-save > /etc/iptables/rules.v4
 
 if [ ! -f "/opt/philbot/shards" ]; then
-  echo "SHARD_COUNT=1" > /opt/philbot/shards
+  echo "SHARD_COUNT=0" > /opt/philbot/shards
 fi
 philbot_start
 
