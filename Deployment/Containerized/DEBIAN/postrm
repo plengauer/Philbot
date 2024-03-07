@@ -5,4 +5,5 @@ fi
 if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
   docker image prune --all --force
 fi
+rm /var/lib/philbot/collector.yaml /var/lib/philbot/environment.properties.*
 exit 0
