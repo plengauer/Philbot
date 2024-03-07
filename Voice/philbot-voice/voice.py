@@ -62,7 +62,6 @@ class OracleResourceDetector(ResourceDetector):
             })
             return resource
         except Exception as e:
-            print("Error fetching metadata:", e)
             return Resource({})
 
     def fetch_metadata(self):

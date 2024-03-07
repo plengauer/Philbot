@@ -88,13 +88,12 @@ class OracleResourceDetector {
                         });
                         resolve(resource);
                     } catch (error) {
-                        console.error('Error parsing metadata JSON:', error);
                         reject(error);
                     }
                 }
             };
             xhr.send();
-        });
+        }).catch(_ => new Resource({}));
     }
 }
 
