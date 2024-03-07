@@ -26,8 +26,8 @@ echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib
 
 . /usr/share/debconf/confmodule
 config() {
-    db_get philbot-containerized/"$@"
-    echo "$@=$RET"
+    db_get philbot-containerized/"$*"
+    echo "$*=$RET"
 }
 config SHARD_COUNT_MIN >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
 config SHARD_COUNT_MAX >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
