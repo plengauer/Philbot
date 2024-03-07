@@ -1,4 +1,3 @@
 #!/bin/bash -e
-set -e
 source /usr/bin/philbot_init_otel
 systemctl start philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice

@@ -1,5 +1,4 @@
 #!/bin/bash -e
-set -e
 source /usr/bin/philbot_init_otel
 
 source /opt/philbot/shards
@@ -14,7 +13,7 @@ start() {
       if [ "$image_digest" = "$instance_digest" ]; then
         return 0
       fi
-      docker rm philbot-$name
+      docker rm philbot-$name --force
     fi
     docker create \
         --name philbot-$name \
