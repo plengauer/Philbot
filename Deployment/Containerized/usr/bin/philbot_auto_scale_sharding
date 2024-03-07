@@ -8,7 +8,7 @@ if [ "$SHARD_COUNT" -eq "$SHARD_COUNT_NEW" ]; then
 fi
 
 if [ "$SHARD_COUNT" -gt "0" ]; then
-  seq -s " philbot-discordgateway2http_" 0 $(($SHARD_COUNT-1)) | xargs -I '{}' echo philbot-discordgateway2http_'{}' | xargs parallel -j "$SHARD_COUNT" docker rm -- '{}'
+  seq -s " philbot-discordgateway2http_" 0 $(($SHARD_COUNT-1)) | xargs -I '{}' echo philbot-discordgateway2http_'{}' | xargs -I {IMAGES} parallel -i -j "$SHARD_COUNT" docker rm {} --force -- {IMAGES}
 fi
 
 echo "SHARD_COUNT=$SHARD_COUNT_NEW" > /opt/philbot/shards
