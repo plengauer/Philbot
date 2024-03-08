@@ -2,7 +2,7 @@
 source /usr/bin/philbot_init_otel
 
 if [ "$1" = "triggered" ]; then
-  philbot_stop
+  philbot_stop >&2
 fi
 
 philbot_config_populate
@@ -41,6 +41,6 @@ iptables-save > /etc/iptables/rules.v4
 if [ ! -f "/opt/philbot/shards" ]; then
   echo "SHARD_COUNT=0" > /opt/philbot/shards
 fi
-philbot_start
+philbot_start >&2
 
 curl -v http://127.0.0.1:8080/invite 2>&1 | grep location | rev | cut -d' ' -f1 | rev | xargs echo 'Invite with' >&2
