@@ -2,7 +2,7 @@
 source /usr/bin/philbot_init_otel
 
 if [ "$1" = "triggered" ]; then
-  bash /usr/bin/philbot_stop
+  philbot_stop
 fi
 
 philbot_config_populate
