@@ -127,7 +127,7 @@ function handleMessage(state, message) {
         'discord.guild.id': event.d?.guild_id ?? (event.t?.startsWith('GUILD_') ? event.d.id : ""),
         'discord.channel.id': event.d?.channel_id ?? (event.t?.startsWith('CHANNEL_') ? event.d.id : ""),
         'discord.user.id': event.d?.user_id ?? event.d?.user?.id ?? event.d?.member?.user?.id ?? event.d?.author?.id ?? (event.t?.startsWith('USER_') ? event.d.id : ""),
-        'discord.activities': event.d?.activities?.map(activity => activity.name).join(',')
+        'discord.activities': event.d?.activities?.map(activity => activity.name).sort().join(',')
     });
     switch(event.op) {
         case 0 /* ready | resumed | dispatch */: return handleDispatch(state, event.s, event.t, event.d).catch(error => console.log(error));
@@ -270,7 +270,7 @@ async function handleDispatch(state, sequence, event, payload) {
             span.setAttribute('discord.client_status.desktop', payload.client_status?.desktop);
             span.setAttribute('discord.client_status.mobile', payload.client_status?.mobile);
             span.setAttribute('discord.client_status.web', payload.client_status?.web);
-            span.setAttribute('discord.activities', payload.activities?.map(activity => activity.name + (activity.details ? ', ' + activity.details : '') + (activity.state ? ', ' + activity.state : '')))
+            span.setAttribute('discord.activities', payload.activities?.map(activity => activity.name + (activity.details ? ', ' + activity.details : '') + (activity.state ? ', ' + activity.state : ''))?.sort())
             return opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
                     () => dispatch(state, event, payload)
                 )
