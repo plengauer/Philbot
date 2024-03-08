@@ -1,6 +1,6 @@
 {
   "name": "philbot-discordgateway2http",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "description": "connects to the discord gateway and forwards all events via HTTP(s) to a pre-configured endpoint",
   "type": "module",
