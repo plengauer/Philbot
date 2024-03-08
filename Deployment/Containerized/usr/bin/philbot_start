@@ -29,20 +29,18 @@ start() {
 
 start selfmonitoring selfmonitoring --mount type=bind,source=/var/lib/philbot/collector.yaml,target=/etc/otelcol/config.yaml
 
-if [ "$SHARD_COUNT" -gt 0 ]; then 
-    start voice voice \
-        --env PORT=12345 \
-        --env STATE_STORAGE_DIRECTORY=/sessions \
-        --mount type=bind,source=/var/lib/philbot/voice_sessions,target=/sessions \
-      --env CACHE_DIRECTORY=/cache \
-      --mount type=bind,source=/var/lib/philbot/audio_cache,target=/cache
+start voice voice \
+    --env PORT=12345 \
+    --env STATE_STORAGE_DIRECTORY=/sessions \
+    --mount type=bind,source=/var/lib/philbot/voice_sessions,target=/sessions \
+    --env CACHE_DIRECTORY=/cache \
+    --mount type=bind,source=/var/lib/philbot/audio_cache,target=/cache
 
-    start backend backend \
-        --env PORT=8080 \
-        --env VOICE_PORT=12345 \
-        --env MEMORY_DIRECTORY=/memory \
-        --mount type=bind,source=/var/lib/philbot/memory,target=/memory
-fi
+start backend backend \
+    --env PORT=8080 \
+    --env VOICE_PORT=12345 \
+    --env MEMORY_DIRECTORY=/memory \
+    --mount type=bind,source=/var/lib/philbot/memory,target=/memory
 
 start discordgateway2httpmaster discordgateway2httpmaster \
     --env PORT=7999
