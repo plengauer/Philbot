@@ -1,6 +1,14 @@
-#!/bin/bash
+#!/bin/bash -e
 if [ -f /usr/bin/philbot_init_otel ]; then
   source /usr/bin/philbot_init_otel
 fi
-philbot_stop
-exit 0
+
+if [ "$1" = 'install' ]; then
+  # nothing to do
+elif [ "$1" = 'upgrade' ]; then
+  philbot_stop
+elif [ "$1" = 'abort-upgrade' ]; then
+  philbot_start || true
+else
+  exit 1
+fi
