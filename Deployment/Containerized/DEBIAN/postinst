@@ -4,7 +4,8 @@ if [ "$1" = 'abort-configure' ] || [ "$1" = 'abort-upgrade' ] || [ "$1" = 'abort
   exit 0
 elif [ "$1" = 'triggered' ]; then
   philbot_config_populate
-  philbot_restart
+  philbot_stop
+  philbot_start
 elif [ "$1" = 'configure' ]; then
   philbot_config_populate
   source /usr/bin/philbot_init_otel
