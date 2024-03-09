@@ -1,5 +1,10 @@
-#!/bin/bash
+#!/bin/bash -e
 source /usr/bin/philbot_init_otel
-philbot_stop
-systemctl disable philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice
-exit 0
+if [ "$1" = 'remove' ] || [ "$1" = 'upgrade' ] || [ "$1" = 'deconfigure' ]; then
+  philbot_stop
+  systemctl disable philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice
+elif [ "$1" = 'failed-upgrade' ]; then
+  philbot_start || true
+else
+  exit 1
+fi
