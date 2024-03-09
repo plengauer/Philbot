@@ -1,46 +1,38 @@
 #!/bin/bash -e
 source /usr/bin/philbot_init_otel
-
-if [ "$1" = "triggered" ]; then
-  philbot_stop >&2
+if [ "$1" = 'abort-configure' ] || [ "$1" = 'abort-upgrade' ] || [ "$1" = 'abort-remove' ] || [ "$1" = 'abort-deconfigure' ]; then
+  exit 0
+elif [ "$1" = 'triggered' ]; then
+  philbot_config_populate
+  philbot_restart
+elif [ "$1" = 'configure' ]; then
+  philbot_config_populate
+  source /usr/bin/philbot_init_otel
+  echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.scheduler
+  echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.discordgateway2http
+  echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+  echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.backend
+  echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.voice
+  echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.scheduler
+  echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.discordgateway2http
+  echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+  echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.backend
+  echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.voice
+  echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.scheduler
+  echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.discordgateway2http
+  echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+  echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.backend
+  echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.voice
+  . /usr/share/debconf/confmodule
+  config() { db_get philbot-containerized/"$*"; echo "$*=$RET"; }
+  config SHARD_COUNT_MIN >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+  config SHARD_COUNT_MAX >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+  config SHARD_COUNT_REDUNDANT >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
+  db_stop
+  iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+  iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
+  iptables-save > /etc/iptables/rules.v4
+  if [ ! -f "/opt/philbot/shards" ]; then echo "SHARD_COUNT=0" > /opt/philbot/shards; fi
+  philbot_start >&2
+  curl -v http://127.0.0.1:8080/invite 2>&1 | grep location | rev | cut -d' ' -f1 | rev | xargs echo 'Invite with' >&2
 fi
-
-philbot_config_populate
-source /usr/bin/philbot_init_otel
-
-echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.scheduler
-echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.discordgateway2http
-echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
-echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.backend
-echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.voice
-echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.scheduler
-echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.discordgateway2http
-echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
-echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.backend
-echo "OPENTELEMETRY_METRICS_API_ENDPOINT=http://127.0.0.1:4318/v1/metrics" >> /var/lib/philbot/environment.properties.voice
-echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.scheduler
-echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.discordgateway2http
-echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
-echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.backend
-echo "OPENTELEMETRY_LOGS_API_ENDPOINT=http://127.0.0.1:4318/v1/logs" >> /var/lib/philbot/environment.properties.voice
-
-. /usr/share/debconf/confmodule
-config() {
-    db_get philbot-containerized/"$*"
-    echo "$*=$RET"
-}
-config SHARD_COUNT_MIN >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
-config SHARD_COUNT_MAX >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
-config SHARD_COUNT_REDUNDANT >> /var/lib/philbot/environment.properties.discordgateway2httpmaster
-db_stop
-
-iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
-iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
-iptables-save > /etc/iptables/rules.v4
-
-if [ ! -f "/opt/philbot/shards" ]; then
-  echo "SHARD_COUNT=0" > /opt/philbot/shards
-fi
-philbot_start >&2
-
-curl -v http://127.0.0.1:8080/invite 2>&1 | grep location | rev | cut -d' ' -f1 | rev | xargs echo 'Invite with' >&2
