@@ -1,3 +1,9 @@
 #!/bin/bash -e
 source /usr/bin/philbot_init_otel
-philbot_stop
+if [ "$1" = 'remove' ] || [ "$1" = 'upgrade' ] || [ "$1" = 'deconfigure' ]; then
+  philbot_stop
+elif [ "$1" = 'failed-upgrade' ]; then
+  philbot_start || true
+else
+  exit 1
+fi
