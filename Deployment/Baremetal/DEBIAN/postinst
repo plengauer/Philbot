@@ -1,21 +1,22 @@
 #!/bin/bash -e
 source /usr/bin/philbot_init_otel
-
-if [ "$1" = "triggered" ]; then
-  philbot_stop
+if [ "$1" = 'abort-configure' ] || [ "$1" = 'abort-upgrade' ] || [ "$1" = 'abort-remove' ] || [ "$1" = 'abort-deconfigure' ]; then
+  exit 0
+elif [ "$1" = 'triggered' ]; then
+  philbot_config_populate
+  philbot_restart
+elif [ "$1" = 'configure' ]; then
+  philbot_config_populate
+  source /usr/bin/philbot_init_otel
+  wget -O /opt/philbot/libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2
+  tar -xf /opt/philbot/libopus.tar.bz2 -C /opt/philbot
+  rm /opt/philbot/libopus.tar.bz2
+  iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+  iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
+  iptables-save > /etc/iptables/rules.v4
+  systemctl daemon-reload
+  systemctl enable philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice
+  philbot_start
+else
+  exit 1
 fi
-
-philbot_config_populate
-source /usr/bin/philbot_init_otel
-
-wget -O /opt/philbot/libopus.tar.bz2 https://anaconda.org/anaconda/libopus/1.3/download/linux-64/libopus-1.3-h7b6447c_0.tar.bz2
-tar -xf /opt/philbot/libopus.tar.bz2 -C /opt/philbot
-rm /opt/philbot/libopus.tar.bz2
-
-iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
-iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
-iptables-save > /etc/iptables/rules.v4
-
-systemctl daemon-reload
-systemctl enable philbot_scheduler philbot_discordgateway2http philbot_backend philbot_voice
-philbot_start
