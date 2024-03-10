@@ -1,10 +1,14 @@
-#!/bin/bash
+#!/bin/bash -e
 if [ -f /usr/bin/philbot_init_otel ]; then
   source /usr/bin/philbot_init_otel
 fi
 systemctl daemon-reload
-if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
-  rm -rf /opt/philbot
+if [ "$1" = 'remove' ] || [ "$1" = 'purge' ] || [ "$1" = 'disappear' ]; then
+  rm -rf /opt/philbot /var/lib/philbot/collector.yaml /var/lib/philbot/environment.properties.*
+elif [ "$1" = 'upgrade' ]; then
+  true
+elif [ "$1" = 'failed-upgrade' ] || [ "$1" = 'abort-install' ] || [ "$1" = 'abort-upgrade' ]; then
+  true
+else
+  exit 1
 fi
-rm /var/lib/philbot/collector.yaml /var/lib/philbot/environment.properties.*
-exit 0
