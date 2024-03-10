@@ -38,7 +38,8 @@ async function notifyMembers(event) {
                         }
                     }
                     return true;
-                })
+                }),
+                discord.guild_member_has_permission(event.guild_id, event.channel_id, member.user.id, 'VIEW_CHANNELS').then(has => !has)
             ])
             .then(values => values.some(value => value) ? null : member))
         ))
