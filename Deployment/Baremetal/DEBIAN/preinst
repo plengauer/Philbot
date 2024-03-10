@@ -2,9 +2,8 @@
 if [ -f /usr/bin/philbot_init_otel ]; then
   source /usr/bin/philbot_init_otel
 fi
-
 if [ "$1" = 'install' ]; then
-  # nothing to do
+  true
 elif [ "$1" = 'upgrade' ]; then
   philbot_stop
 elif [ "$1" = 'abort-upgrade' ]; then
