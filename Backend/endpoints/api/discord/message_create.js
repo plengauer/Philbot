@@ -189,7 +189,7 @@ async function handleMessageForSOSMentions(guild_id, channel_id, event_id, user_
   return respond(guild_id, channel_id, event_id, `**SOS** by ${discord.mention_user(user_id)} for ` + activities.join(',') + ` ` + user_ids.map(discord.mention_user).join(', '));
 }
 
-async function resolveMembersForSpecialActivityMentions(guild_id, channel_id, user_id, message, activities) {
+async function resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities) {
   let members = await discord.guild_members_list(guild_id);
   let user_ids = members.map(member => member.user.id).filter(other_user_id => user_id !== other_user_id && !message.includes(other_user_id));
   user_ids = await Promise.all(user_ids.map(other_user_id => memory.get(`activities:all:user:${other_user_id }`, [])
