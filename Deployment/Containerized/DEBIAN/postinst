@@ -2,7 +2,7 @@
 source /usr/bin/philbot_init_otel
 if [ "$1" = 'abort-configure' ] || [ "$1" = 'abort-upgrade' ] || [ "$1" = 'abort-remove' ] || [ "$1" = 'abort-deconfigure' ]; then
   exit 0
-elif [ "$1" = 'triggered' ]; then
+elif [ "$1" = 'triggered' ] || [ "$1" = 'reconfigure' ]; then
   philbot_config_populate
   philbot_stop
   philbot_start
