@@ -166,7 +166,7 @@ async function handleMessageForSpecificActivityMentions(guild_id, channel_id, ev
       activities.push(message.substring(f, t));
     }
   }
-  let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
+  let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, channel_id, user_id, message, activities);
   if (user_ids.length == 0) return;
   return respond(guild_id, channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
 }
@@ -175,7 +175,7 @@ async function handleMessageForGenericActivityMentions(guild_id, channel_id, eve
   if (!message.includes('@activity')) return;
   let activities = await memory.get(`activities:current:user:${user_id}`, []);
   if (activities.length == 0) return;
-  let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
+  let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, channel_id, user_id, message, activities);
   if (user_ids.length == 0) return;
   return respond(guild_id, channel_id, event_id, 'Fyi ' + user_ids.map(discord.mention_user).join(', '));
 }
@@ -184,12 +184,12 @@ async function handleMessageForSOSMentions(guild_id, channel_id, event_id, user_
   if (!message.toUpperCase().includes('SOS') && !message.toUpperCase().includes('S.O.S')) return;
   let activities = await memory.get(`activities:current:user:${user_id}`, []);
   if (activities.length == 0) return;
-  let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities);
+  let user_ids = await resolveMembersForSpecialActivityMentions(guild_id, channel_id, user_id, message, activities);
   if (user_ids.length == 0) return;
   return respond(guild_id, channel_id, event_id, `**SOS** by ${discord.mention_user(user_id)} for ` + activities.join(',') + ` ` + user_ids.map(discord.mention_user).join(', '));
 }
 
-async function resolveMembersForSpecialActivityMentions(guild_id, user_id, message, activities) {
+async function resolveMembersForSpecialActivityMentions(guild_id, channel_id, user_id, message, activities) {
   let members = await discord.guild_members_list(guild_id);
   let user_ids = members.map(member => member.user.id).filter(other_user_id => user_id !== other_user_id && !message.includes(other_user_id));
   user_ids = await Promise.all(user_ids.map(other_user_id => memory.get(`activities:all:user:${other_user_id }`, [])
@@ -206,6 +206,10 @@ async function resolveMembersForSpecialActivityMentions(guild_id, user_id, messa
       }
       return false;
     }).then(value => value ? other_user_id : null)
+  ));
+  user_ids = user_ids.filter(user_id => !!user_id);
+  user_ids = await Promise.all(user_ids.map(other_user_id =>
+    discord.guild_member_has_permission(guild_id, channel_id, user_id, 'VIEW_CHANNELS').then(haz => haz ? other_user_id : null)
   ));
   user_ids = user_ids.filter(user_id => !!user_id);
   return user_ids;
