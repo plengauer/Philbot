@@ -36,4 +36,6 @@ elif [ "$1" = 'configure' ]; then
   if [ ! -f "/opt/philbot/shards" ]; then echo "SHARD_COUNT=0" > /opt/philbot/shards; fi
   philbot_start >&2
   curl -v http://127.0.0.1:8080/invite 2>&1 | grep location | rev | cut -d' ' -f1 | rev | xargs echo 'Invite with' >&2
+else
+  exit 1
 fi
