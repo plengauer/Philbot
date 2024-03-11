@@ -114,10 +114,7 @@ class ServiceResourceDetector {
 }
 
 async function opentelemetry_init() {
-  let sdk;
-  try {
-    sdk = opentelemetry_create();
-  } catch(e){}
+  let sdk = opentelemetry_create();
   process.on('exit', () => sdk.shutdown());
   process.on('SIGINT', () => sdk.shutdown());
   process.on('SIGQUIT', () => sdk.shutdown());
