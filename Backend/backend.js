@@ -114,7 +114,10 @@ class ServiceResourceDetector {
 }
 
 async function opentelemetry_init() {
-  let sdk = opentelemetry_create();
+  let sdk;
+  try {
+    sdk = opentelemetry_create();
+  } catch(e){}
   process.on('exit', () => sdk.shutdown());
   process.on('SIGINT', () => sdk.shutdown());
   process.on('SIGQUIT', () => sdk.shutdown());
@@ -135,7 +138,7 @@ function opentelemetry_create() {
     metricReader: new PeriodicExportingMetricReader({
       exporter: new OTLPMetricExporter({
         url: process.env.OPENTELEMETRY_METRICS_API_ENDPOINT,
-        headers: { Authorization: process.env.OPENTELEMETRY_METRICS_API_TOKEN },
+        headers: { Authorization: process.env.OPENTELEMETRY_METRICS_API_TOKEN ? process.env.OPENTELEMETRY_METRICS_API_TOKEN : 'undefined'},
         temporalityPreference: AggregationTemporality.DELTA
       }),
       exportIntervalMillis: 5000,
