@@ -1,5 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 source /usr/bin/philbot_init_otel
 source /opt/philbot/shards
-{ echo philbot-scheduler philbot-discordgateway2httpmaster philbot-backend philbot-voice philbot-selfmonitoring; seq -s " philbot-discordgateway2http_" 0 $(($SHARD_COUNT-1)) | xargs -I '{}' echo philbot-discordgateway2http_'{}'; } | xargs parallel docker rm --force :::
-exit 0
+{ echo -n philbot-scheduler philbot-discordgateway2httpmaster philbot-backend philbot-voice philbot-selfmonitoring; seq -s " philbot-discordgateway2http_" 0 $(($SHARD_COUNT-1)) | xargs -I '{}' echo philbot-discordgateway2http_'{}'; } | xargs parallel docker rm --force :::
