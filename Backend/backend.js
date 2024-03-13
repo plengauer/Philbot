@@ -135,7 +135,7 @@ function opentelemetry_create() {
     metricReader: new PeriodicExportingMetricReader({
       exporter: new OTLPMetricExporter({
         url: process.env.OPENTELEMETRY_METRICS_API_ENDPOINT,
-        headers: { Authorization: process.env.OPENTELEMETRY_METRICS_API_TOKEN },
+        headers: { Authorization: process.env.OPENTELEMETRY_METRICS_API_TOKEN ? process.env.OPENTELEMETRY_METRICS_API_TOKEN : 'undefined'},
         temporalityPreference: AggregationTemporality.DELTA
       }),
       exportIntervalMillis: 5000,
