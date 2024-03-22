@@ -18,6 +18,7 @@ start() {
     docker create \
         --name philbot-$name \
         --restart unless-stopped \
+        --memory=100m \
         --network=host \
         --log-opt max-size=5m --log-opt max-file=5 \
         --env-file /var/lib/philbot/environment.properties.$image \
