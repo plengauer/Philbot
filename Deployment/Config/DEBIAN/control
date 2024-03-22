@@ -1,7 +1,7 @@
 Package: philbot-config
-Version: 4.1.1
+Version: 4.1.2
 Architecture: all
-Depends: debconf, bash
+Depends: bash, coreutils, util-linux, debconf, sed
 Priority: extra
 Maintainer: Philipp Lengauer <p.lengauer@gmail.com>
 Homepage: https://github.com/plengauer/Philbot
