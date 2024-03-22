@@ -51,7 +51,7 @@ start discordgateway2httpmaster discordgateway2httpmaster \
 for shard_index in $(seq 0 $(($SHARD_COUNT-1)))
 do
     start discordgateway2http_$shard_index discordgateway2http \
-        --memory=25m \
+        --memory=50m \
         --env SHARD_INDEX=auto --env SHARD_COUNT=auto \
         --env BASE_PORT=8081 \
         --env SHARDS_MASTER_PORT=7999 \
