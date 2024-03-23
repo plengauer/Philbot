@@ -27,10 +27,10 @@ start() {
     docker start philbot-$name
 }
 
-start selfmonitoring selfmonitoring --mount type=bind,source=/var/lib/philbot/collector.yaml,target=/etc/otelcol/config.yaml
+start selfmonitoring selfmonitoring --memory=25m --mount type=bind,source=/var/lib/philbot/collector.yaml,target=/etc/otelcol/config.yaml
 
 start voice voice \
-    --memory=100m \
+    --memory=150m \
     --env PORT=12345 \
     --env STATE_STORAGE_DIRECTORY=/sessions \
     --mount type=bind,source=/var/lib/philbot/voice_sessions,target=/sessions \
@@ -38,7 +38,7 @@ start voice voice \
     --mount type=bind,source=/var/lib/philbot/audio_cache,target=/cache
 
 start backend backend \
-    --memory=100m \
+    --memory=250m \
     --env PORT=8080 \
     --env VOICE_PORT=12345 \
     --env MEMORY_DIRECTORY=/memory \
