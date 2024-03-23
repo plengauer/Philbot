@@ -61,7 +61,7 @@ do
 done
 
 start scheduler scheduler \
-    --memory=25m \
+    --memory=50m \
     --env CONFIG_FILE=/config.properties \
     --mount type=bind,source=/var/lib/philbot/config.properties.scheduler,target=/config.properties,readonly
 
