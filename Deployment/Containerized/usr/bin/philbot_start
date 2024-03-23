@@ -31,7 +31,7 @@ start selfmonitoring selfmonitoring --memory=25m --mount type=bind,source=/var/l
 
 start voice voice \
     --memory=150m \
-    --env MEMORY_LIMIT=$((1024*1024*100))
+    --env MEMORY_LIMIT=$((1024*1024*100)) \
     --env PORT=12345 \
     --env STATE_STORAGE_DIRECTORY=/sessions \
     --mount type=bind,source=/var/lib/philbot/voice_sessions,target=/sessions \
