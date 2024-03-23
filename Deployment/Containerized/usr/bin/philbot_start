@@ -27,9 +27,11 @@ start() {
     docker start philbot-$name
 }
 
-start selfmonitoring selfmonitoring --mount type=bind,source=/var/lib/philbot/collector.yaml,target=/etc/otelcol/config.yaml
+start selfmonitoring selfmonitoring --memory=25m --mount type=bind,source=/var/lib/philbot/collector.yaml,target=/etc/otelcol/config.yaml
 
 start voice voice \
+    --memory=150m \
+    --env MEMORY_LIMIT=$((1024*1024*100))
     --env PORT=12345 \
     --env STATE_STORAGE_DIRECTORY=/sessions \
     --mount type=bind,source=/var/lib/philbot/voice_sessions,target=/sessions \
@@ -37,17 +39,20 @@ start voice voice \
     --mount type=bind,source=/var/lib/philbot/audio_cache,target=/cache
 
 start backend backend \
+    --memory=250m \
     --env PORT=8080 \
     --env VOICE_PORT=12345 \
     --env MEMORY_DIRECTORY=/memory \
     --mount type=bind,source=/var/lib/philbot/memory,target=/memory
 
 start discordgateway2httpmaster discordgateway2httpmaster \
+    --memory=150m \
     --env PORT=7999
 
 for shard_index in $(seq 0 $(($SHARD_COUNT-1)))
 do
     start discordgateway2http_$shard_index discordgateway2http \
+        --memory=50m \
         --env SHARD_INDEX=auto --env SHARD_COUNT=auto \
         --env BASE_PORT=8081 \
         --env SHARDS_MASTER_PORT=7999 \
@@ -57,6 +62,7 @@ do
 done
 
 start scheduler scheduler \
+    --memory=50m \
     --env CONFIG_FILE=/config.properties \
     --mount type=bind,source=/var/lib/philbot/config.properties.scheduler,target=/config.properties,readonly
 

@@ -1,6 +1,6 @@
 Package: philbot-containerized
 Provides: philbot-deployment
-Version: 2.9.5
+Version: 2.10.0
 Architecture: all
 Depends: bash, debconf, coreutils, util-linux, findutils, parallel, awk, grep, cron, wget, curl, docker.io, iptables-persistent, jq, opentelemetry-shell (>= 2.6.1)
 Conflicts: philbot-baremetal, philbot-k8s
