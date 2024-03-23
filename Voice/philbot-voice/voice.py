@@ -15,6 +15,8 @@ import socket
 import requests
 import subprocess
 import websocket
+import psutil
+import resource
 from flask import Flask, request, Response, send_file
 import yt_dlp
 import opentelemetry
@@ -1128,6 +1130,8 @@ def cleanup_loop():
         time.sleep(60)
 
 def main():
+    memory_limit = int(psutil.virtual_memory().total * 0.8)
+    resource.setrlimit(resource.RLIMIT_AS, (memory_limit, memory_limit))
     if not pyogg.PYOGG_OPUS_AVAIL or not pyogg.PYOGG_OPUS_FILE_AVAIL:
         print('VOICE not ready (opus not available)')
         exit(1)
