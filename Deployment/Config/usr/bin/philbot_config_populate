@@ -5,11 +5,11 @@ destination_directory=/var/lib/philbot
 
 value() {
     db_get philbot/"$*"
-    echo "$RET"
+    \echo "$RET"
 }
 
 config() {
-    value "$*" | xargs -I {} echo "$*={}"
+    value "$*" | xargs -I {} /bin/echo "$*={}"
 }
 
 kvp_deployment=$(config DEPLOYMENT | sed 's/DEPLOYMENT/deployment.environment/g')
@@ -92,8 +92,8 @@ cat /var/lib/philbot-config/collector.yaml \
   | sed 's~\$ENDPOINT_LOGS~'"$endpoint_logs"'~g' \
   | sed 's~\$ENDPOINT_METRICS~'"$endpoint_metrics"'~g' \
   | sed 's~\$ENDPOINT_TRACES~'"$endpoint_traces"'~g' \
-  | sed 's~\$HEADER_LOGS~'"$header_logs"'~g' \
-  | sed 's~\$HEADER_METRICS~'"$header_metrics"'~g' \
-  | sed 's~\$HEADER_TRACES~'"$header_traces"'~g' > $destination_directory/collector.yaml
+  | \sed 's~\$HEADER_LOGS~'"$header_logs"'~g' \
+  | \sed 's~\$HEADER_METRICS~'"$header_metrics"'~g' \
+  | \sed 's~\$HEADER_TRACES~'"$header_traces"'~g' > $destination_directory/collector.yaml
 
 exit 0
