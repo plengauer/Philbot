@@ -27,7 +27,7 @@ start() {
     docker start philbot-$name
 }
 
-start selfmonitoring selfmonitoring --memory=25m --mount type=bind,source=/var/lib/philbot/collector.yaml,target=/etc/otelcol/config.yaml
+start selfmonitoring selfmonitoring --memory=50m --mount type=bind,source=/var/lib/philbot/collector.yaml,target=/etc/otelcol/config.yaml
 
 start voice voice \
     --memory=150m \
