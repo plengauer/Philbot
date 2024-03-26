@@ -100,7 +100,7 @@ class DynatraceResourceDetector(ResourceDetector):
                 pass
         return Resource.get_empty()
 
-resource = get_aggregated_resources([
+resources = get_aggregated_resources([
         DynatraceResourceDetector(),
         # TODO azure
         # TODO alibaba cloud 
@@ -121,10 +121,10 @@ meter_provider = MeterProvider(metric_readers = [ PeriodicExportingMetricReader(
     endpoint = os.environ.get('OPENTELEMETRY_METRICS_API_ENDPOINT', ''),
     headers = { 'Authorization': os.environ.get('OPENTELEMETRY_METRICS_API_TOKEN', '') }
 #    preferred_temporality = { Counter: AggregationTemporality.DELTA }
-)) ], resource = resource)
+)) ], resource = resources)
 opentelemetry.metrics.set_meter_provider(meter_provider)
 
-tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource=resource)
+tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource = resources)
 tracer_provider.add_span_processor(
     BatchSpanProcessor(OTLPSpanExporter(
         endpoint = os.environ.get('OPENTELEMETRY_TRACES_API_ENDPOINT', ''),
