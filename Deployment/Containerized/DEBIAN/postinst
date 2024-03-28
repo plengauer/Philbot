@@ -33,10 +33,11 @@ elif [ "$1" = 'configure' ]; then
   iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
   iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
   iptables-save > /etc/iptables/rules.v4
-  if grep -q '^SHARD_COUNT_MIN=1$' /var/lib/philbot/environment.properties.discordgateway2httpmaster && grep -q '^SHARD_COUNT_MAX=1$' /var/lib/philbot/environment.properties.discordgateway2httpmaster && grep -q '^SHARD_COUNT_REDUNDANT=0$' /var/lib/philbot/environment.properties.discordgateway2httpmaster; then
-    echo STATIC_SHARD_COUNT=1 > /opt/philbot/shards
+  \eval "$(cat /var/lib/philbot/environment.properties.discordgateway2httpmaster | grep '^SHARD_COUNT_)"
+  if [ "$SHARD_COUNT_MIN" = "$SHARD_COUNT_MAX" ]; then
+    echo STATIC_SHARD_COUNT=$SHARD_COUNT_MAX > /opt/philbot/shards
   elif ! [ -f "/opt/philbot/shards" ]; then
-    echo SHARD_COUNT=0 > /opt/philbot/shards
+    echo SHARD_COUNT=$SHARD_COUNT_MIN > /opt/philbot/shards
   fi
   philbot_start >&2
   curl -v http://127.0.0.1:8080/invite 2>&1 | grep location | rev | cut -d' ' -f1 | rev | xargs echo 'Invite with' >&2
