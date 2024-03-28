@@ -33,7 +33,7 @@ elif [ "$1" = 'configure' ]; then
   iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
   iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
   iptables-save > /etc/iptables/rules.v4
-  \eval "$(cat /var/lib/philbot/environment.properties.discordgateway2httpmaster | grep '^SHARD_COUNT_)"
+  \eval "$(cat /var/lib/philbot/environment.properties.discordgateway2httpmaster | grep '^SHARD_COUNT_')"
   if [ "$SHARD_COUNT_MIN" = "$SHARD_COUNT_MAX" ]; then
     echo STATIC_SHARD_COUNT=$SHARD_COUNT_MAX > /opt/philbot/shards
   elif ! [ -f "/opt/philbot/shards" ]; then
