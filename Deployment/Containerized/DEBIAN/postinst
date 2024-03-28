@@ -2,11 +2,12 @@
 source /usr/bin/philbot_init_otel
 if [ "$1" = 'abort-configure' ] || [ "$1" = 'abort-upgrade' ] || [ "$1" = 'abort-remove' ] || [ "$1" = 'abort-deconfigure' ]; then
   true
-elif [ "$1" = 'triggered' ] || [ "$1" = 'reconfigure' ]; then
+elif [ "$1" = 'triggered' ]; then
   philbot_config_populate
   philbot_stop
   philbot_start
-elif [ "$1" = 'configure' ]; then
+elif [ "$1" = 'configure' ] || [ "$1" = 'reconfigure' ]; then
+  if [ "$1" = 'reconfigure' ]; then philbot_stop; fi
   philbot_config_populate
   source /usr/bin/philbot_init_otel
   echo "OPENTELEMETRY_TRACES_API_ENDPOINT=http://127.0.0.1:4318/v1/traces" >> /var/lib/philbot/environment.properties.scheduler
