@@ -2,9 +2,6 @@ receivers:
   otlp:
     protocols:
       http:
-      https:
-        tls:
-          insecure: true
 
 exporters:
   otlphttp/logs:
