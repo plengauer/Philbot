@@ -1,5 +1,5 @@
 Package: philbot-config
-Version: 4.1.3
+Version: 4.2.0
 Architecture: all
 Depends: bash, coreutils, util-linux, debconf, sed
 Priority: extra
