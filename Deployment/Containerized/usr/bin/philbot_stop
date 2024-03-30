@@ -4,8 +4,7 @@ source /opt/philbot/shards
 if [ -n "$STATIC_SHARD_COUNT" ]; then
   SHARD_COUNT="$STATIC_SHARD_COUNT"
 fi
-container_names() {
-  echo -n philbot-scheduler philbot-discordgateway2httpmaster philbot-backend philbot-voice philbot-selfmonitoring ''; seq -s " philbot-discordgateway2http_" 0 $(($SHARD_COUNT-1)) | xargs -I '{}' echo philbot-discordgateway2http_'{}'
-}
-container_names | xargs parallel docker rm --force :::
-docker container ls -a | grep "$(container_names | tr ' ' '\n')" && exec philbot_stop || true
+while docker container ls -a | grep "$(container_names | tr ' ' '\n')"; do
+  echo -n philbot-scheduler philbot-discordgateway2httpmaster philbot-backend philbot-voice philbot-selfmonitoring ''; seq -s " philbot-discordgateway2http_" 0 $(($SHARD_COUNT-1)) | xargs -I '{}' echo philbot-discordgateway2http_'{}' | xargs parallel docker rm --force :::
+done
+exit 0
