@@ -5,22 +5,16 @@ receivers:
 
 exporters:
   otlphttp/logs:
-    tls:
-      insecure: true
     endpoint: "$ENDPOINT_LOGS"
     headers:
       Authorization: "$HEADER_LOGS"
   
   otlphttp/metrics:
-    tls:
-      insecure: true
     endpoint: "$ENDPOINT_METRICS"
     headers:
       Authorization: "$HEADER_METRICS"
   
   otlphttp/traces:
-    tls:
-      insecure: true
     endpoint: "$ENDPOINT_TRACES"
     headers:
       Authorization: "$HEADER_TRACES"
