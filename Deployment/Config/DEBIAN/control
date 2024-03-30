@@ -1,7 +1,7 @@
 Package: philbot-config
 Version: 3.6.4
 Architecture: all
-Depends: debconf, bash
+Depends: debconf, bash, golang-cfssl
 Priority: extra
 Maintainer: Philipp Lengauer <p.lengauer@gmail.com>
 Homepage: https://github.com/plengauer/Philbot
