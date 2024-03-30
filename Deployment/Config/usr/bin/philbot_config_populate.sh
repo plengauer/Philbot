@@ -83,9 +83,9 @@ echo $(config TRACKER_GG_API_TOKEN) >> $destination_directory/environment.proper
 echo $(config YOUTUBE_API_TOKEN) >> $destination_directory/environment.properties.backend
 echo $(config LINK_OBSERVABILITY) >> $destination_directory/environment.properties.backend
 
-endpoint_logs="$(value OPENTELEMETRY_LOGS_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
-endpoint_metrics="$(value OPENTELEMETRY_METRICS_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
-endpoint_traces="$(value OPENTELEMETRY_TRACES_API_ENDPOINT | rev | cut -d/ -f3- | rev)"
+endpoint_logs="$(value OPENTELEMETRY_LOGS_API_ENDPOINT | rev | cut -d / -f 3- | rev)"
+endpoint_metrics="$(value OPENTELEMETRY_METRICS_API_ENDPOINT | rev | cut -d / -f 3- | rev)"
+endpoint_traces="$(value OPENTELEMETRY_TRACES_API_ENDPOINT | rev | cut -d / -f 3- | rev)"
 header_logs="$(value OPENTELEMETRY_LOGS_API_TOKEN)"
 header_metrics="$(value OPENTELEMETRY_METRICS_API_TOKEN)"
 header_traces="$(value OPENTELEMETRY_TRACES_API_TOKEN)"
