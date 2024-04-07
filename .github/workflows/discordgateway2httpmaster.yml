@@ -22,7 +22,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: echo "::set-output name=version::$(cat ./DiscordGateway2HTTPMaster/version.txt)"
         id: version
-      - uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v5
         with:
           context: ./DiscordGateway2HTTPMaster/
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-discordgateway2httpmaster:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-discordgateway2httpmaster:latest
