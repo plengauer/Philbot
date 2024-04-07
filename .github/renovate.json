@@ -4,7 +4,5 @@
     "config:recommended"
   ],
   "prHourlyLimit": 0,
-  "prConcurrentLimit": 0,
-  "automerge": true,
-  "automergeType": "branch"
+  "prConcurrentLimit": 0
 }
