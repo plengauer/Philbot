@@ -7,5 +7,5 @@
   "prConcurrentLimit": 0,
   "grouping": "auto",
   "automerge": true,
-  "automergeType": "branch",
+  "automergeType": "branch"
 }
