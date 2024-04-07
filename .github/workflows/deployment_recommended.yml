@@ -15,7 +15,7 @@ jobs:
         working-directory: ./Deployment/Recommended
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
         id: version
