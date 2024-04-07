@@ -9,7 +9,5 @@
   "automergeType": "pr",
   "assignAutomerge": true,
   "ignoreTests": true,
-  {
-    "reviewers": ["plengauer"]
-  }
+  "reviewers": ["plengauer"]
 }
