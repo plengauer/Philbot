@@ -7,7 +7,7 @@ on:
       - 'DiscordGateway2HTTP/package.json'
 
 jobs:
-  publish-npm:
+  publish:
     runs-on: ubuntu-latest
     defaults:
       run:
