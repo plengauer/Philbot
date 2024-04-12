@@ -1,13 +1,13 @@
 {
   "name": "philbot-backend",
-  "version": "3.16.0",
+  "version": "3.17.0",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "form-data": "4.0.0",
     "jszip": "3.10.1",
     "epic-free-games": "4.0.2",
     "boomerencoding": "1.0.2",
-    "properties-reader": "2.2.0",
+    "properties-reader": "2.3.0",
     "@opentelemetry/resources": "1.23.0",
     "@opentelemetry/semantic-conventions": "1.23.0",
     "@opentelemetry/api": "1.6.0",
