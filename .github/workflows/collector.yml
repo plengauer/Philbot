@@ -4,10 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - 'Collector/**'
-  schedule:
-    - cron: "0 0 1 * *"
-  workflow_dispatch:
+      - 'Collector/version.txt'
 
 jobs:
   publish-image:
