@@ -1,4 +1,4 @@
-name: Publish Deployment Root
+name: Publish Debian Root
 
 on:
   push:
