@@ -4,8 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - 'Deployment/Baremetal/**'
-  workflow_dispatch:
+      - 'Deployment/Baremetal/DEBIAN/control'
       
 jobs:
   publish:
