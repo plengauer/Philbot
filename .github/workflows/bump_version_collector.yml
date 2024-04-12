@@ -1,8 +1,8 @@
 name: Bump Version Collector
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [opened]
     branches: 'main'
     paths: 'Collector/Dockerfile'
 
