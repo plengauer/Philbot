@@ -4,8 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - 'Deployment/Recommended/**'
-  workflow_dispatch:
+      - 'Deployment/Recommended/DEBIAN/control'
       
 jobs:
   publish:
