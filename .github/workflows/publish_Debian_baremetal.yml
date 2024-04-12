@@ -1,4 +1,4 @@
-name: Publish Deployment Baremetal
+name: Publish Debian Baremetal
 
 on:
   push:
