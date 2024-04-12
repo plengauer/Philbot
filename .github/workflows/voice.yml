@@ -4,10 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - 'Voice/**'
-  schedule:
-    - cron: "0 0 1 * *"
-  workflow_dispatch:
+      - 'Voice/pyproject.toml'
 
 permissions:
   contents: read
@@ -29,7 +26,6 @@ jobs:
         pip install build
     - run: python -m build
     - run: twine upload --username philipplengauer ./dist/*
-      continue-on-error: true
       env:
         TWINE_PASSWORD: ${{secrets.PYPI_PASSWORD}}
 
