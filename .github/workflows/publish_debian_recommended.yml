@@ -1,4 +1,4 @@
-name: Publish Deployment Recommended
+name: Publish Debian Recommended
 
 on:
   push:
