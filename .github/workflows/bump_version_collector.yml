@@ -1,0 +1,31 @@
+name: Bump Version Collector
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: 'main'
+    paths: 'Collector/Dockerfile'
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    if: github.actor == 'renovate[bot]'
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: ./Collector/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Version bump
+      - run: |
+          set -e
+          version="$(cat version.txt)"
+          major="$(echo "$version" | cut -d . -f 1)"
+          minor="$(echo "$version" | cut -d . -f 2)"
+          patch="$(echo "$version" | cut -d . -f 3)"
+          minor=$((minor + 1))
+          patch=0
+          echo -n "$major.$minor.$patch" > version.txt
