@@ -1,0 +1,11 @@
+#!/bin/bash -e
+if [ -f /usr/bin/philbot_init_otel ]; then
+  source /usr/bin/philbot_init_otel
+fi
+if [ "$1" = 'purge' ]; then
+  echo PURGE | debconf-communicate philbot
+elif [ "$1" = 'remove' ] || [ "$1" = 'disappear' ] || [ "$1" = 'upgrade' ] || [ "$1" = 'failed-upgrade' ] || [ "$1" = 'abort-install' ] || [ "$1" = 'abort-upgrade' ]; then
+  true
+else
+  exit 1
+fi
