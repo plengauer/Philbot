@@ -28,7 +28,7 @@ function computeBillingSlotProgress() {
 
 async function getLanguageModels() {
   let models = await getModels();
-  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/));
+  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/) && !model.includes('preview'));
   models = Array.from(new Set(models));
   models = models.sort((m1, m2) => {
     let p1 = getModelPower(m1);
@@ -38,12 +38,17 @@ async function getLanguageModels() {
   return models;
 }
 
+
 function isLanguageCompletionModel(model) {
   return !isLanguageChatModel(model);
 }
 
 function isLanguageChatModel(model) {
   return model.startsWith('gpt-') && !model.endsWith('-instruct')
+}
+
+async function isVisionLanguageModel(model) {
+  return model.includes('vision') || getModelPower(model) >= getModelPower('gpt-4-turbo');
 }
 
 function compareLanguageModelByCost(cheap_model, expensive_model) {
@@ -96,7 +101,7 @@ async function createResponse0(model, user, history_token, system, message, atta
           stream.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
         });
       }
-      input.content.push({ type: 'image_url', image_url: image_url });
+      input.content.push({ type: 'image_url', image_url: { url: image_url } });
     } else {
       // ignore
     }
@@ -113,9 +118,9 @@ async function createResponse0(model, user, history_token, system, message, atta
     output = { role: 'assistant', content: completion.trim() };
   } else {
     let response = await HTTP('/v1/chat/completions' , { user: user, "model": model, "messages": [{ "role": "system", "content": (system ?? '').trim() }].concat(
-        model.includes('vision') ? conversation :
+      isVisionLanguageModel(model) ? conversation :
         conversation.map(line => { return { role: line.role, content: typeof line.content == 'string' ? line.content : line.content.find(content => content.type == 'text' ).text }; })
-      ), temperature: temperature, max_tokens: model.includes('vision') ? 4096 : undefined });
+      ), temperature: temperature, max_tokens: model.includes('preview') ? 4096 : undefined });
     output = response.choices[0].message;
     await report(response.model, computeLanguageCost(response.model, response.usage.prompt_tokens, response.usage.completion_tokens));
   }
