@@ -4,11 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - 'Backend/**'
-  schedule:
-    - cron: "0 0 1 * *"
-  workflow_dispatch:
-
+      - 'Backend/package.json'
 
 jobs:
   publish-npm:
@@ -23,7 +19,6 @@ jobs:
           node-version: 19
           registry-url: https://registry.npmjs.org/
       - run: npm publish
-        continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
