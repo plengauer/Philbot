@@ -1,4 +1,4 @@
-name: Version Bump Scheduler
+name: Bump Version Scheduler
 
 on:
   pull_request:
