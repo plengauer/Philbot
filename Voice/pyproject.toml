@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "philbot-voice"
-version = "2.5.0"
+version = "2.6.0"
 description = ""
 authors = ["philipp.lengauer <p.lengauer@gmail.com>"]
 packages = [{include = "philbot-voice"}]
@@ -8,7 +8,7 @@ packages = [{include = "philbot-voice"}]
 [tool.poetry.dependencies]
 python = "3.12.3"
 Flask = "3.0.2"
-websocket-client = "1.4.2"
+websocket-client = "1.7.0"
 PyNaCl = "1.5.0"
 PyOgg = "0.6.14a1"
 yt_dlp = "2024.3.10"
