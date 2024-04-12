@@ -4,8 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - 'Deployment/Containerized/**'
-  workflow_dispatch:
+      - 'Deployment/Containerized/DEBIAN/control'
       
 jobs:
   publish:
