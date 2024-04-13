@@ -15,6 +15,11 @@ jobs:
           sudo apt-get -y dist-upgrade
           sudo apt-get remove -y containerd.io
       - name: "Install bot"
+        env:
+          PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
+          PHILBOT_API_TOKEN: ${{ secrets.PHILBOT_APPLICATION_ID }}
+          PHILBOT_YOUTUBE_TOKEN: ${{ secrets.PHILBOT_YOUTUBE_TOKEN }}
+          PHILBOT_OPENAI_TOKEN: ${{ secrets.PHILBOT_OPENAI_TOKEN }}
         run: |
           set -e
           sudo apt-get install -y debconf-utils
