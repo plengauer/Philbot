@@ -30,7 +30,7 @@ jobs:
           } | sudo debconf-set-selections
           wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh -E
       - name: "Test Webserver"
-        run: curl --fail http://127.0.0.1:8080
+        run: wget http://127.0.0.1/
       - name: "Test AI"
         run: exit 1
       - name: "Test Voice"
