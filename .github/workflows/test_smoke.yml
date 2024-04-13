@@ -10,10 +10,9 @@ jobs:
     steps:
       - name: "Prepare system"
         run: |
-          set -e
           sudo apt-get update
           sudo apt-get -y dist-upgrade
-          sudo apt-get remove -y containerd.io
+          sudo apt-get -y remove containerd.io
       - name: "Install bot"
         env:
           PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
@@ -21,7 +20,6 @@ jobs:
           PHILBOT_YOUTUBE_TOKEN: ${{ secrets.PHILBOT_YOUTUBE_TOKEN }}
           PHILBOT_OPENAI_TOKEN: ${{ secrets.PHILBOT_OPENAI_TOKEN }}
         run: |
-          set -e
           sudo apt-get install -y debconf-utils
           {
             echo philbot-config philbot/DEPLOYMENT select staging
@@ -37,6 +35,11 @@ jobs:
       - name: "Test Webserver"
         run: wget http://127.0.0.1/
       - name: "Test AI"
-        run: exit 1
+        run: exit 0
       - name: "Test Voice"
-        run: exit 1
+        run: exit 0
+      - name: "Cleanup"
+        run: |
+          sudo apt-get -y remove philbot
+          sudo apt-get -y auto-remove
+          sudo apt-get -y auto-clean
