@@ -17,7 +17,17 @@ jobs:
       - name: "Install bot"
         run: |
           set -e
-          exit 1 # TODO preseed everything
+          sudo apt-get install -y debconf-utils
+          {
+            echo philbot-config philbot/DEPLOYMENT select staging
+            echo philbot-config philbot/DISCORD_CLIENT_ID string $PHILBOT_APPLICATION_ID
+            echo philbot-config philbot/DISCORD_API_TOKEN string $PHILBOT_API_TOKEN
+            echo philbot-config philbot/SELF_MONITORING select yes
+            echo philbot-config philbot/OWNER_DISCORD_USER_ID string 305778551167254529
+            echo philbot-config philbot/YOUTUBE_API_TOKEN string $PHILBOT_YOUTUBE_TOKEN
+            echo philbot-config philbot/OPENAI_API_TOKEN string $PHILBOT_OPENAI_TOKEN
+            echo philbot-config philbot/OPENAI_COST_LIMIT string 1
+          } | sudo debconf-set-selections
           wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh -E
       - name: "Test Webserver"
         run: curl --fail http://127.0.0.1:8080
