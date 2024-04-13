@@ -1,0 +1,27 @@
+name: Test Smoke
+
+on:
+  push:
+      
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Prepare system"
+      - run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get -y dist-upgrade
+          sudo apt-get remove -y containerd.io
+      - name: "Install bot"
+        run: |
+          set -e
+          exit 1 # TODO preseed everything
+          wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh -E
+      - name: "Test Webserver"
+        run: curl --fail http://127.0.0.1:8080
+      - name: "Test AI"
+        run: exit 1
+      - name: "Test Voice"
+        run: exit 1
