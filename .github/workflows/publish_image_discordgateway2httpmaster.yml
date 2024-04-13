@@ -5,6 +5,7 @@ on:
     branches: main
     paths:
       - 'DiscordGateway2HTTPMaster/version.txt'
+      - 'DiscordGateway2HTTPMaster/Dockerfile'
 
 jobs:
   publish-image:

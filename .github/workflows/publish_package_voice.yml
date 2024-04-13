@@ -1,0 +1,30 @@
+name: Publish Package Voice
+
+on:
+  push:
+    branches: main
+    paths:
+      - 'Voice/pyproject.toml'
+
+permissions:
+  contents: read
+
+jobs:
+  publish-pypi:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Voice/
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    - run: |
+        python -m pip install --upgrade pip
+        pip install twine
+        pip install build
+    - run: python -m build
+    - run: twine upload --username __token__ ./dist/*
+      env:
+        TWINE_PASSWORD: ${{secrets.PYPI_PASSWORD}}

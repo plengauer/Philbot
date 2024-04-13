@@ -1,28 +1,14 @@
-name: Publish Discord Gateway 2 HTTP
+name: Publish Image Discord Gateway 2 HTTP
 
 on:
   push:
     branches: main
     paths:
       - 'DiscordGateway2HTTP/package.json'
+      - 'DiscordGateway2HTTP/Dockerfile'
 
 jobs:
-  publish-npm:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./DiscordGateway2HTTP/
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 19
-          registry-url: https://registry.npmjs.org/
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-
-  publish-image:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

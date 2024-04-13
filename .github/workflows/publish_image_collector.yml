@@ -5,9 +5,10 @@ on:
     branches: main
     paths:
       - 'Collector/version.txt'
+      - 'Collector/Dockerfile'
 
 jobs:
-  publish-image:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

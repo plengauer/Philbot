@@ -1,4 +1,4 @@
-name: Publish Deployment Configuration
+name: Publish Debian Configuration
 
 on:
   push:

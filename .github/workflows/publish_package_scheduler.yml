@@ -1,0 +1,33 @@
+name: Publish Scheduler
+
+on:
+  push:
+    branches: main
+    paths:
+      - 'Scheduler/philbot-scheduler.gemspec'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Scheduler/
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-ruby@v1
+      with:
+        ruby-version: 3.1.x
+
+    - run: |
+        mkdir -p $HOME/.gem
+        touch $HOME/.gem/credentials
+        chmod 0600 $HOME/.gem/credentials
+        printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
+        gem build *.gemspec
+        gem push *.gem
+      env:
+        GEM_HOST_API_KEY: "${{secrets.RUBYGEMS_TOKEN}}"
