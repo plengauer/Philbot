@@ -34,20 +34,22 @@ public class ObservableHttpHandler {
             Context context = GlobalOpenTelemetry.get().getPropagators().getTextMapPropagator().extract(Context.current(), exchange, GETTER);
             try (Scope __ = context.makeCurrent()) {
                 Span span = TRACER.spanBuilder(exchange.getRequestMethod()).setSpanKind(SpanKind.SERVER).startSpan();
-                span.setAttribute("http.flavor", exchange.getProtocol().split("/")[1]);
-                span.setAttribute("http.host", exchange.getLocalAddress().getHostString());
-                span.setAttribute("http.method", exchange.getRequestMethod());
+                span.setAttribute("network.transport", "tcp");
+                span.setAttribute("network.protocol.name", exchange.getProtocol().split("/")[0].toLowerCase());
+                span.setAttribute("network.protocol.version", exchange.getProtocol().split("/")[1]);
+                span.setAttribute("network.local.address", exchange.getLocalAddress().getAddress().toString().substring(1));
+                span.setAttribute("network.local.port", exchange.getLocalAddress().getPort());
+                span.setAttribute("network.peer.address", exchange.getRemoteAddress().getAddress().toString().substring(1));
+                span.setAttribute("network.peer.port", exchange.getRemoteAddress().getPort());
+                span.setAttribute("server.address", exchange.getLocalAddress().getHostString());
+                span.setAttribute("server.port", exchange.getLocalAddress().getPort());
+                span.setAttribute("client.address", exchange.getRemoteAddress().getAddress().toString().substring(1));
+                span.setAttribute("client.port", exchange.getRemoteAddress().getPort());
+                span.setAttribute("http.request.method", exchange.getRequestMethod());
                 span.setAttribute("http.route", exchange.getHttpContext().getPath());
-                span.setAttribute("http.scheme", exchange.getProtocol().split("/")[0].toLowerCase());
-                span.setAttribute("http.target", exchange.getHttpContext().getPath());
-                span.setAttribute("http.url",  exchange.getProtocol().split("/")[0].toLowerCase() + "://" + exchange.getRequestHeaders().getFirst("Host") + exchange.getRequestURI());
-                span.setAttribute("http.user_agent", exchange.getRequestHeaders().getFirst("User-Agent"));
-                span.setAttribute("net.host.ip", exchange.getLocalAddress().getAddress().toString().substring(1));
-                span.setAttribute("net.host.name", exchange.getLocalAddress().getHostName());
-                span.setAttribute("net.host.port", exchange.getLocalAddress().getPort());
-                span.setAttribute("net.peer.ip", exchange.getRemoteAddress().getAddress().toString().substring(1));
-                span.setAttribute("net.peer.port", exchange.getRemoteAddress().getPort());
-                span.setAttribute("net.transport", "ip_tcp");
+                span.setAttribute("url.full",  exchange.getProtocol().split("/")[0].toLowerCase() + "://" + exchange.getRequestHeaders().getFirst("Host") + exchange.getRequestURI());
+                span.setAttribute("url.scheme", exchange.getProtocol().split("/")[0].toLowerCase());
+                span.setAttribute("url.path", exchange.getHttpContext().getPath());
                 InputStream in = new InputStream() {
                     private final InputStream inner = exchange.getRequestBody();
 
@@ -57,7 +59,7 @@ public class ObservableHttpHandler {
                     public int read() throws IOException {
                         int result = inner.read();
                         if (result >= 0) bytes++;
-                        else span.setAttribute("http.request_content_length_uncompressed", bytes);
+                        else span.setAttribute("http.request.body.size", bytes);
                         return result;
                     }
 
@@ -69,10 +71,13 @@ public class ObservableHttpHandler {
                 };
                 OutputStream out = new OutputStream() {
                     private final OutputStream inner = exchange.getResponseBody();
+
+                    private int bytes = 0;
                     
                     @Override
                     public void write(int b) throws IOException {
                         inner.write(b);
+                        bytes++;
                     }
 
                     @Override
@@ -82,7 +87,7 @@ public class ObservableHttpHandler {
                             inner.close();
                         } finally {
                             span.setAttribute("http.status_code", exchange.getResponseCode());
-                            // span.setAttribute("http.status_text", "OK");
+                            span.setAttribute("http.response.body.size", bytes);
                             span.end();
                         }
                     }
