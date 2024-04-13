@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: "Prepare system"
-      - run: |
+        run: |
           set -e
           sudo apt-get update
           sudo apt-get -y dist-upgrade
