@@ -36,7 +36,7 @@ jobs:
           } | sudo debconf-set-selections
           wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh -E
       - name: "Test Webserver"
-        run: wget http://127.0.0.1/
+        run: wget http://127.0.0.1:8080/
       - name: "Test AI"
         env:
           PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
