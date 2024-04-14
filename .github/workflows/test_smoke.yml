@@ -42,6 +42,7 @@ jobs:
           PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
           PHILBOT_API_TOKEN: ${{ secrets.PHILBOT_API_TOKEN }}
         run: |
+          set -x
           channel_id='1149981968549806101' # TODO can we make these dynamic? or secrets?
           message_id="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" -H 'content-type: application/json' -d "{\"content\": \"<@$PHILBOT_APPLICATION_ID> hello, how are you?\"}" https://discord.com/api/v10/channels/$channel_id/messages)"
           while ! curl --fail -H "authorization: Bot $PHILBOT_API_TOKEN" https://discord.com/api/v10/channels/$channel_id/messages | jq -r .[].referenced_message.id | grep -F "$message_id"; do
@@ -52,10 +53,11 @@ jobs:
           PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
           PHILBOT_API_TOKEN: ${{ secrets.PHILBOT_API_TOKEN }}
         run: |
+          set -x
           guild_id='977181350509555752' # TODO can we make these dynamic? or secrets?
           channel_id='1149981968549806101'
           channel_name='staging'
-          echo '{"value":"true"}' | tee /var/lib/philbot/memory/config_feature_guild_"$guild_id"_name_player.json
+          echo '{"value":"true"}' | tee /var/lib/philbot/memory/config_feature_guild_"$guild_id"_name_player.json > /dev/null
           message_id="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" -H 'content-type: application/json' -d "{\"content\": \"<@$PHILBOT_APPLICATION_ID> play in $channel_name Rick Astley Never Gonna Give You Up\"}" https://discord.com/api/v10/channels/$channel_id/messages)"
           while ! ls /var/lib/memory/philbot/player_voice_channel_guild_"$guild_id".json; do; sleep 1; do
           while ! ls /var/lib/memory/philbot/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do; sleep 1; do
