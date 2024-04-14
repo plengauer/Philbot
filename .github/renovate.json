@@ -9,6 +9,6 @@
   "automergeType": "pr",
   "assignAutomerge": true,
   "ignoreTests": true,
-  "reviewers": ["plengauer","moflwi","probsJustin"],
+  "reviewers": ["plengauer","moflwi","probsJustin", "KleinKoala"],
   "bumpVersion": "minor"
 }
