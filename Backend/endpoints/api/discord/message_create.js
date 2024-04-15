@@ -62,9 +62,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
   if (message.length == 0) return;
   
   let mentioned = false;
-  if (me.id == user_id) {
-    return; // avoid cycles
-  } else if (message.startsWith('@' + me.username + ' ')) {
+  if (message.startsWith('@' + me.username + ' ')) {
     mentioned = true;
     message = message.substring(1 + me.username.length).trim();
   } else if (message.startsWith('@' + discord.user2name(me) + ' ')) {
@@ -458,7 +456,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     let voice_channel_id = null;
     if (message.toLowerCase().startsWith('in ')) {
       let channel_name = message.split(' ')[1];
-      voice_channel_id = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.name == channel_name)).then(channel => channel?.id); 
+      voice_channel_id = await discord.guild_channels_list(guild_id).then(channels => channels.find(channel => channel.type == 2 && channel.name == channel_name)).then(channel => channel?.id); 
       if (!voice_channel_id) return respond(guild_id, channel_id, event_id, 'I cannot find the channel ' + channel_name + '!');
       search_string = message.split(' ').slice(2).join(' ');
     } else {
