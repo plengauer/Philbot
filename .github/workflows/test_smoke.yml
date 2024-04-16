@@ -3,6 +3,12 @@ name: Test Smoke
 on:
   push:
     branches: main
+    paths:
+      - '**/package.json'
+      - '**/pyproject.toml'
+      - '**/*.gemspec'
+      - '**/version.txt'
+      - '**/Dockerfile'
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
@@ -37,6 +43,7 @@ jobs:
             echo philbot-config philbot/OPENAI_COST_LIMIT string 1
           } | sudo debconf-set-selections
           wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh -E
+          sleep 60 # let it boot up
       - name: "Test Webserver"
         run: wget http://127.0.0.1:8080/
       - name: "Test AI"
