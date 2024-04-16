@@ -33,7 +33,7 @@ async function getInformationClassic(details, state, user_id) {
   let team_id = game.participants.filter(participant => participant.summonerId == summoner.id)[0].teamId;
   let enemies = game.participants.filter(participant => participant.teamId != team_id);
   
-  let players = await Promise.all(enemies.map(enemy => getPlayerInfo(summoner.server, enemy.summonerId, enemy.summonerName, enemy.championId)));
+  let players = await Promise.all(enemies.map(enemy => getPlayerInfo(summoner.server, enemy.summonerId, enemy.championId)));
   players = players.filter(player => !!player);
   
   let mdp = -1;
@@ -186,7 +186,8 @@ async function getTFTSummoner(server, summonerName) {
 }
 
 async function getActiveGame(server, summonerId) {
-  return http_get(server, '/lol/spectator/v4/active-games/by-summoner/' + summonerId)
+  return http_get(server, '/lol/spectator/v5/active-games/by-summoner/' + await getPuuid(server, summonerId))
+  //return http_get(server, '/lol/spectator/v4/active-games/by-summoner/' + summonerId)
     .then(game => {
       game.server = server;
       return game;
@@ -196,7 +197,8 @@ async function getActiveGame(server, summonerId) {
     });
 }
 
-async function getPlayerInfo(server, summonerId, summonerName, championId) {
+async function getPlayerInfo(server, summonerId, championId) {
+  // cant resolve summoner names with v5 anymore, so have to fall back to champion names
   return Promise.all([
       getChampionName(championId),
       getMastery(server, summonerId, championId),
@@ -204,7 +206,7 @@ async function getPlayerInfo(server, summonerId, summonerName, championId) {
     ]).then(results => {
       return {
         id: summonerId,
-        summoner: summonerName,
+        summoner: results[0],
         champion: results[0],
         mastery: results[1],
         matches: results[2]
