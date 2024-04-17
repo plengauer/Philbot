@@ -23,7 +23,7 @@ jobs:
       - name: "Prepare system"
         run: |
           sudo apt-get update
-          sudo apt-get -y dist-upgrade
+          # sudo apt-get -y dist-upgrade
           sudo apt-get -y remove containerd.io
       - name: "Install bot"
         env:
