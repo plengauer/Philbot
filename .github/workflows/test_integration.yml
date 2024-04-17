@@ -29,8 +29,8 @@ jobs:
         env:
           PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
           PHILBOT_API_TOKEN: ${{ secrets.PHILBOT_API_TOKEN }}
-          PHILBOT_YOUTUBE_API_TOKEN: ${{ secrets.PHILBOT_YOUTUBE_API_TOKEN }}
-          PHILBOT_OPENAI_API_TOKEN: ${{ secrets.PHILBOT_OPENAI_API_TOKEN }}
+          PHILBOT_YOUTUBE_API_TOKEN: ${{ secrets.YOUTUBE_API_TOKEN }}
+          PHILBOT_OPENAI_API_TOKEN: ${{ secrets.OPENAI_API_TOKEN }}
         run: |
           sudo apt-get install -y debconf-utils jq curl wget
           {
