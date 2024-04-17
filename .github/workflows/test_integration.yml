@@ -53,7 +53,7 @@ jobs:
           PHILBOT_API_TOKEN: ${{ secrets.PHILBOT_API_TOKEN }}
           CHANNEL_ID: ${{ secrets.PHILBOT_TEXT_CHANNEL_ID }}
         run: |
-          set -x
+          date
           message_id="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" -H 'content-type: application/json' -d "{\"content\": \"<@$PHILBOT_APPLICATION_ID> hello, how are you?\"}" https://discord.com/api/v10/channels/$CHANNEL_ID/messages | jq -r .id)"
           while ! curl --fail -H "authorization: Bot $PHILBOT_API_TOKEN" https://discord.com/api/v10/channels/$CHANNEL_ID/messages | jq -r .[].referenced_message.id | grep -F "$message_id"; do
             sleep 10
@@ -66,7 +66,7 @@ jobs:
           TEXT_CHANNEL_ID: ${{ secrets.PHILBOT_TEXT_CHANNEL_ID }}
           VOICE_CHANNEL_ID: ${{ secrets.PHILBOT_VOICE_CHANNEL_ID }}
         run: |
-          set -x
+          date
           voice_channel_name="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" https://discord.com/api/v10/channels/$VOICE_CHANNEL_ID | jq -r .name)"
           echo '{"value":"true"}' | sudo tee /var/lib/philbot/memory/config_feature_guild_"$GUILD_ID"_name_player.json > /dev/null
           message_id="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" -H 'content-type: application/json' -d "{\"content\": \"<@$PHILBOT_APPLICATION_ID> play in $voice_channel_name Rick Astley Never Gonna Give You Up\"}" https://discord.com/api/v10/channels/$TEXT_CHANNEL_ID/messages | jq -r .id)"
