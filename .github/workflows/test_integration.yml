@@ -69,11 +69,11 @@ jobs:
           voice_channel_name="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" https://discord.com/api/v10/channels/$VOICE_CHANNEL_ID | jq -r .name)"
           echo '{"value":"true"}' | sudo tee /var/lib/philbot/memory/config_feature_guild_"$GUILD_ID"_name_player.json > /dev/null
           message_id="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" -H 'content-type: application/json' -d "{\"content\": \"<@$PHILBOT_APPLICATION_ID> play in $voice_channel_name Rick Astley Never Gonna Give You Up\"}" https://discord.com/api/v10/channels/$TEXT_CHANNEL_ID/messages | jq -r .id)"
-          while ! ls /var/lib/philbot/memory/player_voice_channel_guild_"$GUILD_ID".json; do; sleep 1; do
-          while ! ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do; sleep 1; do
+          while ! ls /var/lib/philbot/memory/player_voice_channel_guild_"$GUILD_ID".json; do sleep 1; done
+          while ! ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
           sleep 60
-          while ! ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do; sleep 1; do
-          while ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do; sleep 1; do
+          while ! ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
+          while ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
       - name: "Cleanup"
         run: |
           sudo apt-get -y remove philbot
