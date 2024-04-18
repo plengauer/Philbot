@@ -66,7 +66,7 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
     if (message.startsWith('@self ')) {
       message = message.substring('@self '.length);
       mentioned = true
-    } else
+    } else {
       return;
     }
   } else if (message.startsWith('@' + me.username + ' ')) {
