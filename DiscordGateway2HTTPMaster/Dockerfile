@@ -8,7 +8,7 @@ RUN wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/re
 RUN wget https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-aws-resources/1.29.0-alpha/opentelemetry-aws-resources-1.29.0-alpha.jar
 
 
-FROM amazoncorretto:21.0.2
+FROM amazoncorretto:21.0.3
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
 
