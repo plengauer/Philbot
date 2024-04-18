@@ -62,7 +62,14 @@ async function handle0(guild_id, channel_id, event_id, user_id, message, referen
   if (message.length == 0) return;
   
   let mentioned = false;
-  if (message.startsWith('@' + me.username + ' ')) {
+  if (user_id == me.id) {
+    if (message.startsWith('@self ')) {
+      message = message.substring('@self '.length);
+      mentioned = true
+    } else
+      return;
+    }
+  } else if (message.startsWith('@' + me.username + ' ')) {
     mentioned = true;
     message = message.substring(1 + me.username.length).trim();
   } else if (message.startsWith('@' + discord.user2name(me) + ' ')) {
