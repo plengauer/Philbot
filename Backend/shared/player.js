@@ -41,7 +41,13 @@ async function resolve_search_string(search_string) {
   if (search_string.startsWith('https://youtu.be/')) {
     return resolve_search_string('https://www.youtube.com/watch?v=' + search_string.substring('https://youtu.be/'.length));
   } else if (search_string.startsWith('https://www.youtube.com/watch?v=') || search_string.startsWith('https://youtube.com/watch?v=')) {
-    return [ search_string ];
+    if (search_string.includes('&list=')) {
+      let list = search_string.split('list=')[1];
+      if (list.includes('&')) list = list.substring(0, list.indexOf('&'));
+      return resolve_search_string('https://www.youtube.com/playlist?list=' + list);
+    } else {
+      return [ search_string ];
+    }
   } else if (search_string.startsWith('https://www.youtube.com/playlist?list=') || search_string.startsWith('https://youtube.com/playlist?list=')) {
     let list = search_string.split('list=')[1];
     if (list.includes('&')) list = list.substring(0, list.indexOf('&'));
