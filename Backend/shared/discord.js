@@ -326,6 +326,7 @@ async function post(channel_id, content, referenced_message_id = undefined, noti
       content_page = content_page + "```";
       await post_paged(channel_id, content_page , referenced_message_id, notify, [], [], []);
       content = last_code_block_language + content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
+    }
   }
   return post_paged(channel_id, content, referenced_message_id, notify, embeds, components, attachments);
 }
