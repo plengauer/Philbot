@@ -317,7 +317,7 @@ async function post(channel_id, content, referenced_message_id = undefined, noti
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
     let content_page = content.substring(0, index).trim();
-    let matched_code_brackets = content_page.match(/```.*?\s/).length;
+    let matched_code_brackets = content_page.match(/```.*?\s/);
     let last_code_block_language = matched_code_brackets[matched_code_brackets.length-1] //last code block language (format: "```language")
     if (matched_code_brackets == null || matched_code_brackets.length%2 == 0) {      
       await post_paged(channel_id, content_page , referenced_message_id, notify, [], [], []);
