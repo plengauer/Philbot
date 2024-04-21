@@ -316,16 +316,16 @@ async function post(channel_id, content, referenced_message_id = undefined, noti
   let limit = 1997; //limit 2000-3 for possible addition of closing code brackets
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
-    let matchedCodeBrackets = ContentPage.match(/```.*?\s/).length;
-    let lastCodeBlockLanguage = matchedCodeBrackets[matchedCodeBrackets.length-1] //last code block language (format: "```language")
-    let ContentPage = content.substring(0, index).trim();
-    if (matchedCodeBrackets.length%2 == 0 || matchedCodeBrackets == null) {      
-      await post_paged(channel_id, ContentPage , referenced_message_id, notify, [], [], []);
+    let content_page = content.substring(0, index).trim();
+    let matched_code_brackets = content_page.match(/```.*?\s/).length;
+    let last_code_block_language = matched_code_brackets[matched_code_brackets.length-1] //last code block language (format: "```language")
+    if (matched_code_brackets == null || matched_code_brackets.length%2 == 0) {      
+      await post_paged(channel_id, content_page , referenced_message_id, notify, [], [], []);
       content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
     } else {
-      ContentPage = ContendPage + "```";
-      await post_paged(channel_id, ContentPage , referenced_message_id, notify, [], [], []);
-      content = lastCodeBlockLanguage + content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
+      content_page = content_page + "```";
+      await post_paged(channel_id, content_page , referenced_message_id, notify, [], [], []);
+      content = last_code_block_language + content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
   }
   return post_paged(channel_id, content, referenced_message_id, notify, embeds, components, attachments);
 }
