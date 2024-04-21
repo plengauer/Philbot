@@ -313,11 +313,19 @@ async function trigger_typing_indicator(channel_id) {
 }
 
 async function post(channel_id, content, referenced_message_id = undefined, notify = true, embeds = [], components = [], attachments = []) {
-  let limit = 2000;
+  let limit = 1997; //limit 2000-3 for possible addition of closing code brackets
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
-    await post_paged(channel_id, content.substring(0, index).trim(), referenced_message_id, notify, [], [], []);
-    content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
+    let matchedCodeBrackets = ContentPage.match(/```.*?\s/).length;
+    let lastCodeBlockLanguage = matchedCodeBrackets[matchedCodeBrackets.length-1] //last code block language (format: "```language")
+    let ContentPage = content.substring(0, index).trim();
+    if (matchedCodeBrackets.length%2 == 0 || matchedCodeBrackets == null) {      
+      await post_paged(channel_id, ContentPage , referenced_message_id, notify, [], [], []);
+      content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
+    } else {
+      ContentPage = ContendPage + "```";
+      await post_paged(channel_id, ContentPage , referenced_message_id, notify, [], [], []);
+      content = lastCodeBlockLanguage + content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
   }
   return post_paged(channel_id, content, referenced_message_id, notify, embeds, components, attachments);
 }
