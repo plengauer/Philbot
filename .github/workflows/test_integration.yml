@@ -2,7 +2,7 @@ name: Test Integration
 
 on:
   push:
-#    branches: main
+    branches: main
     paths:
       - '**/package.json'
       - '**/pyproject.toml'
@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: "Setup observability"
-        uses: plengauer/opentelemetry-bash/actions/instrument/job@257-detect-github-action-step-job-as-a-root-span
+        uses: plengauer/opentelemetry-bash/actions/instrument/job@main
         env:
           OTEL_SERVICE_NAME: 'Philbot CI'
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://philbot.eu:4318/v1/metrics'
