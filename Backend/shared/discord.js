@@ -313,11 +313,18 @@ async function trigger_typing_indicator(channel_id) {
 }
 
 async function post(channel_id, content, referenced_message_id = undefined, notify = true, embeds = [], components = [], attachments = []) {
-  let limit = 2000;
+  let limit = 1997; //limit 2000-3 for possible addition of closing code brackets
   while (content.length > limit) {
     let index = getSplitIndex(content, limit);
-    await post_paged(channel_id, content.substring(0, index).trim(), referenced_message_id, notify, [], [], []);
+    let content_page = content.substring(0, index).trim();
     content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
+    let matched_code_brackets = (content_page.match(/```.*?\s/) ?? []).concat(content_page.match(/```.*?$/) ?? []);    
+    if (matched_code_brackets.length % 2 != 0) {
+      let last_code_block_language = matched_code_brackets[matched_code_brackets.length-1]; //last code block language (format: "```language")
+      content_page = content_page + "```";
+      content = last_code_block_language + content;
+    }
+    await post_paged(channel_id, content_page, referenced_message_id, notify, [], [], []);
   }
   return post_paged(channel_id, content, referenced_message_id, notify, embeds, components, attachments);
 }
