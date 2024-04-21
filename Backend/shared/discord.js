@@ -318,8 +318,8 @@ async function post(channel_id, content, referenced_message_id = undefined, noti
     let index = getSplitIndex(content, limit);
     let content_page = content.substring(0, index).trim();
     content = content.substring(index + (index < content.length && content[index] === '\n' ? 1 : 0), content.length);
-    let matched_code_brackets = content_page.match(/```.*?(\s|$)/);    
-    if (matched_code_brackets && matched_code_brackets.length % 2 != 0) {
+    let matched_code_brackets = (content_page.match(/```.*?\s/) ?? []).concat(content_page.match(/```.*?$/) ?? []);    
+    if (matched_code_brackets.length % 2 != 0) {
       let last_code_block_language = matched_code_brackets[matched_code_brackets.length-1]; //last code block language (format: "```language")
       content_page = content_page + "```";
       content = last_code_block_language + content;
