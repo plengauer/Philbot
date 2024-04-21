@@ -133,7 +133,7 @@ Description: Public URL:
 
 Template: philbot/CODE_URL
 Type: string
-Default: http://__code_url__
+Default: __code_url__
 Description: Code URL:
  Please provide a full URL where to code of the bot is located.
  
