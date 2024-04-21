@@ -23,10 +23,9 @@ jobs:
       - name: "Setup observability"
         uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.6.0
         env:
-          OTEL_SERVICE_NAME: 'Philbot CI'
-          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://philbot.eu:4318/v1/metrics'
-          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://philbot.eu:4318/v1/logs'
-          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://philbot.eu:4318/v1/traces'
+          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
+          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
       - name: "Prepare system"
         run: |
           sudo apt-get update
