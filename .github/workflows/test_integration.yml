@@ -2,7 +2,7 @@ name: Test Smoke
 
 on:
   push:
-    branches: main
+#    branches: main
     paths:
       - '**/package.json'
       - '**/pyproject.toml'
