@@ -62,7 +62,7 @@ db_go
 
 db_get philbot/SELF_MONITORING
 if [ "$RET" = "yes" ]; then
-  parent_domain=__PARENT_DOMAIN__
+  parent_domain=__parent_domain__
   db_set philbot/OPENTELEMETRY_TRACES_API_ENDPOINT "http://$parent_domain:4318/v1/traces"
   db_set philbot/OPENTELEMETRY_TRACES_API_TOKEN ""
   db_set philbot/OPENTELEMETRY_METRICS_API_ENDPOINT "http://$parent_domain:4318/v1/metrics"
