@@ -16,7 +16,7 @@ jobs:
       run:
         working-directory: ./Scheduler/
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@main
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.6.0
         env:
           OTEL_SERVICE_NAME: 'Philbot CI'
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://philbot.eu:4318/v1/metrics'
