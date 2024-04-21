@@ -15,7 +15,6 @@ import socket
 import requests
 import subprocess
 import websocket
-import resource
 from flask import Flask, request, Response, send_file
 import yt_dlp
 import opentelemetry
