@@ -24,9 +24,9 @@ jobs:
       - run: echo "::set-output name=version::$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')"
         id: version
       - run: |
-          sed -i ./DEBIAN/templates s~__code_url__~https://github.com/$GITHUB_REPOSITORY~g
-          sed -i ./DEBIAN/templates s/__parent_domain__/$PARENT_DOMAIN/g
-          sed -i ./DEBIAN/config s/__parent_domain__/$PARENT_DOMAIN/g
+          sed -i '' ./DEBIAN/templates s~__code_url__~https://github.com/$GITHUB_REPOSITORY~g
+          sed -i '' ./DEBIAN/templates s/__parent_domain__/$PARENT_DOMAIN/g
+          sed -i '' ./DEBIAN/config s/__parent_domain__/$PARENT_DOMAIN/g
         env:
           PARENT_DOMAIN: ${{ secrets.PARENT_DOMAIN }}      
       - run: dpkg-deb --root-owner-group -Zgzip --build . ../package.deb
