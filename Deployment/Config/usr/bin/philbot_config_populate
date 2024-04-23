@@ -67,6 +67,7 @@ config OPENTELEMETRY_LOGS_API_TOKEN >> $destination_directory/environment.proper
 config OPENTELEMETRY_LOGS_API_TOKEN >> $destination_directory/environment.properties.deployment
 config DISCORD_CLIENT_ID >> $destination_directory/environment.properties.backend
 config OWNER_DISCORD_USER_ID >> $destination_directory/environment.properties.backend
+config CODE_URL >> $destination_directory/environment.properties.backend
 config PUBLIC_URL >> $destination_directory/environment.properties.backend
 config OPENAI_API_TOKEN >> $destination_directory/environment.properties.backend
 config OPENAI_COST_LIMIT >> $destination_directory/environment.properties.backend

@@ -127,7 +127,13 @@ Description: Tracker GG API Token:
 
 Template: philbot/PUBLIC_URL
 Type: string
-Default: http://philbot.eu
+Default: http://__parent_domain__
 Description: Public URL:
  Please provide a full URL with which the bot is reachable from the public internet, use an empty string if the bot should auto-detect its public IP and use that as its public URL.
+
+Template: philbot/CODE_URL
+Type: string
+Default: __code_url__
+Description: Code URL:
+ Please provide a full URL where the code of the bot is located.
  

@@ -1,7 +1,9 @@
+const process = require('process');
+
 async function handle() {
   return {
     status: 301,
-    headers: { 'location': `https://github.com/plengauer/Philbot` },
+    headers: { 'location': process.env.CODE_URL },
     body: 'Moved Permanently'
   };
 }
