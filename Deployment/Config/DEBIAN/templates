@@ -135,5 +135,5 @@ Template: philbot/CODE_URL
 Type: string
 Default: __code_url__
 Description: Code URL:
- Please provide a full URL where to code of the bot is located.
+ Please provide a full URL where the code of the bot is located.
  
