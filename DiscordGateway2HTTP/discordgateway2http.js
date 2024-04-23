@@ -42,7 +42,8 @@ async function init() {
 }
 
 async function requestInitialConfig() {
-    return requestConfig(null).catch(_ => requestInitialConfig());
+    return requestConfig(null)
+        .catch(_ => new Promise(resolve => setTimeout(resolve, CONFIG_REQUEST_INTERVAL)).then(() => requestInitialConfig()));
 }
 
 async function requestConfig(config = null) {
