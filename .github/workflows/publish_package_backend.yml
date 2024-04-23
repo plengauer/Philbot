@@ -13,6 +13,11 @@ jobs:
       run:
         working-directory: ./Backend/
     steps:
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.6.0
+        env:
+          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
+          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
