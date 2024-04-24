@@ -53,6 +53,8 @@ jobs:
             echo philbot-config philbot/OPENAI_COST_LIMIT string 1
           } | sudo debconf-set-selections
           wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh -E
+      - name: "Scale bot"
+        run: |
           sleep $((60 * 5)) # let it scale
           sleep 60 # let it boot up
       - name: "Test Webserver"
