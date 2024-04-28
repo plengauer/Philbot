@@ -1,9 +1,8 @@
 name: Bump Version Collector
 
 on:
-  pull_request_target:
-    types: [opened]
-    branches: 'main'
+  push:
+    branches: 'renovate/**'
     paths: 'Collector/Dockerfile'
 
 jobs:
@@ -18,7 +17,6 @@ jobs:
   
   bump:
     runs-on: ubuntu-latest
-    if: github.actor == 'renovate[bot]'
     permissions:
       contents: write
     defaults:
@@ -27,9 +25,6 @@ jobs:
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.7.0
       - uses: actions/checkout@v4
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Version bump
       - run: |
           set -e
           version="$(cat version.txt)"
@@ -39,3 +34,6 @@ jobs:
           minor=$((minor + 1))
           patch=0
           echo -n "$major.$minor.$patch" > version.txt
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Version bump

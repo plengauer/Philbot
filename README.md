@@ -8,7 +8,7 @@ baremetal (install all dependencies on the system, slightly reduced downtime whe
 containerized (install all tiers as docker containers, less cluttered, discord shards auto-scale in case discord enforces sharding due to much usage and can therefore serve an arbitrary number of Discord servers). Kubernetes deployment will come soon.
 Run the following command to install on your own infrastructure:
 ```
-wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh -E
+wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh
 ```
 
 # System Requirements
