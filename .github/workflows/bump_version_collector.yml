@@ -22,9 +22,6 @@ jobs:
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
           OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
       - uses: actions/checkout@v4
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Version bump
       - run: |
           set -e
           version="$(cat version.txt)"
@@ -34,3 +31,6 @@ jobs:
           minor=$((minor + 1))
           patch=0
           echo -n "$major.$minor.$patch" > version.txt
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Version bump
