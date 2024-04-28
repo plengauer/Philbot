@@ -9,7 +9,7 @@ jobs:
   observe:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.7.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.8.0
         env:
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
@@ -18,7 +18,7 @@ jobs:
   renovate:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.7.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.8.0
       - uses: renovatebot/github-action@v40.1.10
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
