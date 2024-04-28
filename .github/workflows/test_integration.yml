@@ -15,17 +15,21 @@ on:
     - cron: '0 0 * * *'
       
 jobs:
-  test:
+  observe:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
     steps:
-      - name: "Setup observability"
-        uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.6.1
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.7.0
         env:
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
           OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
+  
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: "Setup observability"
+        uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.7.0
       - name: "Prepare system"
         run: |
           sudo apt-get update
@@ -49,6 +53,8 @@ jobs:
             echo philbot-config philbot/OPENAI_COST_LIMIT string 1
           } | sudo debconf-set-selections
           wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh
+      - name: "Scale bot"
+        run: |
           sleep $((60 * 5)) # let it scale
           sleep 60 # let it boot up
       - name: "Test Webserver"
