@@ -1,6 +1,6 @@
 {
   "name": "philbot-discordgateway2http",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "description": "connects to the discord gateway and forwards all events via HTTP(s) to a pre-configured endpoint",
   "type": "module",
@@ -20,7 +20,7 @@
     "opentelemetry-resource-detector-git": "0.29.0",
     "@opentelemetry/resource-detector-github": "0.28.1",
     "@opentelemetry/resource-detector-container": "0.3.8",
-    "@opentelemetry/resource-detector-aws": "1.4.1",
+    "@opentelemetry/resource-detector-aws": "1.4.2",
     "@opentelemetry/resource-detector-gcp": "0.29.8",
     "xhr2": "0.2.1"
   },
