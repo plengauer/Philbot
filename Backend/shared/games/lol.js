@@ -11,8 +11,9 @@ async function http_get(server, endpoint, ttc = undefined, key = process.env.RIO
 }
 
 async function getInformation(details, state, user_id) {
-  return Promise.all([ getInformationClassic(details, state, user_id), getInformationTFT(details, state, user_id) ])
-    .then(results => results.find(result => !!result));
+  return [];
+//  return Promise.all([ getInformationClassic(details, state, user_id), getInformationTFT(details, state, user_id) ])
+//    .then(results => results.find(result => !!result));
 }
 
 async function getInformationClassic(details, state, user_id) {
@@ -342,7 +343,8 @@ const ranked_system = {
 }
 
 async function updateRankedRoles(guild_id, user_id) {
-  return games_util.updateRankedRoles(guild_id, user_id, 'League of Legends', { servers: SERVERS, ranked_system: ranked_system }, getLeagues);
+  return undefined;
+  // return games_util.updateRankedRoles(guild_id, user_id, 'League of Legends', { servers: SERVERS, ranked_system: ranked_system }, getLeagues);
 }
 
 async function getLeagues(accounts) {
