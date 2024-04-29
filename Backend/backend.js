@@ -144,7 +144,7 @@ function opentelemetry_create() {
     resourceDetectors: [
       new DynatraceResourceDetector(),
       alibabaCloudEcsDetector,
-      gcpDetector,
+      // gcpDetector, TODO this creates failing spans that are noise when there we are not running in google
       new OracleResourceDetector(),
       //azureCloudAppDetector, TODO azure
       awsBeanstalkDetector, awsEc2Detector, awsEcsDetector, awsEksDetector,
