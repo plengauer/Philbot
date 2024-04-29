@@ -140,7 +140,7 @@ function create() {
       new DynatraceResourceDetector(),
       opentelemetry_resources_alibaba_cloud.alibabaCloudEcsDetector,
       // TODO azure
-      opentelemetry_resources_gcp.gcpDetector,
+      // opentelemetry_resources_gcp.gcpDetector, // TODO makes noisy spans!
       opentelemetry_resources_aws.awsBeanstalkDetector,
       opentelemetry_resources_aws.awsEc2Detector,
       opentelemetry_resources_aws.awsEcsDetector,
