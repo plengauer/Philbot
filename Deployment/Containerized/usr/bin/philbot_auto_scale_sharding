@@ -4,7 +4,7 @@ source /usr/bin/philbot_init_otel
 source /opt/philbot/shards
 if [ -z "$SHARD_COUNT" ]; then exit 0; fi
 
-SHARD_COUNT_NEW=$(curl --no-progress-meter --retry 8 --retry-connrefused "http://127.0.0.1:7999/gateway/shards")
+SHARD_COUNT_NEW=$(curl --no-progress-meter --fail --retry 8 --retry-connrefused --retry-all-errors "http://127.0.0.1:7999/gateway/shards")
 if [ "$SHARD_COUNT" -eq "$SHARD_COUNT_NEW" ]; then exit 0; fi
 
 if [ "$SHARD_COUNT" -gt "0" ]; then
