@@ -20,7 +20,7 @@ async function updateRankedRoles(guild_id, user_id, activity, config, getUserRan
   if (!account) return;
   let member = await discord.guild_member_retrieve(guild_id, user_id);
   let user_ranks = await getUserRanks(account);
-  if (user_ranks == null || user_ranks == undefined) return promptConfiguration(user_id, activity, config.servers ?? [], 'For League of Legends, the name is the riot ID.');
+  if (user_ranks == null || user_ranks == undefined) return promptConfiguration(user_id, activity, config.servers ?? []);
   for (let mode in config.ranked_system) {
     for (let rank of config.ranked_system[mode]) {
       let role_id = roles[mode][rank.name];
