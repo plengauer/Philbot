@@ -86,7 +86,7 @@ jobs:
           sleep 60
           while ! ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
           while ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
-      - name: "Cleanup"
+      - name: "Uninstall bot"
         run: |
           sudo apt-get -y remove philbot
           sudo apt-get -y auto-remove
