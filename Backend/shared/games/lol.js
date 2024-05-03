@@ -183,7 +183,7 @@ async function getTFTSummoner(server, summonerName) {
   let gameName = summonerName.split('#', 2)[0];
   let tagline = summonerName.split('#', 2)[1];
   return http_get.get(getBasicServer(server), '/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(gameName) + '/' + encodeURIComponent(tagline), 60 * 60 * 24)
-    .then(account => http_get(server, '/lol/summoner/v4/summoners/by-puuid/' + encodeURIComponent(account.puuid), 60 * 60 * 24))
+    .then(account => http_get(server, '/tft/summoner/v1/summoners/by-puuid/' + encodeURIComponent(account.puuid), 60 * 60 * 24))
     .then(summoner => {
       summoner.server = server;
       return summoner;
