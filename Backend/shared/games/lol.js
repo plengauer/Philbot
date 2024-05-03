@@ -20,7 +20,7 @@ async function getInformationClassic(details, state, user_id) {
   if (!process.env.RIOT_API_TOKEN) return null;
 
   let summoners = await resolveAccount(user_id);
-  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS, 'For League of Legends, the name is the riot ID.');
+  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS, 'For League of Legends, the name is the Riot ID.');
   
   let games = await Promise.all(summoners.map(summoner => getActiveGame(summoner.server, summoner.id))).then(games => games.filter(game => !!game));
   if (games.length > 1) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS);
@@ -318,7 +318,7 @@ async function getInformationTFT(details, state, user_id) {
   if (!process.env.RIOT_TFT_API_TOKEN) return null;
 
   let summoners = await resolveAccount(user_id).then(summoners => Promise.all(summoners.map(summoner => getTFTSummoner(summoner.server, summoner.name))));
-  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS, 'For League of Legends, the name is the riot ID.');
+  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS, 'For League of Legends, the name is the Riot ID.');
   
   return null; // TODO
 }
