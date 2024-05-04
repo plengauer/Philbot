@@ -28,7 +28,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - run: echo "::set-output name=version::$(cat ./DiscordGateway2HTTPMaster/version.txt)"
+      - run: echo "version=$(cat ./DiscordGateway2HTTPMaster/version.txt)" >> "$GITHUB_OUTPUT"
         id: version
       - uses: docker/build-push-action@v5
         with:
