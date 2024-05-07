@@ -32,17 +32,16 @@ async function updateRankedRoles(guild_id, user_id, activity, config, getUserRan
   }
 }
 
-async function promptConfiguration(user_id, activity, servers) {
-  return synchronized.locked('activity:config:prompt:user:' + user_id, () => promptConfiguration0(user_id, activity, servers));
+async function promptConfiguration(user_id, activity, servers, hint) {
+  return synchronized.locked('activity:config:prompt:user:' + user_id, () => promptConfiguration0(user_id, activity, servers, hint));
 }
 
-async function promptConfiguration0(user_id, activity, servers) {
+async function promptConfiguration0(user_id, activity, servers, hint) {
   let muted = await memory.get('mute:auto:activity_hint_config:activity:' + activity + ':user:' + user_id, false);
   if (muted) return;
   await memory.set('mute:auto:activity_hint_config:activity:' + activity + ':user:' + user_id, true, 60 * 60 * 24 * 7 * 4);
-  let instruction = 'Respond with \'configure ' + activity + (servers.length > 0 ? '<server>' : '') + ' <name>\', filling in your information.' + (servers.length > 0 ? ' Valid servers are ' + servers.join(', ') + '.' : '');
-  await discord.try_dms(user_id, 'To give you real-time hints and assign roles based on your competitive rank, I need your in-game name. ' + instruction);
-  return;
+  let instruction = 'Respond with \'configure ' + activity + (servers.length > 0 ? ' <server>' : '') + ' <name>\', filling in your information.' + (servers.length > 0 ? ' Valid servers are ' + servers.join(', ') + '.' : '') + (hint ? ' ' + hint : '');
+  return discord.try_dms(user_id, 'To give you real-time hints and assign roles based on your competitive rank, I need your in-game name. ' + instruction);
 }
 
 async function getRoles(guild_id, activity, system) {

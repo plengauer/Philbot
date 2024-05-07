@@ -644,7 +644,7 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
   } else if (message.toLowerCase().startsWith("hint") || message.toLowerCase().startsWith("info") || message.toLowerCase().startsWith("information")) {
     let activity = message.split(' ').slice(1).join(' ');
     return games.getActivityHint(activity, null, null, user_id)
-      .then(hint => hint != null ? respond(guild_id, channel_id, event_id, hint.text) : reactNotOK(channel_id, event_id));
+      .then(hint => hint?.text ? respond(guild_id, channel_id, event_id, hint.text) : reactNotOK(channel_id, event_id));
       
   } else if (message.toLowerCase().startsWith('remind ')) {
     let tokens = message.split(' ').filter(token => token.length > 0);

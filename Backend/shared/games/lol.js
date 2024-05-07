@@ -11,9 +11,8 @@ async function http_get(server, endpoint, ttc = undefined, key = process.env.RIO
 }
 
 async function getInformation(details, state, user_id) {
-  return [];
-//  return Promise.all([ getInformationClassic(details, state, user_id), getInformationTFT(details, state, user_id) ])
-//    .then(results => results.find(result => !!result));
+  return Promise.all([ getInformationClassic(details, state, user_id), getInformationTFT(details, state, user_id) ])
+    .then(results => results.find(result => !!result));
 }
 
 async function getInformationClassic(details, state, user_id) {
@@ -21,7 +20,7 @@ async function getInformationClassic(details, state, user_id) {
   if (!process.env.RIOT_API_TOKEN) return null;
 
   let summoners = await resolveAccount(user_id);
-  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS);
+  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS, 'For League of Legends, the name is the Riot ID.');
   
   let games = await Promise.all(summoners.map(summoner => getActiveGame(summoner.server, summoner.id))).then(games => games.filter(game => !!game));
   if (games.length > 1) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS);
@@ -164,7 +163,11 @@ async function resolveAccount(user_id) {
 }
 
 async function getSummoner(server, summonerName) {
-  return http_get(server, '/lol/summoner/v4/summoners/by-name/' + encodeURIComponent(summonerName), 60 * 60 * 24)
+  if (!summonerName.includes('#')) return null;
+  let gameName = summonerName.split('#', 2)[0];
+  let tagline = summonerName.split('#', 2)[1];
+  return http_get(getBasicServer(server), '/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(gameName) + '/' + encodeURIComponent(tagline), 60 * 60 * 24)
+    .then(account => http_get(server, '/lol/summoner/v4/summoners/by-puuid/' + encodeURIComponent(account.puuid), 60 * 60 * 24))
     .then(summoner => {
       summoner.server = server;
       return summoner;
@@ -176,12 +179,17 @@ async function getSummoner(server, summonerName) {
 }
 
 async function getTFTSummoner(server, summonerName) {
-  return http_get(server, '/tft/summoner/v1/summoners/by-name/' + encodeURIComponent(summonerName), 60 * 60 * 24, process.env.RIOT_TFT_API_TOKEN)
+  if (!summonerName.includes('#')) return null;
+  let gameName = summonerName.split('#', 2)[0];
+  let tagline = summonerName.split('#', 2)[1];
+  return http_get(getBasicServer(server), '/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(gameName) + '/' + encodeURIComponent(tagline), 60 * 60 * 24)
+    .then(account => http_get(server, '/tft/summoner/v1/summoners/by-puuid/' + encodeURIComponent(account.puuid), 60 * 60 * 24))
     .then(summoner => {
       summoner.server = server;
       return summoner;
     }).catch(e => {
       if (e.message.includes('HTTP error 404')) return null;
+      if (e.message.includes('HTTP error 503')) return null;
       else throw e;
     });
 }
@@ -310,7 +318,7 @@ async function getInformationTFT(details, state, user_id) {
   if (!process.env.RIOT_TFT_API_TOKEN) return null;
 
   let summoners = await resolveAccount(user_id).then(summoners => Promise.all(summoners.map(summoner => getTFTSummoner(summoner.server, summoner.name))));
-  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS);
+  if (summoners.length == 0) return games_util.promptConfiguration(user_id, 'League of Legends', SERVERS, 'For League of Legends, the name is the Riot ID.');
   
   return null; // TODO
 }
@@ -404,13 +412,3 @@ function prettifyQueueType(queueType) {
 
 
 module.exports = { getInformation, getSummoner, updateRankedRoles }
-
-
-
-
-
-
-
-
-
-
