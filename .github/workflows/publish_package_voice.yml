@@ -6,9 +6,6 @@ on:
     paths:
       - 'Voice/pyproject.toml'
 
-permissions:
-  contents: read
-
 jobs:
   observe:
     runs-on: ubuntu-latest
@@ -25,16 +22,16 @@ jobs:
       run:
         working-directory: ./Voice/
     steps:
-    - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.9.1
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-    - run: |
-        python -m pip install --upgrade pip
-        pip install twine
-        pip install build
-    - run: python -m build
-    - run: twine upload --username __token__ ./dist/*
-      env:
-        TWINE_PASSWORD: ${{secrets.PYPI_PASSWORD}}
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.9.1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: |
+          python -m pip install --upgrade pip
+          pip install twine
+          pip install build
+      - run: python -m build
+      - run: twine upload --username __token__ ./dist/*
+        env:
+          TWINE_PASSWORD: ${{secrets.PYPI_PASSWORD}}
