@@ -10,7 +10,7 @@ jobs:
   observe:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.12.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.12.1
         env:
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
@@ -23,7 +23,7 @@ jobs:
         working-directory: ./Deployment/Root
 
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.12.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.12.1
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "version=$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')" >> "$GITHUB_OUTPUT"
