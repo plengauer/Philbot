@@ -84,6 +84,19 @@ async function createResponse0(model, user, history_token, system, message, atta
   const horizon = 3;
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = (conversation_key ? await memory.get(conversation_key, []) : []).slice(-(2 * horizon + 1));
+
+  for (let item of conversation) {
+    if (!Array.isArray(item.content)) continue;
+    for (let content of item.content.filter(content => content.type == 'image_url')) {
+      let uri = url.parse(content.image_url.url);
+      try {
+        await curl.request({ method: 'HEAD', secure: uri.protocol == 'https', hostname: uri.hostname, path: uri.path, query: uri.query });
+      } catch {
+        item.content = item.content.filter(content => content.type != 'image_url');
+      }
+    }
+  }
+
   let input = { role: 'user', content: attachments && attachments.length > 0 ? [{ type: "text", text: message.trim() }] : message.trim() };
   for (let attachment of attachments ?? []) {
     if (attachment.content_type.startsWith('image/')) {
