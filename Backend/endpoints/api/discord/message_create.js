@@ -1102,15 +1102,15 @@ async function handleCommand(guild_id, channel_id, event_id, user_id, message, r
     }
 
     if (!attachments && attachments.length == 0) attachments = [];
-    if (embeds) attachments = attachments.concat(embeds.filter(embed => embed.url).map(embed => { return { url: embed.url }; }));
+    if (embeds) attachments = attachments.concat(embeds.filter(embed => embed.proxy_url).map(embed => { return { url: embed.proxy_url }; }));
     if (referenced_message_id) {
       let message = await discord.message_retrieve(channel_id, referenced_message_id);
       attachments = attachments.concat(message.attachments);
-      attachments = attachments.concat(message.embeds.filter(embed => embed.url).map(embed => { return { url: embed.url }; }));
+      attachments = attachments.concat(message.embeds.filter(embed => embed.proxy_url).map(embed => { return { url: embed.proxy_url }; }));
     }
     for (let attachment of attachments) {
       if (attachment.content_type) continue;
-      let uri = url.parse(attachment.url);
+      let uri = url.parse(attachment.proxy_url);
       let canary = await curl.request_full({ method: 'HEAD', hostname: uri.hostname, path: uri.path, query: uri.query });
       attachment.content_type = canary.headers['content-type'];
     }
