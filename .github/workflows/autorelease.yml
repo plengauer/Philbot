@@ -1,4 +1,4 @@
-name: Autoversion
+name: Automatic Version Bump
 
 on:
   schedule:
