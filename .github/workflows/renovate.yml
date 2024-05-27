@@ -5,6 +5,9 @@ on:
     - cron: '0 * * * *'
   workflow_dispatch:
 
+concurrency:
+  group: renovate
+
 jobs:
   observe:
     runs-on: ubuntu-latest
