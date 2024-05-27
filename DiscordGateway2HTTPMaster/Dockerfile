@@ -13,7 +13,7 @@ SHELL ["/bin/bash", "-c"]
 WORKDIR /application
 
 COPY --from=downloader /downloads/ ./
-COPY run.sh version.txt logging.properties src/ ./
+COPY run.sh VERSION logging.properties src/ ./
 RUN javac -cp $(find . -name '*.jar' | paste -sd ":" -) eu/philbot/*.java && rm eu/philbot/*.java
 
 ENV PORT=8080
