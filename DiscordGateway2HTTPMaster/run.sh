@@ -1,6 +1,6 @@
 #!/bin/sh
 export OTEL_SERVICE_NAME="Philbot Discord Gateway 2 HTTP Master"
-export OTEL_RESOURCE_ATTRIBUTES=service.namespace="Philbot",service.version=$(cat version.txt),service.instance.id=$(uuidgen)
+export OTEL_RESOURCE_ATTRIBUTES=service.namespace="Philbot",service.version=$(cat VERSION),service.instance.id=$(uuidgen)
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
 export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="$OPENTELEMETRY_METRICS_API_ENDPOINT"
