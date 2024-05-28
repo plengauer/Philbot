@@ -4,7 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - 'Collector/version.txt'
+      - 'Collector/VERSION'
       - 'Collector/Dockerfile'
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - run: echo "version=$(cat ./DiscordGateway2HTTPMaster/version.txt)" >> "$GITHUB_OUTPUT"
+      - run: echo "version=$(cat ./DiscordGateway2HTTPMaster/VERSION)" >> "$GITHUB_OUTPUT"
         id: version
       - uses: docker/build-push-action@v5
         with:
