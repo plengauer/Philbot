@@ -1,9 +1,12 @@
 name: Renovate
 
 on:
-#  schedule:
-#    - cron: '0 * * * *'
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
+
+concurrency:
+  group: renovate
 
 jobs:
   observe:
@@ -17,14 +20,10 @@ jobs:
   
   renovate:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.12.3
       - uses: renovatebot/github-action@v40.1.11
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
