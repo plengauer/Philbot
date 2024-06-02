@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
       - run: |
-          echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- DiscordGateway2HTTPMaster/VERSION | grep -E "^+" && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- DiscordGateway2HTTPMaster/VERSION | grep -E "^\+" && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   publish:
     runs-on: ubuntu-latest

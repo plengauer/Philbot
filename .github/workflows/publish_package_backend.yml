@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
       - run: |
-          echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- Backend/package.json | grep -E "^+" | grep -q '"version":' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- Backend/package.json | grep -E "^\+" | grep -q '"version":' && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   publish:
     runs-on: ubuntu-latest
