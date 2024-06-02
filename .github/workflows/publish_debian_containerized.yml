@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
       - run: |
-          echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- Deployment/Baremetal/DEBIAN/control | grep -E "^+" | grep -q 'Version: ' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- Deployment/Containerized/DEBIAN/control | grep -E "^+" | grep -q 'Version: ' && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   publish:
     runs-on: ubuntu-latest
