@@ -1,15 +1,18 @@
 name: Renovate
 
 on:
-#  schedule:
-#    - cron: '0 * * * *'
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
+
+concurrency:
+  group: renovate
 
 jobs:
   observe:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.12.3
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.12.7
         env:
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
@@ -17,14 +20,10 @@ jobs:
   
   renovate:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.12.3
-      - uses: renovatebot/github-action@v40.1.11
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.12.7
+      - uses: renovatebot/github-action@v40.1.12
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}

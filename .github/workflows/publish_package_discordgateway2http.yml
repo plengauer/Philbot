@@ -10,19 +10,31 @@ jobs:
   observe:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.12.3
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.12.7
         env:
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
           OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
 
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.12.7
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- DiscordGateway2HTTP/package.json | grep -E "^\+" | grep -q '"version":' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   publish:
     runs-on: ubuntu-latest
+    needs: diff
+    if: needs.diff.outputs.dirty == 'true'
     defaults:
       run:
         working-directory: ./DiscordGateway2HTTP/
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.12.3
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.12.7
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
