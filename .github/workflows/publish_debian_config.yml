@@ -18,12 +18,15 @@ jobs:
 
   diff:
     runs-on: ubuntu-latest
+    outputs:
+      dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.12.7
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: |
+      - id: git-diff
+        run: |
           echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- Deployment/Config/DEBIAN/control | grep -E "^\+" | grep -q 'Version: ' && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   publish:
