@@ -6,7 +6,15 @@
     <groupId>eu.app</groupId>
     <artifactId>DiscordGateway2HTTPMaster</artifactId>
     <version>1.0-SNAPSHOT</version>
-        <dependencies>
+    
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> 
+        <maven.compiler.release>21</maven.compiler.release>
+    </properties>
+
+    <dependencies>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
@@ -28,16 +36,15 @@
             <version>1.36.0-alpha</version>
         </dependency>
     </dependencies>
-
-    <build>
+        <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
             <plugin>
