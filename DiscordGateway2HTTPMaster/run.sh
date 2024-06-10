@@ -9,4 +9,5 @@ export OTEL_TRACES_EXPORTER=otlp
 export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf
 export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="$OPENTELEMETRY_TRACES_API_ENDPOINT"
 export OTEL_EXPORTER_OTLP_TRACES_HEADERS="Authorization=$OPENTELEMETRY_TRACES_API_TOKEN"
-exec java -Xmx100m -XX:+ExitOnOutOfMemoryError -Djava.util.logging.config.file=logging.properties -javaagent:./opentelemetry-javaagent.jar -cp $(find . -name "*.jar" | paste -sd ":" -):. eu.philbot.DiscordGateway2HTTPMaster
+JAR_FILE=DiscordGateway2HTTPMaster.jar
+exec java -Xmx100m -XX:+ExitOnOutOfMemoryError -Djava.util.logging.config.file=logging.properties -javaagent:./opentelemetry-javaagent.jar -cp "$JAR_FILE" eu.philbot.DiscordGateway2HTTPMaster
