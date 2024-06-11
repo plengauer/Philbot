@@ -16,7 +16,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
+            <dependency><!--Also update the version of the javaagent (same as bom) in the Dockerfile-->
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
                 <version>1.38.0</version>
@@ -31,7 +31,7 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
         </dependency>
-        <dependency>
+        <dependency><!--Also update this one-->
             <groupId>io.opentelemetry.contrib</groupId>
             <artifactId>opentelemetry-aws-resources</artifactId>
             <version>1.36.0-alpha</version>
