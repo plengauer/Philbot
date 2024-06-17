@@ -44,7 +44,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: echo "version=$(cat ./Scheduler/philbot-scheduler.gemspec | grep 'version' | awk -F\' '{print $2}')" >> "$GITHUB_OUTPUT"
         id: version
-      - uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v6
         with:
           context: ./Scheduler/
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-scheduler:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-scheduler:latest
