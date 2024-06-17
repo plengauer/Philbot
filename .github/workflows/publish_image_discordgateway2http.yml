@@ -44,7 +44,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: echo "version=$(node -p "require('./DiscordGateway2HTTP/package.json').version")" >> "$GITHUB_OUTPUT"
         id: version
-      - uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v6
         with:
           context: ./DiscordGateway2HTTP/
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-discordgateway2http:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-discordgateway2http:latest
