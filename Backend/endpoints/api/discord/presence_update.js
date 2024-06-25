@@ -7,7 +7,7 @@ const role_management = require('../../../shared/role_management.js');
 const synchronized = require('../../../shared/synchronized.js');
 
 const mute_ttl = 60 * 60 * 24 * 7 * 13;
-const mute_auto_ttl = 60 * 60 * 24 * 3;
+const mute_auto_ttl = 60 * 60 * 24 * 11;
 const all_activities_ttl = 60 * 60 * 24 * 7 * 13;
 const current_activities_ttl = 60 * 60 * 24;
 // const starting_activities_ttl = 60 * 3;
