@@ -235,6 +235,8 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-4o": // shorthand
     case "gpt-4o-2024-05-13":
       return tokens_prompt / 1000 * 0.0050 + tokens_completion / 1000 * 0.0150;
+    case "gpt-4o-2024-08-06":
+      return tokens_prompt / 1000 * 0.0025 + tokens_completion / 1000 * 0.0100;      
     default:
       throw new Error("Unknown model: " + model);
   }
