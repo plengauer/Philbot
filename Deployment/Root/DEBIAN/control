@@ -1,5 +1,5 @@
 Package: philbot
-Version: 2.4.0
+Version: 2.4.1
 Architecture: all
 Depends: philbot-recommended | philbot-deployment
 Priority: extra
