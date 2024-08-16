@@ -46,7 +46,7 @@ async function resolve_search_string(search_string) {
       if (list.includes('&')) list = list.substring(0, list.indexOf('&'));
       return resolve_search_string('https://www.youtube.com/playlist?list=' + list);
     } else {
-      return [ search_string ];
+      throw new Error('Playing from Youtube is temporarily deactivated!'); // return [ search_string ];
     }
   } else if (search_string.startsWith('https://www.youtube.com/playlist?list=') || search_string.startsWith('https://youtube.com/playlist?list=')) {
     let list = search_string.split('list=')[1];
