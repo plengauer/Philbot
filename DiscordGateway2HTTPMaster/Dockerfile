@@ -2,10 +2,10 @@ FROM ubuntu:rolling AS downloader
 WORKDIR /downloads
 RUN apt-get update && apt-get install -y wget
 # this is super anti-pattern, fix with a proper maven project
-RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-api/1.29.0/opentelemetry-api-1.29.0.jar
-RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-context/1.9.1/opentelemetry-context-1.9.1.jar
+RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-api/1.41.0/opentelemetry-api-1.41.0.jar
+RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-context/1.41.0/opentelemetry-context-1.41.0.jar
 RUN wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
-RUN wget https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-aws-resources/1.29.0-alpha/opentelemetry-aws-resources-1.29.0-alpha.jar
+RUN wget https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-aws-resources/1.38.0-alpha/opentelemetry-aws-resources-1.38.0-alpha.jar
 
 
 FROM amazoncorretto:21.0.4
