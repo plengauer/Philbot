@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.27.0
-      - uses: renovatebot/github-action@v40.2.7
+      - uses: renovatebot/github-action@v40.2.8
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
