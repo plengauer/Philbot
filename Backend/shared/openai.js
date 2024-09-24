@@ -81,7 +81,7 @@ async function createResponse0(model, user, history_token, system, message, atta
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!token) return null;
 
-  const horizon = 3;
+  const horizon = 5;
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = (conversation_key ? await memory.get(conversation_key, []) : []).slice(-(2 * horizon + 1));
 
