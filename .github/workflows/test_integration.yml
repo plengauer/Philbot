@@ -36,7 +36,7 @@ jobs:
       - name: "Prepare system"
         run: |
           sudo apt-get update
-          sudo apt-get -y remove containerd.io
+          # sudo apt-get -y remove containerd.io
       - name: "Install bot"
         env:
           PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
