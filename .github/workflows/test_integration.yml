@@ -55,7 +55,7 @@ jobs:
             echo philbot-config philbot/OPENAI_API_TOKEN string $PHILBOT_OPENAI_API_TOKEN
             echo philbot-config philbot/OPENAI_COST_LIMIT string 1
           } | sudo debconf-set-selections
-          wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh
+          wget -O - https://raw.githubusercontent.com/plengauer/philbot/main/INSTALL.sh | sh || sudo -E apt-get install -y --allow-unauthenticated philbot-containerized
       - name: "Scale bot"
         run: |
           sleep $((60 * 5)) # let it scale
