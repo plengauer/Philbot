@@ -15,7 +15,7 @@
     "@opentelemetry/sdk-node": "0.53.0",
     "@opentelemetry/sdk-trace-base": "1.26.0",
     "@opentelemetry/exporter-trace-otlp-proto": "0.53.0",
-    "@opentelemetry/auto-instrumentations-node": "0.50.2",
+    "@opentelemetry/auto-instrumentations-node": "0.51.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "0.53.0",
     "opentelemetry-resource-detector-git": "0.30.0",
     "@opentelemetry/resource-detector-github": "0.29.0",
