@@ -1,5 +1,10 @@
 name: Automatic Version Bump
 
+env:
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
+  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
+
 on:
   workflow_dispatch:
   schedule:
@@ -10,12 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.35.0
-        env:
-          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
-          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
-          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
-          OTEL_SHELL_CONFIG_OBSERVE_SUBPROCESSES: 'TRUE'
-          OTEL_SHELL_CONFIG_OBSERVE_SIGNALS: 'TRUE'
   
   bump:
     runs-on: ubuntu-latest
