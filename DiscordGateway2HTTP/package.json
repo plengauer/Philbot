@@ -21,7 +21,7 @@
     "@opentelemetry/resource-detector-github": "0.29.0",
     "@opentelemetry/resource-detector-container": "0.5.1",
     "@opentelemetry/resource-detector-aws": "1.7.0",
-    "@opentelemetry/resource-detector-gcp": "0.29.13",
+    "@opentelemetry/resource-detector-gcp": "0.30.0",
     "xhr2": "0.2.1"
   },
   "scripts": {
