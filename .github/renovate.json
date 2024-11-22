@@ -8,7 +8,5 @@
   "prConcurrentLimit": 0,
   "automerge": true,
   "automergeType": "pr",
-  "assignAutomerge": true,
-  "ignoreTests": true,
-  "reviewers": ["plengauer", "moflwi", "probsJustin", "KleinKoala"]
+  "ignoreTests": true
 }
