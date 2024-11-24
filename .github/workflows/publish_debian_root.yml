@@ -31,13 +31,14 @@ jobs:
           echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- Deployment/Root/DEBIAN/control | grep -E "^\+" | grep -q 'Version: ' && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   publish:
-    runs-on: ubuntu-latest
-    needs: diff
     if: needs.diff.outputs.dirty == 'true'
+    needs: diff
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: ./Deployment/Root
-
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.39.0
       - uses: actions/checkout@v4
