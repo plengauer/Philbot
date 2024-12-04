@@ -1,4 +1,4 @@
-FROM node:22.11.0
+FROM node:22.12.0
 WORKDIR /application
 
 RUN apt-get update && apt-get -y install ffmpeg
