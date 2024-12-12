@@ -15,8 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.42.0
-        with:
-          cache: true
   
   bump:
     runs-on: ubuntu-latest
@@ -26,4 +24,3 @@ jobs:
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
           openai_token: ${{ secrets.OPENAI_API_TOKEN }}
-          cache: true

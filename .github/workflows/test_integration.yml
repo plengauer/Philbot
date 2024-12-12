@@ -27,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.42.0
+        with:
+          cache: true
   
   test:
     runs-on: ubuntu-latest
@@ -34,6 +36,8 @@ jobs:
     steps:
       - name: "Setup observability"
         uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.42.0
+        with:
+          cache: true
       - name: "Prepare system"
         run: |
           sudo apt-get update
