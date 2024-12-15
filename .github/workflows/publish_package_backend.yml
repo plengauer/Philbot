@@ -15,14 +15,14 @@ jobs:
   observe:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.42.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.42.1
 
   diff:
     runs-on: ubuntu-latest
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.42.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.42.1
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -38,7 +38,7 @@ jobs:
       run:
         working-directory: ./Backend/
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.42.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.42.1
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
