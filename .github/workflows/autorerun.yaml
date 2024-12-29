@@ -3,12 +3,12 @@ name: Autorerun
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *' # TODO when to run
+    - cron: '0 0 * * *'
 
 jobs:
-  bump:
+  rerun:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/autorerun@0.1.0
+      - uses: plengauer/autorerun@v0.1.0
         with:
-          github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }} # token for GITHUB to retrigger, needs permissions to run GitHub Actions
+          github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
