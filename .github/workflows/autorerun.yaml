@@ -6,9 +6,15 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
+  observe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.43.0
+
   rerun:
     runs-on: ubuntu-latest
     steps:
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.43.0
       - uses: plengauer/autorerun@v0.1.0
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
