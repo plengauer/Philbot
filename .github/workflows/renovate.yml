@@ -17,12 +17,12 @@ jobs:
   observe:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.45.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.46.0
   
   renovate:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.45.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.46.0
       - uses: renovatebot/github-action@v41.0.8
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
