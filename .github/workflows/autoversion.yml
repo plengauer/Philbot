@@ -14,12 +14,12 @@ jobs:
   observe:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.46.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.46.1
   
   bump:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.46.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.46.1
       - uses: plengauer/autoversion@v0.17.5
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
