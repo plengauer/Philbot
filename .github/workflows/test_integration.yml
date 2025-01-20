@@ -26,7 +26,7 @@ jobs:
   observe:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.46.1
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.47.0
         with:
           cache: true
   
@@ -35,7 +35,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: "Setup observability"
-        uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.46.1
+        uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.47.0
         with:
           cache: true
       - name: "Prepare system"
