@@ -9,12 +9,12 @@ jobs:
   observe:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.47.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.48.0
 
   rerun:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.47.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.48.0
       - uses: plengauer/autorerun@v0.17.0
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
