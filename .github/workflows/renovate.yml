@@ -14,11 +14,6 @@ concurrency:
   group: renovate
 
 jobs:
-  observe:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.48.0
-  
   renovate:
     runs-on: ubuntu-latest
     steps:
