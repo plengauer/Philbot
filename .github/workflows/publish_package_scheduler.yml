@@ -1,4 +1,4 @@
-name: Publish Scheduler
+name: Publish Package Scheduler
 
 env:
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
@@ -12,11 +12,6 @@ on:
       - 'Scheduler/philbot-scheduler.gemspec'
 
 jobs:
-  observe:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.48.0
-
   diff:
     runs-on: ubuntu-latest
     outputs:

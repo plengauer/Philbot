@@ -1,4 +1,4 @@
-name: Autorerun
+name: Automatic Rerun
 
 env:
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
@@ -11,11 +11,6 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  observe:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.48.0
-
   rerun:
     runs-on: ubuntu-latest
     steps:
