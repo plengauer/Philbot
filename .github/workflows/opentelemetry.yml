@@ -13,4 +13,4 @@ jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@4.48.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@5.0.0
