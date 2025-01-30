@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: "Setup observability"
-        uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.48.0
+        uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.0.0
       - name: "Prepare system"
         run: |
           sudo apt-get update
