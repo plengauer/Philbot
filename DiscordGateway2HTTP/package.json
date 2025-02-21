@@ -6,7 +6,7 @@
   "type": "module",
   "dependencies": {
     "request": "2.88.2",
-    "ws": "8.18.0",
+    "ws": "8.18.1",
     "properties-reader": "2.3.0",
     "@opentelemetry/resources": "1.30.1",
     "@opentelemetry/semantic-conventions": "1.30.0",
