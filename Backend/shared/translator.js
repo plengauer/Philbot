@@ -64,7 +64,11 @@ async function on_message_create(guild_id, channel_id, message_id, user_id, cont
   
   translations_counter.add(1, { 'language.target': target_language.substring(0, 1).toUpperCase() + target_language.substring(1).toLowerCase(), 'language.source': source_language });
 
-  return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`, false).then(() => true);
+  if (message_id) {
+    return discord.respond(channel_id, message_id, `(${source_language}) "${translation}"`, false).then(() => true);
+  } else {
+    return discord.post(channel_id, discord.mention_user(user_id) + ` (${source_language}): "${translation}"`).then(() => true);
+  }
 }
 
 async function translate(model, user, target_language, source) {
