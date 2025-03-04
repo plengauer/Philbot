@@ -3,6 +3,8 @@ name: OpenTelemetry
 on:
   workflow_run:
     workflows: [ 'Automatic Approvals', 'Automatic Version Bump', 'Automatic Rerun', 'Greetings', 'Publish Image Collector', 'Publish Debian Barematel', 'Publish Debian Configuration', 'Publish Debian Containerized', 'Publish Debian Recommended', 'Publish Debian Root', 'Public Image Discord Gateway 2 HTTP Master', 'Publish Image Backend', 'Publish Image Discord Gateway 2 HTTP', 'Publish Image Scheduler', 'Publish Image Voice', 'Publish Package Backend', 'Publish Package Discord Gateway 2 HTTP', 'Publish Package Voice', 'Publish Package Scheduler', 'Renovate', 'Test Integration' ]
+    types:
+      - completed
 
 env:
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
