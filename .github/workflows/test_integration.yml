@@ -1,4 +1,4 @@
-name: Test Integration
+name: 'Test Integration'
 
 env:
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'

@@ -1,4 +1,4 @@
-name: Publish Debian Containerized
+name: 'Publish Debian Containerized'
 
 env:
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'

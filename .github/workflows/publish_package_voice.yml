@@ -1,4 +1,4 @@
-name: Publish Package Voice
+name: 'Publish Package Voice'
 
 env:
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
