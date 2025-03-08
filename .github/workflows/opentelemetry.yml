@@ -16,7 +16,3 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v5.7.5
-        with:
-          debug: 1
-        env:
-          OTEL_SHELL_SDK_OUTPUT_REDIRECT: /dev/stderr
