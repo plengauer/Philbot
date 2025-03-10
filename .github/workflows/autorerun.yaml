@@ -15,6 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.7.5
-      - uses: plengauer/autorerun@v0.19.0
+      - uses: plengauer/autorerun@v0.20.0
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
