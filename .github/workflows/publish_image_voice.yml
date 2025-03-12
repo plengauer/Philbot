@@ -20,7 +20,7 @@ jobs:
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.8.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.8.1
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -33,7 +33,7 @@ jobs:
     needs: diff
     if: needs.diff.outputs.dirty == 'true'
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.8.0
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.8.1
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
