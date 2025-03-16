@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.8.2
-      - uses: renovatebot/github-action@v41.0.14
+      - uses: renovatebot/github-action@v41.0.15
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
