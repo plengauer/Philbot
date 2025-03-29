@@ -35,9 +35,9 @@ jobs:
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.10.1
       - uses: actions/checkout@v4
-      - uses: actions/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.1.x
+          ruby-version: 3.4
       - run: |
           mkdir -p $HOME/.gem
           touch $HOME/.gem/credentials
