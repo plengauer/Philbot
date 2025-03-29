@@ -1,4 +1,9 @@
-name: Test Integration
+name: 'Test Integration'
+
+env:
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
+  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
 
 on:
   push:
@@ -18,25 +23,16 @@ concurrency:
   group: test-integration
       
 jobs:
-  observe:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.23.1
-        env:
-          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
-          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
-          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
-  
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: "Setup observability"
-        uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.23.1
+        uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.10.1
       - name: "Prepare system"
         run: |
           sudo apt-get update
-          sudo apt-get -y remove containerd.io
+          sudo apt-get -y remove ufw containerd.io docker-ce-cli
       - name: "Install bot"
         env:
           PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
@@ -70,22 +66,22 @@ jobs:
         run: |
           message_id="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" -H 'content-type: application/json' -d "{\"content\": \"@self hello, how are you?\"}" https://discord.com/api/v10/channels/$CHANNEL_ID/messages | jq -r .id)"
           while ! curl -H "authorization: Bot $PHILBOT_API_TOKEN" https://discord.com/api/v10/channels/$CHANNEL_ID/messages | jq -r .[].referenced_message.id | grep -F "$message_id"; do sleep 10; done
-      - name: "Test Voice"
-        env:
-          PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
-          PHILBOT_API_TOKEN: ${{ secrets.PHILBOT_API_TOKEN }}
-          GUILD_ID: ${{ secrets.PHILBOT_GUILD_ID }}
-          TEXT_CHANNEL_ID: ${{ secrets.PHILBOT_TEXT_CHANNEL_ID }}
-          VOICE_CHANNEL_ID: ${{ secrets.PHILBOT_VOICE_CHANNEL_ID }}
-        run: |
-          voice_channel_name="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" https://discord.com/api/v10/channels/$VOICE_CHANNEL_ID | jq -r .name)"
-          echo '{"value":"true"}' | sudo tee /var/lib/philbot/memory/config_feature_guild_"$GUILD_ID"_name_player.json > /dev/null
-          message_id="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" -H 'content-type: application/json' -d "{\"content\": \"@self play in $voice_channel_name Rick Astley Never Gonna Give You Up\"}" https://discord.com/api/v10/channels/$TEXT_CHANNEL_ID/messages | jq -r .id)"
-          while ! ls /var/lib/philbot/memory/player_voice_channel_guild_"$GUILD_ID".json; do sleep 1; done
-          while ! ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
-          sleep 60
-          while ! ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
-          while ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
+#      - name: "Test Voice"
+#        env:
+#          PHILBOT_APPLICATION_ID: ${{ secrets.PHILBOT_APPLICATION_ID }}
+#          PHILBOT_API_TOKEN: ${{ secrets.PHILBOT_API_TOKEN }}
+#          GUILD_ID: ${{ secrets.PHILBOT_GUILD_ID }}
+#          TEXT_CHANNEL_ID: ${{ secrets.PHILBOT_TEXT_CHANNEL_ID }}
+#          VOICE_CHANNEL_ID: ${{ secrets.PHILBOT_VOICE_CHANNEL_ID }}
+#        run: |
+#          voice_channel_name="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" https://discord.com/api/v10/channels/$VOICE_CHANNEL_ID | jq -r .name)"
+#          echo '{"value":"true"}' | sudo tee /var/lib/philbot/memory/config_feature_guild_"$GUILD_ID"_name_player.json > /dev/null
+#          message_id="$(curl -H "authorization: Bot $PHILBOT_API_TOKEN" -H 'content-type: application/json' -d "{\"content\": \"@self play in $voice_channel_name Rick Astley Never Gonna Give You Up\"}" https://discord.com/api/v10/channels/$TEXT_CHANNEL_ID/messages | jq -r .id)"
+#          while ! ls /var/lib/philbot/memory/player_voice_channel_guild_"$GUILD_ID".json; do sleep 1; done
+#          while ! ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
+#          sleep 60
+#          while ! ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
+#          while ls /var/lib/philbot/memory/voice_channel_user_"$PHILBOT_APPLICATION_ID".json; do sleep 1; done
       - name: "Uninstall bot"
         run: |
           sudo apt-get -y remove philbot

@@ -1,19 +1,19 @@
 FROM ubuntu:rolling AS downloader
 WORKDIR /downloads
-RUN apt-get update && apt-get install -y wget
+RUN apt-get update && apt-get install -y wget && snap install yq
 # this is super anti-pattern, fix with a proper maven project
-RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-api/1.29.0/opentelemetry-api-1.29.0.jar
-RUN wget https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-context/1.9.1/opentelemetry-context-1.9.1.jar
-RUN wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
-RUN wget https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-aws-resources/1.29.0-alpha/opentelemetry-aws-resources-1.29.0-alpha.jar
+# EDIT: this is still an anti-pattern. but now renovate can handle it
+COPY pom.xml ./
+RUN yq -p=xml -o=json pom.xml | jq -r .project.version > VERSION
+RUN yq -p=xml -o=json pom.xml | jq -r .project.dependencies.dependency[].artifactId | while read -r artifactId; do groupId="$(yq -p=xml -o=json pom.xml | jq -r '.project.dependencies.dependency[] | select(.artifactId == "'$artifactId'") | .groupId' | tr . /)"; version="$(yq -p=xml -o=js
+on pom.xml | jq -r '.project.dependencies.dependency[] | select(.artifactId == "'$artifactId'") | .version')"; echo "https://repo1.maven.org/maven2/$groupId/$artifactId/$version/$artifactId-$version.jar"; done | xargs wget
 
-
-FROM amazoncorretto:21.0.4
+FROM amazoncorretto:21.0.6
 SHELL ["/bin/bash", "-c"]
 WORKDIR /application
 
 COPY --from=downloader /downloads/ ./
-COPY run.sh VERSION logging.properties src/ ./
+COPY run.sh logging.properties src/ ./
 RUN javac -cp $(find . -name '*.jar' | paste -sd ":" -) eu/philbot/*.java && rm eu/philbot/*.java
 
 ENV PORT=8080

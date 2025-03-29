@@ -1,4 +1,4 @@
-name: 'Automatic Version Bump'
+name: 'Automatic Rerun'
 
 env:
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
@@ -8,14 +8,13 @@ env:
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: '0 0 * * *'
 
 jobs:
-  bump:
+  rerun:
     runs-on: ubuntu-latest
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.10.1
-      - uses: plengauer/autoversion@v0.17.6
+      - uses: plengauer/autorerun@v0.20.0
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
-          openai_token: ${{ secrets.OPENAI_API_TOKEN }}

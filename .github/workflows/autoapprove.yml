@@ -1,4 +1,4 @@
-name: 'Automatic Version Bump'
+name: 'Automatic Approvals'
 
 env:
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
@@ -6,16 +6,19 @@ env:
   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 0'
+  pull_request:
+
+concurrency:
+  group: approve-${{ github.event.pull_request.number }}
 
 jobs:
-  bump:
+  approve:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.10.1
-      - uses: plengauer/autoversion@v0.17.6
+      - uses: plengauer/autoapprove@v0.1.0
         with:
-          github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
-          openai_token: ${{ secrets.OPENAI_API_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          user_to_approve: ${{ secrets.ACTIONS_GITHUB_TOKEN }}

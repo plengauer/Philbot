@@ -28,7 +28,7 @@ function computeBillingSlotProgress() {
 
 async function getLanguageModels() {
   let models = await getModels();
-  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/) && !model.includes('preview') && !model.includes('mini'));
+  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/) && !model.includes('preview') && !model.includes('mini') && !model.startsWith('chatgpt-') && !model.includes('transcribe'));
   models = Array.from(new Set(models));
   models = models.sort((m1, m2) => {
     let p1 = getModelPower(m1);
@@ -81,7 +81,7 @@ async function createResponse0(model, user, history_token, system, message, atta
   // https://platform.openai.com/docs/guides/chat/introduction
   if (!token) return null;
 
-  const horizon = 3;
+  const horizon = 5;
   const conversation_key = history_token ? `chatgpt:history:${history_token}` : null;
   let conversation = (conversation_key ? await memory.get(conversation_key, []) : []).slice(-(2 * horizon + 1));
 
@@ -235,6 +235,8 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-4o": // shorthand
     case "gpt-4o-2024-05-13":
       return tokens_prompt / 1000 * 0.0050 + tokens_completion / 1000 * 0.0150;
+    case "gpt-4o-2024-08-06":
+      return tokens_prompt / 1000 * 0.0025 + tokens_completion / 1000 * 0.0100;      
     default:
       throw new Error("Unknown model: " + model);
   }

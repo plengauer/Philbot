@@ -1,4 +1,9 @@
-name: Publish Image Backend
+name: 'Publish Image Backend'
+
+env:
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
+  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
 
 on:
   push:
@@ -7,21 +12,12 @@ on:
       - 'Backend/package.json'
 
 jobs:
-  observe:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v4.23.1
-        env:
-          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
-          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
-          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
-
   diff:
     runs-on: ubuntu-latest
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.23.1
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.10.1
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -34,7 +30,7 @@ jobs:
     needs: diff
     if: needs.diff.outputs.dirty == 'true'
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v4.23.1
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.10.1
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
