@@ -54,10 +54,10 @@ class DynatraceResourceDetector {
   detect() {
     for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
       try {
-        return new opentelemetry_resources.Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties());
+        return opentelemetry_resources.resourceFromAttributes(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties());
       } catch { }
     }
-    return new opentelemetry_resources.Resource({});
+    return new opentelemetry_resources.emptyResource();
   }
 }
 
@@ -71,7 +71,7 @@ class OracleResourceDetector {
               if (xhr.status === 200) {
                   try {
                       const metadata = JSON.parse(xhr.responseText);
-                      const resource = new Resource({
+                      const resource = opentelemetry_resources.resourceFromAttributes({
                           [SemanticResourceAttributes.CLOUD_PROVIDER]: 'oracle',
                           [SemanticResourceAttributes.CLOUD_REGION]: metadata.region,
                           [SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE]: metadata.availabilityDomain,
@@ -93,13 +93,13 @@ class OracleResourceDetector {
           xhr.onabort = reject;
           xhr.ontimeout = reject;
           xhr.send();
-      }).catch(_ => new opentelemetry_resources.Resource({}));
+      }).catch(_ => opentelemetry_resources.emptyResource());
   }
 }
 
 class ServiceResourceDetector {
   detect() {
-    return new opentelemetry_resources.Resource({
+    return opentelemetry_resources.resourceFromAttributese({
       [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
       [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_NAME]: 'Philbot Discord Gateway 2 HTTP',
       [opentelemetry_semantic_conventions.SemanticResourceAttributes.SERVICE_VERSION]: JSON.parse('' + fs.readFileSync('package.json')).version,
