@@ -24,6 +24,9 @@ opentelemetry-resourcedetector-process = "0.3.0"
 opentelemetry-resourcedetector-docker = "0.4.0"
 opentelemetry-resourcedetector-kubernetes = "0.3.0"
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
