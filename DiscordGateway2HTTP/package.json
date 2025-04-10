@@ -9,7 +9,7 @@
     "ws": "8.18.1",
     "properties-reader": "2.3.0",
     "@opentelemetry/resources": "2.0.0",
-    "@opentelemetry/semantic-conventions": "1.31.0",
+    "@opentelemetry/semantic-conventions": "1.32.0",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/core": "2.0.0",
     "@opentelemetry/sdk-node": "0.200.0",
