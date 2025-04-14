@@ -17,7 +17,7 @@ jobs:
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.12.1
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.12.3
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -33,7 +33,7 @@ jobs:
       run:
         working-directory: ./Scheduler/
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.12.1
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.12.3
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
         with:
