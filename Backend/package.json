@@ -1,6 +1,6 @@
 {
   "name": "philbot-backend",
-  "version": "3.40.0",
+  "version": "3.41.0",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "form-data": "4.0.2",
