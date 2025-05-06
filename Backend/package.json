@@ -1,6 +1,6 @@
 {
   "name": "philbot-backend",
-  "version": "3.38.0",
+  "version": "3.41.0",
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "form-data": "4.0.2",
@@ -9,13 +9,13 @@
     "boomerencoding": "1.1.0",
     "properties-reader": "2.3.0",
     "@opentelemetry/resources": "2.0.0",
-    "@opentelemetry/semantic-conventions": "1.30.0",
+    "@opentelemetry/semantic-conventions": "1.32.0",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/core": "2.0.0",
     "@opentelemetry/sdk-node": "0.200.0",
     "@opentelemetry/sdk-trace-base": "2.0.0",
     "@opentelemetry/exporter-trace-otlp-proto": "0.200.0",
-    "@opentelemetry/auto-instrumentations-node": "0.57.0",
+    "@opentelemetry/auto-instrumentations-node": "0.58.1",
     "@opentelemetry/exporter-metrics-otlp-proto": "0.200.0",
     "opentelemetry-resource-detector-git": "0.30.0",
     "@opentelemetry/resource-detector-github": "0.31.0",

@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const propertiesReader = require('properties-reader');
 const opentelemetry_api = require('@opentelemetry/api');
 const opentelemetry_sdk = require('@opentelemetry/sdk-node');
-const { Resource } = require('@opentelemetry/resources');
+const { resourceFromAttributes, emptyResource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 const { PeriodicExportingMetricReader, AggregationTemporality} = require('@opentelemetry/sdk-metrics');
 const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
@@ -58,10 +58,10 @@ class DynatraceResourceDetector {
   detect() {
     for (let name of ['dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties', '/var/lib/dynatrace/enrichment/dt_metadata.properties']) {
       try {
-        return new Resource(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties());
+        return resourceFromAttributes(propertiesReader(name.startsWith("/var") ? name : fs.readFileSync(name).toString()).getAllProperties());
       } catch { }
     }
-    return new Resource({});
+    return emptyResource();
   }
 }
 
@@ -75,7 +75,7 @@ class OracleResourceDetector {
                 if (xhr.status === 200) {
                     try {
                         const metadata = JSON.parse(xhr.responseText);
-                        const resource = new Resource({
+                        const resource = resourceFromAttributes({
                             [SemanticResourceAttributes.CLOUD_PROVIDER]: 'oracle',
                             [SemanticResourceAttributes.CLOUD_REGION]: metadata.region,
                             [SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE]: metadata.availabilityDomain,
@@ -97,13 +97,13 @@ class OracleResourceDetector {
             xhr.onabort = reject;
             xhr.ontimeout = reject;
             xhr.send();
-        }).catch(_ => new Resource({}));
+        }).catch(_ => emptyResource());
     }
 }
 
 class ServiceResourceDetector {
   detect() {
-    return new Resource({
+    return resourceFromAttributes({
       [SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Philbot',
       [SemanticResourceAttributes.SERVICE_NAME]: 'Philbot Backend',
       [SemanticResourceAttributes.SERVICE_VERSION]: JSON.parse('' + fs.readFileSync('package.json')).version,
