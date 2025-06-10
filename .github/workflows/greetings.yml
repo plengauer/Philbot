@@ -14,7 +14,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.19.1
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.19.2
       - uses: actions/first-interaction@v1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
