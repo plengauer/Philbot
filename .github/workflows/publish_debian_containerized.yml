@@ -18,7 +18,7 @@ jobs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.19.2
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.0.0
         with:
           fetch-depth: 0
       - id: git-diff
@@ -36,12 +36,12 @@ jobs:
         working-directory: ./Deployment/Containerized
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.19.2
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.0.0
       - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "version=$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')" >> "$GITHUB_OUTPUT"
         id: version
       - run: dpkg-deb --root-owner-group -Zgzip --build . ../package.deb
-      - uses: actions/create-release@v1
+      - uses: actions/create-release@v1.0.0
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
@@ -50,7 +50,7 @@ jobs:
           release_name: Release Deployment Containerized v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
-      - uses: actions/upload-release-asset@v1
+      - uses: actions/upload-release-asset@v1.0.0
         id: upload-release-asset
         env:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
