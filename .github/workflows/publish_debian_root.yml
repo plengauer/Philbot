@@ -41,7 +41,7 @@ jobs:
       - run: echo "version=$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')" >> "$GITHUB_OUTPUT"
         id: version
       - run: dpkg-deb --root-owner-group -Zgzip --build . ../package.deb
-      - uses: actions/create-release@v1.0.0
+      - uses: actions/create-release@v1.1.4
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
