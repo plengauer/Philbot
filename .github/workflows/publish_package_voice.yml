@@ -18,7 +18,7 @@ jobs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.19.2
-      - uses: actions/checkout@v4.0.0
+      - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
       - id: git-diff
@@ -34,7 +34,7 @@ jobs:
         working-directory: ./Voice/
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.19.2
-      - uses: actions/checkout@v4.0.0
+      - uses: actions/checkout@v4.2.2
       - uses: actions/setup-python@v5.0.0
         with:
           python-version: '3.x'
