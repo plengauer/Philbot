@@ -40,7 +40,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: echo "version=$(cat ./DiscordGateway2HTTPMaster/VERSION)" >> "$GITHUB_OUTPUT"
         id: version
-      - uses: docker/build-push-action@v6.0.0
+      - uses: docker/build-push-action@v6.18.0
         with:
           context: ./Collector/
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/philbot-selfmonitoring:v${{ steps.version.outputs.version }}, ${{ secrets.DOCKERHUB_USERNAME }}/philbot-selfmonitoring:latest
