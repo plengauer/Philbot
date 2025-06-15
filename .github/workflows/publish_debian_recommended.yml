@@ -50,7 +50,7 @@ jobs:
           release_name: Release Deployment Recommended v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
-      - uses: actions/upload-release-asset@v1.0.0
+      - uses: actions/upload-release-asset@v1.0.2
         id: upload-release-asset
         env:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
