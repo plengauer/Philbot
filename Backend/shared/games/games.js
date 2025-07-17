@@ -1,7 +1,4 @@
-const troll = require('./troll.js');
 const rdro = require('./rdro.js');
-const lol = require('./lol.js');
-const wow = require('./wow.js');
 const epicgames = require('./epicgames.js');
 const phasmophobia = require('./phasmophobia.js');
 const hitman = require('./hitman.js');
