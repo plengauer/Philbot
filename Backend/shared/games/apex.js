@@ -3,10 +3,6 @@ const curl = require('../curl.js');
 const trackernetwork_gg = require('./trackernetwork_gg.js');
 const games_util = require('./games_util.js');
 
-async function getInformation() {
-  return troll.getInformation();
-}
-
 const ranks = [
   { name: 'Apex Predator', color: 0xc23435 },
   { name:        'Master', color: 0x9d70b1 },
