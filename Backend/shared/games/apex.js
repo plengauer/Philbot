@@ -1,7 +1,6 @@
 const process = require('process');
 const curl = require('../curl.js');
 const trackernetwork_gg = require('./trackernetwork_gg.js');
-const troll = require('./troll.js');
 const games_util = require('./games_util.js');
 
 async function getInformation() {
