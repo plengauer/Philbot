@@ -32,7 +32,7 @@ async function http_tracker(player) {
   return trackernetwork_gg.get('api.fortnitetracker.com', '/v1/profile/pc/' + encodeURIComponent(player));
 }
 
-module.exports = { getInformation, updateRankedRoles }
+module.exports = { updateRankedRoles }
 
 
 
