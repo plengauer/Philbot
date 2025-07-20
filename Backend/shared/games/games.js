@@ -23,10 +23,6 @@ async function getActivityHint(name, details, state, user_id) {
     return phasmophobia.getInformation(name.split(' ').slice(1).join(' '));
   } else if (name.toLowerCase().startsWith('hitman')) {
     return hitman.getInformation(name.split(' ').slice(1).join(' '));
-  } else if (name == 'Apex Legends') {
-    return apex.getInformation();
-  } else if (name == 'Fortnite') {
-    return fortnite.getInformation();
   } else if (name == 'Kerbal Space Program' || name == 'Kerbal Space Program 2') {
     return ksp.getInformation();
   } else {
