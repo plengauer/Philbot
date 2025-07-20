@@ -59,7 +59,7 @@ async function http_tracker(player) {
   return trackernetwork_gg.get('public-api.tracker.gg', '/apex/v1/standard/profile/5/' + encodeURIComponent(player));
 }
 
-module.exports = { getInformation, updateRankedRoles }
+module.exports = { updateRankedRoles }
 
 
 
