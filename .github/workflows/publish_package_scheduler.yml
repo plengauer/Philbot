@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.21.0
       - uses: actions/checkout@v4.2.2
-      - uses: ruby/setup-ruby@v1.253.0
+      - uses: ruby/setup-ruby@v1.254.0
         with:
           ruby-version: 3.4
       - run: |
