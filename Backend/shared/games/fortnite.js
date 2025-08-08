@@ -1,12 +1,7 @@
 const memory = require('../memory.js');
 const discord = require('../discord.js');
 const trackernetwork_gg = require('./trackernetwork_gg.js');
-const troll = require('./troll.js');
 const games_util = require('./games_util.js');
-
-async function getInformation() {
-  return troll.getInformation();
-}
 
 const ranks = [
   { name: 'Champion League', color: 0x00d8d8 },
@@ -37,7 +32,7 @@ async function http_tracker(player) {
   return trackernetwork_gg.get('api.fortnitetracker.com', '/v1/profile/pc/' + encodeURIComponent(player));
 }
 
-module.exports = { getInformation, updateRankedRoles }
+module.exports = { updateRankedRoles }
 
 
 
