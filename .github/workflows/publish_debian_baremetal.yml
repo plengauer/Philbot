@@ -17,7 +17,7 @@ jobs:
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.22.6
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.22.7
       - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
@@ -35,7 +35,7 @@ jobs:
       run:
         working-directory: ./Deployment/Baremetal
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.22.6
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.22.7
       - uses: actions/checkout@v4.2.2
       - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "version=$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')" >> "$GITHUB_OUTPUT"
