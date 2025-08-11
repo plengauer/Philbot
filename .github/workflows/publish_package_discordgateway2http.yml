@@ -18,7 +18,7 @@ jobs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.22.7
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4.3.0
         with:
           fetch-depth: 0
       - id: git-diff
@@ -34,7 +34,7 @@ jobs:
         working-directory: ./DiscordGateway2HTTP/
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.22.7
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4.3.0
       - uses: actions/setup-node@v4.4.0
         with:
           node-version: 19
