@@ -18,7 +18,7 @@ jobs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.22.7
-      - uses: actions/checkout@v4.3.0
+      - uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
       - id: git-diff
@@ -36,7 +36,7 @@ jobs:
         working-directory: ./Deployment/Root
     steps:
       - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.22.7
-      - uses: actions/checkout@v4.3.0
+      - uses: actions/checkout@v5.0.0
       - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "version=$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')" >> "$GITHUB_OUTPUT"
         id: version
