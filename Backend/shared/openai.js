@@ -28,7 +28,7 @@ function computeBillingSlotProgress() {
 
 async function getLanguageModels() {
   let models = await getModels();
-  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/) && !model.includes('preview') && !model.includes('mini') && !model.includes('nano') && !model.startsWith('chatgpt-') && !model.includes('transcribe'));
+  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/) && !model.includes('preview') && !model.includes('mini') && !model.includes('nano') && !model.startsWith('chatgpt-') && !model.includes('transcribe') && !model.includes('chat-latest') && !model.includes('image'));
   models = Array.from(new Set(models));
   models = models.sort((m1, m2) => {
     let p1 = getModelPower(m1);
@@ -240,6 +240,9 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-4.1":
     case "gpt-4.1-2025-04-14":
       return tokens_prompt / 1000 * 0.0025 + tokens_completion / 1000 * 0.0100;
+    case "gpt-5":
+    case "gpt-5-2025-08-07":
+      return tokens_prompt / 1000000 * 1.15 + tokens_completion / 1000000 * 10
     default:
       throw new Error("Unknown model: " + model);
   }
