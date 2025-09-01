@@ -17,7 +17,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.24.4
+      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.25.1
       - uses: plengauer/autoapprove@v0.2.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
