@@ -1,0 +1,21 @@
+name: 'Deploy OpenTelemetry'
+
+on:
+  push:
+    branches: main
+    paths:
+      - .github/workflows/**
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: otel-deploy-job
+    steps:
+      - uses: plengauer/Thoth/actions/instrument/deploy@v5.27.0
+        env:
+          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
+          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces'
+        with:
+          github_token: '${{ secrets.ACTIONS_GITHUB_TOKEN  }}'
