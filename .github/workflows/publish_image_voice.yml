@@ -29,7 +29,8 @@ jobs:
       - id: git-diff
         run: |
           echo dirty="$(git diff "$GITHUB_SHA"^1 "$GITHUB_SHA" -- Voice/pyproject.toml | grep -E "^\+" | grep -q 'version' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
+    permissions:
+      actions: read
   publish:
     runs-on: ubuntu-latest
     needs: diff
