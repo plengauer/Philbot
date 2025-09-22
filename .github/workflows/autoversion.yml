@@ -14,8 +14,12 @@ jobs:
   bump:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/job@v5.26.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.26.0
+        with:
+          secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}","${{ secrets.OPENAI_API_TOKEN }}"]'
       - uses: plengauer/autoversion@v1.0.0
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
           openai_token: ${{ secrets.OPENAI_API_TOKEN }}
+    permissions:
+      actions: read

@@ -2,7 +2,7 @@ name: OpenTelemetry
 
 on:
   workflow_run:
-    workflows: [ 'Automatic Approvals', 'Automatic Version Bump', 'Automatic Rerun', 'Greetings', 'Publish Image Collector', 'Publish Debian Barematel', 'Publish Debian Configuration', 'Publish Debian Containerized', 'Publish Debian Recommended', 'Publish Debian Root', 'Public Image Discord Gateway 2 HTTP Master', 'Publish Image Backend', 'Publish Image Discord Gateway 2 HTTP', 'Publish Image Scheduler', 'Publish Image Voice', 'Publish Package Backend', 'Publish Package Discord Gateway 2 HTTP', 'Publish Package Voice', 'Publish Package Scheduler', 'Renovate', 'Test Integration' ]
+    workflows: [Automatic Approvals, Automatic Rerun, Automatic Version Bump, Greetings, Publish Debian Baremetal, Publish Debian Configuration, Publish Debian Containerized, Publish Debian Recommended, Publish Debian Root, Publish Image Backend, Publish Image Collector, Publish Image Discord Gateway 2 HTTP, Publish Image Discord Gateway 2 HTTP Master, Publish Image Scheduler, Publish Image Voice, Publish Package Backend, Publish Package Discord Gateway 2 HTTP, Publish Package Scheduler, Publish Package Voice, Renovate, Test Integration]
     types:
       - completed
 
@@ -15,4 +15,6 @@ jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-bash/actions/instrument/workflow@v5.26.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/workflow@v5.26.0
+    permissions:
+      actions: read
