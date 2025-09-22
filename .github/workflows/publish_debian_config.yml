@@ -17,7 +17,7 @@ jobs:
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.26.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.27.0
         with:
           secrets_to_redact: '["${{ github.token }}"]'
       - uses: actions/checkout@v5
@@ -39,7 +39,7 @@ jobs:
       run:
         working-directory: ./Deployment/Config
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.26.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.27.0
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}","${{ secrets.PARENT_DOMAIN }}"]'
       - uses: actions/checkout@v5
