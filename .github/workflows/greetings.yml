@@ -18,7 +18,7 @@ jobs:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.27.0
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.GITHUB_TOKEN }}"]'
-      - uses: actions/first-interaction@v3.0.0
+      - uses: actions/first-interaction@v3.1.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-message: "Hello, thanks for adding an issue for the first time!"
