@@ -1,2 +1,2 @@
-FROM otel/opentelemetry-collector:0.136.0
+FROM otel/opentelemetry-collector:0.137.0
 EXPOSE 4318
