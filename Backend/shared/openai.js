@@ -244,7 +244,13 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     case "gpt-5-2025-08-07":
       return tokens_prompt / 1000000 * 1.15 + tokens_completion / 1000000 * 10;
     default:
-      return tokens_prompt / 1000000 * 1.15 + tokens_completion / 1000000 * 10;
+      if (model.startsWith("gpt-")) {
+        let basemodel = model.substring(0, "gpt-1".length);
+        if (mode.length > basemodel.length) {
+          return computeLanguageCost(basemodel, tokens_prompt, tokens_completion);
+        }
+      }
+      throw new Error("Unknown model, cannot calculate price! (" + model + ")");
   }
 }
 
