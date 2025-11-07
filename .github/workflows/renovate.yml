@@ -20,7 +20,7 @@ jobs:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.33.1
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}"]'
-      - uses: renovatebot/github-action@v43.0.20
+      - uses: renovatebot/github-action@v44.0.0
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
