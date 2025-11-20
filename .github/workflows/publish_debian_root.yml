@@ -20,7 +20,7 @@ jobs:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.35.0
         with:
           secrets_to_redact: '["${{ github.token }}"]'
-      - uses: actions/checkout@v5.0.1
+      - uses: actions/checkout@v6.0.0
         with:
           fetch-depth: 0
       - id: git-diff
@@ -42,7 +42,7 @@ jobs:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.35.0
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}"]'
-      - uses: actions/checkout@v5.0.1
+      - uses: actions/checkout@v6.0.0
       - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "version=$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')" >> "$GITHUB_OUTPUT"
         id: version
