@@ -17,7 +17,7 @@ jobs:
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.35.0
+      - uses: /actions/instrument/job@v5.35.0
         with:
           secrets_to_redact: '["${{ github.token }}"]'
       - uses: actions/checkout@v6.0.0
@@ -33,7 +33,7 @@ jobs:
     needs: diff
     if: needs.diff.outputs.dirty == 'true'
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.35.0
+      - uses: /actions/instrument/job@v5.35.0
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.DOCKERHUB_TOKEN }}","${{ secrets.DOCKERHUB_USERNAME }}"]'
       - uses: actions/checkout@v6.0.0
