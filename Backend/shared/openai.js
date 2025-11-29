@@ -28,7 +28,7 @@ function computeBillingSlotProgress() {
 
 async function getLanguageModels() {
   let models = await getModels();
-  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/) && !model.includes('preview') && !model.includes('mini') && !model.includes('nano') && !model.startsWith('chatgpt-') && !model.includes('transcribe') && !model.includes('chat-latest') && !model.includes('image') && !model.includes('audio') && !model.includes('realtime'));
+  models = models.filter(model => (model.match(/text-[a-zA-Z]+(:|-)\d\d\d$/) || model.match(/gpt-*/)) && !model.match(/-\d{4}$/) && !model.match(/-\d{4}-/) && !model.match(/-\d*k/) && !model.includes('preview') && !model.includes('mini') && !model.includes('nano') && !model.startsWith('chatgpt-') && !model.includes('transcribe') && !model.includes('chat-latest') && !model.includes('image') && !model.includes('audio') && !model.includes('realtime') && !model.includes('codex') && !model.includes('pro') && !model.includes('instruct') && !model.includes('search-api'));
   models = Array.from(new Set(models));
   models = models.sort((m1, m2) => {
     let p1 = getModelPower(m1);
@@ -246,7 +246,7 @@ function computeLanguageCost(model, tokens_prompt, tokens_completion) {
     default:
       if (model.startsWith("gpt-")) {
         let basemodel = model.substring(0, "gpt-1".length);
-        if (mode.length > basemodel.length) {
+        if (model.length > basemodel.length) {
           return computeLanguageCost(basemodel, tokens_prompt, tokens_completion);
         }
       }
