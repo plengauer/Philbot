@@ -1,0 +1,18 @@
+
+on:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.37.0
+        env:
+          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics
+          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces
+      - run: |
+          :
+    permissions:
+      actions: read
