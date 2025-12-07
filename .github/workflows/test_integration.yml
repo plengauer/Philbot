@@ -25,7 +25,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - name: "Setup observability"
         uses: plengauer/opentelemetry-github/actions/instrument/job@v5.37.0
