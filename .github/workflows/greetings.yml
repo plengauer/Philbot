@@ -20,6 +20,6 @@ jobs:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.GITHUB_TOKEN }}"]'
       - uses: actions/first-interaction@v3.1.0
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-message: "Hello, thanks for adding an issue for the first time!"
-          pr-message: "Hello, thanks for contributing for the first time!"
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          issue_message: "Hello, thanks for adding an issue for the first time!"
+          pr_message: "Hello, thanks for contributing for the first time!"
