@@ -15,7 +15,7 @@ jobs:
           OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}"]'
-      - uses: plengauer/autoassign@v0.0.0
+      - uses: plengauer/autoassign@v0.1.0
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
     permissions:
