@@ -47,7 +47,7 @@ start backend backend \
 
 if [ -z "$STATIC_SHARD_COUNT" ]; then
     start discordgateway2httpmaster discordgateway2httpmaster \
-        --memory=150m \
+        --memory=250m \
         --env PORT=7999
 else
     SHARD_COUNT="$STATIC_SHARD_COUNT"
@@ -56,7 +56,7 @@ fi
 for shard_index in $(seq 0 $(($SHARD_COUNT-1)))
 do
     start discordgateway2http_$shard_index discordgateway2http \
-        --memory=50m \
+        --memory=150m \
         --env SHARD_INDEX=$([ -n "$STATIC_SHARD_COUNT" ] && echo "$shard_index" || echo auto) --env SHARD_COUNT=$([ -n "$STATIC_SHARD_COUNT" ] && echo "$STATIC_SHARD_COUNT" || echo auto) \
         --env BASE_PORT=8081 \
         --env SHARDS_MASTER_PORT=7999 \
