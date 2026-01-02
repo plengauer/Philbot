@@ -21,7 +21,7 @@ jobs:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.41.0
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}","${{ secrets.GITHUB_TOKEN }}"]'
-      - uses: plengauer/autoapprove@v0.2.0
+      - uses: plengauer/autoapprove@v1.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           user_to_approve: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
