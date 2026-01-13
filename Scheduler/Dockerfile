@@ -4,7 +4,7 @@ COPY philbot-scheduler.gemspec ./
 RUN cat philbot-scheduler.gemspec | grep 'version' | awk -F\' '{print $2}' > version.txt
 
 
-FROM ruby:4.0.0
+FROM ruby:4.0.1
 WORKDIR /application
 
 COPY --from=extractor /extractions/version.txt ./
