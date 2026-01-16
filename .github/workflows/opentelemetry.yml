@@ -2,7 +2,7 @@ name: OpenTelemetry
 
 on:
   workflow_run:
-    workflows: [.github/workflows/copilot-setup-steps.yml, Automatic Rerun, Automatic Version Bump, CodeQL, Copilot coding agent, Greetings, Publish Debian Baremetal, Publish Debian Configuration, Publish Debian Containerized, Publish Debian Recommended, Publish Debian Root, Publish Image Backend, Publish Image Collector, Publish Image Discord Gateway 2 HTTP, Publish Image Discord Gateway 2 HTTP Master, Publish Image Scheduler, Publish Image Voice, Publish Package Backend, Publish Package Discord Gateway 2 HTTP, Publish Package Scheduler, Publish Package Voice, Renovate, Test Integration]
+    workflows: [.github/workflows/copilot-setup-steps.yml, Automatic Rerun, Automatic Version Bump, CodeQL, Copilot coding agent, Greetings, Publish Debian Baremetal, Publish Debian Configuration, Publish Debian Containerized, Publish Debian Recommended, Publish Debian Root, Publish Image Backend, Publish Image Collector, Publish Image Discord Gateway 2 HTTP, Publish Image Discord Gateway 2 HTTP Master, Publish Image Scheduler, Publish Image Voice, Publish Package Backend, Publish Package Discord Gateway 2 HTTP, Publish Package Scheduler, Publish Package Voice, Renovate, Test Integration, Update Debian Repository]
     types:
       - completed
 
