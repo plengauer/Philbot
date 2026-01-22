@@ -15,7 +15,7 @@ jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/workflow@v5.41.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/workflow@v5.42.0
     permissions:
       actions: read
     container: ghcr.io/plengauer/opentelemetry-github-workflow-instrumentation-runner:v5.42.0
