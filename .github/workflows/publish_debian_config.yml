@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.42.0
         with:
-          secrets_to_redact: '["${{ github.token }}","${{ secrets.PARENT_DOMAIN }}"]'
+          secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}","${{ secrets.PARENT_DOMAIN }}"]'
       - uses: actions/checkout@v6
       - run: sudo apt-get update && sudo apt-get install devscripts debhelper
       - run: echo "version=$(cat ./DEBIAN/control | grep 'Version' | awk -F\  '{print $2}')" >> "$GITHUB_OUTPUT"
