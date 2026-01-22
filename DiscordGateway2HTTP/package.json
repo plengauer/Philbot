@@ -15,13 +15,13 @@
     "@opentelemetry/sdk-node": "0.211.0",
     "@opentelemetry/sdk-trace-base": "2.5.0",
     "@opentelemetry/exporter-trace-otlp-proto": "0.211.0",
-    "@opentelemetry/auto-instrumentations-node": "0.67.3",
+    "@opentelemetry/auto-instrumentations-node": "0.69.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "0.211.0",
     "opentelemetry-resource-detector-git": "0.30.0",
     "@opentelemetry/resource-detector-github": "0.32.0",
-    "@opentelemetry/resource-detector-container": "0.8.0",
-    "@opentelemetry/resource-detector-aws": "2.9.0",
-    "@opentelemetry/resource-detector-gcp": "0.44.0",
+    "@opentelemetry/resource-detector-container": "0.8.2",
+    "@opentelemetry/resource-detector-aws": "2.11.0",
+    "@opentelemetry/resource-detector-gcp": "0.46.0",
     "xhr2": "0.2.1"
   },
   "scripts": {
