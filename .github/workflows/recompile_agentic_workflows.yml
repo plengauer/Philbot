@@ -1,0 +1,56 @@
+name: 'Recompile Agentic Workflows'
+
+on:
+  push:
+    paths:
+      - '.github/workflows/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  recompile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - env:
+          GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+        run: |
+          gh extension install github/gh-aw
+          gh aw compile
+      - id: push
+        run: |
+          if git diff --quiet HEAD; then exit 0; fi
+          user_name="$(gh api user --jq .login)"
+          user_id="$(gh api user --jq .id)"
+          git config user.name "$user_name"
+          git config user.email "${user_id}+${user_name}@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git add -A
+          git commit -m "recompile agentic workflows"
+          git push && echo "pushed=true" >> "$GITHUB_OUTPUT" || echo "pushed=false" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+      - if: steps.push.outputs.pushed == 'false'
+        id: open-pr
+        uses: peter-evans/create-pull-request@v8.1.0
+        with:
+          token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+          commit-message: "recompile agentic workflows"
+          base: main
+          branch: "agentic-workflows/auto-recompile"
+          title: "Recompile Agentic Workflows"
+          body: |
+            (this PR is automatically generated)
+          delete-branch: true
+      - if: steps.open-pr.outputs.pull-request-number != null
+        run: sleep 60 # make sure PR state is updated and API can catch up
+      - if: steps.open-pr.outputs.pull-request-number != null
+        shell: bash
+        run: gh pr merge --squash --auto ${{ steps.open-pr.outputs.pull-request-number }}
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+        continue-on-error: true
