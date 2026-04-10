@@ -7,9 +7,9 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     concurrency:
-      group: deploy-otel-job
+      group: deploy-otel-job-${{ github.ref_name }}
     steps:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.47.3
         env:
