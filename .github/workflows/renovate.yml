@@ -17,10 +17,10 @@ jobs:
   renovate:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@v5.47.3
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@3863925db919310045f636380cc799b60ed41c92 # v5.47.3
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}"]'
-      - uses: renovatebot/github-action@v46.1.8
+      - uses: renovatebot/github-action@b67590ea780158ccd13192c22a3655a5231f869d # v46.1.8
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
