@@ -17,7 +17,7 @@ jobs:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@3863925db919310045f636380cc799b60ed41c92 # v5.47.3
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}","${{ secrets.OPENAI_API_TOKEN }}"]'
-      - uses: plengauer/autoversion@075d9850ed89b6683b71ecab1e4ad873a28dc61e # v3.0.0
+      - uses: plengauer/autoversion@09172e83f9d0372b01fc3845f952135b9a208a4f # v3.1.0
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
           openai_token: ${{ secrets.OPENAI_API_TOKEN }}
