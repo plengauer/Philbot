@@ -30,7 +30,7 @@ jobs:
           GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
         run: |
           gh extension install github/gh-aw
-          gh aw compile
+          gh aw compile --approve
       - id: push
         run: |
           if git diff --quiet HEAD; then exit 0; fi
