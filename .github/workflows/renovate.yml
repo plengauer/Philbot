@@ -16,6 +16,12 @@ concurrency:
 jobs:
   renovate:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      pull-requests: write
+      issues: write
+      security-events: write
     steps:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@3863925db919310045f636380cc799b60ed41c92 # v5.47.3
         with:
@@ -25,5 +31,3 @@ jobs:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
           token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
-    permissions:
-      actions: read
