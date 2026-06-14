@@ -17,6 +17,13 @@ jobs:
       contents: read
       actions: read
     steps:
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@3863925db919310045f636380cc799b60ed41c92
+        env:
+          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics
+          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces
+        with:
+          secrets_to_redact: ${{ github.token }}
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
@@ -42,6 +49,15 @@ jobs:
       issues: read
       actions: read
     steps:
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@3863925db919310045f636380cc799b60ed41c92
+        env:
+          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics
+          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces
+        with:
+          secrets_to_redact: |-
+            ${{ github.token }}
+            ${{ secrets.OPENAI_TOKEN }}
       - id: autoversion
         uses: plengauer/autoversion@badee98ba4eb3a38f99cf8acab7f5510e7e8736f # v5.0.0
         with:
@@ -58,32 +74,7 @@ jobs:
       
       - id: prepare_branch
         if: steps.check_patch.outputs.should_backport == 'true'
-        run: |
-          set -e
-          current_tag=$(git describe --tags --abbrev=0 ${{ matrix.ref }})
-          if [ -z "${current_tag:-}" ]; then exit 1; fi
-          current_tag_sha=$(git rev-list -n 1 "$current_tag")
-          while read -r tag; do
-            if [ "${#tag}" -gt "${#current_tag}" ]; then
-              current_tag="$tag"
-            fi
-          done < <(git tag --points-at "$current_tag_sha")
-          case "$current_tag" in
-            v*.*.*) current_tag="${current_tag%.*}";;
-            v*.*) ;;
-            v*) exit 2;;
-            *) exit 3;; 
-          esac
-          branch_name="release/$current_tag"
-          echo name="$branch_name" >> "$GITHUB_OUTPUT"
-          if git ls-remote --exit-code --heads origin "$branch_name"; then
-            git fetch origin "$branch_name"
-            git checkout "$branch_name"
-          else
-            git checkout -b "$branch_name" "$current_tag".0
-            git push -u origin "$branch_name"
-          fi
-      
+        run: "set -e\ncurrent_tag=$(git describe --tags --abbrev=0 ${{ matrix.ref }})\nif [ -z \"${current_tag:-}\" ]; then exit 1; fi\ncurrent_tag_sha=$(git rev-list -n 1 \"$current_tag\")\nwhile read -r tag; do\n  if [ \"${#tag}\" -gt \"${#current_tag}\" ]; then\n    current_tag=\"$tag\"\n  fi\ndone < <(git tag --points-at \"$current_tag_sha\")\ncase \"$current_tag\" in\n  v*.*.*) current_tag=\"${current_tag%.*}\";;\n  v*.*) ;;\n  v*) exit 2;;\n  *) exit 3;; \nesac\nbranch_name=\"release/$current_tag\"\necho name=\"$branch_name\" >> \"$GITHUB_OUTPUT\"\nif git ls-remote --exit-code --heads origin \"$branch_name\"; then\n  git fetch origin \"$branch_name\"\n  git checkout \"$branch_name\"\nelse\n  git checkout -b \"$branch_name\" \"$current_tag\".0\n  git push -u origin \"$branch_name\"\nfi\n"
       - if: steps.check_patch.outputs.should_backport == 'true'
         run: |
           set -e
