@@ -18,6 +18,7 @@ jobs:
     permissions:
       pages: write
       id-token: write
+      actions: read
     steps:
       - uses: plengauer/opentelemetry-github/actions/instrument/job@3863925db919310045f636380cc799b60ed41c92 # v5.47.3
         env:
