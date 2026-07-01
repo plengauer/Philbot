@@ -18,4 +18,4 @@ jobs:
       - uses: plengauer/opentelemetry-github/actions/instrument/workflow@af83be0ddf1ec3035230c030f3ab6d10a7040515 # v5.56.0
     permissions:
       actions: read
-    container: ghcr.io/plengauer/opentelemetry-github-workflow-instrumentation-runner:v5.56.0
+    container: ghcr.io/plengauer/opentelemetry-github-workflow-instrumentation-runner:v5.58.0
