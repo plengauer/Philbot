@@ -17,7 +17,7 @@ jobs:
       contents: read
       actions: read
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@3863925db919310045f636380cc799b60ed41c92
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@2169fb0fa9a8260fde99a2a185bbf99a5d63546e # v5.59.0
         env:
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
@@ -49,7 +49,7 @@ jobs:
       issues: read
       actions: read
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@3863925db919310045f636380cc799b60ed41c92
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@2169fb0fa9a8260fde99a2a185bbf99a5d63546e # v5.59.0
         env:
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
