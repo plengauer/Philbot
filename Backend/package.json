@@ -4,7 +4,7 @@
   "author": "philipp-lengauer <p.lengauer@gmail.com>",
   "dependencies": {
     "form-data": "4.0.6",
-    "jszip": "3.10.1",
+    "jszip": "3.10.2",
     "epic-free-games": "4.1.4",
     "boomerencoding": "1.1.0",
     "properties-reader": "3.0.1",
