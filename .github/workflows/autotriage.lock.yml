@@ -361,6 +361,7 @@ jobs:
             ${{ github.token }}
             ${{ secrets.ACTIONS_GITHUB_TOKEN }}
             ${{ secrets.COPILOT_GITHUB_TOKEN }}
+            ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
             ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN }}
             ${{ secrets.GH_AW_GITHUB_TOKEN }}
             ${{ secrets.GITHUB_TOKEN }}
@@ -984,7 +985,9 @@ jobs:
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
           OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces
         with:
-          secrets_to_redact: ${{ github.token }}
+          secrets_to_redact: |-
+            ${{ github.token }}
+            ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Setup Scripts
         id: setup
         uses: github/gh-aw-actions/setup@5e508589e03a7757a7e05b26e834292f5445bfb6 # v0.88.8
@@ -1396,6 +1399,7 @@ jobs:
           secrets_to_redact: |-
             ${{ github.token }}
             ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+            ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Setup Scripts
         id: setup
         uses: github/gh-aw-actions/setup@5e508589e03a7757a7e05b26e834292f5445bfb6 # v0.88.8
