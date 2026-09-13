@@ -1,0 +1,27 @@
+name: Autoversion
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'
+  push:
+    branches:
+      - 'release/v*.*'
+
+concurrency:
+  group: bump-version-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    if: ${{ !github.event.repository.fork }}
+    runs-on: ubuntu-slim
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: plengauer/autoversion@badee98ba4eb3a38f99cf8acab7f5510e7e8736f # v5.0.0
+        with:
+          github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN || github.token }}
+          openai_token: ${{ secrets.OPENAI_TOKEN }}
+          increments: ${{ github.ref_name == 'main' && 'major;minor' || 'patch' }}
