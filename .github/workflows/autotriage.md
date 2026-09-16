@@ -5,8 +5,8 @@ on:
   issues:
     types: [opened]
   roles: all
-rate-limit:
-  max: 2
+user-rate-limit:
+  max-runs-per-window: 3
   window: 60
 permissions:
   contents: read
