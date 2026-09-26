@@ -17,7 +17,7 @@ jobs:
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@74b46584d99a285f5f5300264c94538dcf6e9596 # v5.62.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
         with:
           secrets_to_redact: '["${{ github.token }}"]'
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -39,7 +39,7 @@ jobs:
       run:
         working-directory: ./Deployment/Containerized
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@74b46584d99a285f5f5300264c94538dcf6e9596 # v5.62.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}"]'
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
