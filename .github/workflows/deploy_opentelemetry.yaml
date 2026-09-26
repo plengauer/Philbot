@@ -12,14 +12,14 @@ jobs:
     concurrency:
       group: otel-deploy-job
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@74b46584d99a285f5f5300264c94538dcf6e9596 # v5.62.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
         env:
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
           OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN  }}","${{ secrets.PARENT_DOMAIN }}"]'
-      - uses: plengauer/opentelemetry-github/actions/instrument/deploy@74b46584d99a285f5f5300264c94538dcf6e9596 # v5.62.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/deploy@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
         env:
           OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics'
           OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: 'http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs'
