@@ -23,7 +23,7 @@ jobs:
       issues: write
       security-events: write
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@74b46584d99a285f5f5300264c94538dcf6e9596 # v5.62.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}"]'
       - uses: renovatebot/github-action@f3a31a786096ba6b40d0f0ffe11a494ef73bfa7c # v46.3.4
