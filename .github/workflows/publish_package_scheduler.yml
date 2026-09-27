@@ -40,7 +40,7 @@ jobs:
         with:
           secrets_to_redact: '["${{ github.token }}","${{secrets.RUBYGEMS_TOKEN}}"]'
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: ruby/setup-ruby@bec3f19a76460dbe12f60def7d1a77585f07516c # v1.322.0
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         with:
           ruby-version: 4.0.6
       - run: |
