@@ -17,7 +17,7 @@ jobs:
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@af83be0ddf1ec3035230c030f3ab6d10a7040515 # v5.56.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
         with:
           secrets_to_redact: '["${{ github.token }}"]'
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -36,11 +36,11 @@ jobs:
       run:
         working-directory: ./Voice/
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@af83be0ddf1ec3035230c030f3ab6d10a7040515 # v5.56.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
         with:
           secrets_to_redact: '["${{ github.token }}","${{secrets.PYPI_TOKEN}}"]'
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.x'
       - run: |
