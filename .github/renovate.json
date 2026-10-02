@@ -4,6 +4,9 @@
     "config:recommended",
     "helpers:pinGitHubActionDigests"
   ],
+  "ignorePaths": [
+    "**/*.lock.yml"
+  ],
   "dependencyDashboard": false,
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
