@@ -1,0 +1,22 @@
+name: OpenTelemetry
+on:
+  pull_request:
+    types: [opened, reopened, closed]
+  pull_request_review:
+    types: [submitted]
+  create:
+  delete:
+  push:
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: plengauer/opentelemetry-github/actions/instrument/repository@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
+        env:
+          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics
+          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces
+    container: ghcr.io/plengauer/opentelemetry-github-workflow-instrumentation-runner:db7b5a16bf2d905493c86f582aba4bb056d8aada

@@ -19,7 +19,18 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: read
     steps:
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
+        env:
+          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics
+          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces
+        with:
+          secrets_to_redact: |-
+            ${{ github.token }}
+            ${{ secrets.ACTIONS_GITHUB_TOKEN || github.token }}
+            ${{ secrets.OPENAI_TOKEN }}
       - uses: plengauer/autoversion@de18b86671e27145d689f84b43978cf5f1a5d16c # v5.2.0
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN || github.token }}
