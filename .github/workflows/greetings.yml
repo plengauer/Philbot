@@ -15,7 +15,7 @@ jobs:
       pull-requests: write
       actions: read
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@48918a17e96079ba32d8379d536c89679ab39340 # v5.63.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@a3202770e6f9c17a81f2a7fd1073352b814d99b1 # v5.63.1
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.GITHUB_TOKEN }}"]'
       - uses: actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d # v3.1.0
