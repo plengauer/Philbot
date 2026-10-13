@@ -1,0 +1,7 @@
+paths:
+  .github/workflows/autobackport.yml:
+    # Why: shellcheck suggests grouping the consecutive `>> "$GITHUB_OUTPUT"`
+    # redirects in the `run:` script at line 95 (SC2129, style only). Ignored
+    # for this file only.
+    ignore:
+      - 'SC2129'

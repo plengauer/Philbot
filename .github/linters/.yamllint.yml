@@ -1,0 +1,26 @@
+---
+extends: default
+rules:
+  # Why: all workflows of the templates omit the `---` document start marker
+  # (8 of 8 files, reported as warnings); GitHub Actions does not need it.
+  document-start: disable
+  # Why: `on:` is the mandatory top-level key of every workflow, and the rule
+  # reports it as a truthy value (8 of 8 files).
+  truthy: disable
+  # Why: Renovate pins actions as `uses: owner/repo@<sha> # v1.2.3` with a
+  # single space before the version comment (18 occurrences), but the default
+  # expects two.
+  comments:
+    min-spaces-from-content: 1
+  # Why: shell lines in `run:` blocks cannot be wrapped without changing the
+  # script, and the default limit of 80 is exceeded up to 176 characters (the
+  # `gh release create` line of ci.yml). 500 is the limit of MegaLinter's own
+  # default yamllint config, which this file replaces.
+  line-length:
+    max: 500
+  # Why: renovate.yml has trailing whitespace after `security-events: write`.
+  # It is ignored for this file only, so that the rule stays active for all
+  # other files.
+  trailing-spaces:
+    ignore: |
+      .github/workflows/renovate.yml
