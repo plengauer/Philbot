@@ -19,9 +19,18 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: read
     steps:
-      - uses: plengauer/autoversion@9539a8fa1c0e662cb733fa58e1a6fd7573e26af6 # v5.1.0
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@a3202770e6f9c17a81f2a7fd1073352b814d99b1 # v5.63.1
+        env:
+          OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/metrics
+          OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/logs
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://${{ secrets.PARENT_DOMAIN }}:4318/v1/traces
+        with:
+          secrets_to_redact: |-
+            ${{ github.token }}
+            ${{ secrets.ACTIONS_GITHUB_TOKEN || github.token }}
+      - uses: plengauer/autoversion@de18b86671e27145d689f84b43978cf5f1a5d16c # v5.2.0
         with:
           github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN || github.token }}
-          openai_token: ${{ secrets.OPENAI_TOKEN }}
           increments: ${{ github.ref_name == 'main' && 'major;minor' || 'patch' }}

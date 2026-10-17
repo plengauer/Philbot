@@ -2,7 +2,7 @@ name: OpenTelemetry
 
 on:
   workflow_run:
-    workflows: [.github/workflows/copilot-setup-steps.yml, Autobackport, Automatic Rerun, Autotriage, CodeQL, Copilot, Copilot cloud agent, Copilot code review, Copilot coding agent, Dependency Graph, Greetings, Publish Debian Baremetal, Publish Debian Configuration, Publish Debian Containerized, Publish Debian Recommended, Publish Debian Root, Publish Image Backend, Publish Image Collector, Publish Image Discord Gateway 2 HTTP, Publish Image Discord Gateway 2 HTTP Master, Publish Image Scheduler, Publish Image Voice, Publish Package Backend, Publish Package Discord Gateway 2 HTTP, Publish Package Scheduler, Publish Package Voice, Recompile Agentic Workflows, Renovate, Report Failed Workflows, Test Integration, Update Debian Repository]
+    workflows: [.github/workflows/copilot-setup-steps.yml, Autobackport, Automatic Rerun, Autotriage, Autoversion, Claude, CodeQL, Copilot, Copilot cloud agent, Copilot code review, Dependency Graph, Greetings, OpenAI Codex, Publish Debian Baremetal, Publish Debian Configuration, Publish Debian Containerized, Publish Debian Recommended, Publish Debian Root, Publish Image Backend, Publish Image Collector, Publish Image Discord Gateway 2 HTTP, Publish Image Discord Gateway 2 HTTP Master, Publish Image Scheduler, Publish Image Voice, Publish Package Backend, Publish Package Discord Gateway 2 HTTP, Publish Package Scheduler, Publish Package Voice, Recompile Agentic Workflows, Renovate, Rerequest Reviews, Test Integration, Update Debian Repository]
     types:
       - completed
 
@@ -15,7 +15,7 @@ jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/workflow@db7b5a16bf2d905493c86f582aba4bb056d8aada # v5.62.1
+      - uses: plengauer/opentelemetry-github/actions/instrument/workflow@a3202770e6f9c17a81f2a7fd1073352b814d99b1 # v5.63.1
     permissions:
       actions: read
-    container: ghcr.io/plengauer/opentelemetry-github-workflow-instrumentation-runner:v5.62.1
+    container: ghcr.io/plengauer/opentelemetry-github-workflow-instrumentation-runner:v5.63.1

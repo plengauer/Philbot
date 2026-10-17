@@ -1,0 +1,6 @@
+# Why: lychee reports `https://x-access-token/` in recompile_agentic_workflows.yml.
+# It is the credential placeholder of the git remote URL
+# `https://x-access-token:${GH_TOKEN}@github.com/...`, which is not a link.
+# Workflow YAML is not documentation with links for a reader to click, so it is
+# excluded from the dead-link checker. The other linters still cover it.
+exclude_path = ['\.github/workflows/']
