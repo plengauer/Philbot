@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: "Setup observability"
-        uses: plengauer/opentelemetry-github/actions/instrument/job@a3202770e6f9c17a81f2a7fd1073352b814d99b1 # v5.63.1
+        uses: plengauer/opentelemetry-github/actions/instrument/job@cae29061ec48de46feefdc8131c776a9af11da6f # v5.64.0
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.OPENAI_API_TOKEN }}","${{ secrets.PHILBOT_API_TOKEN }}","${{ secrets.PHILBOT_APPLICATION_ID }}","${{ secrets.PHILBOT_GUILD_ID }}","${{ secrets.PHILBOT_TEXT_CHANNEL_ID }}","${{ secrets.PHILBOT_VOICE_CHANNEL_ID }}","${{ secrets.YOUTUBE_API_TOKEN }}"]'
       - name: "Prepare system"
