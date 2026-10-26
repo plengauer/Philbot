@@ -17,7 +17,7 @@ jobs:
     outputs:
       dirty: ${{ steps.git-diff.outputs.dirty }}
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@a3202770e6f9c17a81f2a7fd1073352b814d99b1 # v5.63.1
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@cae29061ec48de46feefdc8131c776a9af11da6f # v5.64.0
         with:
           secrets_to_redact: '["${{ github.token }}"]'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,7 +39,7 @@ jobs:
       run:
         working-directory: ./Deployment/Baremetal
     steps:
-      - uses: plengauer/opentelemetry-github/actions/instrument/job@a3202770e6f9c17a81f2a7fd1073352b814d99b1 # v5.63.1
+      - uses: plengauer/opentelemetry-github/actions/instrument/job@cae29061ec48de46feefdc8131c776a9af11da6f # v5.64.0
         with:
           secrets_to_redact: '["${{ github.token }}","${{ secrets.ACTIONS_GITHUB_TOKEN }}"]'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
