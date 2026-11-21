@@ -20,7 +20,7 @@
     "opentelemetry-resource-detector-git": "0.30.0",
     "@opentelemetry/resource-detector-github": "0.34.1",
     "@opentelemetry/resource-detector-container": "0.9.1",
-    "@opentelemetry/resource-detector-aws": "2.23.0",
+    "@opentelemetry/resource-detector-aws": "3.1.0",
     "@opentelemetry/resource-detector-gcp": "0.60.0",
     "xhr2": "0.2.1"
   },
