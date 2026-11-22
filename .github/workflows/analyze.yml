@@ -42,7 +42,7 @@ jobs:
           GITHUB_COMMENT_REPORTER: true
           SARIF_REPORTER: true
       - if: always() && github.ref_name == 'main' && hashFiles('megalinter-reports/megalinter-report.sarif') != ''
-        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
         with:
           sarif_file: megalinter-reports/megalinter-report.sarif
           category: megalinter
